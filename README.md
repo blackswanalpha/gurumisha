@@ -83,13 +83,45 @@ A comprehensive Django-based e-commerce platform specializing in car sales, spar
 
 ## 🔧 Installation
 
-### 1. Clone the Repository
+### Quick Setup (Recommended)
+
+For the fastest setup experience, use our automated setup scripts:
+
+**Linux/macOS:**
+```bash
+git clone https://github.com/blackswanalpha/gurumisha.git
+cd gurumisha
+chmod +x setup.sh
+./setup.sh
+```
+
+**Windows:**
+```cmd
+git clone https://github.com/blackswanalpha/gurumisha.git
+cd gurumisha
+setup.bat
+```
+
+The setup scripts will automatically:
+- Create and activate virtual environment
+- Install all Python and Node.js dependencies
+- Set up database with migrations
+- Create .env configuration file
+- Build Tailwind CSS assets
+- Collect static files
+- Optionally create superuser account
+
+### Manual Installation
+
+If you prefer manual setup or need more control:
+
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/blackswanalpha/gurumisha.git
 cd gurumisha
 ```
 
-### 2. Set Up Virtual Environment
+#### 2. Set Up Virtual Environment
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -101,18 +133,17 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Install Dependencies
+#### 3. Install Dependencies
 ```bash
 # Install Python dependencies
 pip install -r requirements.txt
 
 # Install Node.js dependencies for Tailwind CSS
-cd gurumisha
 npm install
 ```
 
-### 4. Environment Configuration
-Create a `.env` file in the project root:
+#### 4. Environment Configuration
+Create a `.env` file in the `gurumisha/` directory:
 ```env
 DEBUG=True
 SECRET_KEY=your-secret-key-here
@@ -122,10 +153,14 @@ EMAIL_PORT=587
 EMAIL_HOST_USER=kamandembugua18@gmail.com
 EMAIL_HOST_PASSWORD=your-email-password
 EMAIL_USE_TLS=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-### 5. Database Setup
+#### 5. Database Setup
 ```bash
+# Navigate to Django project
+cd gurumisha
+
 # Run migrations
 python manage.py makemigrations
 python manage.py migrate
@@ -137,12 +172,14 @@ python manage.py createsuperuser
 python manage.py loaddata fixtures/sample_data.json
 ```
 
-### 6. Build Static Assets
+#### 6. Build Static Assets
 ```bash
-# Build Tailwind CSS
+# Build Tailwind CSS (from project root)
+cd ..
 npm run build
 
 # Collect static files
+cd gurumisha
 python manage.py collectstatic
 ```
 
