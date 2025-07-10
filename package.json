@@ -1,0 +1,53 @@
+{
+  "name": "gurumisha",
+  "version": "1.0.0",
+  "description": "Django E-Commerce Platform for Car Sales and Spare Parts",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "build": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify",
+    "start": "python manage.py runserver",
+    "test": "python manage.py test",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "django",
+    "ecommerce",
+    "car-sales",
+    "spare-parts",
+    "tailwindcss",
+    "htmx"
+  ],
+  "author": "Victor Mbugua <kamandembugua18@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.3",
+    "@tailwindcss/typography": "^0.5.9",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+    "postcss-cli": "^10.1.0",
+    "eslint": "^8.42.0",
+    "prettier": "^2.8.8",
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "htmx.org": "^1.9.2",
+    "alpinejs": "^3.12.0",
+    "chart.js": "^4.3.0",
+    "aos": "^2.3.4",
+    "swiper": "^9.4.1",
+    "glightbox": "^3.2.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
