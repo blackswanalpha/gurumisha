@@ -1,0 +1,465 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}{% block dashboard_title %}Admin Dashboard{% endblock %} - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Splash Screen -->
+{% include 'components/splash_screen.html' %}
+
+<!-- Admin Dashboard Layout -->
+<div class="min-h-screen bg-harrier-gray">
+    <!-- Dashboard Header -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Page Title -->
+                <div class="flex items-center">
+                    <button type="button" class="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-harrier-red" id="mobile-sidebar-toggle">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="ml-4 lg:ml-0">
+                        <h1 class="text-2xl font-heading font-bold text-harrier-dark">
+                            {% block page_title %}Admin Dashboard{% endblock %}
+                        </h1>
+                        <p class="text-sm text-gray-600 mt-1">
+                            {% block page_description %}Manage your automotive marketplace{% endblock %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Top Actions -->
+                <div class="flex items-center space-x-4">
+                    {% block top_actions %}
+                        <!-- Quick Actions -->
+                        <div class="hidden md:flex items-center space-x-2">
+                            <!-- Export Dropdown -->
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" type="button" class="btn-admin-secondary text-sm flex items-center">
+                                    <i class="fas fa-download mr-2"></i>Export
+                                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                </button>
+                                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <div class="py-1">
+                                        <a href="{% url 'core:export_users' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-users mr-2"></i>Export Users
+                                        </a>
+                                        <a href="{% url 'core:export_cars' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-car mr-2"></i>Export Cars
+                                        </a>
+                                        <a href="{% url 'core:export_vendors' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-store mr-2"></i>Export Vendors
+                                        </a>
+                                        <a href="{% url 'core:export_analytics' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-chart-bar mr-2"></i>Export Analytics
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn-admin-primary text-sm"
+                                hx-get="{% url 'core:add_new_modal' %}"
+                                hx-target="body"
+                                hx-swap="beforeend"
+                            >
+                                <i class="fas fa-plus mr-2"></i>Add New
+                            </button>
+                        </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="admin-sidebar-overlay lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+
+    <!-- Dashboard Content -->
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Enhanced Admin Sidebar Navigation -->
+            <aside class="admin-sidebar w-full lg:w-72 flex-shrink-0 fixed lg:relative top-0 left-0 h-full lg:h-auto z-50 lg:z-auto lg:translate-x-0">
+                <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden h-full lg:h-auto overflow-y-auto">
+                    <!-- Admin Profile Section -->
+                    <div class="bg-gradient-to-r from-harrier-dark to-harrier-red p-6 text-white">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                <i class="fas fa-user-shield text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white">{{ user.get_full_name|default:user.username }}</h3>
+                                <p class="text-sm text-gray-200">System Administrator</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+                                <div class="text-lg font-bold">{{ total_users|default:0 }}</div>
+                                <div class="text-xs text-gray-200">Users</div>
+                            </div>
+                            <div class="bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+                                <div class="text-lg font-bold">{{ active_orders|default:0 }}</div>
+                                <div class="text-xs text-gray-200">Orders</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Navigation Menu -->
+                    <nav class="p-6 font-raleway">
+                        {% block sidebar_nav %}
+                            <!-- Main Dashboard -->
+                            <div class="nav-section mb-8">
+                                <a href="{% url 'core:dashboard' %}" class="dashboard-main-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                                    <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-harrier-red to-harrier-dark text-white hover:shadow-lg transition-all duration-300">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-tachometer-alt text-white text-lg"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-bold text-white font-montserrat">Dashboard</h3>
+                                                <p class="text-xs text-white/80">Overview & Stats</p>
+                                            </div>
+                                        </div>
+                                        <i class="fas fa-arrow-right text-white/60"></i>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <!-- Import & Tracking Section -->
+                            <div class="nav-section import-tracking mb-6">
+                                <div class="section-header-modern">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-harrier-red/10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-ship text-harrier-red text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Import & Tracking</h4>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <a href="{% url 'core:admin_import_requests' %}" class="modern-nav-link {% if 'admin_import_requests' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-file-import"></i>
+                                                </div>
+                                                <span class="nav-label">Import Requests</span>
+                                            </div>
+                                            <div class="nav-badge">{{ total_import_orders|default:0 }}</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="{% url 'core:admin_tracking_management' %}" class="modern-nav-link {% if 'admin_tracking_management' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-route"></i>
+                                                </div>
+                                                <span class="nav-label">Tracking Management</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- User & Vendor Management Section -->
+                            <div class="nav-section user-management mb-6">
+                                <div class="section-header-modern">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-users text-emerald-600 text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">User Management</h4>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <a href="{% url 'core:admin_users' %}" class="modern-nav-link {% if 'admin_users' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-users-cog"></i>
+                                                </div>
+                                                <span class="nav-label">Users</span>
+                                            </div>
+                                            <div class="nav-badge">{{ total_users|default:0 }}</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="{% url 'core:admin_vendors' %}" class="modern-nav-link {% if 'admin_vendors' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-store-alt"></i>
+                                                </div>
+                                                <span class="nav-label">Vendors</span>
+                                            </div>
+                                            <div class="nav-badge">{{ active_vendors|default:0 }}</div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Inventory & Products Section -->
+                            <div class="nav-section inventory mb-6">
+                                <div class="section-header-modern">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-warehouse text-amber-600 text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Inventory</h4>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <a href="{% url 'core:admin_listings' %}" class="modern-nav-link {% if 'admin_listings' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-car-side"></i>
+                                                </div>
+                                                <span class="nav-label">Car Listings</span>
+                                            </div>
+                                            <div class="nav-badge">{{ total_listings|default:0 }}</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="{% url 'core:admin_spare_shop' %}" class="modern-nav-link {% if 'admin_spare_shop' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-tools"></i>
+                                                </div>
+                                                <span class="nav-label">Spare Shop</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Communication Section -->
+                            <div class="nav-section communication mb-6">
+                                <div class="section-header-modern">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-violet-500/10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-comments text-violet-600 text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Communication</h4>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <a href="{% url 'core:admin_queries' %}" class="modern-nav-link {% if 'admin_queries' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </div>
+                                                <span class="nav-label">Queries</span>
+                                            </div>
+                                            <div class="nav-badge">{{ new_inquiries|default:0 }}</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="{% url 'core:notifications' %}" class="modern-nav-link {% if 'notifications' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-bell"></i>
+                                                </div>
+                                                <span class="nav-label">Notifications</span>
+                                            </div>
+                                            <div
+                                                hx-get="{% url 'core:notifications_count_htmx' %}"
+                                                hx-trigger="load, every 30s"
+                                                hx-target="this"
+                                                hx-swap="innerHTML"
+                                                class="nav-badge"
+                                            >
+                                                0
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Content & Settings Section -->
+                            <div class="nav-section content-settings mb-6">
+                                <div class="section-header-modern">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-gray-500/10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-cog text-gray-600 text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Content & Settings</h4>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <a href="{% url 'core:admin_content_management' %}" class="modern-nav-link {% if 'admin_content_management' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-edit"></i>
+                                                </div>
+                                                <span class="nav-label">Content Management</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                        </div>
+                                    </a>
+
+                                    <a href="{% url 'core:admin_system_settings' %}" class="modern-nav-link {% if 'admin_system_settings' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-sliders-h"></i>
+                                                </div>
+                                                <span class="nav-label">System Settings</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Analytics Section -->
+                            <div class="nav-section mb-6">
+                                <a href="{% url 'core:admin_analytics' %}" class="analytics-link {% if 'admin_analytics' in request.resolver_match.url_name %}active{% endif %}">
+                                    <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg transition-all duration-300">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-chart-line text-white text-lg"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-bold text-white font-montserrat">Analytics</h3>
+                                                <p class="text-xs text-white/80">Reports & Insights</p>
+                                            </div>
+                                        </div>
+                                        <i class="fas fa-arrow-right text-white/60"></i>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endblock %}
+                    </nav>
+                </div>
+
+                <!-- Quick Stats Card -->
+                {% block sidebar_stats %}
+                    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <h3 class="text-sm font-semibold text-harrier-dark mb-4 uppercase tracking-wide">Quick Stats</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">System Status</span>
+                                <span class="text-sm font-bold text-green-600">
+                                    <i class="fas fa-circle text-xs mr-1"></i>Online
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Last Update</span>
+                                <span class="text-sm text-gray-500">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endblock %}
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 min-w-0">
+                <!-- Breadcrumb -->
+                {% block breadcrumb %}
+                    <nav class="flex mb-6" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                            <li class="inline-flex items-center">
+                                <a href="{% url 'core:dashboard' %}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-harrier-red">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Admin
+                                </a>
+                            </li>
+                            {% block breadcrumb_items %}{% endblock %}
+                        </ol>
+                    </nav>
+                {% endblock %}
+
+                <!-- Page Content -->
+                {% block dashboard_content %}
+                    <div class="admin-card p-6">
+                        <p class="text-gray-600">Admin dashboard content goes here.</p>
+                    </div>
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="fixed inset-0 z-40 lg:hidden hidden" id="mobile-sidebar-overlay">
+    <div class="fixed inset-0 bg-black bg-opacity-50" id="mobile-sidebar-backdrop"></div>
+    <div class="fixed inset-y-0 left-0 flex flex-col w-64 bg-white shadow-xl transform -translate-x-full transition-transform duration-300 ease-in-out" id="mobile-sidebar">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 class="text-lg font-heading font-semibold text-harrier-dark">Admin Menu</h2>
+            <button type="button" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100" id="mobile-sidebar-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="flex-1 p-4 overflow-y-auto">
+            <!-- Mobile navigation will be populated by JavaScript -->
+        </nav>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile sidebar functionality
+    const mobileToggle = document.getElementById('mobile-sidebar-toggle');
+    const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    const mobileClose = document.getElementById('mobile-sidebar-close');
+    const mobileBackdrop = document.getElementById('mobile-sidebar-backdrop');
+
+    function openMobileSidebar() {
+        mobileOverlay.classList.remove('hidden');
+        setTimeout(() => {
+            mobileSidebar.classList.add('translate-x-0');
+            mobileSidebar.classList.remove('-translate-x-full');
+        }, 10);
+    }
+
+    function closeMobileSidebar() {
+        mobileSidebar.classList.remove('translate-x-0');
+        mobileSidebar.classList.add('-translate-x-full');
+        setTimeout(() => {
+            mobileOverlay.classList.add('hidden');
+        }, 300);
+    }
+
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', openMobileSidebar);
+    }
+
+    if (mobileClose) {
+        mobileClose.addEventListener('click', closeMobileSidebar);
+    }
+
+    if (mobileBackdrop) {
+        mobileBackdrop.addEventListener('click', closeMobileSidebar);
+    }
+
+    // Copy desktop navigation to mobile
+    const desktopNav = document.querySelector('aside nav ul');
+    const mobileNav = document.querySelector('#mobile-sidebar nav');
+    if (desktopNav && mobileNav) {
+        mobileNav.innerHTML = '<ul class="space-y-2">' + desktopNav.innerHTML + '</ul>';
+    }
+
+    // Auto-close mobile sidebar on window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1024) {
+            closeMobileSidebar();
+        }
+    });
+});
+</script>
+{% endblock %}

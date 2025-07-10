@@ -1,0 +1,28 @@
+<!-- Reusable Breadcrumb Component -->
+{% load static %}
+
+<div class="bg-harrier-gray py-4">
+    <div class="container mx-auto px-4">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                <li>
+                    <a href="{% url 'core:homepage' %}" class="text-gray-500 hover:text-harrier-red transition-colors">
+                        <i class="fas fa-home mr-1"></i>Home
+                    </a>
+                </li>
+                {% for item in breadcrumb_items %}
+                    <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+                    {% if item.url %}
+                        <li>
+                            <a href="{{ item.url }}" class="text-gray-500 hover:text-harrier-red transition-colors">
+                                {{ item.name }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="text-harrier-dark font-semibold">{{ item.name }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ol>
+        </nav>
+    </div>
+</div>

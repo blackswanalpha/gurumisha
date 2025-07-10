@@ -1,0 +1,199 @@
+{% load static %}
+
+<!-- Splash Screen Component -->
+<div id="splash-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-harrier-dark via-gray-900 to-harrier-blue transition-opacity duration-1000">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0 bg-pattern bg-repeat opacity-20"></div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="relative z-10 text-center">
+        <!-- Logo Container -->
+        <div class="mb-8 transform transition-all duration-1000 ease-out" id="splash-logo">
+            <div class="w-32 h-32 mx-auto mb-6 relative">
+                <!-- Logo Background Circle -->
+                <div class="absolute inset-0 bg-white rounded-full shadow-2xl animate-pulse"></div>
+                
+                <!-- Logo Image -->
+                <div class="relative z-10 flex items-center justify-center w-full h-full">
+                    <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="w-20 h-20 object-contain">
+                </div>
+                
+                <!-- Rotating Ring -->
+                <div class="absolute inset-0 border-4 border-transparent border-t-harrier-red rounded-full animate-spin"></div>
+            </div>
+            
+            <!-- Brand Name -->
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-2 tracking-wide">
+                Gurumisha
+            </h1>
+            <p class="text-lg text-gray-300 font-medium tracking-wider">
+                Your Trusted Car Partner
+            </p>
+        </div>
+        
+        <!-- Loading Animation -->
+        <div class="mb-8" id="splash-loader">
+            <!-- Progress Bar -->
+            <div class="w-64 h-2 bg-gray-700 rounded-full mx-auto mb-4 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-harrier-red to-harrier-blue rounded-full transition-all duration-300 ease-out" 
+                     id="progress-bar" style="width: 0%"></div>
+            </div>
+            
+            <!-- Loading Text -->
+            <p class="text-sm text-gray-400 animate-pulse" id="loading-text">
+                Loading your dashboard...
+            </p>
+        </div>
+        
+        <!-- Loading Dots -->
+        <div class="flex justify-center space-x-2">
+            <div class="w-3 h-3 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+            <div class="w-3 h-3 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+            <div class="w-3 h-3 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+        </div>
+    </div>
+    
+    <!-- Bottom Branding -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+        <p class="text-xs text-gray-500 tracking-wide">
+            Powered by Harrier Design System
+        </p>
+    </div>
+</div>
+
+<!-- Splash Screen Styles -->
+<style>
+    /* Custom animations for splash screen */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    @keyframes slideInFromLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Background pattern */
+    .bg-pattern {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    
+    /* Splash screen specific animations */
+    #splash-logo {
+        animation: scaleIn 1s ease-out;
+    }
+    
+    #splash-loader {
+        animation: fadeInUp 1s ease-out 0.5s both;
+    }
+    
+    /* Fade out animation */
+    .splash-fade-out {
+        opacity: 0;
+        transform: scale(1.1);
+        transition: all 0.8s ease-in-out;
+    }
+    
+    /* Ensure splash screen is above everything */
+    #splash-screen {
+        z-index: 9999;
+    }
+    
+    /* Hide scrollbar during splash */
+    body.splash-active {
+        overflow: hidden;
+    }
+</style>
+
+<!-- Splash Screen JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const splashScreen = document.getElementById('splash-screen');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingText = document.getElementById('loading-text');
+    
+    // Add splash-active class to body
+    document.body.classList.add('splash-active');
+    
+    // Loading messages
+    const loadingMessages = [
+        'Loading your dashboard...',
+        'Preparing your data...',
+        'Setting up your workspace...',
+        'Almost ready...'
+    ];
+    
+    let currentMessage = 0;
+    let progress = 0;
+    
+    // Simulate loading progress
+    const loadingInterval = setInterval(() => {
+        progress += Math.random() * 15 + 5; // Random increment between 5-20
+        
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(loadingInterval);
+            
+            // Final loading message
+            loadingText.textContent = 'Welcome!';
+            
+            // Hide splash screen after a short delay
+            setTimeout(hideSplashScreen, 800);
+        }
+        
+        // Update progress bar
+        progressBar.style.width = progress + '%';
+        
+        // Update loading message
+        if (progress > 25 && currentMessage < 1) {
+            loadingText.textContent = loadingMessages[1];
+            currentMessage = 1;
+        } else if (progress > 50 && currentMessage < 2) {
+            loadingText.textContent = loadingMessages[2];
+            currentMessage = 2;
+        } else if (progress > 75 && currentMessage < 3) {
+            loadingText.textContent = loadingMessages[3];
+            currentMessage = 3;
+        }
+    }, 100);
+    
+    // Function to hide splash screen
+    function hideSplashScreen() {
+        splashScreen.classList.add('splash-fade-out');
+        document.body.classList.remove('splash-active');
+        
+        setTimeout(() => {
+            splashScreen.style.display = 'none';
+        }, 800);
+    }
+    
+    // Fallback: Hide splash screen after maximum time
+    setTimeout(hideSplashScreen, 5000);
+});
+</script>

@@ -1,0 +1,198 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Activity Logs{% endblock %}
+{% block page_description %}View your recent activities and actions{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+    <!-- Activity Logs Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-bold text-harrier-dark font-montserrat">Activity Logs</h2>
+            <p class="text-gray-600 mt-1">Track your activities and actions across the platform</p>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="flex items-center space-x-4">
+            <form method="GET" class="flex items-center space-x-2">
+                <select name="action" class="form-select text-sm border-gray-300 rounded-lg">
+                    <option value="">All Actions</option>
+                    {% for action in available_actions %}
+                        <option value="{{ action }}" {% if current_filter == action %}selected{% endif %}>
+                            {{ action|title|replace:"_":" " }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-admin-primary text-sm">
+                    <i class="fas fa-filter mr-1"></i>Filter
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Activity Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value">{{ activities.count }}</div>
+            <div class="admin-stat-label">Total Activities</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-blue-600">
+                {{ activities|length }}
+            </div>
+            <div class="admin-stat-label">Recent Activities</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">0</div>
+            <div class="admin-stat-label">Login Sessions</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-purple-600">0</div>
+            <div class="admin-stat-label">Page Views</div>
+        </div>
+    </div>
+
+    <!-- Activity Timeline -->
+    <div class="admin-card">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-harrier-dark mb-6 font-montserrat">
+                <i class="fas fa-history text-harrier-red mr-2"></i>
+                Activity Timeline
+            </h3>
+            
+            {% if activities %}
+                <div class="space-y-4">
+                    {% for activity in activities %}
+                        <div class="activity-item flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <!-- Activity Icon -->
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                    {% if activity.action == 'login' %}bg-green-100 text-green-600
+                                    {% elif activity.action == 'logout' %}bg-red-100 text-red-600
+                                    {% elif 'create' in activity.action %}bg-blue-100 text-blue-600
+                                    {% elif 'update' in activity.action %}bg-yellow-100 text-yellow-600
+                                    {% elif 'delete' in activity.action %}bg-red-100 text-red-600
+                                    {% elif 'view' in activity.action %}bg-gray-100 text-gray-600
+                                    {% else %}bg-purple-100 text-purple-600{% endif %}">
+                                    
+                                    {% if activity.action == 'login' %}
+                                        <i class="fas fa-sign-in-alt"></i>
+                                    {% elif activity.action == 'logout' %}
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    {% elif 'car' in activity.action %}
+                                        <i class="fas fa-car"></i>
+                                    {% elif 'order' in activity.action %}
+                                        <i class="fas fa-shopping-cart"></i>
+                                    {% elif 'import' in activity.action %}
+                                        <i class="fas fa-ship"></i>
+                                    {% elif 'search' in activity.action %}
+                                        <i class="fas fa-search"></i>
+                                    {% elif 'profile' in activity.action %}
+                                        <i class="fas fa-user"></i>
+                                    {% else %}
+                                        <i class="fas fa-activity"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Activity Details -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-medium text-harrier-dark">
+                                        {{ activity.description }}
+                                    </h4>
+                                    <span class="text-xs text-gray-500">
+                                        {{ activity.timestamp|timesince }} ago
+                                    </span>
+                                </div>
+                                
+                                <div class="mt-1 flex items-center space-x-4 text-xs text-gray-500">
+                                    <span class="inline-flex items-center">
+                                        <i class="fas fa-tag mr-1"></i>
+                                        {{ activity.get_action_display }}
+                                    </span>
+                                    
+                                    {% if activity.ip_address %}
+                                        <span class="inline-flex items-center">
+                                            <i class="fas fa-globe mr-1"></i>
+                                            {{ activity.ip_address }}
+                                        </span>
+                                    {% endif %}
+                                    
+                                    {% if activity.content_object %}
+                                        <span class="inline-flex items-center">
+                                            <i class="fas fa-link mr-1"></i>
+                                            {{ activity.content_object }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Extra Data -->
+                                {% if activity.extra_data %}
+                                    <div class="mt-2">
+                                        <details class="text-xs">
+                                            <summary class="cursor-pointer text-harrier-red hover:text-red-700">
+                                                View Details
+                                            </summary>
+                                            <div class="mt-1 p-2 bg-white rounded border text-gray-600">
+                                                {% for key, value in activity.extra_data.items %}
+                                                    <div><strong>{{ key }}:</strong> {{ value }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        </details>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Load More Button -->
+                {% if activities.count >= 50 %}
+                    <div class="mt-6 text-center">
+                        <button class="btn-admin-secondary" onclick="loadMoreActivities()">
+                            <i class="fas fa-chevron-down mr-2"></i>
+                            Load More Activities
+                        </button>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-history text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Activities Found</h3>
+                    <p class="text-gray-500">
+                        {% if current_filter %}
+                            No activities found for the selected filter. Try changing your filter criteria.
+                        {% else %}
+                            Start using the platform to see your activities here.
+                        {% endif %}
+                    </p>
+                    {% if current_filter %}
+                        <a href="{% url 'core:activity_logs' %}" class="btn-admin-secondary mt-4">
+                            <i class="fas fa-times mr-2"></i>Clear Filter
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function loadMoreActivities() {
+    // Implement HTMX or AJAX loading for more activities
+    showToast('Loading more activities...', 'info');
+}
+
+// Auto-refresh activities every 30 seconds
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        // Refresh activity count or latest activities
+        htmx.trigger(document.body, 'refresh-activities');
+    }
+}, 30000);
+</script>
+{% endblock %}

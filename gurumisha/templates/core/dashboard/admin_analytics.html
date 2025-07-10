@@ -1,0 +1,221 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Analytics & Reports{% endblock %}
+{% block page_title %}Analytics & Reports{% endblock %}
+{% block page_description %}System analytics and performance reports{% endblock %}
+
+
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Analytics</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-blue-600">{{ total_users|default:0 }}</div>
+            <div class="admin-stat-label">Total Users</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-arrow-up text-green-500"></i> +12% this month
+            </div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">{{ total_cars|default:0 }}</div>
+            <div class="admin-stat-label">Car Listings</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-arrow-up text-green-500"></i> +8% this month
+            </div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-purple-600">{{ total_vendors|default:0 }}</div>
+            <div class="admin-stat-label">Active Vendors</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-arrow-up text-green-500"></i> +5% this month
+            </div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-orange-600">{{ total_inquiries|default:0 }}</div>
+            <div class="admin-stat-label">Total Inquiries</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-arrow-up text-green-500"></i> +15% this month
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Monthly Growth Chart -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Monthly Growth</h3>
+                <div class="flex items-center space-x-2">
+                    <select class="text-sm border border-gray-300 rounded px-2 py-1">
+                        <option>Last 6 months</option>
+                        <option>Last 12 months</option>
+                    </select>
+                </div>
+            </div>
+            <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                <div class="text-center text-gray-500">
+                    <i class="fas fa-chart-line text-4xl mb-2"></i>
+                    <p>Chart visualization would go here</p>
+                    <p class="text-sm">Integration with Chart.js or similar library</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Activity Chart -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">User Activity</h3>
+                <div class="flex items-center space-x-2">
+                    <select class="text-sm border border-gray-300 rounded px-2 py-1">
+                        <option>This week</option>
+                        <option>This month</option>
+                    </select>
+                </div>
+            </div>
+            <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                <div class="text-center text-gray-500">
+                    <i class="fas fa-chart-bar text-4xl mb-2"></i>
+                    <p>Activity chart would go here</p>
+                    <p class="text-sm">Daily/Weekly user activity patterns</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Brands and Performance -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Top Car Brands -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-heading font-bold text-harrier-dark mb-6">Top Car Brands</h3>
+            <div class="space-y-4">
+                {% for brand in top_brands %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-harrier-red rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                                {{ brand.name|first|upper }}
+                            </div>
+                            <div>
+                                <div class="font-medium text-harrier-dark">{{ brand.name }}</div>
+                                <div class="text-sm text-gray-500">{{ brand.car_count }} listing{{ brand.car_count|pluralize }}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-harrier-dark">{{ brand.car_count }}</div>
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                <div class="bg-harrier-red h-2 rounded-full" style="width: {% widthratio brand.car_count 50 100 %}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-car text-3xl mb-2"></i>
+                        <p>No brand data available</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-heading font-bold text-harrier-dark mb-6">Recent System Activity</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-user-plus text-green-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-harrier-dark">New user registration</p>
+                            <p class="text-xs text-gray-600">Customer account created</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-500">2h ago</span>
+                </div>
+                
+                <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-car text-blue-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-harrier-dark">Car listing approved</p>
+                            <p class="text-xs text-gray-600">2020 Toyota Camry approved</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-500">4h ago</span>
+                </div>
+                
+                <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-store text-orange-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-harrier-dark">Vendor approved</p>
+                            <p class="text-xs text-gray-600">ABC Motors verified</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-500">6h ago</span>
+                </div>
+                
+                <div class="flex items-center justify-between py-3">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-ship text-purple-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-harrier-dark">Import request</p>
+                            <p class="text-xs text-gray-600">2023 Honda Civic requested</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-500">8h ago</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export and Reports -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-heading font-bold text-harrier-dark">Export Reports</h3>
+            <div class="flex items-center space-x-2">
+                <button class="btn-harrier-secondary">
+                    <i class="fas fa-download mr-2"></i>Export Data
+                </button>
+                <button class="btn-harrier-primary">
+                    <i class="fas fa-file-pdf mr-2"></i>Generate Report
+                </button>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="border border-gray-200 rounded-lg p-4 text-center hover:border-harrier-red transition-colors cursor-pointer">
+                <i class="fas fa-users text-2xl text-blue-600 mb-2"></i>
+                <h4 class="font-medium text-harrier-dark">User Report</h4>
+                <p class="text-sm text-gray-600">Export user data and statistics</p>
+            </div>
+            
+            <div class="border border-gray-200 rounded-lg p-4 text-center hover:border-harrier-red transition-colors cursor-pointer">
+                <i class="fas fa-car text-2xl text-green-600 mb-2"></i>
+                <h4 class="font-medium text-harrier-dark">Listings Report</h4>
+                <p class="text-sm text-gray-600">Export car listings and performance</p>
+            </div>
+            
+            <div class="border border-gray-200 rounded-lg p-4 text-center hover:border-harrier-red transition-colors cursor-pointer">
+                <i class="fas fa-chart-line text-2xl text-purple-600 mb-2"></i>
+                <h4 class="font-medium text-harrier-dark">Analytics Report</h4>
+                <p class="text-sm text-gray-600">Export comprehensive analytics</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

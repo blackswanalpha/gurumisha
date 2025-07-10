@@ -1,0 +1,495 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Orders Management{% endblock %}
+{% block page_title %}Orders Management{% endblock %}
+{% block page_description %}Track and manage your spare parts orders{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">Orders</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Order Stats with Modern Design -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-shopping-bag text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_orders }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Orders</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-harrier-red rounded-full mr-2"></div>
+                <span class="text-gray-600 font-medium">All time orders</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-dollar-sign text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600 font-montserrat">{{ total_revenue|floatformat:0 }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Revenue</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-green-600 font-medium">KSh earned</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-clock text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-yellow-600 font-montserrat">{{ pending_orders }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Pending Orders</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                {% if pending_orders > 0 %}
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div>
+                    <span class="text-yellow-600 font-medium">Needs attention</span>
+                {% else %}
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-green-600 font-medium">All caught up</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-cogs text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-blue-600 font-montserrat">{{ processing_orders }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Processing</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                <span class="text-blue-600 font-medium">In progress</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Orders List -->
+    <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-red/5 to-transparent">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-list text-white text-sm"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat">Recent Orders</h2>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-filter text-harrier-red"></i>
+                        <span class="text-sm font-semibold text-harrier-dark font-montserrat">Filter:</span>
+                    </div>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-raleway bg-white shadow-sm focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 hover:border-harrier-red/50"
+                            hx-get="{% url 'core:vendor_orders' %}"
+                            hx-target="#orders-container"
+                            hx-trigger="change">
+                        <option>📋 All Orders</option>
+                        <option>⏳ Pending</option>
+                        <option>⚙️ Processing</option>
+                        <option>🚚 Shipped</option>
+                        <option>✅ Delivered</option>
+                        <option>❌ Cancelled</option>
+                    </select>
+
+                    <button class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                            onclick="exportOrders()">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6" id="orders-container">
+            {% if orders %}
+                <div class="space-y-6">
+                    {% for order in orders %}
+                        <div class="bg-white rounded-xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group overflow-hidden">
+                            <!-- Enhanced Order Header -->
+                            <div class="p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200/50">
+                                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                            <i class="fas fa-receipt text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-bold text-harrier-dark font-montserrat group-hover:text-harrier-red transition-colors">
+                                                Order #{{ order.order_number }}
+                                            </h3>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm text-gray-600">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-user text-harrier-red mr-2"></i>
+                                                    <span class="font-medium">{{ order.customer_name }}</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-envelope text-blue-500 mr-2"></i>
+                                                    <span>{{ order.customer_email }}</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-phone text-green-500 mr-2"></i>
+                                                    <span>{{ order.customer_phone }}</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-calendar text-purple-500 mr-2"></i>
+                                                    <span>{{ order.created_at|date:"M d, Y" }} at {{ order.created_at|time:"H:i" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-start lg:items-end space-y-3 mt-4 lg:mt-0">
+                                        <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold border
+                                            {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800 border-yellow-200
+                                            {% elif order.status == 'paid' %}bg-blue-100 text-blue-800 border-blue-200
+                                            {% elif order.status == 'processing' %}bg-purple-100 text-purple-800 border-purple-200
+                                            {% elif order.status == 'shipped' %}bg-indigo-100 text-indigo-800 border-indigo-200
+                                            {% elif order.status == 'delivered' %}bg-green-100 text-green-800 border-green-200
+                                            {% elif order.status == 'cancelled' %}bg-red-100 text-red-800 border-red-200
+                                            {% else %}bg-gray-100 text-gray-800 border-gray-200{% endif %}">
+                                            {% if order.status == 'pending' %}⏳
+                                            {% elif order.status == 'paid' %}💳
+                                            {% elif order.status == 'processing' %}⚙️
+                                            {% elif order.status == 'shipped' %}🚚
+                                            {% elif order.status == 'delivered' %}✅
+                                            {% elif order.status == 'cancelled' %}❌
+                                            {% else %}📋{% endif %}
+                                            {{ order.get_status_display }}
+                                        </span>
+                                        <div class="text-right">
+                                            <div class="text-2xl font-bold text-harrier-red font-montserrat">
+                                                KSh {{ order.total_amount|floatformat:0 }}
+                                            </div>
+                                            <div class="text-sm text-gray-600">Total Amount</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Vendor's Items in this Order -->
+                            <div class="p-6">
+                                <div class="bg-gradient-to-br from-harrier-red/5 to-transparent rounded-xl p-5 border border-harrier-red/20 mb-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-box text-white text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Your Items in this Order</h4>
+                                    </div>
+                                    <div class="space-y-3">
+                                        {% for item in order.items.all %}
+                                            {% if item.vendor == vendor %}
+                                                <div class="bg-white/60 rounded-lg p-4 border border-gray-100 hover:bg-white/80 transition-all duration-200">
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex items-center space-x-4">
+                                                            <div class="w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center">
+                                                                <i class="fas fa-cog text-white"></i>
+                                                            </div>
+                                                            <div>
+                                                                <p class="font-bold text-harrier-dark font-montserrat">{{ item.part_name }}</p>
+                                                                <p class="text-sm text-gray-600 font-raleway">SKU: {{ item.part_sku }}</p>
+                                                                {% if item.part_description %}
+                                                                    <p class="text-xs text-gray-500 mt-1">{{ item.part_description|truncatewords:10 }}</p>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <div class="flex items-center space-x-2 mb-1">
+                                                                <span class="text-sm text-gray-600">{{ item.quantity }} ×</span>
+                                                                <span class="font-semibold text-harrier-dark">KSh {{ item.unit_price|floatformat:0 }}</span>
+                                                            </div>
+                                                            <div class="text-lg font-bold text-harrier-red font-montserrat">KSh {{ item.total_price|floatformat:0 }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Enhanced Shipping Information -->
+                                <div class="bg-gradient-to-br from-blue-500/5 to-transparent rounded-xl p-5 border border-blue-500/20 mb-6">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-shipping-fast text-white text-sm"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Shipping Address</h4>
+                                    </div>
+                                    <div class="bg-white/60 rounded-lg p-4 border border-gray-100">
+                                        <div class="flex items-start">
+                                            <i class="fas fa-map-marker-alt text-blue-500 mr-3 mt-1"></i>
+                                            <div class="text-sm text-gray-700 font-raleway leading-relaxed">
+                                                <div class="font-semibold text-harrier-dark">{{ order.shipping_address }}</div>
+                                                <div>{{ order.shipping_city }}{% if order.shipping_postal_code %}, {{ order.shipping_postal_code }}{% endif %}</div>
+                                                <div>{{ order.shipping_country }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Order Actions -->
+                            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200/50">
+                                <div class="flex flex-wrap gap-3">
+                                    <a href="{% url 'core:order_detail' order.id %}"
+                                       class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg text-sm font-medium hover:from-harrier-red-dark hover:to-harrier-red transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                        <i class="fas fa-eye mr-2"></i>View Full Order
+                                    </a>
+
+                                    {% if order.status == 'paid' %}
+                                        <button onclick="updateOrderStatus({{ order.id }}, 'processing')"
+                                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                            <i class="fas fa-cogs mr-2"></i>Mark as Processing
+                                        </button>
+                                    {% elif order.status == 'processing' %}
+                                        <button onclick="updateOrderStatus({{ order.id }}, 'shipped')"
+                                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg text-sm font-medium hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                            <i class="fas fa-shipping-fast mr-2"></i>Mark as Shipped
+                                        </button>
+                                    {% elif order.status == 'shipped' %}
+                                        <button onclick="updateOrderStatus({{ order.id }}, 'delivered')"
+                                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                            <i class="fas fa-check-circle mr-2"></i>Mark as Delivered
+                                        </button>
+                                    {% endif %}
+
+                                    <button onclick="printInvoice({{ order.id }})" class="inline-flex items-center px-4 py-2 bg-white border-2 border-harrier-blue text-harrier-blue rounded-lg text-sm font-medium hover:bg-harrier-blue hover:text-white transition-all duration-200 transform hover:scale-105">
+                                        <i class="fas fa-print mr-2"></i>Print Invoice
+                                    </button>
+
+                                    <button onclick="contactCustomer('{{ order.customer_email }}', '{{ order.customer_name }}')" class="inline-flex items-center px-4 py-2 bg-white border-2 border-gray-400 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-400 hover:text-white transition-all duration-200 transform hover:scale-105">
+                                        <i class="fas fa-envelope mr-2"></i>Contact Customer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Enhanced Empty State -->
+                <div class="text-center py-16">
+                    <div class="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-shopping-bag text-6xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-harrier-dark mb-4 font-montserrat">No Orders Yet</h3>
+                    <p class="text-gray-600 mb-8 max-w-md mx-auto font-raleway leading-relaxed">You haven't received any orders for your spare parts yet. Start by managing your inventory and promoting your products!</p>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <a href="{% url 'core:vendor_spare_parts' %}"
+                           class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-bold hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                            <i class="fas fa-cogs mr-3"></i>Manage Inventory
+                        </a>
+
+                        <a href="{% url 'core:vendor_analytics' %}"
+                           class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200 shadow-sm">
+                            <i class="fas fa-chart-bar mr-2"></i>View Analytics
+                        </a>
+                    </div>
+
+                    <!-- Quick Tips -->
+                    <div class="mt-12 bg-white/60 rounded-lg p-6 border border-gray-100 max-w-2xl mx-auto">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat">Tips to Get Your First Order</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="flex items-start">
+                                <i class="fas fa-tags text-harrier-red mr-3 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-harrier-dark">Competitive Pricing</div>
+                                    <div class="text-gray-600">Research market prices</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-star text-yellow-500 mr-3 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-harrier-dark">Quality Products</div>
+                                    <div class="text-gray-600">Maintain high standards</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-shipping-fast text-blue-500 mr-3 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-harrier-dark">Fast Delivery</div>
+                                    <div class="text-gray-600">Quick order processing</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    // Enhanced order status update with better UX
+    function updateOrderStatus(orderId, newStatus) {
+        const statusMessages = {
+            'processing': '⚙️ Mark this order as being processed?',
+            'shipped': '🚚 Mark this order as shipped?',
+            'delivered': '✅ Mark this order as delivered?'
+        };
+
+        const confirmMessage = statusMessages[newStatus] || `Update this order status to ${newStatus}?`;
+
+        if (!confirm(confirmMessage + '\n\nThis will notify the customer about the status change.')) {
+            return;
+        }
+
+        // Show loading state
+        const button = event.target;
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+        button.disabled = true;
+
+        // This would be implemented with a proper endpoint
+        fetch(`/dashboard/vendor/orders/${orderId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `status=${newStatus}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showMessage(data.message, 'error');
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            showMessage('An error occurred while updating the order status', 'error');
+            button.innerHTML = originalContent;
+            button.disabled = false;
+        });
+    }
+
+    // Enhanced print invoice function
+    function printInvoice(orderId) {
+        showMessage('📄 Preparing invoice for printing...', 'info');
+
+        // Open print window
+        const printWindow = window.open(`/dashboard/vendor/orders/${orderId}/invoice/`, '_blank');
+
+        if (printWindow) {
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+        } else {
+            showMessage('❌ Please allow popups to print invoices', 'error');
+        }
+    }
+
+    // Enhanced contact customer function
+    function contactCustomer(customerEmail, customerName) {
+        const subject = encodeURIComponent(`Regarding your order - ${customerName}`);
+        const body = encodeURIComponent(`Dear ${customerName},\n\nI hope this message finds you well. I wanted to reach out regarding your recent order.\n\nBest regards,\n{{ vendor.company_name }}`);
+
+        const mailtoLink = `mailto:${customerEmail}?subject=${subject}&body=${body}`;
+
+        // Try to open email client
+        const link = document.createElement('a');
+        link.href = mailtoLink;
+        link.click();
+
+        showMessage(`📧 Opening email client to contact ${customerName}`, 'info');
+    }
+
+    // Export orders function
+    function exportOrders() {
+        showMessage('📊 Preparing orders export...', 'info');
+
+        // Create download link
+        const link = document.createElement('a');
+        link.href = '/dashboard/vendor/orders/export/';
+        link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+
+        setTimeout(() => {
+            showMessage('✅ Orders exported successfully!', 'success');
+        }, 1000);
+    }
+
+    // Enhanced message display with icons and better styling
+    function showMessage(message, type) {
+        const toast = document.createElement('div');
+        const icons = {
+            'success': '✅',
+            'error': '❌',
+            'info': 'ℹ️',
+            'warning': '⚠️'
+        };
+
+        const colors = {
+            'success': 'bg-gradient-to-r from-green-500 to-green-600',
+            'error': 'bg-gradient-to-r from-red-500 to-red-600',
+            'info': 'bg-gradient-to-r from-blue-500 to-blue-600',
+            'warning': 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+        };
+
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type] || colors.info} animate-fade-in-up`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <span class="mr-2 text-lg">${icons[type] || icons.info}</span>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }, 4000);
+    }
+
+    // Auto-refresh orders every 5 minutes
+    setInterval(function() {
+        const indicator = document.createElement('div');
+        indicator.className = 'fixed top-4 left-4 bg-harrier-red text-white px-3 py-1 rounded-lg text-sm z-50 animate-fade-in-up';
+        indicator.innerHTML = '<i class="fas fa-sync-alt fa-spin mr-1"></i>Refreshing orders...';
+        document.body.appendChild(indicator);
+
+        htmx.trigger('#orders-container', 'refresh');
+
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+        }, 2000);
+    }, 300000); // 5 minutes
+</script>
+{% endblock %}

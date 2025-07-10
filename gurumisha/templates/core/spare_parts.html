@@ -1,0 +1,560 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Spare Parts - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Background Image -->
+<section class="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0 z-0">
+        <img src="{% static 'images/product-1-720x480.jpg' %}"
+             alt="Spare Parts Background"
+             class="w-full h-full object-cover">
+        <!-- Harrier Design Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-r from-harrier-dark/90 via-harrier-blue/80 to-harrier-red/70"></div>
+        <!-- Pattern Overlay -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute inset-0 bg-pattern bg-repeat opacity-20"></div>
+        </div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="space-y-6 animate-fadeInUp">
+            <!-- Badge -->
+            <div class="inline-flex items-center px-4 py-2 bg-harrier-red/20 border border-harrier-red/30 rounded-full text-harrier-red text-sm font-medium backdrop-blur-sm">
+                <i class="fas fa-cogs mr-2"></i>
+                Genuine Auto Parts
+            </div>
+
+            <!-- Main Heading -->
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white leading-tight">
+                Premium
+                <span class="text-harrier-red">Spare Parts</span>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed">
+                Discover quality automotive parts from trusted vendors.
+                <span class="text-harrier-red font-semibold">Genuine parts</span> for all major car brands.
+            </p>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">500+</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Parts Available</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">50+</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Trusted Vendors</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">24/7</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Support</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">100%</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Genuine</div>
+                </div>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                <a href="#parts-section"
+                   class="btn-harrier-primary px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl">
+                    <i class="fas fa-search mr-2"></i>
+                    Browse Parts
+                </a>
+                <a href="#contact"
+                   class="px-8 py-4 text-lg font-semibold border-2 border-white text-white rounded-xl hover:bg-white hover:text-harrier-dark transition-all duration-300">
+                    <i class="fas fa-phone mr-2"></i>
+                    Get Quote
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+        <div class="animate-bounce">
+            <a href="#parts-section" class="text-white hover:text-harrier-red transition-colors">
+                <i class="fas fa-chevron-down text-2xl"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Filters Section -->
+<section id="parts-section" class="bg-white border-b py-8 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Section Header -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-2">Find Your Perfect Part</h2>
+            <p class="text-gray-600">Use our advanced filters to locate the exact spare part you need</p>
+        </div>
+
+        <!-- Enhanced Filter Form with HTMX -->
+        <div class="bg-harrier-gray rounded-2xl p-6 shadow-lg">
+            <form hx-get="{% url 'core:spare_parts_search' %}"
+                  hx-target="#parts-grid-container"
+                  hx-swap="outerHTML"
+                  hx-trigger="change, submit"
+                  hx-indicator="#search-loading"
+                  class="space-y-6"
+                  id="filter-form">
+
+                <!-- Main Search Row -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="space-y-2 relative">
+                        <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <i class="fas fa-search mr-2 text-harrier-red"></i>Search Parts
+                        </label>
+                        <input type="text"
+                               name="search"
+                               value="{{ request.GET.search }}"
+                               placeholder="Enter part name, number, or description..."
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm"
+                               hx-get="{% url 'core:spare_parts_autocomplete' %}"
+                               hx-target="#search-suggestions"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-vals='{"q": "this.value"}'
+                               autocomplete="off"
+                               id="search-input">
+                        <div id="search-suggestions" class="relative"></div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <i class="fas fa-tags mr-2 text-harrier-red"></i>Category
+                        </label>
+                        <select name="category" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category }}" {% if request.GET.category == category %}selected{% endif %}>
+                                    {{ category }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <i class="fas fa-car mr-2 text-harrier-red"></i>Compatible Brand
+                        </label>
+                        <select name="brand" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm">
+                            <option value="">All Brands</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand.id }}" {% if request.GET.brand == brand.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ brand.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <i class="fas fa-sort mr-2 text-harrier-red"></i>Sort By
+                        </label>
+                        <select name="sort" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm">
+                            <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>Newest First</option>
+                            <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                            <option value="price" {% if request.GET.sort == 'price' %}selected{% endif %}>Price: Low to High</option>
+                            <option value="-price" {% if request.GET.sort == '-price' %}selected{% endif %}>Price: High to Low</option>
+                            <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name: A to Z</option>
+                            <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name: Z to A</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters (Collapsible) -->
+                <div class="border-t border-gray-200 pt-6">
+                    <button type="button"
+                            onclick="toggleAdvancedFilters()"
+                            class="flex items-center text-harrier-red font-semibold mb-4 hover:text-harrier-dark transition-colors">
+                        <i class="fas fa-sliders-h mr-2"></i>
+                        Advanced Filters
+                        <i class="fas fa-chevron-down ml-2 transition-transform duration-200" id="advanced-chevron"></i>
+                    </button>
+
+                    <div id="advanced-filters" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                                <i class="fas fa-dollar-sign mr-2 text-harrier-red"></i>Min Price (KSh)
+                            </label>
+                            <input type="number"
+                                   name="min_price"
+                                   value="{{ request.GET.min_price }}"
+                                   placeholder="0"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                                <i class="fas fa-dollar-sign mr-2 text-harrier-red"></i>Max Price (KSh)
+                            </label>
+                            <input type="number"
+                                   name="max_price"
+                                   value="{{ request.GET.max_price }}"
+                                   placeholder="100000"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-harrier-dark mb-2">
+                                <i class="fas fa-star mr-2 text-harrier-red"></i>Condition
+                            </label>
+                            <select name="condition" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 bg-white shadow-sm">
+                                <option value="">All Conditions</option>
+                                <option value="new" {% if request.GET.condition == 'new' %}selected{% endif %}>New</option>
+                                <option value="used" {% if request.GET.condition == 'used' %}selected{% endif %}>Used</option>
+                                <option value="refurbished" {% if request.GET.condition == 'refurbished' %}selected{% endif %}>Refurbished</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                    <button type="submit" class="flex-1 btn-harrier-primary px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-search mr-2"></i>Search Parts
+                        <span id="search-loading" class="htmx-indicator">
+                            <i class="fas fa-spinner fa-spin ml-2"></i>
+                        </span>
+                    </button>
+                    <button type="button"
+                            onclick="clearFilters()"
+                            class="px-6 py-3 border-2 border-harrier-red text-harrier-red rounded-xl font-semibold hover:bg-harrier-red hover:text-white transition-all duration-300">
+                        <i class="fas fa-times mr-2"></i>Clear Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Results Section -->
+<section class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Results Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-harrier-dark">
+                    {% if spare_parts %}
+                        {{ spare_parts|length }} Part{{ spare_parts|length|pluralize }} Found
+                    {% else %}
+                        Browse Our Spare Parts
+                    {% endif %}
+                </h2>
+                {% if request.GET.search %}
+                    <p class="text-gray-600">Search results for "{{ request.GET.search }}"</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Parts Grid Container (HTMX Target) -->
+        {% include 'core/partials/spare_parts_grid.html' %}
+    </div>
+</section>
+
+<!-- Part Inquiry Modal -->
+<div id="partInquiryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">Inquire About Part</h3>
+                <button onclick="closePartInquiry()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form hx-post="{% url 'core:create_inquiry' %}" hx-target="#part-inquiry-result" hx-swap="innerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="inquiry_type" value="spare_part">
+                <input type="hidden" name="spare_part_id" id="part-id">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <input type="text" name="subject" id="part-subject" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-deep-ocean focus:border-transparent" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                        <textarea name="message" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-deep-ocean focus:border-transparent" placeholder="I'm interested in this spare part. Please provide availability and pricing details..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone (Optional)</label>
+                        <input type="tel" name="phone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-deep-ocean focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div id="part-inquiry-result" class="mt-4"></div>
+                
+                <div class="flex space-x-4 mt-6">
+                    <button type="button" onclick="closePartInquiry()" class="flex-1 border-2 border-deep-ocean text-deep-ocean px-6 py-3 rounded-lg hover:bg-deep-ocean hover:text-white transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 bg-deep-ocean text-white px-6 py-3 rounded-lg hover:bg-azure transition-colors">Send Inquiry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fadeInUp {
+        animation: fadeInUp 1s ease-out;
+    }
+
+    /* Background Pattern */
+    .bg-pattern {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* Enhanced Button Styles */
+    .btn-harrier-primary {
+        background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+        color: white;
+        border: none;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .btn-harrier-primary:hover {
+        background: linear-gradient(135deg, #B91C1C 0%, #DC2626 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-harrier-primary::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-harrier-primary:active::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    /* Smooth Scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Enhanced Card Hover Effects */
+    .product-card-harrier {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .product-card-harrier:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Filter Form Enhancements */
+    .filter-input:focus {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Advanced filters toggle
+    function toggleAdvancedFilters() {
+        const advancedFilters = document.getElementById('advanced-filters');
+        const chevron = document.getElementById('advanced-chevron');
+
+        if (advancedFilters.classList.contains('hidden')) {
+            advancedFilters.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+        } else {
+            advancedFilters.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+        }
+    }
+
+    // Clear all filters
+    function clearFilters() {
+        const form = document.getElementById('filter-form');
+        const inputs = form.querySelectorAll('input, select');
+
+        inputs.forEach(input => {
+            if (input.type === 'text' || input.type === 'number') {
+                input.value = '';
+            } else if (input.type === 'select-one') {
+                input.selectedIndex = 0;
+            }
+        });
+
+        // Trigger HTMX request to reload all parts
+        htmx.trigger(form, 'submit');
+    }
+
+    // Search suggestions functionality
+    function selectSuggestion(suggestion) {
+        const searchInput = document.getElementById('search-input');
+        searchInput.value = suggestion;
+
+        // Clear suggestions
+        document.getElementById('search-suggestions').innerHTML = '';
+
+        // Trigger search
+        htmx.trigger(document.getElementById('filter-form'), 'submit');
+    }
+
+    function submitSearch() {
+        // Clear suggestions
+        document.getElementById('search-suggestions').innerHTML = '';
+
+        // Trigger search
+        htmx.trigger(document.getElementById('filter-form'), 'submit');
+    }
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        const searchInput = document.getElementById('search-input');
+        const suggestions = document.getElementById('search-suggestions');
+
+        if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+            suggestions.innerHTML = '';
+        }
+    });
+
+    // Add to cart function
+    function addToCart(partId, quantity) {
+        fetch('{% url "core:add_to_cart" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `part_id=${partId}&quantity=${quantity}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                // Update cart badge if exists
+                updateCartBadge(data.cart_total_items);
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('An error occurred while adding to cart', 'error');
+        });
+    }
+
+    function updateCartBadge(totalItems) {
+        const cartBadge = document.getElementById('cart-badge');
+        if (cartBadge) {
+            cartBadge.textContent = totalItems;
+            cartBadge.style.display = totalItems > 0 ? 'inline' : 'none';
+        }
+    }
+
+    function showMessage(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    // Part inquiry modal functions
+    function openPartInquiry(partId, partName) {
+        document.getElementById('part-id').value = partId;
+        document.getElementById('part-subject').value = 'Inquiry about ' + partName;
+        document.getElementById('partInquiryModal').classList.remove('hidden');
+    }
+
+    function closePartInquiry() {
+        document.getElementById('partInquiryModal').classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('partInquiryModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closePartInquiry();
+        }
+    });
+
+    // HTMX event listeners
+    document.addEventListener('htmx:beforeRequest', function(e) {
+        // Show loading state
+        const loadingIndicator = document.getElementById('search-loading');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'inline';
+        }
+    });
+
+    document.addEventListener('htmx:afterRequest', function(e) {
+        // Hide loading state
+        const loadingIndicator = document.getElementById('search-loading');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-expand advanced filters if any advanced filter has a value
+        const advancedInputs = document.querySelectorAll('#advanced-filters input, #advanced-filters select');
+        let hasAdvancedValues = false;
+
+        advancedInputs.forEach(input => {
+            if (input.value && input.value !== '') {
+                hasAdvancedValues = true;
+            }
+        });
+
+        if (hasAdvancedValues) {
+            toggleAdvancedFilters();
+        }
+    });
+</script>
+{% endblock %}

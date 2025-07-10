@@ -1,0 +1,13 @@
+<!-- Toast Messages Component -->
+<!-- Renders Django messages as hidden elements for JavaScript toast manager -->
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="django-message hidden" 
+             data-type="{{ message.type }}" 
+             data-level="{{ message.level }}"
+             data-tags="{{ message.tags }}">
+            {{ message.message }}
+        </div>
+    {% endfor %}
+{% endif %}

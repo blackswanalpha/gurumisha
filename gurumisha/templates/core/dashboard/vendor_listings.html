@@ -1,0 +1,374 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}My Car Listings{% endblock %}
+{% block page_title %}My Car Listings{% endblock %}
+{% block page_description %}Manage your car inventory and listings{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">My Listings</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Listing Stats with Modern Design -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-car text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_cars }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Listings</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-harrier-red rounded-full mr-2"></div>
+                <span class="text-gray-600 font-medium">All your vehicles</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-check-circle text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600 font-montserrat">{{ approved_cars }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Approved</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-green-600 font-medium">Live on site</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-clock text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-yellow-600 font-montserrat">{{ pending_cars }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Pending Review</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                {% if pending_cars > 0 %}
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div>
+                    <span class="text-yellow-600 font-medium">Under review</span>
+                {% else %}
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-green-600 font-medium">All approved</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-eye text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-blue-600 font-montserrat">{{ total_views|default:0 }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Views</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                <span class="text-blue-600 font-medium">Customer interest</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Actions Bar with Modern Design -->
+    <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <!-- Filters Section -->
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-filter text-harrier-red"></i>
+                    <span class="text-sm font-semibold text-harrier-dark font-montserrat">Filters:</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <select
+                        name="status_filter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm text-sm font-raleway transition-all duration-200 hover:border-harrier-red/50"
+                        hx-get="{% url 'core:vendor_listings' %}"
+                        hx-target="#listings-container"
+                        hx-trigger="change">
+                        <option value="">All Status</option>
+                        <option value="approved">✅ Approved</option>
+                        <option value="pending">⏳ Pending Review</option>
+                    </select>
+
+                    <select
+                        name="sort_by"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm text-sm font-raleway transition-all duration-200 hover:border-harrier-red/50"
+                        hx-get="{% url 'core:vendor_listings' %}"
+                        hx-target="#listings-container"
+                        hx-trigger="change">
+                        <option value="-created_at">📅 Newest First</option>
+                        <option value="created_at">📅 Oldest First</option>
+                        <option value="-price">💰 Price: High to Low</option>
+                        <option value="price">💰 Price: Low to High</option>
+                        <option value="-views_count">👁️ Most Viewed</option>
+                    </select>
+
+                    <!-- View Toggle -->
+                    <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                        <button
+                            id="gridView"
+                            class="px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 bg-white text-harrier-red shadow-sm"
+                            onclick="toggleView('grid')">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button
+                            id="listView"
+                            class="px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 hover:text-harrier-red"
+                            onclick="toggleView('list')">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Actions Section -->
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input
+                        type="text"
+                        name="search"
+                        placeholder="Search your listings..."
+                        class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm text-sm font-raleway transition-all duration-200 hover:border-harrier-red/50 w-full sm:w-64"
+                        hx-get="{% url 'core:vendor_listings' %}"
+                        hx-target="#listings-container"
+                        hx-trigger="keyup changed delay:500ms">
+                </div>
+
+                <a href="{% url 'core:sell_car' %}" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-semibold text-sm hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                    <i class="fas fa-plus mr-2"></i>Add New Car
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Listings Container -->
+    <div id="listings-container" class="animate-fade-in-up" style="animation-delay: 0.2s;">
+        {% include 'core/dashboard/partials/vendor_car_list.html' %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+// Enhanced car management functions with better UX
+function editCar(carId) {
+    window.location.href = `/cars/edit/${carId}/`;
+}
+
+function deleteCar(carId) {
+    // Enhanced confirmation with modern styling
+    if (confirm('⚠️ Are you sure you want to delete this car listing?\n\nThis action cannot be undone and will permanently remove:\n• All car details and images\n• Associated inquiries\n• View statistics\n\nClick OK to proceed or Cancel to keep the listing.')) {
+        // Show loading state
+        const carElement = document.getElementById(`car-${carId}`);
+        if (carElement) {
+            carElement.style.opacity = '0.5';
+            carElement.style.pointerEvents = 'none';
+        }
+
+        htmx.ajax('DELETE', `/dashboard/vendor/delete-car/${carId}/`, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            target: '#listings-container',
+            swap: 'innerHTML'
+        });
+    }
+}
+
+function toggleCarStatus(carId, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'active' ? 'show' : 'hide';
+
+    // Show loading state
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Updating...';
+    button.disabled = true;
+
+    htmx.ajax('POST', `/dashboard/vendor/toggle-car-status/${carId}/`, {
+        values: {
+            'status': newStatus,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        target: `#car-${carId}`,
+        swap: 'outerHTML'
+    });
+}
+
+function duplicateCar(carId) {
+    if (confirm('📋 Create a copy of this car listing?\n\nThis will create an exact duplicate that you can then modify. The copy will be marked as "Draft" until you publish it.')) {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Copying...';
+        button.disabled = true;
+
+        htmx.ajax('POST', `/dashboard/vendor/duplicate-car/${carId}/`, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            target: '#listings-container',
+            swap: 'innerHTML'
+        });
+    }
+}
+
+// Enhanced bulk actions with better UX
+function selectAllCars() {
+    const checkboxes = document.querySelectorAll('input[name="selected_cars"]');
+    const selectAll = document.getElementById('selectAll');
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+        // Add visual feedback
+        const carCard = checkbox.closest('.car-card');
+        if (carCard) {
+            if (checkbox.checked) {
+                carCard.classList.add('ring-2', 'ring-harrier-red', 'ring-opacity-50');
+            } else {
+                carCard.classList.remove('ring-2', 'ring-harrier-red', 'ring-opacity-50');
+            }
+        }
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const selected = document.querySelectorAll('input[name="selected_cars"]:checked');
+    const bulkActions = document.getElementById('bulkActions');
+
+    if (selected.length > 0) {
+        bulkActions.classList.remove('hidden');
+        bulkActions.classList.add('animate-fade-in-up');
+        document.getElementById('selectedCount').textContent = selected.length;
+    } else {
+        bulkActions.classList.add('hidden');
+        bulkActions.classList.remove('animate-fade-in-up');
+    }
+}
+
+function performBulkAction(action) {
+    const selected = Array.from(document.querySelectorAll('input[name="selected_cars"]:checked'))
+                          .map(cb => cb.value);
+
+    if (selected.length === 0) {
+        alert('⚠️ Please select at least one car to perform this action.');
+        return;
+    }
+
+    let confirmMessage = '';
+    let icon = '';
+    switch(action) {
+        case 'delete':
+            icon = '🗑️';
+            confirmMessage = `${icon} Delete ${selected.length} selected car${selected.length > 1 ? 's' : ''}?\n\nThis action cannot be undone and will permanently remove:\n• All car details and images\n• Associated inquiries\n• View statistics`;
+            break;
+        case 'activate':
+            icon = '✅';
+            confirmMessage = `${icon} Activate ${selected.length} selected car${selected.length > 1 ? 's' : ''}?\n\nThese cars will become visible to customers on the website.`;
+            break;
+        case 'deactivate':
+            icon = '👁️‍🗨️';
+            confirmMessage = `${icon} Hide ${selected.length} selected car${selected.length > 1 ? 's' : ''}?\n\nThese cars will be hidden from customers but remain in your inventory.`;
+            break;
+    }
+
+    if (confirm(confirmMessage)) {
+        // Show loading state for bulk actions
+        const bulkActions = document.getElementById('bulkActions');
+        const originalContent = bulkActions.innerHTML;
+        bulkActions.innerHTML = `
+            <div class="flex items-center justify-center p-4">
+                <i class="fas fa-spinner fa-spin text-harrier-red mr-2"></i>
+                <span class="text-harrier-dark font-medium">Processing ${selected.length} car${selected.length > 1 ? 's' : ''}...</span>
+            </div>
+        `;
+
+        htmx.ajax('POST', `/dashboard/vendor/bulk-action/`, {
+            values: {
+                'action': action,
+                'car_ids': selected.join(','),
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            target: '#listings-container',
+            swap: 'innerHTML'
+        });
+    }
+}
+
+// View toggle functionality
+function toggleView(viewType) {
+    const gridBtn = document.getElementById('gridView');
+    const listBtn = document.getElementById('listView');
+    const container = document.getElementById('listings-container');
+
+    if (viewType === 'grid') {
+        gridBtn.classList.add('bg-white', 'text-harrier-red', 'shadow-sm');
+        gridBtn.classList.remove('text-gray-600');
+        listBtn.classList.remove('bg-white', 'text-harrier-red', 'shadow-sm');
+        listBtn.classList.add('text-gray-600');
+        container.setAttribute('data-view', 'grid');
+    } else {
+        listBtn.classList.add('bg-white', 'text-harrier-red', 'shadow-sm');
+        listBtn.classList.remove('text-gray-600');
+        gridBtn.classList.remove('bg-white', 'text-harrier-red', 'shadow-sm');
+        gridBtn.classList.add('text-gray-600');
+        container.setAttribute('data-view', 'list');
+    }
+
+    // Store preference
+    localStorage.setItem('vendor_listings_view', viewType);
+}
+
+// Load saved view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('vendor_listings_view') || 'grid';
+    toggleView(savedView);
+});
+
+// Auto-refresh every 3 minutes with visual indicator
+let refreshInterval;
+function startAutoRefresh() {
+    refreshInterval = setInterval(function() {
+        // Show subtle refresh indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'fixed top-4 right-4 bg-harrier-red text-white px-3 py-1 rounded-lg text-sm z-50 animate-fade-in-up';
+        indicator.innerHTML = '<i class="fas fa-sync-alt fa-spin mr-1"></i>Refreshing...';
+        document.body.appendChild(indicator);
+
+        htmx.trigger('#listings-container', 'refresh');
+
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+        }, 2000);
+    }, 180000); // 3 minutes
+}
+
+// Start auto-refresh on page load
+document.addEventListener('DOMContentLoaded', startAutoRefresh);
+</script>
+{% endblock %}

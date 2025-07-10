@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ spare_part.name }} - Spare Parts - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<section class="bg-gray-50 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{% url 'core:homepage' %}" class="text-gray-700 hover:text-harrier-red">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <a href="{% url 'core:spare_parts' %}" class="text-gray-700 hover:text-harrier-red">Spare Parts</a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <span class="text-harrier-red font-medium">{{ spare_part.name }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Product Detail -->
+<section class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Product Images -->
+            <div class="space-y-4">
+                <!-- Main Image -->
+                <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-xl overflow-hidden">
+                    {% if spare_part.main_image %}
+                        <img src="{{ spare_part.main_image.url }}" 
+                             alt="{{ spare_part.name }}" 
+                             class="w-full h-full object-cover object-center"
+                             id="main-image">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200">
+                            <i class="fas fa-cog text-gray-400 text-6xl"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Thumbnail Images -->
+                {% if spare_part.images.all %}
+                    <div class="grid grid-cols-4 gap-4">
+                        {% if spare_part.main_image %}
+                            <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden cursor-pointer border-2 border-harrier-red"
+                                 onclick="changeMainImage('{{ spare_part.main_image.url }}')">
+                                <img src="{{ spare_part.main_image.url }}" 
+                                     alt="{{ spare_part.name }}" 
+                                     class="w-full h-full object-cover object-center">
+                            </div>
+                        {% endif %}
+                        {% for image in spare_part.images.all|slice:":3" %}
+                            <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-harrier-red transition-colors"
+                                 onclick="changeMainImage('{{ image.image.url }}')">
+                                <img src="{{ image.image.url }}" 
+                                     alt="{{ image.caption|default:spare_part.name }}" 
+                                     class="w-full h-full object-cover object-center">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Product Information -->
+            <div class="space-y-6">
+                <!-- Product Title and Price -->
+                <div>
+                    <h1 class="text-3xl font-heading font-bold text-harrier-dark mb-2">{{ spare_part.name }}</h1>
+                    <div class="flex items-center space-x-4 mb-4">
+                        <span class="text-3xl font-bold text-harrier-red">
+                            KSh {{ spare_part.price|floatformat:0 }}
+                        </span>
+                        {% if spare_part.discount_price %}
+                            <span class="text-xl text-gray-500 line-through">
+                                KSh {{ spare_part.discount_price|floatformat:0 }}
+                            </span>
+                            <span class="bg-harrier-red text-white px-2 py-1 rounded text-sm font-semibold">
+                                SALE
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Stock Status -->
+                    <div class="flex items-center space-x-4 mb-6">
+                        {% if spare_part.is_in_stock %}
+                            <span class="flex items-center text-green-600 font-semibold">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                In Stock ({{ spare_part.available_quantity }} available)
+                            </span>
+                        {% else %}
+                            <span class="flex items-center text-red-600 font-semibold">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                Out of Stock
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Product Details -->
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-semibold text-harrier-dark mb-4">Product Details</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="font-medium text-gray-700">SKU:</span>
+                            <span class="text-gray-600">{{ spare_part.sku }}</span>
+                        </div>
+                        {% if spare_part.part_number %}
+                            <div>
+                                <span class="font-medium text-gray-700">Part Number:</span>
+                                <span class="text-gray-600">{{ spare_part.part_number }}</span>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <span class="font-medium text-gray-700">Category:</span>
+                            <span class="text-gray-600">{{ spare_part.get_category_display }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-700">Condition:</span>
+                            <span class="text-gray-600">{{ spare_part.get_condition_display }}</span>
+                        </div>
+                        {% if spare_part.weight %}
+                            <div>
+                                <span class="font-medium text-gray-700">Weight:</span>
+                                <span class="text-gray-600">{{ spare_part.weight }} kg</span>
+                            </div>
+                        {% endif %}
+                        {% if spare_part.dimensions %}
+                            <div>
+                                <span class="font-medium text-gray-700">Dimensions:</span>
+                                <span class="text-gray-600">{{ spare_part.dimensions }} cm</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Compatible Vehicles -->
+                {% if spare_part.compatible_brands.all %}
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-lg font-semibold text-harrier-dark mb-4">Compatible Vehicles</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for brand in spare_part.compatible_brands.all %}
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    {{ brand.name }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                        {% if spare_part.year_from or spare_part.year_to %}
+                            <p class="text-sm text-gray-600 mt-2">
+                                Year Range: 
+                                {% if spare_part.year_from %}{{ spare_part.year_from }}{% else %}Any{% endif %}
+                                - 
+                                {% if spare_part.year_to %}{{ spare_part.year_to }}{% else %}Present{% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <!-- Add to Cart Section -->
+                {% if spare_part.is_in_stock %}
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <label class="text-sm font-medium text-gray-700">Quantity:</label>
+                            <div class="flex items-center border border-gray-300 rounded-lg">
+                                <button type="button" onclick="decreaseQuantity()" 
+                                        class="px-3 py-2 text-gray-600 hover:text-harrier-red transition-colors">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" id="quantity" value="1" min="1" max="{{ spare_part.available_quantity }}"
+                                       class="w-16 text-center border-0 focus:ring-0 focus:outline-none">
+                                <button type="button" onclick="increaseQuantity()" 
+                                        class="px-3 py-2 text-gray-600 hover:text-harrier-red transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            {% if user.is_authenticated %}
+                                <button onclick="addToCartDetail()" id="add-to-cart-btn"
+                                        class="flex-1 btn-harrier-primary px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:transform hover:scale-105">
+                                    <i class="fas fa-cart-plus mr-2"></i>
+                                    {% if in_cart %}Update Cart ({{ cart_quantity }}){% else %}Add to Cart{% endif %}
+                                </button>
+                            {% else %}
+                                <a href="{% url 'core:login' %}" 
+                                   class="flex-1 btn-harrier-primary px-8 py-4 rounded-xl font-semibold text-lg text-center transition-all duration-300 hover:transform hover:scale-105">
+                                    <i class="fas fa-sign-in-alt mr-2"></i>
+                                    Login to Purchase
+                                </a>
+                            {% endif %}
+                            
+                            <button onclick="openPartInquiry('{{ spare_part.id }}', '{{ spare_part.name }}')"
+                                    class="px-8 py-4 border-2 border-harrier-red text-harrier-red rounded-xl font-semibold text-lg hover:bg-harrier-red hover:text-white transition-all duration-300">
+                                <i class="fas fa-envelope mr-2"></i>
+                                Inquire
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="border-t border-gray-200 pt-6">
+                        <button disabled
+                                class="w-full bg-gray-300 text-gray-500 px-8 py-4 rounded-xl font-semibold text-lg cursor-not-allowed">
+                            <i class="fas fa-times mr-2"></i>
+                            Out of Stock
+                        </button>
+                        <button onclick="openPartInquiry('{{ spare_part.id }}', '{{ spare_part.name }}')"
+                                class="w-full mt-4 border-2 border-harrier-red text-harrier-red px-8 py-4 rounded-xl font-semibold text-lg hover:bg-harrier-red hover:text-white transition-all duration-300">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Inquire About Availability
+                        </button>
+                    </div>
+                {% endif %}
+                
+                <!-- Vendor Information -->
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-semibold text-harrier-dark mb-4">Sold By</h3>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-harrier-red rounded-full flex items-center justify-center">
+                            <i class="fas fa-store text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-harrier-dark">{{ spare_part.vendor.company_name }}</p>
+                            <p class="text-sm text-gray-600">{{ spare_part.vendor.location|default:"Kenya" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Product Description -->
+<section class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-heading font-bold text-harrier-dark mb-6">Product Description</h2>
+            <div class="prose prose-lg max-w-none">
+                <p class="text-gray-700 leading-relaxed">{{ spare_part.description }}</p>
+                {% if spare_part.specifications %}
+                    <h3 class="text-xl font-semibold text-harrier-dark mt-8 mb-4">Specifications</h3>
+                    <div class="text-gray-700 leading-relaxed">{{ spare_part.specifications|linebreaks }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Products -->
+{% if related_parts %}
+    <section class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-heading font-bold text-harrier-dark mb-8 text-center">Related Parts</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for part in related_parts %}
+                    <div class="product-card-harrier bg-white rounded-xl shadow-lg overflow-hidden group">
+                        <div class="relative">
+                            {% if part.main_image %}
+                                <img src="{{ part.main_image.url }}" alt="{{ part.name }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
+                            {% else %}
+                                <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-cog text-gray-400 text-4xl"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="absolute top-3 left-3">
+                                <span class="bg-harrier-blue text-white px-2 py-1 rounded-full text-xs font-semibold">{{ part.condition|title }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold text-harrier-dark mb-2">{{ part.name }}</h3>
+                            <p class="text-sm text-gray-600 mb-3">{{ part.description|truncatewords:15 }}</p>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-xl font-bold text-harrier-red">KSh {{ part.price|floatformat:0 }}</span>
+                                <a href="{% url 'core:spare_part_detail' part.pk %}" 
+                                   class="btn-harrier-primary px-4 py-2 rounded-lg text-sm">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endif %}
+
+<!-- Include the inquiry modal from spare_parts.html -->
+{% include 'core/partials/inquiry_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let maxQuantity = {{ spare_part.available_quantity }};
+    
+    function changeMainImage(imageUrl) {
+        document.getElementById('main-image').src = imageUrl;
+        
+        // Update border on thumbnails
+        document.querySelectorAll('.aspect-w-1.aspect-h-1').forEach(thumb => {
+            thumb.classList.remove('border-harrier-red');
+            thumb.classList.add('border-transparent');
+        });
+        event.target.closest('.aspect-w-1.aspect-h-1').classList.add('border-harrier-red');
+        event.target.closest('.aspect-w-1.aspect-h-1').classList.remove('border-transparent');
+    }
+    
+    function increaseQuantity() {
+        const quantityInput = document.getElementById('quantity');
+        const currentValue = parseInt(quantityInput.value);
+        if (currentValue < maxQuantity) {
+            quantityInput.value = currentValue + 1;
+        }
+    }
+    
+    function decreaseQuantity() {
+        const quantityInput = document.getElementById('quantity');
+        const currentValue = parseInt(quantityInput.value);
+        if (currentValue > 1) {
+            quantityInput.value = currentValue - 1;
+        }
+    }
+    
+    function addToCartDetail() {
+        const quantity = document.getElementById('quantity').value;
+        
+        fetch('{% url "core:add_to_cart" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `part_id={{ spare_part.id }}&quantity=${quantity}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                // Update button text
+                document.getElementById('add-to-cart-btn').innerHTML = 
+                    '<i class="fas fa-cart-plus mr-2"></i>Update Cart (' + (parseInt('{{ cart_quantity }}') + parseInt(quantity)) + ')';
+                // Update cart badge
+                updateCartBadge(data.cart_total_items);
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('An error occurred while adding to cart', 'error');
+        });
+    }
+    
+    function updateCartBadge(totalItems) {
+        const cartBadge = document.getElementById('cart-badge');
+        if (cartBadge) {
+            cartBadge.textContent = totalItems;
+            cartBadge.style.display = totalItems > 0 ? 'inline' : 'none';
+        }
+    }
+    
+    function showMessage(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+    
+    function openPartInquiry(partId, partName) {
+        document.getElementById('part-id').value = partId;
+        document.getElementById('part-subject').value = 'Inquiry about ' + partName;
+        document.getElementById('partInquiryModal').classList.remove('hidden');
+    }
+    
+    function closePartInquiry() {
+        document.getElementById('partInquiryModal').classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('partInquiryModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closePartInquiry();
+        }
+    });
+</script>
+{% endblock %}

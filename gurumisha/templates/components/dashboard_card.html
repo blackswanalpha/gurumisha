@@ -1,0 +1,30 @@
+<!-- Dashboard Card Component -->
+<!-- Usage: {% include 'components/dashboard_card.html' with title="Card Title" content="Card content" icon="fas fa-icon" %} -->
+
+<div class="dashboard-card {% if hover %}hover:shadow-lg transition-all duration-200{% endif %} {% if classes %}{{ classes }}{% endif %}">
+    {% if title or icon %}
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    {% if icon %}
+                        <i class="{{ icon }} text-harrier-red mr-3"></i>
+                    {% endif %}
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">{{ title }}</h3>
+                </div>
+                {% if action_url and action_text %}
+                    <a href="{{ action_url }}" class="text-sm text-harrier-red hover:text-harrier-dark font-medium">{{ action_text }}</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <div class="p-6">
+        {% if content %}
+            {{ content|safe }}
+        {% else %}
+            {% block card_content %}
+                <p class="text-gray-600">Card content goes here.</p>
+            {% endblock %}
+        {% endif %}
+    </div>
+</div>

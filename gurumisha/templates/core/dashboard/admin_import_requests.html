@@ -1,0 +1,916 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Import Requests{% endblock %}
+{% block page_description %}Manage car import requests and tracking{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-8">
+    <!-- Import Requests Header -->
+    <div class="flex justify-between items-center animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div>
+            <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Import Requests</h2>
+            <p class="text-gray-600 mt-1 font-raleway">Manage car import orders and tracking workflow</p>
+        </div>
+        
+        <div class="flex space-x-3">
+            <button class="btn-admin-secondary text-sm hover:scale-105 transition-transform duration-200">
+                <i class="fas fa-filter mr-2"></i>Filter
+            </button>
+            <button class="btn-admin-primary text-sm hover:scale-105 transition-transform duration-200"
+                    hx-get="{% url 'core:admin_import_request_add_modal' %}"
+                    hx-target="body"
+                    hx-swap="beforeend">
+                <i class="fas fa-plus mr-2"></i>New Import Request
+            </button>
+        </div>
+    </div>
+
+    <!-- Import Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-harrier-red">{{ total_imports|default:0 }}</div>
+            <div class="admin-stat-label">Total Imports</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-orange-600">{{ pending_imports|default:0 }}</div>
+            <div class="admin-stat-label">Pending</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-blue-600">{{ in_transit_imports|default:0 }}</div>
+            <div class="admin-stat-label">In Transit</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">{{ completed_imports|default:0 }}</div>
+            <div class="admin-stat-label">Completed</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <a href="#" class="quick-action-card group">
+            <div class="flex items-center">
+                <div class="w-14 h-14 bg-gradient-to-br from-harrier-red to-harrier-dark rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-route text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h4 class="font-semibold text-harrier-dark font-raleway">Tracking Management</h4>
+                    <p class="text-sm text-gray-600">Manage 7-stage tracking workflow</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="#" class="quick-action-card group">
+            <div class="flex items-center">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-upload text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h4 class="font-semibold text-harrier-dark font-raleway">Document Management</h4>
+                    <p class="text-sm text-gray-600">Upload and manage documents</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="#" class="quick-action-card group">
+            <div class="flex items-center">
+                <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-search text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h4 class="font-semibold text-harrier-dark font-raleway">Chassis Search</h4>
+                    <p class="text-sm text-gray-600">Track by chassis number</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Comprehensive Filter System -->
+    <div class="admin-card animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <!-- Header with Search -->
+                <div class="flex items-center flex-1">
+                    <div class="w-10 h-10 bg-gradient-to-br from-harrier-red to-harrier-dark rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-ship text-white"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mr-6">Recent Import Requests</h3>
+
+                    <!-- Search Bar -->
+                    <div class="relative flex-1 max-w-md">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text"
+                               id="search-input"
+                               name="search"
+                               value="{{ current_search }}"
+                               placeholder="Search by customer, vehicle, or order ID..."
+                               class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm transition-all duration-200"
+                               hx-get="{% url 'core:admin_import_requests_table_partial' %}"
+                               hx-target="#import-requests-table"
+                               hx-swap="outerHTML"
+                               hx-trigger="keyup changed delay:500ms, search"
+                               hx-include="[name='status'], [name='brand'], [name='country'], [name='date_from'], [name='date_to']">
+                        <button type="button"
+                                id="clear-search"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-harrier-red transition-colors duration-200"
+                                style="display: {{ current_search|yesno:'block,none' }};">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-2">
+                    <button class="btn-filter-toggle text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200"
+                            onclick="toggleFilters()">
+                        <i class="fas fa-filter mr-1"></i>Filters
+                    </button>
+                    <button type="button"
+                            class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200"
+                            onclick="exportData()"
+                            title="Export filtered results">
+                        <i class="fas fa-download mr-1" id="export-icon"></i>Export
+                    </button>
+                    <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200"
+                            hx-get="{% url 'core:admin_import_requests_refresh' %}?{{ request.GET.urlencode }}"
+                            hx-target="#import-requests-table"
+                            hx-swap="outerHTML"
+                            hx-indicator="#refresh-indicator"
+                            title="Refresh table">
+                        <i class="fas fa-sync mr-1" id="refresh-indicator"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Filters Panel -->
+        <div id="filters-panel" class="border-b border-gray-200 bg-gray-50" style="display: none;">
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Status</label>
+                        <select name="status"
+                                class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
+                                hx-get="{% url 'core:admin_import_requests_table_partial' %}"
+                                hx-target="#import-requests-table"
+                                hx-swap="outerHTML"
+                                hx-include="[name='search'], [name='brand'], [name='country'], [name='date_from'], [name='date_to']">
+                            <option value="">All Statuses</option>
+                            {% for status_code, status_display in status_choices %}
+                                <option value="{{ status_code }}" {% if current_status == status_code %}selected{% endif %}>
+                                    {{ status_display }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Brand Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Brand</label>
+                        <select name="brand"
+                                class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
+                                hx-get="{% url 'core:admin_import_requests_table_partial' %}"
+                                hx-target="#import-requests-table"
+                                hx-swap="outerHTML"
+                                hx-include="[name='search'], [name='status'], [name='country'], [name='date_from'], [name='date_to']">
+                            <option value="">All Brands</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand }}" {% if current_brand == brand %}selected{% endif %}>
+                                    {{ brand }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Country Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Origin Country</label>
+                        <select name="country"
+                                class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
+                                hx-get="{% url 'core:admin_import_requests_table_partial' %}"
+                                hx-target="#import-requests-table"
+                                hx-swap="outerHTML"
+                                hx-include="[name='search'], [name='status'], [name='brand'], [name='date_from'], [name='date_to']">
+                            <option value="">All Countries</option>
+                            {% for country in countries %}
+                                <option value="{{ country }}" {% if current_country == country %}selected{% endif %}>
+                                    {{ country }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Date From -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Date From</label>
+                        <input type="date"
+                               name="date_from"
+                               value="{{ current_date_from }}"
+                               class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
+                               hx-get="{% url 'core:admin_import_requests_table_partial' %}"
+                               hx-target="#import-requests-table"
+                               hx-swap="outerHTML"
+                               hx-trigger="change"
+                               hx-include="[name='search'], [name='status'], [name='brand'], [name='country'], [name='date_to']">
+                    </div>
+
+                    <!-- Date To -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Date To</label>
+                        <input type="date"
+                               name="date_to"
+                               value="{{ current_date_to }}"
+                               class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
+                               hx-get="{% url 'core:admin_import_requests_table_partial' %}"
+                               hx-target="#import-requests-table"
+                               hx-swap="outerHTML"
+                               hx-trigger="change"
+                               hx-include="[name='search'], [name='status'], [name='brand'], [name='country'], [name='date_from']">
+                    </div>
+                </div>
+
+                <!-- Clear Filters Button -->
+                <div class="mt-4 flex justify-end">
+                    <button type="button"
+                            class="btn-admin-secondary text-sm"
+                            onclick="clearAllFilters()">
+                        <i class="fas fa-times mr-2"></i>Clear All Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto" id="import-requests-table">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                            Order ID
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                            Customer
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                            Vehicle Details
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                            Progress
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% if import_requests %}
+                        {% for request in import_requests %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-harrier-dark font-raleway">#{{ request.id|stringformat:"05d" }}</div>
+                                <div class="text-sm text-gray-500">{{ request.created_at|date:"M d, Y" }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-harrier-red rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                                        {{ request.customer.first_name|first|default:request.customer.username|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900 font-raleway">{{ request.customer.get_full_name|default:request.customer.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ request.customer.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ request.year }} {{ request.brand }} {{ request.model }}</div>
+                                <div class="text-sm text-gray-500">{{ request.origin_country }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-montserrat transition-all duration-200 hover:scale-105
+                                    {% if request.status == 'pending' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                                    {% elif request.status == 'on_quotation' %}bg-orange-100 text-orange-800 border border-orange-200
+                                    {% elif request.status == 'processing' %}bg-blue-100 text-blue-800 border border-blue-200
+                                    {% elif request.status == 'fee_paid' %}bg-purple-100 text-purple-800 border border-purple-200
+                                    {% elif request.status == 'shipped' %}bg-indigo-100 text-indigo-800 border border-indigo-200
+                                    {% elif request.status == 'arrived' %}bg-teal-100 text-teal-800 border border-teal-200
+                                    {% elif request.status == 'completed' %}bg-green-100 text-green-800 border border-green-200
+                                    {% elif request.status == 'cancelled' %}bg-red-100 text-red-800 border border-red-200
+                                    {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                    <div class="w-2 h-2 rounded-full mr-2
+                                        {% if request.status == 'pending' %}bg-yellow-500
+                                        {% elif request.status == 'on_quotation' %}bg-orange-500
+                                        {% elif request.status == 'processing' %}bg-blue-500
+                                        {% elif request.status == 'fee_paid' %}bg-purple-500
+                                        {% elif request.status == 'shipped' %}bg-indigo-500
+                                        {% elif request.status == 'arrived' %}bg-teal-500
+                                        {% elif request.status == 'completed' %}bg-green-500
+                                        {% elif request.status == 'cancelled' %}bg-red-500
+                                        {% else %}bg-gray-500{% endif %}"></div>
+                                    {{ request.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                                    <div class="bg-gradient-to-r from-harrier-red to-harrier-dark h-3 rounded-full transition-all duration-500 ease-out"
+                                         style="width: {% if request.status == 'pending' %}20%{% elif request.status == 'on_quotation' %}40%{% elif request.status == 'processing' %}60%{% elif request.status == 'fee_paid' %}80%{% elif request.status == 'completed' %}100%{% elif request.status == 'cancelled' %}0%{% else %}0%{% endif %}"></div>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 font-medium">
+                                    {% if request.status == 'pending' %}20%{% elif request.status == 'on_quotation' %}40%{% elif request.status == 'processing' %}60%{% elif request.status == 'fee_paid' %}80%{% elif request.status == 'completed' %}100%{% elif request.status == 'cancelled' %}0%{% else %}0%{% endif %} Complete
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <!-- View Button -->
+                                    <button class="action-btn action-btn-view group"
+                                            hx-get="{% url 'core:admin_import_request_view_modal' request.id %}"
+                                            hx-target="body"
+                                            hx-swap="beforeend"
+                                            title="View Details">
+                                        <i class="fas fa-eye group-hover:scale-110 transition-transform duration-200"></i>
+                                    </button>
+
+                                    <!-- Edit Button -->
+                                    <button class="action-btn action-btn-edit group"
+                                            hx-get="{% url 'core:admin_import_request_edit_modal' request.id %}"
+                                            hx-target="body"
+                                            hx-swap="beforeend"
+                                            title="Edit Request">
+                                        <i class="fas fa-edit group-hover:scale-110 transition-transform duration-200"></i>
+                                    </button>
+
+                                    <!-- Status Update Button -->
+                                    <button class="action-btn action-btn-status group"
+                                            hx-get="{% url 'core:admin_import_request_status_modal' request.id %}"
+                                            hx-target="body"
+                                            hx-swap="beforeend"
+                                            title="Update Status">
+                                        <i class="fas fa-sync group-hover:rotate-180 transition-transform duration-300"></i>
+                                    </button>
+
+                                    <!-- Track Button (only enabled when completed and not already tracked) -->
+                                    {% if request.import_order %}
+                                    <button class="action-btn bg-green-600 text-white"
+                                            disabled
+                                            title="Already being tracked - Order #{{ request.import_order.order_number }}">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% elif request.status == 'completed' %}
+                                    <button class="action-btn action-btn-track group"
+                                            hx-post="{% url 'core:admin_import_request_track' request.id %}"
+                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                            hx-confirm="Move this request to tracking management?"
+                                            hx-target="#import-requests-table"
+                                            hx-swap="outerHTML"
+                                            title="Start Tracking">
+                                        <i class="fas fa-route group-hover:scale-110 transition-transform duration-200"></i>
+                                    </button>
+                                    {% else %}
+                                    <button class="action-btn action-btn-track-disabled"
+                                            disabled
+                                            title="Available when status is Completed">
+                                        <i class="fas fa-route"></i>
+                                    </button>
+                                    {% endif %}
+
+                                    <!-- Delete Button -->
+                                    <button class="action-btn action-btn-delete group"
+                                            hx-get="{% url 'core:admin_import_request_delete_modal' request.id %}"
+                                            hx-target="body"
+                                            hx-swap="beforeend"
+                                            title="Delete Request">
+                                        <i class="fas fa-trash group-hover:scale-110 transition-transform duration-200"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-ship text-gray-400 text-2xl"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No import requests yet</h4>
+                                <p class="text-gray-600 font-raleway">Import requests will appear here when customers submit them.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Enhanced Filter and Search Functionality
+    function toggleFilters() {
+        const filtersPanel = document.getElementById('filters-panel');
+        const isVisible = filtersPanel.style.display !== 'none';
+
+        if (isVisible) {
+            filtersPanel.style.display = 'none';
+        } else {
+            filtersPanel.style.display = 'block';
+            // Add smooth slide animation
+            filtersPanel.style.opacity = '0';
+            filtersPanel.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                filtersPanel.style.transition = 'all 0.3s ease';
+                filtersPanel.style.opacity = '1';
+                filtersPanel.style.transform = 'translateY(0)';
+            }, 10);
+        }
+    }
+
+    function clearAllFilters() {
+        // Clear all filter inputs
+        document.querySelector('[name="search"]').value = '';
+        document.querySelector('[name="status"]').value = '';
+        document.querySelector('[name="brand"]').value = '';
+        document.querySelector('[name="country"]').value = '';
+        document.querySelector('[name="date_from"]').value = '';
+        document.querySelector('[name="date_to"]').value = '';
+
+        // Hide clear search button
+        document.getElementById('clear-search').style.display = 'none';
+
+        // Trigger table refresh
+        htmx.ajax('GET', '{% url "core:admin_import_requests_table_partial" %}', {
+            target: '#import-requests-table',
+            swap: 'outerHTML'
+        });
+
+        // Update URL to remove query parameters
+        const url = new URL(window.location);
+        url.search = '';
+        window.history.replaceState({}, '', url);
+    }
+
+    // Handle search input changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const clearSearchBtn = document.getElementById('clear-search');
+
+        // Show/hide clear search button
+        searchInput.addEventListener('input', function() {
+            clearSearchBtn.style.display = this.value ? 'block' : 'none';
+        });
+
+        // Clear search functionality
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            this.style.display = 'none';
+            htmx.trigger(searchInput, 'search');
+        });
+    });
+
+    // Handle refresh button animation
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        if (event.detail.requestConfig.url.includes('refresh')) {
+            const refreshIcon = document.getElementById('refresh-indicator');
+            refreshIcon.classList.add('fa-spin');
+        }
+    });
+
+    document.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.requestConfig.url.includes('refresh')) {
+            const refreshIcon = document.getElementById('refresh-indicator');
+            refreshIcon.classList.remove('fa-spin');
+        }
+    });
+
+    // Handle tracking table updates when import requests are moved to tracking
+    document.addEventListener('htmx:afterRequest', function(event) {
+        // Check if the response has the updateTrackingTable trigger
+        const triggerHeader = event.detail.xhr.getResponseHeader('HX-Trigger');
+        if (triggerHeader && triggerHeader.includes('updateTrackingTable')) {
+            // Update the tracking management table if it exists on the page
+            const trackingTable = document.getElementById('tracking-management-table');
+            if (trackingTable) {
+                // Trigger an HTMX request to refresh the tracking table
+                htmx.ajax('GET', '{% url "core:admin_tracking_management_table_partial" %}', {
+                    target: '#tracking-management-table',
+                    swap: 'outerHTML'
+                });
+            }
+        }
+    });
+
+    // Handle successful tracking operations
+    document.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.successful && event.detail.xhr.responseURL &&
+            event.detail.xhr.responseURL.includes('track')) {
+            // Show success animation for track button
+            const trackButtons = document.querySelectorAll('.action-btn-track');
+            trackButtons.forEach(btn => {
+                btn.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    btn.style.transform = 'scale(1)';
+                }, 200);
+            });
+        }
+    });
+
+    // Export functionality with progress indicator
+    function exportData() {
+        const exportIcon = document.getElementById('export-icon');
+        const originalClass = exportIcon.className;
+
+        // Show loading state
+        exportIcon.className = 'fas fa-spinner fa-spin mr-1';
+
+        // Build export URL with current filters
+        const params = new URLSearchParams();
+        const search = document.querySelector('[name="search"]').value;
+        const status = document.querySelector('[name="status"]').value;
+        const brand = document.querySelector('[name="brand"]').value;
+        const country = document.querySelector('[name="country"]').value;
+        const dateFrom = document.querySelector('[name="date_from"]').value;
+        const dateTo = document.querySelector('[name="date_to"]').value;
+
+        if (search) params.append('search', search);
+        if (status) params.append('status', status);
+        if (brand) params.append('brand', brand);
+        if (country) params.append('country', country);
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+
+        const exportUrl = '{% url "core:admin_import_requests_export" %}?' + params.toString();
+
+        // Create temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = exportUrl;
+        link.download = 'import_requests.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Reset icon after delay
+        setTimeout(() => {
+            exportIcon.className = originalClass;
+        }, 1000);
+    }
+
+    // Auto-show filters if any filter is active
+    document.addEventListener('DOMContentLoaded', function() {
+        const hasActiveFilters = '{{ current_status }}' || '{{ current_search }}' || '{{ current_brand }}' ||
+                                '{{ current_country }}' || '{{ current_date_from }}' || '{{ current_date_to }}';
+
+        if (hasActiveFilters) {
+            document.getElementById('filters-panel').style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Import Requests specific styles */
+    .quick-action-card {
+        @apply bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300;
+        transform: translateY(0);
+    }
+
+    .quick-action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(220, 38, 38, 0.1);
+    }
+
+    /* Enhanced Filter System Styles */
+    .btn-filter-toggle {
+        @apply px-3 py-2 rounded-lg border border-gray-300 hover:border-harrier-red hover:bg-harrier-red hover:text-white transition-all duration-200;
+    }
+
+    #filters-panel {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Search Input Enhancements */
+    #search-input {
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    #search-input:focus {
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+
+    /* Filter Select Enhancements */
+    select, input[type="date"] {
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    select:focus, input[type="date"]:focus {
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+
+    /* Clear Search Button */
+    #clear-search {
+        transition: all 0.2s ease;
+    }
+
+    #clear-search:hover {
+        transform: scale(1.1);
+    }
+
+    /* Loading States */
+    .htmx-request select,
+    .htmx-request input {
+        @apply opacity-75 cursor-wait;
+    }
+
+    /* Refresh Button Animation */
+    .fa-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Filter Panel Animation */
+    #filters-panel[style*="display: block"] {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Enhanced Action Buttons */
+    .action-btn {
+        @apply w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-200;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn-view {
+        @apply bg-harrier-red text-white hover:bg-red-700;
+    }
+
+    .action-btn-edit {
+        @apply bg-blue-600 text-white hover:bg-blue-700;
+    }
+
+    .action-btn-status {
+        @apply bg-purple-600 text-white hover:bg-purple-700;
+    }
+
+    .action-btn-track {
+        @apply bg-green-600 text-white hover:bg-green-700;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .action-btn-track::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .action-btn-track:hover::before {
+        left: 100%;
+    }
+
+    .action-btn-track-disabled {
+        @apply bg-gray-300 text-gray-500 cursor-not-allowed;
+        box-shadow: none;
+    }
+
+    .action-btn-delete {
+        @apply bg-red-600 text-white hover:bg-red-700;
+    }
+
+    /* Progress bar enhancements */
+    .bg-harrier-red {
+        background: linear-gradient(90deg, #DC2626, #EF4444);
+    }
+
+    /* Enhanced table row hover effects */
+    tbody tr {
+        @apply transition-all duration-200 ease-in-out;
+    }
+
+    tbody tr:hover {
+        @apply bg-gray-50;
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Status badge enhancements */
+    .inline-flex {
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .inline-flex:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Glassmorphism effect for cards */
+    .admin-card {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Enhanced animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    /* Ripple effect for buttons */
+    .btn-admin-primary, .btn-admin-secondary {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-admin-primary::before, .btn-admin-secondary::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transition: width 0.3s, height 0.3s, top 0.3s, left 0.3s;
+        transform: translate(-50%, -50%);
+    }
+
+    .btn-admin-primary:active::before, .btn-admin-secondary:active::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    /* Enhanced Mobile Responsiveness */
+    @media (max-width: 1024px) {
+        .grid.lg\\:grid-cols-5 {
+            @apply grid-cols-2;
+        }
+
+        .flex.lg\\:flex-row {
+            @apply flex-col;
+        }
+
+        .max-w-md {
+            @apply max-w-full;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .quick-action-card {
+            padding: 1rem;
+        }
+
+        .admin-stat-card {
+            padding: 1rem;
+        }
+
+        .action-btn {
+            @apply w-7 h-7 text-xs;
+        }
+
+        tbody tr:hover {
+            transform: none;
+        }
+
+        /* Mobile filter adjustments */
+        #filters-panel .grid {
+            @apply grid-cols-1 gap-3;
+        }
+
+        .flex.lg\\:items-center.lg\\:justify-between {
+            @apply flex-col items-start gap-4;
+        }
+
+        /* Mobile search bar */
+        #search-input {
+            @apply text-base; /* Prevent zoom on iOS */
+        }
+
+        /* Mobile table scrolling */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    @media (max-width: 640px) {
+        /* Stack filter controls vertically on small screens */
+        .grid.md\\:grid-cols-2 {
+            @apply grid-cols-1;
+        }
+
+        /* Adjust button sizes for touch */
+        .btn-filter-toggle,
+        button[onclick="exportData()"],
+        button[hx-get*="refresh"] {
+            @apply px-4 py-3 text-base;
+            min-height: 44px; /* iOS touch target size */
+        }
+
+        /* Mobile-friendly action buttons */
+        .action-btn {
+            @apply w-10 h-10 text-base;
+            min-width: 44px;
+            min-height: 44px;
+        }
+    }
+
+    /* Accessibility Enhancements */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* Focus indicators for keyboard navigation */
+    .btn-filter-toggle:focus,
+    button:focus,
+    select:focus,
+    input:focus {
+        outline: 2px solid #DC2626;
+        outline-offset: 2px;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .admin-card {
+            border: 2px solid #000;
+        }
+
+        .action-btn {
+            border: 1px solid currentColor;
+        }
+    }
+
+    /* Dark mode considerations (if implemented) */
+    @media (prefers-color-scheme: dark) {
+        .admin-card {
+            background: rgba(31, 41, 55, 0.95);
+            border-color: rgba(75, 85, 99, 0.3);
+        }
+
+        #filters-panel {
+            background: rgba(17, 24, 39, 0.95);
+        }
+    }
+
+    /* Loading states */
+    .htmx-request .action-btn {
+        @apply opacity-50 cursor-wait;
+    }
+
+    .htmx-request .action-btn i {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}

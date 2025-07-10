@@ -1,0 +1,260 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Gurumisha Motors Admin Panel - Manage your automotive marketplace{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}admin, dashboard, management, automotive{% endblock %}">
+
+    <title>{% block title %}Admin Dashboard - Gurumisha Motors{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // New Color Palette: Red, Black, Dark Blue, White
+                        'primary-red': '#DC2626',      // Bright red
+                        'primary-black': '#1F2937',    // Deep black/gray
+                        'primary-blue': '#1E3A8A',     // Dark blue
+                        'primary-white': '#FFFFFF',    // Pure white
+                        'accent-red': '#EF4444',       // Lighter red for hover states
+                        'accent-gray': '#F3F4F6',      // Light gray for backgrounds
+                        'text-dark': '#111827',        // Dark text
+                        'text-light': '#6B7280',       // Light text
+                        // Legacy colors for backward compatibility
+                        'harrier-red': '#DC2626',
+                        'harrier-dark': '#1F2937',
+                        'harrier-gray': '#F3F4F6',
+                        'harrier-light': '#FFFFFF',
+                        'harrier-accent': '#1E3A8A',
+                    },
+                    fontFamily: {
+                        'heading': ['Inter', 'Roboto', 'system-ui', 'sans-serif'],
+                        'body': ['Inter', 'system-ui', 'sans-serif'],
+                        'display': ['Poppins', 'Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                    boxShadow: {
+                        'modern': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'modern-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'modern-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        // Legacy shadows for backward compatibility
+                        'harrier': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        'harrier-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js for interactive components -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Modern Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Enhanced Admin Sidebar CSS -->
+    <link rel="stylesheet" href="{% static 'css/admin-sidebar.css' %}">
+
+    {% block extra_css %}
+    <style>
+        /* Enhanced Admin-specific styles */
+
+        /* Admin cards */
+        .admin-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .admin-stat-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .admin-stat-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-2px);
+        }
+
+        .admin-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        /* Admin buttons */
+        .btn-admin-primary {
+            background-color: #ed6663;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-admin-primary:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-admin-secondary {
+            background-color: white;
+            color: #ed6663;
+            border: 1px solid #ed6663;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .btn-admin-secondary:hover {
+            background-color: #ed6663;
+            color: white;
+            transform: translateY(-1px);
+        }
+    </style>
+    {% endblock %}
+</head>
+
+<body class="bg-harrier-gray font-body text-harrier-dark">
+    <div id="admin-app">
+        <!-- Admin Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <!-- Logo and Brand -->
+                    <div class="flex items-center">
+                        <!-- Mobile Sidebar Toggle -->
+                        <button id="mobile-sidebar-toggle"
+                                class="lg:hidden p-2 mr-3 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-harrier-red">
+                            <i class="fas fa-bars text-lg"></i>
+                        </button>
+
+                        <a href="{% url 'core:dashboard' %}" class="flex items-center">
+                            <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors" class="h-10 w-auto">
+                            <div class="ml-3">
+                                <h1 class="text-xl font-heading font-bold text-harrier-dark">GURUMISHA</h1>
+                                <p class="text-xs text-harrier-red uppercase tracking-wide font-semibold">ADMIN PANEL</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Admin Actions -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Quick Actions -->
+                        <div class="hidden md:flex items-center space-x-2">
+                            <a href="{% url 'core:homepage' %}" target="_blank" 
+                               class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-harrier-red"
+                               title="View Site">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <button type="button" 
+                                    class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-harrier-red"
+                                    title="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-harrier-red"></span>
+                            </button>
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="relative group">
+                            <button type="button" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-harrier-red">
+                                <div class="w-8 h-8 bg-harrier-red rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                    {{ user.first_name|first|default:user.username|first|upper }}
+                                </div>
+                                <div class="hidden md:block text-left">
+                                    <p class="text-sm font-medium text-harrier-dark">{{ user.first_name|default:user.username }}</p>
+                                    <p class="text-xs text-gray-500">{{ user.get_role_display }}</p>
+                                </div>
+                                <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <a href="{% url 'core:profile' %}" class="block px-4 py-2 text-sm text-harrier-dark hover:bg-harrier-gray transition-colors">
+                                    <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                                </a>
+                                <a href="{% url 'core:homepage' %}" target="_blank" class="block px-4 py-2 text-sm text-harrier-dark hover:bg-harrier-gray transition-colors">
+                                    <i class="fas fa-globe mr-2"></i>View Site
+                                </a>
+                                <div class="border-t border-gray-200 my-1"></div>
+                                <a href="{% url 'core:logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Enhanced Admin Sidebar JavaScript -->
+    <script src="{% static 'js/admin-sidebar.js' %}"></script>
+
+    {% block extra_js %}
+    <script>
+    // Admin-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize admin panel features
+        console.log('Enhanced admin panel loaded');
+
+        // Add keyboard shortcut hints
+        if (window.innerWidth > 768) {
+            console.log('Keyboard shortcuts available:');
+            console.log('Alt + D: Dashboard');
+            console.log('Alt + I: Import Tracking');
+            console.log('Alt + U: User Management');
+            console.log('Alt + S: Toggle Sidebar (mobile)');
+        }
+    });
+    </script>
+
+    <!-- Toast Manager -->
+    {% load core_extras %}
+    {% toast_script %}
+    {% render_toast_messages %}
+    {% endblock %}
+</body>
+</html>

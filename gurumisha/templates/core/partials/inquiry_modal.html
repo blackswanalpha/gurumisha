@@ -1,0 +1,63 @@
+<!-- Part Inquiry Modal -->
+<div id="partInquiryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-harrier-dark">Part Inquiry</h3>
+            <button onclick="closePartInquiry()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form hx-post="{% url 'core:create_inquiry' %}" 
+              hx-target="#inquiry-response" 
+              hx-swap="innerHTML"
+              class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="part-id" name="spare_part_id">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
+                <input type="text" name="name" value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input type="email" name="email" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                <input type="tel" name="phone" value="{% if user.is_authenticated %}{{ user.phone }}{% endif %}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                <input type="text" id="part-subject" name="subject" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                <textarea name="message" rows="4" required
+                          placeholder="Please provide details about your inquiry..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red"></textarea>
+            </div>
+            
+            <div id="inquiry-response" class="text-center"></div>
+            
+            <div class="flex space-x-3 pt-4">
+                <button type="button" onclick="closePartInquiry()" 
+                        class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="flex-1 btn-harrier-primary px-4 py-2 rounded-lg transition-colors">
+                    Send Inquiry
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

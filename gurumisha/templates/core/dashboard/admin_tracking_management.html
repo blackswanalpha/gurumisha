@@ -1,0 +1,550 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Tracking Management{% endblock %}
+{% block page_description %}Manage 7-stage import car order tracking workflow{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-8">
+    <!-- Tracking Management Header -->
+    <div class="flex justify-between items-center animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div>
+            <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Tracking Management</h2>
+            <p class="text-gray-600 mt-1 font-raleway">Manage the 7-stage import car order tracking workflow</p>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+            <!-- Filter by Stage Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open"
+                        class="btn-admin-secondary text-sm flex items-center justify-between min-w-48"
+                        :class="{ 'bg-harrier-red text-white': open }">
+                    <span class="flex items-center">
+                        <i class="fas fa-filter mr-2"></i>
+                        <span id="filter-text">
+                            {% if current_filter %}
+                                {% for stage in workflow_stages %}
+                                    {% if stage.key == current_filter %}{{ stage.name }}{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                All Stages
+                            {% endif %}
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down ml-2 transition-transform duration-200"
+                       :class="{ 'rotate-180': open }"></i>
+                </button>
+
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     @click.away="open = false"
+                     class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+
+                    <!-- All Stages Option -->
+                    <button class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 flex items-center border-b border-gray-100"
+                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}"
+                            hx-target="#tracking-management-table"
+                            hx-swap="innerHTML"
+                            @click="open = false; document.getElementById('filter-text').textContent = 'All Stages'">
+                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-list text-gray-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900 font-montserrat">All Stages</div>
+                            <div class="text-sm text-gray-500">Show all import orders</div>
+                        </div>
+                    </button>
+
+                    <!-- Individual Stage Options -->
+                    {% for stage in workflow_stages %}
+                    <button class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 flex items-center {% if not forloop.last %}border-b border-gray-100{% endif %}"
+                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?status={{ stage.key }}"
+                            hx-target="#tracking-management-table"
+                            hx-swap="innerHTML"
+                            @click="open = false; document.getElementById('filter-text').textContent = '{{ stage.name }}'">
+                        <div class="w-8 h-8 bg-{{ stage.color }}-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="{{ stage.icon }} text-{{ stage.color }}-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900 font-montserrat">{{ stage.name }}</div>
+                            <div class="text-sm text-gray-500">Stage {{ forloop.counter }}</div>
+                        </div>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- New Import Order Button -->
+            <button class="btn-admin-primary text-sm"
+                    hx-get="{% url 'core:admin_import_order_add_modal' %}"
+                    hx-target="body"
+                    hx-swap="beforeend">
+                <i class="fas fa-plus mr-2"></i>New Import Order
+            </button>
+        </div>
+    </div>
+
+    <!-- Tracking Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-harrier-red">{{ total_orders|default:0 }}</div>
+            <div class="admin-stat-label">Total Orders</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-blue-600">{{ confirmed_orders|default:0 }}</div>
+            <div class="admin-stat-label">Confirmed</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-orange-600">{{ in_transit_orders|default:0 }}</div>
+            <div class="admin-stat-label">In Transit</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-teal-600">{{ arrived_orders|default:0 }}</div>
+            <div class="admin-stat-label">Arrived</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">{{ completed_orders|default:0 }}</div>
+            <div class="admin-stat-label">Delivered</div>
+        </div>
+    </div>
+
+    <!-- Enhanced 7-Stage Workflow Overview -->
+    <div class="admin-card animate-fade-in-up overflow-hidden" style="animation-delay: 0.3s;">
+        <div class="bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue p-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mr-4 backdrop-blur-sm">
+                        <i class="fas fa-route text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white font-montserrat">7-Stage Import Workflow</h3>
+                        <p class="text-white text-opacity-90 text-sm font-raleway">Complete tracking from confirmation to delivery</p>
+                    </div>
+                </div>
+                <div class="text-white text-opacity-90">
+                    <i class="fas fa-info-circle text-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 bg-gradient-to-br from-gray-50 to-white">
+            <!-- Progress Flow Visualization -->
+            <div class="relative mb-8">
+                <div class="absolute top-8 left-0 right-0 h-1 bg-gray-200 rounded-full"></div>
+                <div class="absolute top-8 left-0 h-1 bg-gradient-to-r from-harrier-red to-harrier-blue rounded-full" style="width: 100%;"></div>
+
+                <div class="relative grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+                    {% for stage in workflow_stages %}
+                    <div class="workflow-stage-enhanced text-center group cursor-pointer"
+                         data-stage="{{ stage.key }}"
+                         onclick="filterByStage('{{ stage.key }}', '{{ stage.name }}')">
+                        <!-- Stage Icon Circle -->
+                        <div class="relative mx-auto mb-4">
+                            <div class="w-16 h-16 bg-gradient-to-br from-{{ stage.color }}-400 to-{{ stage.color }}-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
+                                <i class="{{ stage.icon }} text-white text-xl"></i>
+                            </div>
+                            <!-- Stage Number Badge -->
+                            <div class="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-{{ stage.color }}-200">
+                                <span class="text-xs font-bold text-{{ stage.color }}-600">{{ forloop.counter }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Stage Info -->
+                        <div class="space-y-1">
+                            <h4 class="font-semibold text-gray-900 text-sm font-montserrat group-hover:text-{{ stage.color }}-600 transition-colors duration-200">
+                                {{ stage.name }}
+                            </h4>
+                            <p class="text-xs text-gray-500 font-raleway">Stage {{ forloop.counter }}</p>
+
+                            <!-- Stage Status Indicator -->
+                            <div class="flex justify-center mt-2">
+                                <div class="w-2 h-2 bg-{{ stage.color }}-400 rounded-full animate-pulse"></div>
+                            </div>
+                        </div>
+
+                        <!-- Hover Effect Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-{{ stage.color }}-50 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Workflow Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-clock text-blue-600"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-900 font-montserrat">{{ in_transit_orders }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">In Progress</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-900 font-montserrat">{{ completed_orders }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">Completed</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-ship text-yellow-600"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-900 font-montserrat">{{ arrived_orders }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">Arrived</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-percentage text-purple-600"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-900 font-montserrat">
+                                {% if total_orders > 0 %}
+                                    {{ completed_orders|floatformat:0 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-gray-600 font-raleway">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Orders Tracking Table -->
+    <div class="admin-card animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-list-alt text-white"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Import Orders Tracking</h3>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50"
+                            title="Export tracking data">
+                        <i class="fas fa-download mr-1"></i>Export
+                    </button>
+                    <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50"
+                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}{% if current_filter %}?status={{ current_filter }}{% endif %}"
+                            hx-target="#tracking-management-table"
+                            hx-swap="innerHTML"
+                            hx-indicator="#refresh-indicator"
+                            title="Refresh table data">
+                        <i class="fas fa-sync mr-1" id="refresh-indicator"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <div id="tracking-management-table">
+                {% include 'core/dashboard/partials/admin_tracking_management_table.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div id="status-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="bg-gradient-to-r from-harrier-red to-harrier-dark p-6 rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white font-montserrat">Update Tracking Status</h3>
+                <button onclick="closeStatusModal()" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <form id="status-form" class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">New Status</label>
+                    <select id="status-select" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red">
+                        {% for stage in workflow_stages %}
+                        <option value="{{ stage.key }}">{{ stage.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Notes (Optional)</label>
+                    <textarea name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red" placeholder="Add any relevant notes about this status update..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex space-x-3 mt-6">
+                <button type="button" onclick="closeStatusModal()" class="flex-1 btn-admin-secondary">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 btn-admin-primary">
+                    Update Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Tracking Management specific styles */
+    .workflow-stage {
+        transform: translateY(0);
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .workflow-stage:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Progress bar animations */
+    .bg-gradient-to-r {
+        background: linear-gradient(90deg, #DC2626, #EF4444);
+        animation: progressGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes progressGlow {
+        0% {
+            box-shadow: 0 0 5px rgba(220, 38, 38, 0.5);
+        }
+        100% {
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.8);
+        }
+    }
+
+    /* Table row hover effects */
+    tbody tr:hover {
+        background-color: #f9fafb;
+        transform: translateX(2px);
+        transition: all 0.2s ease;
+    }
+
+    /* Status badge hover effects */
+    .inline-flex {
+        transition: all 0.2s ease;
+    }
+
+    .inline-flex:hover {
+        transform: scale(1.05);
+    }
+
+    /* Modal animations */
+    #status-modal {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Filter Dropdown Styles */
+    .filter-dropdown-option:hover {
+        background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(239, 68, 68, 0.05) 100%);
+        transform: translateX(2px);
+    }
+
+    /* HTMX Loading Indicators */
+    .htmx-request #refresh-indicator {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Enhanced Workflow Stage Styles */
+    .workflow-stage-enhanced {
+        position: relative;
+        padding: 1rem;
+        border-radius: 1rem;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .workflow-stage-enhanced:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .workflow-stage-enhanced:active {
+        transform: translateY(-4px);
+    }
+
+    /* Progress Flow Animation */
+    .workflow-stage-enhanced .w-16 {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .workflow-stage-enhanced .w-16::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .workflow-stage-enhanced:hover .w-16::before {
+        left: 100%;
+    }
+
+    /* Active Stage Indicator */
+    .workflow-stage-enhanced.active-stage {
+        background: rgba(220, 38, 38, 0.1);
+        border-color: rgba(220, 38, 38, 0.3);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(220, 38, 38, 0.2);
+    }
+
+    .workflow-stage-enhanced.active-stage .w-16 {
+        box-shadow: 0 8px 16px rgba(220, 38, 38, 0.3);
+    }
+
+    /* Enhanced Button Hover Effects */
+    .btn-admin-secondary:hover,
+    .btn-admin-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .workflow-stage {
+            padding: 0.75rem;
+        }
+
+        .admin-stat-card {
+            padding: 1rem;
+        }
+
+        .filter-dropdown {
+            position: static !important;
+            width: 100% !important;
+            margin-top: 0.5rem !important;
+        }
+    }
+</style>
+
+<script>
+let currentOrderId = null;
+
+function openStatusModal(orderId, currentStatus) {
+    currentOrderId = orderId;
+    document.getElementById('status-select').value = currentStatus;
+    document.getElementById('status-modal').classList.remove('hidden');
+}
+
+function closeStatusModal() {
+    currentOrderId = null;
+    document.getElementById('status-modal').classList.add('hidden');
+    document.getElementById('status-form').reset();
+}
+
+// Handle status form submission
+document.getElementById('status-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (!currentOrderId) return;
+
+    const formData = new FormData(this);
+
+    fetch(`/dashboard/admin/tracking/update-status/${currentOrderId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            alert('Status updated successfully!');
+            // Reload the page to show updated status
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the status.');
+    });
+
+    closeStatusModal();
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeStatusModal();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('status-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeStatusModal();
+    }
+});
+
+// Filter by workflow stage function
+function filterByStage(stageKey, stageName) {
+    // Update filter text
+    document.getElementById('filter-text').textContent = stageName;
+
+    // Make HTMX request to filter table
+    htmx.ajax('GET', `/dashboard/admin/tracking-management/table/?status=${stageKey}`, {
+        target: '#tracking-management-table',
+        swap: 'innerHTML'
+    });
+
+    // Add visual feedback to clicked stage
+    document.querySelectorAll('.workflow-stage-enhanced').forEach(stage => {
+        stage.classList.remove('active-stage');
+    });
+
+    document.querySelector(`[data-stage="${stageKey}"]`).classList.add('active-stage');
+}
+</script>
+{% endblock %}
+

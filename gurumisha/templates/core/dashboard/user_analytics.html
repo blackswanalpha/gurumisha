@@ -1,0 +1,353 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}My Activity{% endblock %}
+{% block page_title %}My Activity{% endblock %}
+{% block page_description %}Track your browsing history and preferences{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">My Activity</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Activity Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ cars_viewed|default:0 }}</div>
+            <div class="stat-label">Cars Viewed</div>
+            <div class="text-sm text-blue-600 mt-2">This month</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ inquiries_sent|default:0 }}</div>
+            <div class="stat-label">Inquiries Sent</div>
+            <div class="text-sm text-green-600 mt-2">Total</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ saved_cars|default:0 }}</div>
+            <div class="stat-label">Saved Cars</div>
+            <div class="text-sm text-purple-600 mt-2">Favorites</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ search_count|default:0 }}</div>
+            <div class="stat-label">Searches</div>
+            <div class="text-sm text-yellow-600 mt-2">This month</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Browsing Activity -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Browsing Activity</h3>
+                <p class="text-sm text-gray-600">Your daily activity over the last 30 days</p>
+            </div>
+            <div class="p-6">
+                <canvas id="activityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Interest Categories -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Interest Categories</h3>
+                <p class="text-sm text-gray-600">Car types you've been viewing</p>
+            </div>
+            <div class="p-6">
+                <canvas id="interestChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Recommendations -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Recent Activity -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Recent Activity</h3>
+                <p class="text-sm text-gray-600">Your latest interactions</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-eye text-blue-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">Viewed Toyota Camry 2020</p>
+                                <p class="text-xs text-gray-600">Premium condition, automatic</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">2 hours ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-envelope text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">Sent inquiry for Honda Civic</p>
+                                <p class="text-xs text-gray-600">Asked about financing options</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">1 day ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-heart text-purple-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">Saved BMW X5 2021</p>
+                                <p class="text-xs text-gray-600">Added to favorites</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">2 days ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-search text-yellow-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">Searched for "SUV under 2M"</p>
+                                <p class="text-xs text-gray-600">Found 15 matching results</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">3 days ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personalized Recommendations -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Recommended for You</h3>
+                <p class="text-sm text-gray-600">Based on your browsing history</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <img src="{% static 'images/car-placeholder.jpg' %}" alt="Car" class="w-16 h-16 object-cover rounded-lg mr-3">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-harrier-dark">Toyota Prius 2019</h4>
+                            <p class="text-sm text-gray-600">Hybrid, Excellent condition</p>
+                            <p class="text-lg font-bold text-harrier-red">KSh 2,800,000</p>
+                        </div>
+                        <div class="flex flex-col space-y-1">
+                            <button class="px-3 py-1 text-xs bg-harrier-red text-white rounded hover:bg-harrier-dark">
+                                View
+                            </button>
+                            <button class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <img src="{% static 'images/car-placeholder.jpg' %}" alt="Car" class="w-16 h-16 object-cover rounded-lg mr-3">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-harrier-dark">Honda CR-V 2020</h4>
+                            <p class="text-sm text-gray-600">SUV, Low mileage</p>
+                            <p class="text-lg font-bold text-harrier-red">KSh 3,200,000</p>
+                        </div>
+                        <div class="flex flex-col space-y-1">
+                            <button class="px-3 py-1 text-xs bg-harrier-red text-white rounded hover:bg-harrier-dark">
+                                View
+                            </button>
+                            <button class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <img src="{% static 'images/car-placeholder.jpg' %}" alt="Car" class="w-16 h-16 object-cover rounded-lg mr-3">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-harrier-dark">Nissan X-Trail 2018</h4>
+                            <p class="text-sm text-gray-600">SUV, Well maintained</p>
+                            <p class="text-lg font-bold text-harrier-red">KSh 2,500,000</p>
+                        </div>
+                        <div class="flex flex-col space-y-1">
+                            <button class="px-3 py-1 text-xs bg-harrier-red text-white rounded hover:bg-harrier-dark">
+                                View
+                            </button>
+                            <button class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search History and Preferences -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Search History -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Recent Searches</h3>
+                <p class="text-sm text-gray-600">Your search history</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-search text-gray-400 mr-3"></i>
+                            <span class="text-sm text-harrier-dark">"Toyota Camry automatic"</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-500">15 results</span>
+                            <button class="text-harrier-red hover:text-harrier-dark text-xs">
+                                Search again
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-search text-gray-400 mr-3"></i>
+                            <span class="text-sm text-harrier-dark">"SUV under 3M"</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-500">8 results</span>
+                            <button class="text-harrier-red hover:text-harrier-dark text-xs">
+                                Search again
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-search text-gray-400 mr-3"></i>
+                            <span class="text-sm text-harrier-dark">"Honda hybrid cars"</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-500">12 results</span>
+                            <button class="text-harrier-red hover:text-harrier-dark text-xs">
+                                Search again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Your Preferences</h3>
+                <p class="text-sm text-gray-600">Based on your activity</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-harrier-dark mb-2">Preferred Brands</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Toyota</span>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Honda</span>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">BMW</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-harrier-dark mb-2">Price Range</h4>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">KSh 2M - 4M</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-harrier-dark mb-2">Vehicle Types</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full">Sedan</span>
+                            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">SUV</span>
+                            <span class="px-3 py-1 bg-pink-100 text-pink-800 text-xs rounded-full">Hybrid</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-harrier-dark mb-2">Transmission</h4>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Automatic</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Cars Viewed',
+                data: [12, 19, 15, 25],
+                borderColor: '#ed6663',
+                backgroundColor: 'rgba(237, 102, 99, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Searches',
+                data: [5, 8, 6, 12],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Interest Chart
+    const interestCtx = document.getElementById('interestChart').getContext('2d');
+    new Chart(interestCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Sedan', 'SUV', 'Hatchback', 'Hybrid'],
+            datasets: [{
+                data: [35, 30, 20, 15],
+                backgroundColor: ['#ed6663', '#3b82f6', '#10b981', '#f59e0b']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

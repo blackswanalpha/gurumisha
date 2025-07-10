@@ -1,0 +1,63 @@
+Analyze the existing codebase structure and implement a comprehensive Django monolithic e-commerce system called "Gurumisha" using mock data. implementing advanced CSS styling and JavaScript interactivity to create a modern, professional automotive marketplace. Follow these specific requirements in order:
+
+**Phase 1: Analysis & Setup (Complete First)**
+1. Analyze the existing codebase structure to understand current implementation
+2. Review the `car-dealer-website-template-109` directory to understand the design templates and extract reusable design patterns
+3. Examine all documentation files:
+   - `docs/design.md` - UI development guidelines and design requirements
+   - `docs/system.md` - System architecture specifications
+   - `docs/prd.md` - Product requirements document
+   - Any additional documentation in the `docs/` folder
+4. Analyze the `resources/front/homepage` directory structure and existing frontend assets
+5. Set up the development environment:
+   - Create a Python virtual environment (`venv`)
+   - Install Django and required dependencies
+   - Configure Tailwind CSS for styling
+   - Set up HTMX for dynamic interactions
+
+**Phase 2: Core System Implementation**
+6. Implement Django models for the e-commerce system based on documentation requirements
+7. Create Django views and URL routing structure
+8. Set up the base template structure with semantic HTML5 markup
+9. Ensure responsive design principles are applied throughout
+
+**Phase 3: Homepage Development**
+10. Build the homepage with these 13 sections in exact order:
+    - Navigation bar (responsive, with mobile menu)
+    - Hero section with video features
+    - Browse by vehicle type section
+    - Site features overview
+    - Featured cars showcase
+    - "Why choose us" section
+    - Car brands display
+    - "Sell your car" call-to-action
+    - Hot deals section
+    - Spare parts preview
+    - Customer testimonials
+    - Blog preview
+    - Footer
+
+**Phase 4: Additional Pages & Features**
+11. Identify and implement additional pages required for complete user experience (based on documentation analysis)
+12. Create proper navigation flow between all pages
+13. Implement interactive features using HTMX
+14. Add comprehensive mock data for all content areas
+15. Ensure all components are reusable and follow Django best practices
+
+**Technical Requirements:**
+- Use Django as the primary backend framework
+- Implement Tailwind CSS for all styling (no custom CSS unless absolutely necessary)
+- Use semantic HTML5 markup throughout
+- Integrate HTMX for dynamic interactions without full page reloads
+- Ensure mobile-first responsive design
+- Follow Django best practices for models, views, templates, and URL structure
+- Create reusable Django template components where appropriate
+- Use meaningful mock data that reflects a real car dealership business
+
+**Deliverables:**
+- Fully functional Django application
+- Complete homepage with all specified sections
+- Additional pages as identified in documentation
+- Responsive design that works on mobile, tablet, and desktop
+- Interactive features using HTMX
+- Clean, maintainable code following Django conventions

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Request Verification Code - Gurumisha Motors{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth-pages.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="auth-hero">
+    <div class="auth-hero-content">
+        <h1 class="auth-hero-title">
+            Request Verification Code
+        </h1>
+        <p class="auth-hero-subtitle">
+            Get a new verification code sent to your email
+        </p>
+    </div>
+</section>
+
+<!-- Request Verification Code Section -->
+<section class="py-16 bg-gradient-to-br from-harrier-gray to-white">
+    <div class="container mx-auto px-4">
+        <div class="max-w-lg mx-auto">
+            <div class="auth-form-container">
+                <div class="auth-form-section">
+                    <!-- Email Icon -->
+                    <div class="auth-success-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+
+                    <div class="mb-8">
+                        <h2 class="auth-form-title">Request New Code</h2>
+                        <p class="auth-form-subtitle">
+                            Enter your email address and we'll send you a new 6-digit verification code. 
+                            The code will be valid for 15 minutes.
+                        </p>
+                    </div>
+
+                    <!-- Information Box -->
+                    <div class="auth-info-box">
+                        <h3 class="auth-info-title">
+                            <i class="fas fa-info-circle mr-2"></i>What happens next?
+                        </h3>
+                        <ul class="auth-info-text space-y-2">
+                            <li><i class="fas fa-check mr-2 text-green-600"></i>We'll send a new 6-digit code to your email</li>
+                            <li><i class="fas fa-check mr-2 text-green-600"></i>Any previous codes will be automatically invalidated</li>
+                            <li><i class="fas fa-check mr-2 text-green-600"></i>The new code will expire in 15 minutes</li>
+                            <li><i class="fas fa-check mr-2 text-green-600"></i>Check your spam folder if you don't see it</li>
+                        </ul>
+                    </div>
+
+                    <!-- Request Form -->
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <div>
+                            <label for="{{ form.email.id_for_label }}" class="auth-form-label">
+                                Email Address
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.help_text %}
+                                <div class="auth-form-help">
+                                    {{ form.email.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form.email.errors %}
+                                <div class="auth-form-error">
+                                    {% for error in form.email.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="auth-action-btn">
+                                <i class="fas fa-paper-plane mr-2"></i>Send Verification Code
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Alternative Actions -->
+                    <div class="mt-8 text-center space-y-4">
+                        <div>
+                            <p class="text-gray-600 mb-2">
+                                Already have a code?
+                            </p>
+                            <a href="{% url 'core:verify_email_code' %}" class="text-harrier-red hover:text-harrier-dark font-semibold transition-colors">
+                                <i class="fas fa-keyboard mr-1"></i>Enter Verification Code
+                            </a>
+                        </div>
+                        
+                        <div>
+                            <p class="text-gray-600 mb-2">
+                                Want to go back?
+                            </p>
+                            <a href="{% url 'core:homepage' %}" class="text-gray-600 hover:text-gray-800 font-semibold transition-colors">
+                                <i class="fas fa-home mr-1"></i>Return to Homepage
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Security Notice -->
+                    <div class="auth-warning-box mt-8">
+                        <h3 class="auth-warning-title">
+                            <i class="fas fa-shield-alt mr-2"></i>Security Notice
+                        </h3>
+                        <div class="auth-warning-text">
+                            <p>For your security:</p>
+                            <ul class="mt-2 space-y-1">
+                                <li>• Verification codes expire after 15 minutes</li>
+                                <li>• Only the most recent code will be valid</li>
+                                <li>• Never share your verification code with anyone</li>
+                                <li>• Contact support if you suspect unauthorized access</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Additional Help -->
+                    <div class="mt-8 text-center">
+                        <p class="text-gray-600 mb-4">
+                            Need help with verification?
+                        </p>
+                        <a href="{% url 'core:contact_us' %}" class="text-harrier-red hover:text-harrier-dark font-semibold transition-colors">
+                            <i class="fas fa-headset mr-1"></i>Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

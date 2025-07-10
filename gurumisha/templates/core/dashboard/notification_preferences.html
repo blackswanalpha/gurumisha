@@ -1,0 +1,367 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Notification Preferences{% endblock %}
+{% block page_description %}Manage how you receive notifications{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-bold text-harrier-dark font-montserrat">Notification Preferences</h2>
+            <p class="text-gray-600 mt-1">Customize how and when you receive notifications</p>
+        </div>
+    </div>
+
+    <!-- Notification Preferences Form -->
+    <form method="POST" hx-post="{% url 'core:notification_preferences' %}" hx-target="#preferences-form" hx-swap="outerHTML">
+        {% csrf_token %}
+        <div id="preferences-form" class="space-y-6">
+            
+            <!-- Email Notifications -->
+            <div class="admin-card">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-harrier-dark font-montserrat">
+                                <i class="fas fa-envelope text-harrier-red mr-2"></i>
+                                Email Notifications
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Receive notifications via email</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="email_enabled" {% if preferences.email_enabled %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="email-options" {% if not preferences.email_enabled %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Order Updates</label>
+                                <p class="text-xs text-gray-600">Status changes, shipping updates</p>
+                            </div>
+                            <input type="checkbox" name="email_order_updates" {% if preferences.email_order_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Import Updates</label>
+                                <p class="text-xs text-gray-600">Import tracking, customs clearance</p>
+                            </div>
+                            <input type="checkbox" name="email_import_updates" {% if preferences.email_import_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Inquiry Responses</label>
+                                <p class="text-xs text-gray-600">Replies to your inquiries</p>
+                            </div>
+                            <input type="checkbox" name="email_inquiry_responses" {% if preferences.email_inquiry_responses %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Security Alerts</label>
+                                <p class="text-xs text-gray-600">Login alerts, password changes</p>
+                            </div>
+                            <input type="checkbox" name="email_security_alerts" {% if preferences.email_security_alerts %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Marketing</label>
+                                <p class="text-xs text-gray-600">Promotions, new features</p>
+                            </div>
+                            <input type="checkbox" name="email_marketing" {% if preferences.email_marketing %}checked{% endif %} class="form-checkbox">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMS Notifications -->
+            <div class="admin-card">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-harrier-dark font-montserrat">
+                                <i class="fas fa-sms text-harrier-red mr-2"></i>
+                                SMS Notifications
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Receive notifications via SMS</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="sms_enabled" {% if preferences.sms_enabled %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="sms-options" {% if not preferences.sms_enabled %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Order Updates</label>
+                                <p class="text-xs text-gray-600">Critical order status changes</p>
+                            </div>
+                            <input type="checkbox" name="sms_order_updates" {% if preferences.sms_order_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Import Updates</label>
+                                <p class="text-xs text-gray-600">Important import milestones</p>
+                            </div>
+                            <input type="checkbox" name="sms_import_updates" {% if preferences.sms_import_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Security Alerts</label>
+                                <p class="text-xs text-gray-600">Critical security notifications</p>
+                            </div>
+                            <input type="checkbox" name="sms_security_alerts" {% if preferences.sms_security_alerts %}checked{% endif %} class="form-checkbox">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Push Notifications -->
+            <div class="admin-card">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-harrier-dark font-montserrat">
+                                <i class="fas fa-bell text-harrier-red mr-2"></i>
+                                Push Notifications
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Browser and mobile push notifications</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="push_enabled" {% if preferences.push_enabled %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="push-options" {% if not preferences.push_enabled %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Order Updates</label>
+                                <p class="text-xs text-gray-600">Real-time order notifications</p>
+                            </div>
+                            <input type="checkbox" name="push_order_updates" {% if preferences.push_order_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Import Updates</label>
+                                <p class="text-xs text-gray-600">Import tracking updates</p>
+                            </div>
+                            <input type="checkbox" name="push_import_updates" {% if preferences.push_import_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Inquiry Responses</label>
+                                <p class="text-xs text-gray-600">Instant inquiry replies</p>
+                            </div>
+                            <input type="checkbox" name="push_inquiry_responses" {% if preferences.push_inquiry_responses %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Marketing</label>
+                                <p class="text-xs text-gray-600">Promotional notifications</p>
+                            </div>
+                            <input type="checkbox" name="push_marketing" {% if preferences.push_marketing %}checked{% endif %} class="form-checkbox">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- In-App Notifications -->
+            <div class="admin-card">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-harrier-dark font-montserrat">
+                                <i class="fas fa-desktop text-harrier-red mr-2"></i>
+                                In-App Notifications
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Notifications within the application</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="in_app_enabled" {% if preferences.in_app_enabled %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="in-app-options" {% if not preferences.in_app_enabled %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Order Updates</label>
+                                <p class="text-xs text-gray-600">Dashboard notifications</p>
+                            </div>
+                            <input type="checkbox" name="in_app_order_updates" {% if preferences.in_app_order_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Import Updates</label>
+                                <p class="text-xs text-gray-600">Import tracking in dashboard</p>
+                            </div>
+                            <input type="checkbox" name="in_app_import_updates" {% if preferences.in_app_import_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">Inquiry Responses</label>
+                                <p class="text-xs text-gray-600">Response notifications</p>
+                            </div>
+                            <input type="checkbox" name="in_app_inquiry_responses" {% if preferences.in_app_inquiry_responses %}checked{% endif %} class="form-checkbox">
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="font-medium text-sm text-gray-900">System Updates</label>
+                                <p class="text-xs text-gray-600">Platform announcements</p>
+                            </div>
+                            <input type="checkbox" name="in_app_system_updates" {% if preferences.in_app_system_updates %}checked{% endif %} class="form-checkbox">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Settings -->
+            <div class="admin-card">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-6">
+                        <i class="fas fa-cog text-harrier-red mr-2"></i>
+                        Delivery Settings
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Digest Frequency -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notification Frequency</label>
+                            <select name="digest_frequency" class="form-select w-full">
+                                <option value="immediate" {% if preferences.digest_frequency == 'immediate' %}selected{% endif %}>Immediate</option>
+                                <option value="hourly" {% if preferences.digest_frequency == 'hourly' %}selected{% endif %}>Hourly Digest</option>
+                                <option value="daily" {% if preferences.digest_frequency == 'daily' %}selected{% endif %}>Daily Digest</option>
+                                <option value="weekly" {% if preferences.digest_frequency == 'weekly' %}selected{% endif %}>Weekly Digest</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Quiet Hours -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-medium text-gray-700">Quiet Hours</label>
+                                <input type="checkbox" name="quiet_hours_enabled" {% if preferences.quiet_hours_enabled %}checked{% endif %} class="form-checkbox">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2" id="quiet-hours" {% if not preferences.quiet_hours_enabled %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                                <input type="time" name="quiet_hours_start" value="{{ preferences.quiet_hours_start|default:'22:00' }}" class="form-input text-sm">
+                                <input type="time" name="quiet_hours_end" value="{{ preferences.quiet_hours_end|default:'08:00' }}" class="form-input text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="btn-admin-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Preferences
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Toggle Switch Styles */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #DC2626;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+</style>
+
+<script>
+// Toggle dependent options
+document.addEventListener('DOMContentLoaded', function() {
+    const toggles = document.querySelectorAll('.toggle-switch input');
+    
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const targetId = this.name.replace('_enabled', '-options');
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                if (this.checked) {
+                    targetElement.style.opacity = '1';
+                    targetElement.style.pointerEvents = 'auto';
+                } else {
+                    targetElement.style.opacity = '0.5';
+                    targetElement.style.pointerEvents = 'none';
+                }
+            }
+        });
+    });
+    
+    // Quiet hours toggle
+    const quietHoursToggle = document.querySelector('input[name="quiet_hours_enabled"]');
+    const quietHoursDiv = document.getElementById('quiet-hours');
+    
+    if (quietHoursToggle) {
+        quietHoursToggle.addEventListener('change', function() {
+            if (this.checked) {
+                quietHoursDiv.style.opacity = '1';
+                quietHoursDiv.style.pointerEvents = 'auto';
+            } else {
+                quietHoursDiv.style.opacity = '0.5';
+                quietHoursDiv.style.pointerEvents = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Request Car Import - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="bg-harrier-dark py-16">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
+                REQUEST CAR IMPORT
+            </h1>
+            <p class="text-xl text-gray-300">
+                Import your dream car from Japan, Germany, UK, USA and more
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Import Request Form Section -->
+<section class="py-16 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Process Steps -->
+            <div class="mb-12">
+                <div class="flex items-center justify-center space-x-4 md:space-x-8">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-harrier-red text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                        <span class="ml-2 text-sm font-medium text-harrier-dark">Submit Request</span>
+                    </div>
+                    <div class="w-8 h-1 bg-gray-300"></div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                        <span class="ml-2 text-sm font-medium text-gray-600">Get Quote</span>
+                    </div>
+                    <div class="w-8 h-1 bg-gray-300"></div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                        <span class="ml-2 text-sm font-medium text-gray-600">Confirm & Pay</span>
+                    </div>
+                    <div class="w-8 h-1 bg-gray-300"></div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                        <span class="ml-2 text-sm font-medium text-gray-600">Delivery</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-xl p-8 lg:p-12">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-2">Tell Us What You Want</h2>
+                    <p class="text-gray-600">Provide details about the car you want to import and we'll find the best options for you</p>
+                </div>
+
+                <!-- Display Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="space-y-8">
+                    {% csrf_token %}
+                    
+                    <!-- Vehicle Information -->
+                    <div>
+                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Vehicle Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="{{ form.brand.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Brand <span class="text-harrier-red">*</span>
+                                </label>
+                                {{ form.brand }}
+                                {% if form.brand.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.brand.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.model.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Model <span class="text-harrier-red">*</span>
+                                </label>
+                                {{ form.model }}
+                                {% if form.model.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.model.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.year.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Year <span class="text-harrier-red">*</span>
+                                </label>
+                                {{ form.year }}
+                                {% if form.year.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.year.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div>
+                                <label for="{{ form.preferred_color.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Preferred Color
+                                </label>
+                                {{ form.preferred_color }}
+                                {% if form.preferred_color.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.preferred_color.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.origin_country.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Origin Country <span class="text-harrier-red">*</span>
+                                </label>
+                                {{ form.origin_country }}
+                                {% if form.origin_country.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.origin_country.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Budget Information -->
+                    <div>
+                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Budget Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.budget_min.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Minimum Budget (KES) <span class="text-harrier-red">*</span>
+                                </label>
+                                {{ form.budget_min }}
+                                {% if form.budget_min.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.budget_min.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.budget_max.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Maximum Budget (KES) <span class="text-harrier-red">*</span>
+                                </label>
+                                {{ form.budget_max }}
+                                {% if form.budget_max.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.budget_max.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600">
+                            Budget should include all costs: car price, shipping, customs, and local charges
+                        </p>
+                    </div>
+
+                    <!-- Additional Requirements -->
+                    <div>
+                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Additional Requirements</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label for="{{ form.special_requirements.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Special Requirements
+                                </label>
+                                {{ form.special_requirements }}
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Specify any special requirements like specific features, mileage limits, or other preferences
+                                </p>
+                                {% if form.special_requirements.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.special_requirements.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button type="submit" class="flex-1 btn-harrier-primary py-4 text-lg font-semibold">
+                                <i class="fas fa-paper-plane mr-2"></i>SUBMIT REQUEST
+                            </button>
+                            <a href="{% url 'core:import_listings' %}" class="flex-1 btn-harrier-secondary py-4 text-lg font-semibold text-center">
+                                <i class="fas fa-arrow-left mr-2"></i>BACK TO IMPORT INFO
+                            </a>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-600 text-center">
+                            We'll contact you within 24 hours with available options and pricing
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Import Countries -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-4">Popular Import Destinations</h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                We import from the world's best automotive markets
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="text-center group">
+                <div class="w-20 h-20 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-opacity-20 transition-colors">
+                    <i class="fas fa-flag text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Japan</h3>
+                <p class="text-gray-600 text-sm">High-quality, well-maintained vehicles with excellent reliability</p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="w-20 h-20 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-opacity-20 transition-colors">
+                    <i class="fas fa-flag text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Germany</h3>
+                <p class="text-gray-600 text-sm">Premium luxury and performance vehicles with advanced technology</p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="w-20 h-20 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-opacity-20 transition-colors">
+                    <i class="fas fa-flag text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">United Kingdom</h3>
+                <p class="text-gray-600 text-sm">Right-hand drive vehicles perfect for Kenyan roads</p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="w-20 h-20 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-opacity-20 transition-colors">
+                    <i class="fas fa-flag text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">United States</h3>
+                <p class="text-gray-600 text-sm">American muscle cars and luxury vehicles</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Import Process -->
+<section class="py-16 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-4">How Import Works</h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Our streamlined process makes car importing simple and transparent
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Submit Request</h3>
+                <p class="text-gray-600 text-sm">Tell us what car you want and your budget</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Get Options</h3>
+                <p class="text-gray-600 text-sm">We find available cars and provide detailed quotes</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Secure Purchase</h3>
+                <p class="text-gray-600 text-sm">Confirm your choice and make secure payment</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Delivery</h3>
+                <p class="text-gray-600 text-sm">We handle shipping and deliver to your location</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

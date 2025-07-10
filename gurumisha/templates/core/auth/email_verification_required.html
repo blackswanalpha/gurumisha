@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Verification Required - Gurumisha Motors{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth-pages.css' %}">
+<style>
+/* Inline Critical CSS for Email Verification Required */
+.auth-hero {
+    position: relative;
+    min-height: 60vh;
+    background: linear-gradient(135deg, #EF4444 0%, #1F2937 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.auth-hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.auth-hero-title {
+    font-family: 'Montserrat', 'Raleway', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-hero-subtitle {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    font-weight: 400;
+    line-height: 1.6;
+    opacity: 0.95;
+    margin-bottom: 2rem;
+}
+
+.auth-form-container {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 40px rgba(239, 68, 68, 0.1) !important;
+    overflow: hidden !important;
+}
+
+.auth-form-section {
+    padding: 3rem;
+    position: relative;
+    text-align: center;
+}
+
+.auth-warning-icon {
+    width: 5rem !important;
+    height: 5rem !important;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto 2rem !important;
+    color: white !important;
+    font-size: 2rem !important;
+    animation: warningPulse 2s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.auth-form-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+
+.auth-form-subtitle {
+    font-family: 'Raleway', sans-serif;
+    color: #6B7280;
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+}
+
+.auth-warning-box {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    border-radius: 0.75rem !important;
+    padding: 1.5rem !important;
+    margin-bottom: 2rem !important;
+    text-align: left;
+}
+
+.auth-warning-title {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    color: #DC2626 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.auth-warning-text {
+    font-family: 'Raleway', sans-serif !important;
+    color: #B91C1C !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5;
+}
+
+.auth-action-btn {
+    display: inline-block !important;
+    padding: 1rem 2rem !important;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
+    color: white !important;
+    text-decoration: none !important;
+    border-radius: 0.5rem !important;
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 4px 20px rgba(239, 68, 68, 0.3) !important;
+    margin: 0.5rem !important;
+}
+
+.auth-action-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 8px 30px rgba(239, 68, 68, 0.4) !important;
+    background: linear-gradient(135deg, #F87171 0%, #EF4444 100%) !important;
+}
+
+.auth-secondary-btn {
+    display: inline-block !important;
+    padding: 1rem 2rem !important;
+    background: transparent !important;
+    color: #6B7280 !important;
+    text-decoration: none !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.25s ease;
+    margin: 0.5rem !important;
+}
+
+.auth-secondary-btn:hover {
+    border-color: #DC2626 !important;
+    color: #DC2626 !important;
+    transform: translateY(-1px) !important;
+}
+
+@media (max-width: 768px) {
+    .auth-hero {
+        min-height: 50vh !important;
+        padding: 2rem 1rem !important;
+    }
+    
+    .auth-hero-content {
+        padding: 1rem !important;
+    }
+    
+    .auth-form-container {
+        margin: 1rem !important;
+        border-radius: 0.75rem !important;
+    }
+    
+    .auth-form-section {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .auth-form-title {
+        font-size: 1.75rem !important;
+    }
+    
+    .auth-action-btn,
+    .auth-secondary-btn {
+        display: block !important;
+        width: 100% !important;
+        margin: 0.5rem 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-hero-title {
+        font-size: 2rem !important;
+    }
+    
+    .auth-hero-subtitle {
+        font-size: 1rem !important;
+    }
+    
+    .auth-form-section {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    .auth-form-title {
+        font-size: 1.5rem !important;
+    }
+    
+    .auth-warning-icon {
+        width: 4rem !important;
+        height: 4rem !important;
+        font-size: 1.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="auth-hero">
+    <div class="auth-hero-content">
+        <h1 class="auth-hero-title">
+            Email Verification Required
+        </h1>
+        <p class="auth-hero-subtitle">
+            Please verify your email address to access this feature
+        </p>
+    </div>
+</section>
+
+<!-- Email Verification Required Section -->
+<section class="py-16 bg-gradient-to-br from-harrier-gray to-white">
+    <div class="container mx-auto px-4">
+        <div class="max-w-lg mx-auto">
+            <div class="auth-form-container">
+                <div class="auth-form-section">
+                    <!-- Warning Icon -->
+                    <div class="auth-warning-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+
+                    <div class="mb-8">
+                        <h2 class="auth-form-title">Verification Required</h2>
+                        <p class="auth-form-subtitle">You need to verify your email address before accessing this feature.</p>
+                    </div>
+
+                    <!-- Warning Box -->
+                    <div class="auth-warning-box">
+                        <h3 class="auth-warning-title">
+                            <i class="fas fa-shield-alt mr-2"></i>Why verify your email?
+                        </h3>
+                        <ul class="auth-warning-text space-y-2">
+                            <li><i class="fas fa-check mr-2 text-red-600"></i>Secure your account and protect your data</li>
+                            <li><i class="fas fa-check mr-2 text-red-600"></i>Receive important notifications and updates</li>
+                            <li><i class="fas fa-check mr-2 text-red-600"></i>Access all premium features and services</li>
+                            <li><i class="fas fa-check mr-2 text-red-600"></i>Enable password recovery options</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center">
+                        <a href="{% url 'core:resend_verification' %}" class="auth-action-btn">
+                            <i class="fas fa-envelope mr-2"></i>Resend Verification Email
+                        </a>
+                        <a href="{% url 'core:homepage' %}" class="auth-secondary-btn">
+                            <i class="fas fa-home mr-2"></i>Go to Homepage
+                        </a>
+                    </div>
+
+                    <!-- Additional Help -->
+                    <div class="mt-8 text-center">
+                        <p class="text-gray-600 mb-4">
+                            Need help with verification?
+                        </p>
+                        <a href="{% url 'core:contact_us' %}" class="text-harrier-red hover:text-harrier-dark font-semibold transition-colors">
+                            <i class="fas fa-headset mr-1"></i>Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

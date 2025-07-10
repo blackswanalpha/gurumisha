@@ -1,0 +1,1292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Gurumisha Motors - Your trusted automotive marketplace for buying, selling, and importing cars. Find quality vehicles and spare parts.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}cars, automotive, car dealership, spare parts, car import, used cars, new cars{% endblock %}">
+
+    <title>{% block title %}Gurumisha Motors - Premium Automotive Marketplace{% endblock %}</title>
+
+    <!-- Modern Typography - Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Raleway:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // New Color Palette: Red, Black, Dark Blue, White
+                        'primary-red': '#DC2626',      // Bright red
+                        'primary-black': '#1F2937',    // Deep black/gray
+                        'primary-blue': '#1E3A8A',     // Dark blue
+                        'primary-white': '#FFFFFF',    // Pure white
+                        'accent-red': '#EF4444',       // Lighter red for hover states
+                        'accent-gray': '#F3F4F6',      // Light gray for backgrounds
+                        'text-dark': '#111827',        // Dark text
+                        'text-light': '#6B7280',       // Light text
+                        // Legacy colors for backward compatibility
+                        'harrier-red': '#DC2626',
+                        'harrier-dark': '#1F2937',
+                        'harrier-gray': '#F3F4F6',
+                        'harrier-light': '#FFFFFF',
+                        'harrier-accent': '#1E3A8A',
+                    },
+                    fontFamily: {
+                        // Modern Typography System
+                        'heading': ['Montserrat', 'Raleway', 'Inter', 'system-ui', 'sans-serif'],
+                        'body': ['Inter', 'Raleway', 'system-ui', 'sans-serif'],
+                        'display': ['Montserrat', 'Raleway', 'Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'Fira Code', 'monospace'],
+                        // Primary font families
+                        'montserrat': ['Montserrat', 'Inter', 'sans-serif'],
+                        'raleway': ['Raleway', 'Inter', 'sans-serif'],
+                        'inter': ['Inter', 'system-ui', 'sans-serif'],
+                        // Legacy font families for backward compatibility
+                        'teko': ['Montserrat', 'Inter', 'sans-serif'],
+                    },
+                    fontSize: {
+                        'xs': ['0.75rem', { lineHeight: '1rem' }],
+                        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+                        'base': ['1rem', { lineHeight: '1.5rem' }],
+                        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
+                        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+                        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+                        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+                        '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
+                        '5xl': ['3rem', { lineHeight: '1' }],
+                        '6xl': ['3.75rem', { lineHeight: '1' }],
+                    },
+                    boxShadow: {
+                        'modern': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'modern-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'modern-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        // Legacy shadows for backward compatibility
+                        'harrier': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        'harrier-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    },
+                    animation: {
+                        // Modern Animations
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out',
+                        'slide-in-left': 'slideInLeft 0.6s ease-out',
+                        'slide-in-right': 'slideInRight 0.6s ease-out',
+                        'bounce-slow': 'bounceSlow 2s ease-in-out infinite',
+                        'pulse-slow': 'pulseSlow 3s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'shimmer': 'shimmer 1.5s infinite',
+                        'scale-in': 'scaleIn 0.5s ease-out',
+                        'rotate-slow': 'rotateSlow 8s linear infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(30px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideInLeft: {
+                            '0%': { opacity: '0', transform: 'translateX(-30px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(30px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        bounceSlow: {
+                            '0%, 20%, 53%, 80%, 100%': { transform: 'translate3d(0, 0, 0)' },
+                            '40%, 43%': { transform: 'translate3d(0, -15px, 0)' },
+                            '70%': { transform: 'translate3d(0, -7px, 0)' },
+                            '90%': { transform: 'translate3d(0, -2px, 0)' },
+                        },
+                        pulseSlow: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.9)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        rotateSlow: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        },
+                    },
+                    transitionTimingFunction: {
+                        'bounce-in': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                        'smooth': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                        'elegant': 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Modern Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;800;900&family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Legacy Fonts for Backward Compatibility -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <!-- Global Animations and Typography -->
+    <link rel="stylesheet" href="{% static 'css/global-animations.css' %}">
+
+    <!-- Toast Notification System -->
+    <link rel="stylesheet" href="{% static 'css/toast-animations.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-accent-gray font-body text-text-dark antialiased transition-all duration-300" style="font-family: 'Inter', 'Raleway', system-ui, sans-serif;">
+    <div id="page">
+        <!-- Header -->
+        <header>
+            <div class="container mx-auto">
+                <!-- Top Banner -->
+                <div class="bg-primary-red text-primary-white py-3 px-4">
+                    <div class="flex justify-between items-center text-sm font-medium">
+                        <div class="flex items-center space-x-4">
+                            <div class="hidden md:block">
+                                <span>🔥 Hot deals! - <strong>Save up to 30%</strong> on selected vehicles!</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <span class="flex items-center"><i class="fa fa-clock-o mr-2"></i> Mon - Fri : 09am to 06pm</span>
+                            <span class="flex items-center"><i class="fa fa-phone mr-2"></i> +254 700 000 000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Header -->
+                <div class="bg-primary-white shadow-modern-lg border-b border-gray-100">
+                    <div class="flex justify-between items-center py-5 px-4">
+                        <!-- Logo -->
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'core:homepage' %}" class="flex items-center group">
+                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors" class="h-14 w-auto transition-transform group-hover:scale-105">
+                                <div class="ml-4">
+                                    <h1 class="text-3xl font-display font-bold text-primary-black tracking-tight">GURUMISHA</h1>
+                                    <p class="text-sm text-text-light uppercase tracking-wider font-medium">MOTORS</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <!-- Search Bar -->
+                        <div class="hidden md:flex flex-1 max-w-lg mx-8">
+                            <form class="w-full flex" action="{% url 'core:car_list' %}" method="GET">
+                                <input type="text" name="search" placeholder="Search for cars, brands, models..."
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                                <button type="submit" class="bg-harrier-red text-white px-6 py-2 rounded-r-md hover:bg-red-600 transition-colors">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- User Actions -->
+                        <div class="flex items-center space-x-4">
+                            {% if user.is_authenticated %}
+                                <div class="hidden md:flex items-center space-x-4">
+                                    <!-- Cart Icon -->
+                                    <a href="{% url 'core:cart' %}" class="relative text-harrier-dark hover:text-harrier-red transition-colors">
+                                        <i class="fas fa-shopping-cart text-xl"></i>
+                                        <span id="cart-badge" class="absolute -top-2 -right-2 bg-harrier-red text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold" style="display: none;">0</span>
+                                    </a>
+
+                                    <div class="relative group">
+                                        <button class="flex items-center space-x-2 text-sm text-harrier-dark hover:text-harrier-red">
+                                            <i class="fas fa-user-circle text-xl"></i>
+                                            <span>{{ user.first_name|default:user.username }}</span>
+                                            <i class="fas fa-chevron-down text-xs"></i>
+                                        </button>
+                                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                            <a href="{% url 'core:dashboard' %}" class="block px-4 py-2 text-sm text-harrier-dark hover:bg-harrier-gray transition-colors">
+                                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                            </a>
+                                            <a href="{% url 'core:profile' %}" class="block px-4 py-2 text-sm text-harrier-dark hover:bg-harrier-gray transition-colors">
+                                                <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                                            </a>
+                                            <div class="border-t border-gray-200 my-1"></div>
+                                            <a href="{% url 'core:logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="hidden md:flex items-center space-x-2">
+                                    <a href="{% url 'core:login' %}" class="text-sm text-harrier-dark hover:text-harrier-red">Login</a>
+                                    <span class="text-gray-400">|</span>
+                                    <a href="{% url 'core:register' %}" class="text-sm text-harrier-dark hover:text-harrier-red">Register</a>
+                                </div>
+                            {% endif %}
+
+                            <!-- Mobile menu button -->
+                            <button type="button" class="md:hidden p-2 text-harrier-dark hover:text-harrier-red" id="mobile-menu-btn">
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <nav class="bg-primary-black shadow-modern">
+                        <div class="hidden md:flex items-center justify-center py-4">
+                            <ul class="flex items-center space-x-1 text-primary-white">
+                                <li><a href="{% url 'core:homepage' %}" class="nav-link-modern {% if request.resolver_match.url_name == 'homepage' %}active{% endif %}">HOME</a></li>
+                                <li class="relative group">
+                                    <a href="{% url 'core:car_list' %}" class="nav-link-modern {% if 'car' in request.resolver_match.url_name %}active{% endif %}">CARS <i class="fas fa-chevron-down ml-1 text-xs"></i></a>
+                                    <div class="absolute top-full left-0 bg-primary-white shadow-modern-lg rounded-lg py-3 w-52 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border border-gray-100">
+                                        <a href="{% url 'core:car_list' %}" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">All Cars</a>
+                                        <a href="{% url 'core:car_list' %}?condition=new" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">New Cars</a>
+                                        <a href="{% url 'core:car_list' %}?condition=used" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">Used Cars</a>
+                                        <a href="{% url 'core:car_list' %}?status=featured" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">Featured Cars</a>
+                                    </div>
+                                </li>
+                                <li><a href="{% url 'core:spare_parts' %}" class="nav-link-modern {% if 'spare' in request.resolver_match.url_name %}active{% endif %}">SPARE PARTS</a></li>
+                                <li><a href="{% url 'core:import_listings' %}" class="nav-link-modern {% if 'import' in request.resolver_match.url_name %}active{% endif %}">IMPORT CAR</a></li>
+                                <li><a href="{% url 'core:sell_car' %}" class="nav-link-modern {% if 'sell' in request.resolver_match.url_name %}active{% endif %}">SELL CAR</a></li>
+                                <li><a href="{% url 'core:resources' %}" class="nav-link-modern {% if 'resources' in request.resolver_match.url_name %}active{% endif %}">RESOURCES</a></li>
+                                <li><a href="{% url 'core:about_us' %}" class="nav-link-modern {% if request.resolver_match.url_name == 'about_us' %}active{% endif %}">ABOUT</a></li>
+                                <li><a href="{% url 'core:contact_us' %}" class="nav-link-modern {% if request.resolver_match.url_name == 'contact_us' %}active{% endif %}">CONTACT</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Mobile Navigation -->
+                        <div class="md:hidden hidden" id="mobile-menu">
+                            <div class="bg-white border-t">
+                                <div class="px-4 py-2">
+                                    <form class="flex mb-4" action="{% url 'core:car_list' %}" method="GET">
+                                        <input type="text" name="search" placeholder="Search cars..."
+                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md text-sm">
+                                        <button type="submit" class="bg-harrier-red text-white px-4 py-2 rounded-r-md">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="space-y-1">
+                                    <a href="{% url 'core:homepage' %}" class="mobile-nav-link-harrier">Home</a>
+                                    <a href="{% url 'core:car_list' %}" class="mobile-nav-link-harrier">Cars</a>
+                                    <a href="{% url 'core:spare_parts' %}" class="mobile-nav-link-harrier">Spare Parts</a>
+                                    <a href="{% url 'core:import_listings' %}" class="mobile-nav-link-harrier">Import Car</a>
+                                    <a href="{% url 'core:sell_car' %}" class="mobile-nav-link-harrier">Sell Car</a>
+                                    <a href="{% url 'core:resources' %}" class="mobile-nav-link-harrier">Resources</a>
+                                    <a href="{% url 'core:about_us' %}" class="mobile-nav-link-harrier">About</a>
+                                    <a href="{% url 'core:contact_us' %}" class="mobile-nav-link-harrier">Contact</a>
+                                    {% if user.is_authenticated %}
+                                        <div class="border-t pt-2">
+                                            <a href="{% url 'core:dashboard' %}" class="mobile-nav-link-harrier">
+                                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                            </a>
+                                            <a href="{% url 'core:logout' %}" class="mobile-nav-link-harrier text-red-600">
+                                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <div class="border-t pt-2">
+                                            <a href="{% url 'core:login' %}" class="mobile-nav-link-harrier">Login</a>
+                                            <a href="{% url 'core:register' %}" class="mobile-nav-link-harrier">Register</a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+        <!-- Enhanced Footer with Harrier Design Patterns -->
+        <footer class="mt-12">
+            <!-- Features Section -->
+            <div class="bg-gradient-to-r from-primary-black via-primary-blue to-primary-red py-16">
+                <div class="container mx-auto px-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <!-- Feature 1: World's #1 -->
+                        <div class="text-center group">
+                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
+                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-globe text-white text-2xl"></i>
+                                </div>
+                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Kenya's #1</h6>
+                                <p class="text-gray-200 text-sm">Largest Auto Portal</p>
+                            </div>
+                        </div>
+
+                        <!-- Feature 2: Car Sold -->
+                        <div class="text-center group">
+                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
+                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-car text-white text-2xl"></i>
+                                </div>
+                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Car Sold</h6>
+                                <p class="text-gray-200 text-sm">Every 4 Minutes</p>
+                            </div>
+                        </div>
+
+                        <!-- Feature 3: Offers -->
+                        <div class="text-center group">
+                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
+                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-tags text-white text-2xl"></i>
+                                </div>
+                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Best Offers</h6>
+                                <p class="text-gray-200 text-sm">Stay Updated Pay Less</p>
+                            </div>
+                        </div>
+
+                        <!-- Feature 4: Compare -->
+                        <div class="text-center group">
+                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
+                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-balance-scale text-white text-2xl"></i>
+                                </div>
+                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Compare</h6>
+                                <p class="text-gray-200 text-sm">Decode The Right Car</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <!-- Main Footer Content -->
+            <div class="bg-primary-black text-white py-16">
+                <div class="container mx-auto px-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <!-- Company Info -->
+                        <div class="lg:col-span-1">
+                            <div class="flex items-center mb-6">
+                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors" class="h-12 w-auto">
+                                <div class="ml-3">
+                                    <h3 class="text-2xl font-heading font-bold" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">GURUMISHA</h3>
+                                    <p class="text-sm text-primary-red font-semibold uppercase tracking-wider">MOTORS</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-300 mb-6 leading-relaxed">Your trusted automotive marketplace for buying, selling, and importing quality vehicles. We connect car enthusiasts with their dream cars.</p>
+
+                            <!-- Social Media -->
+                            <div class="flex space-x-3 mb-6">
+                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                    <i class="fab fa-facebook-f text-white"></i>
+                                </a>
+                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                    <i class="fab fa-twitter text-white"></i>
+                                </a>
+                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                    <i class="fab fa-instagram text-white"></i>
+                                </a>
+                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                    <i class="fab fa-linkedin-in text-white"></i>
+                                </a>
+                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                    <i class="fab fa-youtube text-white"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Quick Links -->
+                        <div>
+                            <h4 class="text-lg font-heading font-bold mb-6 text-primary-red uppercase tracking-wide" style="font-family: 'Saira Condensed', sans-serif;">Quick Links</h4>
+                            <ul class="space-y-3">
+                                <li><a href="{% url 'core:car_list' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Browse Cars
+                                </a></li>
+                                <li><a href="{% url 'core:spare_parts' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Spare Parts
+                                </a></li>
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Import Car
+                                </a></li>
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Sell Your Car
+                                </a></li>
+                                <li><a href="{% url 'core:resources' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Resources
+                                </a></li>
+                                <li><a href="{% url 'core:about_us' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> About Us
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Customer Service -->
+                        <div>
+                            <h4 class="text-lg font-heading font-bold mb-6 text-primary-red uppercase tracking-wide" style="font-family: 'Saira Condensed', sans-serif;">Customer Service</h4>
+                            <ul class="space-y-3">
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Help Center
+                                </a></li>
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> FAQs
+                                </a></li>
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Payment Options
+                                </a></li>
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Shipping Info
+                                </a></li>
+                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Return Policy
+                                </a></li>
+                                <li><a href="{% url 'core:contact_us' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Contact Support
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Contact Info -->
+                        <div>
+                            <h4 class="text-lg font-heading font-bold mb-6 text-primary-red uppercase tracking-wide" style="font-family: 'Saira Condensed', sans-serif;">Contact Info</h4>
+                            <ul class="space-y-4 text-gray-300">
+                                <li class="flex items-start group">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center mr-4 mt-1 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-map-marker-alt text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-white">Showroom Address</p>
+                                        <p class="text-sm">Westlands, Nairobi</p>
+                                        <p class="text-sm">Kenya</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-center group">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-phone text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-white">Call Us</p>
+                                        <span class="text-sm">+254 700 000 000</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-center group">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-envelope text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-white">Email Us</p>
+                                        <span class="text-sm">info@gurumisha.com</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-center group">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-clock text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-white">Business Hours</p>
+                                        <span class="text-sm">Mon - Fri: 9AM - 6PM</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Footer -->
+            <div class="bg-gradient-to-r from-primary-blue to-primary-black py-8">
+                <div class="container mx-auto px-4">
+                    <div class="flex flex-col lg:flex-row justify-between items-center space-y-6 lg:space-y-0">
+                        <!-- Copyright -->
+                        <div class="text-center lg:text-left">
+                            <p class="text-gray-300 text-sm">&copy; 2024 <span class="text-white font-semibold">Gurumisha Motors</span>. All rights reserved.</p>
+                            <p class="text-gray-400 text-xs mt-1">Designed with <i class="fas fa-heart text-primary-red"></i> for automotive enthusiasts</p>
+                        </div>
+
+                        <!-- Legal Links -->
+                        <div class="flex flex-wrap justify-center lg:justify-end space-x-6 text-sm">
+                            <a href="#" class="text-gray-300 hover:text-primary-red transition-colors hover:underline">Privacy Policy</a>
+                            <a href="#" class="text-gray-300 hover:text-primary-red transition-colors hover:underline">Terms of Service</a>
+                            <a href="#" class="text-gray-300 hover:text-primary-red transition-colors hover:underline">Cookie Policy</a>
+                            <a href="#" class="text-gray-300 hover:text-primary-red transition-colors hover:underline">Sitemap</a>
+                        </div>
+
+                        <!-- Payment Methods -->
+                        <div class="text-center lg:text-right">
+                            <p class="text-gray-400 text-xs mb-3 uppercase tracking-wider">Secure Payments</p>
+                            <div class="flex justify-center lg:justify-end space-x-3">
+                                <!-- M-Pesa -->
+                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
+                                    <span class="text-green-600 font-bold text-xs">M-PESA</span>
+                                </div>
+                                <!-- Visa -->
+                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
+                                    <i class="fab fa-cc-visa text-blue-600 text-lg"></i>
+                                </div>
+                                <!-- Mastercard -->
+                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
+                                    <i class="fab fa-cc-mastercard text-red-500 text-lg"></i>
+                                </div>
+                                <!-- PayPal -->
+                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
+                                    <i class="fab fa-cc-paypal text-blue-500 text-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Harrier Custom Styles - Exact Font Matching -->
+    <style>
+        /* Modern Typography System */
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 16px;
+            background: #F3F4F6;
+            line-height: 1.6;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', 'Inter', sans-serif;
+            font-weight: 600;
+            line-height: 1.3;
+            color: #111827;
+        }
+
+        h1 { font-size: 2.5rem; }
+        h2 { font-size: 2rem; }
+        h3 { font-size: 1.75rem; }
+        h4 { font-size: 1.5rem; }
+        h5 { font-size: 1.25rem; }
+        h6 { font-size: 1.125rem; }
+
+        small {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: #6B7280;
+        }
+
+        /* Modern Navigation Styles */
+        .nav-link-modern {
+            font-size: 15px;
+            text-transform: uppercase;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            position: relative;
+            letter-spacing: 0.5px;
+            color: #FFFFFF;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-link-modern:hover {
+            color: #FFFFFF;
+            background: #DC2626;
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+
+        .nav-link-modern.active {
+            color: #FFFFFF;
+            background: #1E3A8A;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-nav-link-modern {
+            display: block;
+            padding: 16px 20px;
+            color: #111827;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            border-bottom: 1px solid #E5E7EB;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .mobile-nav-link-modern:hover {
+            background: #F3F4F6;
+            color: #DC2626;
+            padding-left: 24px;
+            text-decoration: none;
+        }
+
+        /* Modern Button Styles */
+        .btn-harrier-primary {
+            padding: 12px 24px;
+            font-size: 15px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #FFFFFF;
+            letter-spacing: 0.5px;
+            background: #DC2626;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-harrier-primary:hover {
+            background: #B91C1C;
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+        }
+
+        .btn-harrier-secondary {
+            padding: 12px 24px;
+            font-size: 15px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #1E3A8A;
+            letter-spacing: 0.5px;
+            background: transparent;
+            border: 2px solid #1E3A8A;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-harrier-secondary:hover {
+            background: #1E3A8A;
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+        }
+
+        /* Product Card Styles - Harrier Match */
+        .product-card-harrier {
+            background: white;
+            border-radius: 0;
+            box-shadow: 0 5px 0 rgba(200,200,200,.2);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .product-card-harrier:hover {
+            box-shadow: 0 8px 15px rgba(0,0,0,.1);
+            transform: translateY(-2px);
+        }
+
+        /* Typography Classes - Harrier Match */
+        .heading-harrier {
+            font-family: 'Saira Condensed', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #333;
+        }
+
+        .price-harrier {
+            font-size: 22px;
+            color: #ed6663;
+            font-weight: 500;
+            font-family: 'Saira Condensed', sans-serif;
+        }
+
+        .text-harrier-muted {
+            color: #777;
+            font-size: 14px;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        /* Product Title Styles - Harrier Match */
+        .product-title-harrier {
+            font-size: 18px;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            font-family: 'Saira Condensed', sans-serif;
+            line-height: 1.3em;
+            font-weight: 500;
+            color: #121212;
+            margin-bottom: 10px;
+            padding-top: 25px;
+        }
+
+        /* Badge Styles - Harrier Match */
+        .badge-harrier-new {
+            font-size: 10.5px;
+            font-family: 'Open Sans', sans-serif;
+            color: #fff;
+            background: #ed6663;
+            text-transform: uppercase;
+            padding: 0px 10px;
+            text-align: center;
+            display: block;
+            position: absolute;
+            font-weight: 400;
+            height: 24px;
+            border-radius: 3px;
+            line-height: 24px;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .badge-harrier-sale {
+            font-size: 10.5px;
+            font-family: 'Open Sans', sans-serif;
+            color: #fff;
+            background: #50b2fc;
+            text-transform: uppercase;
+            padding: 0px 10px;
+            text-align: center;
+            display: block;
+            position: absolute;
+            font-weight: 400;
+            height: 24px;
+            border-radius: 3px;
+            line-height: 24px;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        /* Specification Table - Harrier Match */
+        .spec-table-harrier {
+            width: 100%;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .spec-table-harrier td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eaeaea;
+            font-size: 13px;
+        }
+
+        .spec-table-harrier .label-spec {
+            font-weight: 600;
+            color: #333;
+            width: 40%;
+        }
+
+        .spec-table-harrier .value-spec {
+            color: #777;
+        }
+
+        .spec-table-harrier tr:nth-child(odd) {
+            background: #f9f9f9;
+        }
+
+        /* Modern Section Titles */
+        .section-title-harrier {
+            color: #FFFFFF;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 0px;
+            padding: 20px 32px;
+            position: relative;
+            display: inline-block;
+            font-family: 'Poppins', 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #1E3A8A 0%, #DC2626 100%);
+            margin-top: 0px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Enhanced Vehicle Type List Navigation Styles */
+        #vehicleTypeGrid {
+            display: flex;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            width: max-content;
+            align-items: flex-start;
+        }
+
+        .vehicle-type-nav-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            position: relative;
+        }
+
+        .vehicle-type-nav-btn:hover:not(:disabled) {
+            transform: scale(1.15);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+
+        .vehicle-type-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .vehicle-type-nav-btn:disabled:hover {
+            transform: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Enhanced hover effects for vehicle type items */
+        .vehicle-type-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .vehicle-type-item:hover {
+            transform: scale(1.05) translateY(-6px);
+        }
+
+        /* Mobile dots styling */
+        .mobile-nav-dot {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mobile-nav-dot.active {
+            background-color: #DC2626;
+            width: 1.5rem;
+        }
+
+        /* List view container */
+        .vehicle-type-list-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* Smooth scrolling for all devices */
+        #vehicleTypeGrid {
+            scroll-behavior: smooth;
+        }
+
+        /* Navigation button positioning */
+        .vehicle-type-nav-controls {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 30;
+        }
+
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 768px) {
+            .vehicle-type-nav-btn {
+                display: none;
+            }
+
+            #vehicleTypeGrid {
+                gap: 1.5rem;
+            }
+        }
+
+        /* Keyboard focus styles */
+        .vehicle-type-nav-btn:focus {
+            outline: 2px solid #DC2626;
+            outline-offset: 2px;
+        }
+
+        /* Loading state */
+        .vehicle-type-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Enhanced Video Background Hero Section Styles */
+        .main-banner {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #bg-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(31, 41, 55, 0.8) 0%,
+                rgba(30, 58, 138, 0.7) 50%,
+                rgba(220, 38, 38, 0.6) 100%
+            );
+            z-index: -1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            padding: 2rem 0;
+        }
+
+        .car-search-form {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .car-search-form .form-group label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .car-search-form select,
+        .car-search-form input {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #E5E7EB;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .car-search-form select:focus,
+        .car-search-form input:focus {
+            outline: none;
+            border-color: #F97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #F97316, #DC2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .main-banner {
+                min-height: 100vh;
+            }
+
+            .hero-content {
+                padding: 1rem 0;
+            }
+
+            .car-search-form {
+                margin-top: 2rem;
+                padding: 1.5rem;
+            }
+
+            #bg-video {
+                /* Ensure video covers properly on mobile */
+                min-width: 100%;
+                min-height: 100%;
+            }
+        }
+
+        /* Video loading fallback */
+        .main-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1F2937 0%, #1E3A8A 50%, #DC2626 100%);
+            z-index: -3;
+        }
+
+        /* Enhanced button styles for hero section */
+        .hero-content .btn-search {
+            background: linear-gradient(135deg, #F97316, #DC2626);
+            color: white;
+            font-weight: 700;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            font-size: 1.125rem;
+        }
+
+        .hero-content .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #EA580C, #B91C1C);
+        }
+
+
+
+        /* Other Info Styles - Harrier Match */
+        .other-info {
+            border-top: 1px #eaeaea solid;
+            color: #777;
+            padding-top: 20px;
+            margin-top: 15px;
+            font-family: 'Saira Condensed', sans-serif;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Ratings - Harrier Match */
+        .ratings {
+            font-size: 11px;
+            line-height: normal;
+            margin: 2px 0;
+        }
+
+        .ratings .rating-links a {
+            text-decoration: none;
+            color: #999;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 12px;
+        }
+
+        /* Background Sections - Harrier Style */
+        .sell-car-bg-section {
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center center;
+            position: relative;
+        }
+
+        .sell-car-bg-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1;
+        }
+
+        .sell-car-bg-section .content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Selection and Focus - Harrier Match */
+        ::selection {
+            background-color: #d9eb3d;
+            color: #121212;
+        }
+
+        a:focus, button:focus, input:focus, select:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #ed6663;
+        }
+    </style>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // HTMX configuration
+            document.body.addEventListener('htmx:configRequest', function(evt) {
+                evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+            });
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (mobileMenu && !mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+
+    <!-- Global Animations JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Intersection Observer for scroll animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view', 'revealed');
+                        // Add staggered animation for child elements
+                        const children = entry.target.querySelectorAll('.animate-entrance, .animate-slide-in-left, .animate-slide-in-right, .animate-scale-in');
+                        children.forEach((child, index) => {
+                            setTimeout(() => {
+                                child.classList.add('in-view');
+                            }, index * 100);
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all elements with animation classes
+            const animatedElements = document.querySelectorAll('.animate-entrance, .animate-slide-in-left, .animate-slide-in-right, .animate-scale-in, .scroll-reveal');
+            animatedElements.forEach(el => observer.observe(el));
+
+            // Add hover effects to cards and buttons
+            const cards = document.querySelectorAll('.card-animate, .hover-lift, .hover-scale');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = this.classList.contains('hover-lift') ? 'translateY(-8px)' :
+                                         this.classList.contains('hover-scale') ? 'scale(1.05)' :
+                                         'translateY(-8px)';
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // Add loading states for images
+            const images = document.querySelectorAll('img[data-lazy]');
+            images.forEach(img => {
+                img.classList.add('loading-shimmer');
+                img.addEventListener('load', function() {
+                    this.classList.remove('loading-shimmer');
+                    this.classList.add('animate-fade-in');
+                });
+            });
+
+            // Performance optimization: Reduce animations on low-end devices
+            if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+                document.body.classList.add('performance-mode');
+            }
+
+            // Respect user's motion preferences
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.body.classList.add('performance-mode');
+            }
+
+            // Add smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add focus ring for accessibility
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+
+            // Initialize typography classes
+            const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            headings.forEach(heading => {
+                if (!heading.style.fontFamily) {
+                    heading.classList.add('font-montserrat');
+                }
+            });
+
+            const paragraphs = document.querySelectorAll('p, span, div');
+            paragraphs.forEach(p => {
+                if (!p.style.fontFamily && !p.classList.contains('font-montserrat') && !p.classList.contains('font-raleway')) {
+                    p.classList.add('font-inter');
+                }
+            });
+        });
+
+        // Lazy loading for images with intersection observer
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('loading-shimmer');
+                        img.classList.add('animate-fade-in');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+    </script>
+
+    <!-- Toast Manager -->
+    {% load core_extras %}
+    {% toast_script %}
+    {% render_toast_messages %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

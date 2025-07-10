@@ -1,0 +1,232 @@
+<!-- Update Pill Counts -->
+<script>
+    // Update pill counts when HTMX response is received
+    document.getElementById('count-all').textContent = '{{ total_cars }}';
+    document.getElementById('count-imported').textContent = '{{ imported_count }}';
+    document.getElementById('count-sell-behalf').textContent = '{{ sell_behalf_count }}';
+    document.getElementById('count-auction').textContent = '{{ auction_count }}';
+</script>
+
+<!-- Results Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-white p-6 rounded-xl shadow-lg">
+    <div>
+        <h2 class="text-2xl font-bold text-primary-black mb-2" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">
+            {% if cars %}
+                {{ cars|length }} CAR{{ cars|length|pluralize }} FOUND
+            {% else %}
+                NO CARS FOUND
+            {% endif %}
+            {% if current_filters.listing_type %}
+                <span class="text-primary-red">
+                    - {% if current_filters.listing_type == 'imported' %}IMPORTED CARS
+                    {% elif current_filters.listing_type == 'sell_behalf' %}SELL ON BEHALF
+                    {% elif current_filters.listing_type == 'auction' %}AUCTIONED
+                    {% else %}{{ current_filters.listing_type|title }}{% endif %}
+                </span>
+            {% endif %}
+        </h2>
+        {% if current_filters.search %}
+            <p class="text-gray-600">Search results for "<span class="font-semibold text-primary-red">{{ current_filters.search }}</span>"</p>
+        {% endif %}
+    </div>
+
+    <div class="flex items-center space-x-4 mt-4 md:mt-0">
+        <!-- Sort Dropdown -->
+        <div class="flex items-center space-x-2">
+            <label class="text-sm font-semibold text-gray-600">SORT BY:</label>
+            <select name="sort" form="filter-form" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                <option value="-created_at" {% if current_filters.sort == "-created_at" %}selected{% endif %}>Newest First</option>
+                <option value="price" {% if current_filters.sort == "price" %}selected{% endif %}>Price: Low to High</option>
+                <option value="-price" {% if current_filters.sort == "-price" %}selected{% endif %}>Price: High to Low</option>
+                <option value="year" {% if current_filters.sort == "year" %}selected{% endif %}>Year: Old to New</option>
+                <option value="-year" {% if current_filters.sort == "-year" %}selected{% endif %}>Year: New to Old</option>
+            </select>
+        </div>
+        
+        <!-- View Toggle -->
+        <div class="flex items-center space-x-2">
+            <span class="text-sm font-semibold text-gray-600">VIEW:</span>
+            <button class="p-2 border border-gray-300 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-colors" id="grid-view" title="Grid View">
+                <i class="fas fa-th-large"></i>
+            </button>
+            <button class="p-2 border border-gray-300 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-colors" id="list-view" title="List View">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loading-indicator" class="htmx-indicator">
+    <div class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
+    </div>
+</div>
+
+<!-- Cars Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="cars-grid">
+    {% for car in cars %}
+        <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group">
+            <div class="relative overflow-hidden">
+                {% if car.main_image %}
+                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500">
+                {% else %}
+                    <div class="w-full h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <i class="fas fa-car text-gray-400 text-5xl"></i>
+                    </div>
+                {% endif %}
+
+                <!-- Enhanced Badges -->
+                {% if car.status == 'featured' %}
+                    <div class="absolute top-3 left-3 bg-gradient-to-r from-primary-red to-accent-red text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                        <i class="fas fa-star mr-1"></i>FEATURED
+                    </div>
+                {% endif %}
+
+                <!-- Listing Type Badge -->
+                {% if car.listing_type == 'imported' %}
+                    <div class="absolute top-3 {% if car.status == 'featured' %}left-24{% else %}left-3{% endif %} bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                        <i class="fas fa-ship mr-1"></i>IMPORTED
+                    </div>
+                {% elif car.listing_type == 'sell_behalf' %}
+                    <div class="absolute top-3 {% if car.status == 'featured' %}left-24{% else %}left-3{% endif %} bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                        <i class="fas fa-handshake mr-1"></i>SELL ON BEHALF
+                    </div>
+                {% elif car.listing_type == 'auction' %}
+                    <div class="absolute top-3 {% if car.status == 'featured' %}left-24{% else %}left-3{% endif %} bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                        <i class="fas fa-gavel mr-1"></i>AUCTION
+                    </div>
+                {% endif %}
+
+                {% if car.condition == 'new' %}
+                    <div class="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">NEW</div>
+                {% elif car.condition == 'used' %}
+                    <div class="absolute top-3 right-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">USED</div>
+                {% elif car.condition == 'certified' %}
+                    <div class="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">CERTIFIED</div>
+                {% endif %}
+
+                <!-- Wishlist Button -->
+                <div class="absolute bottom-3 right-3">
+                    <button class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-primary-red hover:text-white transition-all duration-300 shadow-lg">
+                        <i class="fas fa-heart text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Quick View Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-6">
+                    <a href="{% url 'core:car_detail' car.pk %}" class="bg-white text-primary-black px-6 py-3 rounded-lg font-bold hover:bg-primary-red hover:text-white transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shadow-lg">
+                        <i class="fas fa-eye mr-2"></i>VIEW DETAILS
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Brand -->
+                <div class="text-xs text-primary-red font-bold uppercase tracking-wider mb-2">{{ car.brand.name }}</div>
+
+                <!-- Title -->
+                <h3 class="text-lg font-bold text-primary-black mb-3 line-clamp-2 leading-tight" style="font-family: 'Saira Condensed', sans-serif;">{{ car.title }}</h3>
+
+                <!-- Rating and Views -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex text-yellow-400">
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="far fa-star text-sm"></i>
+                    </div>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                        <i class="fas fa-eye mr-1"></i>{{ car.views_count }} views
+                    </span>
+                </div>
+
+                <!-- Enhanced Specs -->
+                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar text-primary-red mr-2"></i>
+                        <span>{{ car.year }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-tachometer-alt text-primary-red mr-2"></i>
+                        <span>{{ car.mileage|floatformat:0 }}km</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-gas-pump text-primary-red mr-2"></i>
+                        <span>{{ car.fuel_type|title }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-cogs text-primary-red mr-2"></i>
+                        <span>{{ car.transmission|title }}</span>
+                    </div>
+                </div>
+
+                <!-- Price and Actions -->
+                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <div>
+                        <span class="text-2xl font-bold text-primary-red" style="font-family: 'Saira Condensed', sans-serif;">
+                            KSh {{ car.price|floatformat:0 }}
+                        </span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="w-10 h-10 border-2 border-gray-200 rounded-lg flex items-center justify-center hover:border-primary-red hover:text-primary-red transition-all duration-300" title="Compare">
+                            <i class="fas fa-balance-scale text-sm"></i>
+                        </button>
+                        <a href="{% url 'core:car_detail' car.pk %}" class="bg-gradient-to-r from-primary-red to-accent-red text-white px-6 py-2 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg">
+                            VIEW
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-full text-center py-20 bg-white rounded-xl shadow-lg">
+            <div class="max-w-md mx-auto">
+                <i class="fas fa-search text-gray-300 text-6xl mb-6"></i>
+                <h3 class="text-2xl font-bold text-primary-black mb-4" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">
+                    NO CARS FOUND
+                </h3>
+                <p class="text-gray-600 mb-8 leading-relaxed">
+                    We couldn't find any vehicles matching your criteria. Try adjusting your filters or browse our complete collection.
+                </p>
+                <a href="{% url 'core:car_list' %}" class="bg-gradient-to-r from-primary-red to-accent-red text-white px-8 py-3 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg">
+                    <i class="fas fa-car mr-2"></i>BROWSE ALL CARS
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Enhanced Pagination -->
+{% if is_paginated %}
+    <div class="flex justify-center mt-12">
+        <nav class="flex items-center space-x-2 bg-white rounded-xl shadow-lg p-4">
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                   class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                    <i class="fas fa-angle-double-left mr-1"></i>FIRST
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                   class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                    <i class="fas fa-angle-left mr-1"></i>PREV
+                </a>
+            {% endif %}
+
+            <span class="px-6 py-2 bg-gradient-to-r from-primary-red to-accent-red text-white rounded-lg font-bold shadow-lg">
+                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                   class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                    NEXT<i class="fas fa-angle-right ml-1"></i>
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                   class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                    LAST<i class="fas fa-angle-double-right ml-1"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+{% endif %}

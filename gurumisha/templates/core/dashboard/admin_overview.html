@@ -1,0 +1,346 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}System Overview{% endblock %}
+{% block page_title %}System Overview{% endblock %}
+{% block page_description %}Monitor system performance and key metrics{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">System Overview</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+            <div class="text-sm text-green-600 mt-2">+12% this month</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ total_cars }}</div>
+            <div class="stat-label">Car Listings</div>
+            <div class="text-sm text-blue-600 mt-2">+8% this month</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ total_vendors }}</div>
+            <div class="stat-label">Active Vendors</div>
+            <div class="text-sm text-green-600 mt-2">+5% this month</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">{{ total_inquiries }}</div>
+            <div class="stat-label">Total Inquiries</div>
+            <div class="text-sm text-yellow-600 mt-2">+15% this month</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- User Growth Chart -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">User Growth</h3>
+                <p class="text-sm text-gray-600">New user registrations over time</p>
+            </div>
+            <div class="p-6">
+                <canvas id="userGrowthChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Platform Activity</h3>
+                <p class="text-sm text-gray-600">Daily activity metrics</p>
+            </div>
+            <div class="p-6">
+                <canvas id="activityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions and Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Quick Actions -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Quick Actions</h3>
+                <p class="text-sm text-gray-600">Common administrative tasks</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    <a href="{% url 'core:admin_users' %}" class="flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-users text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-harrier-dark">Manage Users</div>
+                            <div class="text-sm text-gray-600">View and edit user accounts</div>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'core:admin_vendors' %}" class="flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                        <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-store text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-harrier-dark">Vendor Approvals</div>
+                            <div class="text-sm text-gray-600">Review vendor applications</div>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'core:admin_cars' %}" class="flex items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                        <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-car text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-harrier-dark">Car Listings</div>
+                            <div class="text-sm text-gray-600">Moderate car listings</div>
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="flex items-center p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                        <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chart-bar text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-harrier-dark">Analytics</div>
+                            <div class="text-sm text-gray-600">View detailed reports</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-card lg:col-span-2">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Recent Activity</h3>
+                <p class="text-sm text-gray-600">Latest system events and user actions</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user-plus text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">New user registration</p>
+                                <p class="text-xs text-gray-600">john.doe@example.com joined as customer</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">2 minutes ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-car text-blue-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">New car listing submitted</p>
+                                <p class="text-xs text-gray-600">Toyota Camry 2020 pending approval</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">15 minutes ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-store text-purple-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">Vendor application received</p>
+                                <p class="text-xs text-gray-600">Premium Motors applied for vendor status</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">1 hour ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-envelope text-yellow-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">Customer inquiry received</p>
+                                <p class="text-xs text-gray-600">Inquiry about Honda Civic 2019</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">2 hours ago</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between py-3">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-exclamation-triangle text-red-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-harrier-dark">System alert</p>
+                                <p class="text-xs text-gray-600">High server load detected</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">3 hours ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Pending Approvals -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">Pending Approvals</h3>
+                <p class="text-sm text-gray-600">Items requiring your attention</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-store text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-harrier-dark">{{ pending_vendors }} Vendor Applications</div>
+                                <div class="text-sm text-gray-600">Awaiting approval</div>
+                            </div>
+                        </div>
+                        <a href="{% url 'core:admin_vendors' %}" class="text-harrier-red hover:text-harrier-dark text-sm font-medium">
+                            Review
+                        </a>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-car text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-harrier-dark">{{ pending_cars }} Car Listings</div>
+                                <div class="text-sm text-gray-600">Pending moderation</div>
+                            </div>
+                        </div>
+                        <a href="{% url 'core:admin_cars' %}" class="text-harrier-red hover:text-harrier-dark text-sm font-medium">
+                            Review
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="dashboard-card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-heading font-bold text-harrier-dark">System Health</h3>
+                <p class="text-sm text-gray-600">Current system status</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-700">Database</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check mr-1"></i>Healthy
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-700">Server Load</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Moderate
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-700">Storage</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check mr-1"></i>75% Available
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-700">Backup Status</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check mr-1"></i>Up to Date
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // User Growth Chart
+    const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+    new Chart(userGrowthCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'New Users',
+                data: [65, 89, 120, 151, 180, 210],
+                borderColor: '#ed6663',
+                backgroundColor: 'rgba(237, 102, 99, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Page Views',
+                data: [1200, 1900, 3000, 5000, 2000, 3000, 1500],
+                backgroundColor: '#3b82f6'
+            }, {
+                label: 'Inquiries',
+                data: [120, 190, 300, 500, 200, 300, 150],
+                backgroundColor: '#10b981'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

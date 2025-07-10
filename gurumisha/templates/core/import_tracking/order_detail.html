@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order {{ order.order_number }} - Import Tracking - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="bg-harrier-dark py-16">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
+                    ORDER {{ order.order_number }}
+                </h1>
+                <p class="text-xl text-gray-300">
+                    {{ order.year }} {{ order.brand }} {{ order.model }}
+                </p>
+            </div>
+            <div class="mt-6 lg:mt-0">
+                <span class="px-4 py-2 rounded-lg text-lg font-medium
+                    {% if order.status == 'delivered' %}bg-green-500 text-white
+                    {% elif order.status == 'cancelled' %}bg-red-500 text-white
+                    {% elif order.status in 'in_transit,shipped' %}bg-blue-500 text-white
+                    {% else %}bg-yellow-500 text-white{% endif %}">
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Section -->
+<section class="py-16 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Progress Timeline -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-heading font-bold text-harrier-dark mb-6">Import Progress</h2>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mb-8">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Overall Progress</span>
+                            <span>{{ progress_percentage }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-harrier-red h-3 rounded-full transition-all duration-500" 
+                                 style="width: {{ progress_percentage }}%"></div>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-2">
+                            {% if order.estimated_days_remaining > 0 %}
+                                Estimated {{ order.estimated_days_remaining }} days remaining
+                            {% else %}
+                                Process completed
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Stage Timeline -->
+                    <div class="space-y-6">
+                        {% for stage in stages %}
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold
+                                    {% if stage.is_completed %}bg-green-500
+                                    {% elif stage.is_current %}bg-harrier-red
+                                    {% else %}bg-gray-300{% endif %}">
+                                    {% if stage.is_completed %}
+                                        <i class="fas fa-check"></i>
+                                    {% else %}
+                                        {{ stage.number }}
+                                    {% endif %}
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-harrier-dark
+                                        {% if stage.is_current %}text-harrier-red{% endif %}">
+                                        {{ stage.title }}
+                                    </h3>
+                                    <p class="text-gray-600">{{ stage.description }}</p>
+                                    {% if stage.is_current %}
+                                        <div class="mt-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-harrier-red bg-opacity-10 text-harrier-red">
+                                                <span class="w-2 h-2 bg-harrier-red rounded-full mr-2 animate-pulse"></span>
+                                                Current Stage
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if not forloop.last %}
+                                <div class="ml-5 w-px h-6 bg-gray-300"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Status History -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-heading font-bold text-harrier-dark">Status History</h2>
+                        <button class="text-harrier-red hover:text-harrier-dark text-sm font-medium"
+                                hx-get="{% url 'core:import_order_timeline_htmx' order.order_number %}"
+                                hx-target="#timeline-container"
+                                hx-indicator="#timeline-loading">
+                            <i class="fas fa-sync-alt mr-1"></i>Refresh
+                        </button>
+                    </div>
+
+                    <!-- Loading indicator -->
+                    <div id="timeline-loading" class="htmx-indicator text-center py-4">
+                        <div class="inline-flex items-center">
+                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-harrier-red mr-2"></div>
+                            <span class="text-gray-600">Updating...</span>
+                        </div>
+                    </div>
+
+                    <!-- Timeline container -->
+                    <div id="timeline-container"
+                         hx-get="{% url 'core:import_order_timeline_htmx' order.order_number %}"
+                         hx-trigger="load, every 60s">
+                        <div class="space-y-4">
+                            {% for history in status_history %}
+                                <div class="flex items-start border-l-4 border-harrier-red pl-4 py-2">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-medium text-harrier-dark">
+                                                {{ history.get_new_status_display }}
+                                            </span>
+                                            <span class="text-sm text-gray-500">
+                                                {{ history.created_at|date:"M d, Y H:i" }}
+                                            </span>
+                                        </div>
+                                        {% if history.change_reason %}
+                                            <p class="text-gray-600 text-sm">{{ history.change_reason }}</p>
+                                        {% endif %}
+                                        {% if history.estimated_date %}
+                                            <p class="text-sm text-blue-600">
+                                                <i class="fas fa-calendar mr-1"></i>
+                                                Estimated: {{ history.estimated_date|date:"M d, Y" }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-gray-600">No status updates available yet.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents -->
+                {% if documents %}
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-heading font-bold text-harrier-dark mb-6">Documents</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for document in documents %}
+                            <div class="border border-gray-200 rounded-lg p-4 hover:border-harrier-red transition-colors">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="font-medium text-harrier-dark">{{ document.title }}</h3>
+                                    <span class="text-xs text-gray-500">{{ document.get_document_type_display }}</span>
+                                </div>
+                                {% if document.description %}
+                                    <p class="text-sm text-gray-600 mb-3">{{ document.description }}</p>
+                                {% endif %}
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-500">{{ document.created_at|date:"M d, Y" }}</span>
+                                    <a href="{{ document.document_file.url }}" 
+                                       target="_blank"
+                                       class="text-harrier-red hover:text-harrier-dark text-sm font-medium">
+                                        <i class="fas fa-download mr-1"></i>Download
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Order Summary -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-heading font-bold text-harrier-dark mb-4">Order Summary</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Order Number:</span>
+                            <span class="font-medium">{{ order.order_number }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Vehicle:</span>
+                            <span class="font-medium">{{ order.year }} {{ order.brand }} {{ order.model }}</span>
+                        </div>
+                        {% if order.chassis_number %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Chassis Number:</span>
+                            <span class="font-medium">{{ order.chassis_number }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Origin:</span>
+                            <span class="font-medium">{{ order.origin_country }}</span>
+                        </div>
+                        {% if order.quotation_amount %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Quotation:</span>
+                            <span class="font-medium">KSh {{ order.quotation_amount|floatformat:0 }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Order Date:</span>
+                            <span class="font-medium">{{ order.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Information -->
+                {% if order.vessel_name or order.bill_of_lading %}
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-heading font-bold text-harrier-dark mb-4">Shipping Details</h3>
+                    <div class="space-y-3 text-sm">
+                        {% if order.vessel_name %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Vessel:</span>
+                            <span class="font-medium">{{ order.vessel_name }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order.bill_of_lading %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Bill of Lading:</span>
+                            <span class="font-medium">{{ order.bill_of_lading }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order.departure_date %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Departure:</span>
+                            <span class="font-medium">{{ order.departure_date|date:"M d, Y" }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order.estimated_arrival_date %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">ETA:</span>
+                            <span class="font-medium">{{ order.estimated_arrival_date|date:"M d, Y" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Contact Support -->
+                <div class="bg-harrier-red rounded-lg p-6 text-white">
+                    <h3 class="text-xl font-heading font-bold mb-4">Need Help?</h3>
+                    <p class="mb-4">Contact our import specialists for assistance with your order.</p>
+                    <div class="space-y-2">
+                        <a href="tel:+254700000000" class="block text-white hover:text-gray-200">
+                            <i class="fas fa-phone mr-2"></i>+254 700 000 000
+                        </a>
+                        <a href="mailto:imports@gurumisha.com" class="block text-white hover:text-gray-200">
+                            <i class="fas fa-envelope mr-2"></i>imports@gurumisha.com
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Back to Dashboard -->
+                <a href="{% url 'core:import_order_tracking' %}" 
+                   class="block w-full btn-harrier-secondary text-center">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh status updates every 30 seconds
+    setInterval(function() {
+        htmx.trigger(document.querySelector('[hx-get*="status"]'), 'refresh');
+    }, 30000);
+</script>
+{% endblock %}

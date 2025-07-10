@@ -1,0 +1,12 @@
+{% load static %}
+
+<!-- Role-based Dashboard Routing -->
+{% if user.role == 'admin' %}
+    {% include 'core/dashboard/admin_dashboard.html' %}
+{% elif user.role == 'vendor' %}
+    {% include 'core/dashboard/vendor_dashboard.html' %}
+{% else %}
+    {% include 'core/dashboard/user_dashboard.html' %}
+{% endif %}
+
+

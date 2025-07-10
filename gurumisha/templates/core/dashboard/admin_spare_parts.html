@@ -1,0 +1,283 @@
+{% extends 'core/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Spare Parts Overview - Admin Dashboard{% endblock %}
+
+{% block dashboard_title %}Spare Parts System Overview{% endblock %}
+
+{% block sidebar_nav %}
+    <li>
+        <a href="{% url 'core:dashboard' %}" class="dashboard-nav-link">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'core:admin_users' %}" class="dashboard-nav-link">
+            <i class="fas fa-users"></i>
+            <span>Users</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'core:admin_vendors' %}" class="dashboard-nav-link">
+            <i class="fas fa-store"></i>
+            <span>Vendors</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'core:admin_listings' %}" class="dashboard-nav-link">
+            <i class="fas fa-car"></i>
+            <span>Car Listings</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'core:admin_spare_parts' %}" class="dashboard-nav-link active">
+            <i class="fas fa-cogs"></i>
+            <span>Spare Parts</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'core:admin_analytics' %}" class="dashboard-nav-link">
+            <i class="fas fa-chart-bar"></i>
+            <span>Analytics</span>
+        </a>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- System Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-blue-600">{{ total_parts }}</div>
+            <div class="admin-stat-label">Total Parts</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-arrow-up text-green-500"></i> System-wide
+            </div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">{{ total_suppliers }}</div>
+            <div class="admin-stat-label">Active Suppliers</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-truck text-blue-500"></i> Verified
+            </div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-purple-600">{{ total_categories }}</div>
+            <div class="admin-stat-label">Categories</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-tags text-purple-500"></i> Active
+            </div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-red-600">KSh {{ total_stock_value|floatformat:0 }}</div>
+            <div class="admin-stat-label">Total Stock Value</div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-dollar-sign text-green-500"></i> Current
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts and Quick Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Inventory Alerts -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h2 class="admin-card-title">Inventory Alerts</h2>
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                    {{ active_alerts }} Active
+                </span>
+            </div>
+            <div class="admin-card-content">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-red-800">Low Stock Items</p>
+                                <p class="text-sm text-red-600">{{ low_stock_count }} parts need restocking</p>
+                            </div>
+                        </div>
+                        <button class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-yellow-500 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-yellow-800">Pending Orders</p>
+                                <p class="text-sm text-yellow-600">Review purchase orders</p>
+                            </div>
+                        </div>
+                        <button class="text-yellow-600 hover:text-yellow-800">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line text-blue-500 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-blue-800">Sales Report</p>
+                                <p class="text-sm text-blue-600">Generate monthly report</p>
+                            </div>
+                        </div>
+                        <button class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h2 class="admin-card-title">Quick Actions</h2>
+            </div>
+            <div class="admin-card-content">
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="admin-action-btn">
+                        <i class="fas fa-plus text-green-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium">Add Supplier</span>
+                    </button>
+                    
+                    <button class="admin-action-btn">
+                        <i class="fas fa-tags text-blue-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium">Manage Categories</span>
+                    </button>
+                    
+                    <button class="admin-action-btn">
+                        <i class="fas fa-file-export text-purple-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium">Export Data</span>
+                    </button>
+                    
+                    <button class="admin-action-btn">
+                        <i class="fas fa-cog text-gray-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium">System Settings</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Monthly Revenue Chart -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h2 class="admin-card-title">Monthly Revenue</h2>
+                <select class="admin-select text-sm">
+                    <option>Last 6 months</option>
+                    <option>Last 12 months</option>
+                </select>
+            </div>
+            <div class="admin-card-content">
+                <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div class="text-center">
+                        <i class="fas fa-chart-line text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-600">Revenue chart would be displayed here</p>
+                        <p class="text-sm text-gray-500">Integration with Chart.js or similar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Selling Parts -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h2 class="admin-card-title">Top Selling Parts</h2>
+                <button class="admin-btn-secondary text-sm">View All</button>
+            </div>
+            <div class="admin-card-content">
+                <div class="space-y-4">
+                    {% for part in top_selling_parts|slice:":5" %}
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-cog text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ part.name }}</p>
+                                    <p class="text-sm text-gray-600">{{ part.vendor.company_name }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-semibold text-harrier-red">{{ part.total_sold|default:0 }} sold</p>
+                                <p class="text-sm text-gray-600">KSh {{ part.price|floatformat:0 }}</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-chart-bar text-gray-300 text-3xl mb-2"></i>
+                            <p class="text-gray-500">No sales data available</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Recent Spare Parts Orders</h2>
+            <a href="#" class="admin-btn-secondary">View All Orders</a>
+        </div>
+        <div class="admin-card-content">
+            {% if recent_orders %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="admin-table-header">Order</th>
+                                <th class="admin-table-header">Customer</th>
+                                <th class="admin-table-header">Items</th>
+                                <th class="admin-table-header">Total</th>
+                                <th class="admin-table-header">Status</th>
+                                <th class="admin-table-header">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for order in recent_orders %}
+                                <tr class="admin-table-row">
+                                    <td class="admin-table-cell">
+                                        <div class="font-medium text-gray-900">#{{ order.order_number }}</div>
+                                    </td>
+                                    <td class="admin-table-cell">
+                                        <div>
+                                            <div class="font-medium text-gray-900">{{ order.customer_name }}</div>
+                                            <div class="text-sm text-gray-500">{{ order.customer_email }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="admin-table-cell">
+                                        <div class="text-sm text-gray-900">{{ order.items.count }} item{{ order.items.count|pluralize }}</div>
+                                    </td>
+                                    <td class="admin-table-cell">
+                                        <div class="font-medium text-gray-900">KSh {{ order.total_amount|floatformat:0 }}</div>
+                                    </td>
+                                    <td class="admin-table-cell">
+                                        <span class="admin-status-badge admin-status-{{ order.status }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="admin-table-cell">
+                                        <div class="text-sm text-gray-900">{{ order.created_at|date:"M d, Y" }}</div>
+                                        <div class="text-sm text-gray-500">{{ order.created_at|time:"H:i" }}</div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-shopping-bag text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No orders yet</h3>
+                    <p class="text-gray-500">Spare parts orders will appear here once customers start purchasing.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,990 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Vendor Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_description %}Manage your business preferences and account settings{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">Settings</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Settings Header -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 font-montserrat">Business Settings</h2>
+                    <p class="text-blue-100 text-lg font-raleway">Configure your preferences and manage your account</p>
+                    <div class="flex items-center mt-4 space-x-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-bell mr-2"></i>
+                            <span class="text-sm">Notifications</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-2"></i>
+                            <span class="text-sm">Business Hours</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-credit-card mr-2"></i>
+                            <span class="text-sm">Payment Settings</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-cogs text-4xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Navigation Tabs -->
+    <div class="mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="flex flex-wrap border-b border-gray-200/50">
+                <button onclick="showTab('notifications')" id="tab-notifications" class="settings-tab active px-6 py-4 text-sm font-bold transition-all duration-200 font-montserrat">
+                    <i class="fas fa-bell mr-2"></i>Notifications
+                </button>
+                <button onclick="showTab('business-hours')" id="tab-business-hours" class="settings-tab px-6 py-4 text-sm font-bold transition-all duration-200 font-montserrat">
+                    <i class="fas fa-clock mr-2"></i>Business Hours
+                </button>
+                <button onclick="showTab('payment')" id="tab-payment" class="settings-tab px-6 py-4 text-sm font-bold transition-all duration-200 font-montserrat">
+                    <i class="fas fa-credit-card mr-2"></i>Payment Settings
+                </button>
+                <button onclick="showTab('account')" id="tab-account" class="settings-tab px-6 py-4 text-sm font-bold transition-all duration-200 font-montserrat">
+                    <i class="fas fa-user-cog mr-2"></i>Account Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Content -->
+    <div class="animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Notifications Settings -->
+        <div id="notifications-content" class="settings-content">
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-blue-500/5 to-transparent">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-bell text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Notification Preferences</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Choose how you want to be notified about important events</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="setting_type" value="notifications">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Email Notifications -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                    <i class="fas fa-envelope mr-2 text-blue-500"></i>
+                                    Email Notifications
+                                </h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <label class="font-medium text-gray-700">General Email Notifications</label>
+                                            <p class="text-sm text-gray-500">Receive email updates about your account</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="email_notifications" class="sr-only peer" {% if vendor.email_notifications %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <label class="font-medium text-gray-700">New Inquiry Alerts</label>
+                                            <p class="text-sm text-gray-500">Get notified when customers send inquiries</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="inquiry_notifications" class="sr-only peer" {% if vendor.inquiry_notifications %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <label class="font-medium text-gray-700">Order Updates</label>
+                                            <p class="text-sm text-gray-500">Receive notifications about new orders</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="order_notifications" class="sr-only peer" {% if vendor.order_notifications %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SMS Notifications -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                    <i class="fas fa-sms mr-2 text-green-500"></i>
+                                    SMS Notifications
+                                </h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <label class="font-medium text-gray-700">SMS Alerts</label>
+                                            <p class="text-sm text-gray-500">Receive SMS for urgent notifications</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="sms_notifications" class="sr-only peer" {% if vendor.sms_notifications %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-6 border-t border-gray-200">
+                            <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                                <i class="fas fa-save mr-2"></i>Save Notification Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Hours Settings -->
+        <div id="business-hours-content" class="settings-content hidden">
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-orange-500/5 to-transparent">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-clock text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Business Hours</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Set your operating hours and timezone</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="setting_type" value="business_hours">
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Operating Hours -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-business-time mr-2 text-orange-500"></i>
+                                    Operating Hours
+                                </h4>
+
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-gray-600 mb-4">
+                                        <div>Mon</div>
+                                        <div>Tue</div>
+                                        <div>Wed</div>
+                                        <div>Thu</div>
+                                        <div>Fri</div>
+                                        <div>Sat</div>
+                                        <div>Sun</div>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Monday:</label>
+                                            <input type="time" name="monday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="09:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="monday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="18:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="monday_closed" class="mr-2">
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Tuesday:</label>
+                                            <input type="time" name="tuesday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="09:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="tuesday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="18:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="tuesday_closed" class="mr-2">
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Wednesday:</label>
+                                            <input type="time" name="wednesday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="09:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="wednesday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="18:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="wednesday_closed" class="mr-2">
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Thursday:</label>
+                                            <input type="time" name="thursday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="09:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="thursday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="18:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="thursday_closed" class="mr-2">
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Friday:</label>
+                                            <input type="time" name="friday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="09:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="friday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="18:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="friday_closed" class="mr-2">
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Saturday:</label>
+                                            <input type="time" name="saturday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="09:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="saturday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="15:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="saturday_closed" class="mr-2">
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <label class="w-20 text-sm font-medium">Sunday:</label>
+                                            <input type="time" name="sunday_open" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="10:00">
+                                            <span class="text-gray-500">to</span>
+                                            <input type="time" name="sunday_close" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" value="14:00">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="sunday_closed" class="mr-2" checked>
+                                                <span class="text-sm">Closed</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timezone and Additional Settings -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-globe mr-2 text-blue-500"></i>
+                                    Timezone & Preferences
+                                </h4>
+
+                                <div class="space-y-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-harrier-dark mb-2 font-montserrat">
+                                            <i class="fas fa-clock mr-1 text-blue-500"></i>Timezone
+                                        </label>
+                                        <select name="timezone" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm font-raleway">
+                                            <option value="Africa/Nairobi" {% if vendor.timezone == 'Africa/Nairobi' %}selected{% endif %}>East Africa Time (EAT)</option>
+                                            <option value="UTC" {% if vendor.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                            <option value="Africa/Cairo" {% if vendor.timezone == 'Africa/Cairo' %}selected{% endif %}>Central Africa Time (CAT)</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-bold text-harrier-dark mb-2 font-montserrat">
+                                            <i class="fas fa-info-circle mr-1 text-green-500"></i>Business Hours Note
+                                        </label>
+                                        <textarea name="business_hours_note" rows="4"
+                                                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm font-raleway"
+                                                  placeholder="Add any special notes about your business hours, holidays, or availability...">{{ vendor.business_hours_note|default:'' }}</textarea>
+                                    </div>
+
+                                    <div class="bg-blue-50 rounded-lg p-4">
+                                        <h5 class="font-bold text-blue-800 mb-2">Quick Setup Options</h5>
+                                        <div class="space-y-2">
+                                            <button type="button" onclick="setStandardHours()" class="w-full text-left px-3 py-2 bg-white rounded-lg hover:bg-blue-100 transition-colors text-sm">
+                                                📅 Standard Business Hours (9 AM - 6 PM, Mon-Fri)
+                                            </button>
+                                            <button type="button" onclick="setExtendedHours()" class="w-full text-left px-3 py-2 bg-white rounded-lg hover:bg-blue-100 transition-colors text-sm">
+                                                🕐 Extended Hours (8 AM - 8 PM, Mon-Sat)
+                                            </button>
+                                            <button type="button" onclick="set24Hours()" class="w-full text-left px-3 py-2 bg-white rounded-lg hover:bg-blue-100 transition-colors text-sm">
+                                                🌙 24/7 Operations
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-6 border-t border-gray-200">
+                            <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                                <i class="fas fa-save mr-2"></i>Save Business Hours
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Settings -->
+        <div id="payment-content" class="settings-content hidden">
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-green-500/5 to-transparent">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-credit-card text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Payment Settings</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Configure your payment methods and banking details</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="setting_type" value="payment">
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- M-Pesa Settings -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-mobile-alt mr-2 text-green-500"></i>
+                                    M-Pesa Settings
+                                </h4>
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-harrier-dark mb-2 font-montserrat">
+                                            <i class="fas fa-phone mr-1 text-green-500"></i>M-Pesa Number
+                                        </label>
+                                        <input type="tel" name="mpesa_number" value="{{ vendor.mpesa_number|default:'' }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm font-raleway"
+                                               placeholder="254712345678">
+                                        <p class="text-xs text-gray-500 mt-1">Enter your M-Pesa registered phone number</p>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                                        <div>
+                                            <label class="font-medium text-green-700">Accept M-Pesa Payments</label>
+                                            <p class="text-sm text-green-600">Allow customers to pay via M-Pesa</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="accept_mpesa" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bank Details -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-university mr-2 text-blue-500"></i>
+                                    Bank Details
+                                </h4>
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-harrier-dark mb-2 font-montserrat">
+                                            <i class="fas fa-building mr-1 text-blue-500"></i>Bank Name
+                                        </label>
+                                        <select name="bank_name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm font-raleway">
+                                            <option value="">Select Bank</option>
+                                            <option value="KCB">KCB Bank</option>
+                                            <option value="Equity">Equity Bank</option>
+                                            <option value="Cooperative">Cooperative Bank</option>
+                                            <option value="ABSA">ABSA Bank</option>
+                                            <option value="Standard Chartered">Standard Chartered</option>
+                                            <option value="DTB">Diamond Trust Bank</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-bold text-harrier-dark mb-2 font-montserrat">
+                                            <i class="fas fa-hashtag mr-1 text-blue-500"></i>Account Number
+                                        </label>
+                                        <input type="text" name="account_number" value="{{ vendor.account_number|default:'' }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm font-raleway"
+                                               placeholder="Enter your account number">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-bold text-harrier-dark mb-2 font-montserrat">
+                                            <i class="fas fa-user mr-1 text-blue-500"></i>Account Name
+                                        </label>
+                                        <input type="text" name="account_name" value="{{ vendor.account_name|default:'' }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm font-raleway"
+                                               placeholder="Account holder name">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Methods -->
+                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                            <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                <i class="fas fa-credit-card mr-2 text-purple-500"></i>
+                                Accepted Payment Methods
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-mobile-alt text-green-500 mr-3"></i>
+                                        <span class="font-medium">M-Pesa</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="payment_mpesa" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-university text-blue-500 mr-3"></i>
+                                        <span class="font-medium">Bank Transfer</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="payment_bank" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-money-bill text-yellow-500 mr-3"></i>
+                                        <span class="font-medium">Cash</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="payment_cash" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-6 border-t border-gray-200">
+                            <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                                <i class="fas fa-save mr-2"></i>Save Payment Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Settings -->
+        <div id="account-content" class="settings-content hidden">
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-purple-500/5 to-transparent">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user-cog text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Account Settings</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Manage your account preferences and security settings</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="setting_type" value="account">
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Profile Visibility -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-eye mr-2 text-purple-500"></i>
+                                    Profile Visibility
+                                </h4>
+
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                                        <div>
+                                            <label class="font-medium text-purple-700">Public Profile</label>
+                                            <p class="text-sm text-purple-600">Make your profile visible to customers</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="public_profile" class="sr-only peer" {% if vendor.public_profile %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                        </label>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                                        <div>
+                                            <label class="font-medium text-blue-700">Show Contact Info</label>
+                                            <p class="text-sm text-blue-600">Display phone and email on listings</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="show_contact" class="sr-only peer" {% if vendor.show_contact %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                                        <div>
+                                            <label class="font-medium text-green-700">Auto-approve Inquiries</label>
+                                            <p class="text-sm text-green-600">Automatically approve customer inquiries</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="auto_approve_inquiries" class="sr-only peer" {% if vendor.auto_approve_inquiries %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Security Settings -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-shield-alt mr-2 text-red-500"></i>
+                                    Security Settings
+                                </h4>
+
+                                <div class="space-y-4">
+                                    <div class="p-4 bg-red-50 rounded-lg">
+                                        <h5 class="font-bold text-red-700 mb-2">Two-Factor Authentication</h5>
+                                        <p class="text-sm text-red-600 mb-3">Add an extra layer of security to your account</p>
+                                        <button type="button" onclick="setup2FA()" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                                            <i class="fas fa-mobile-alt mr-2"></i>Setup 2FA
+                                        </button>
+                                    </div>
+
+                                    <div class="p-4 bg-yellow-50 rounded-lg">
+                                        <h5 class="font-bold text-yellow-700 mb-2">Change Password</h5>
+                                        <p class="text-sm text-yellow-600 mb-3">Update your account password</p>
+                                        <button type="button" onclick="changePassword()" class="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors font-medium">
+                                            <i class="fas fa-key mr-2"></i>Change Password
+                                        </button>
+                                    </div>
+
+                                    <div class="p-4 bg-gray-50 rounded-lg">
+                                        <h5 class="font-bold text-gray-700 mb-2">Login Activity</h5>
+                                        <p class="text-sm text-gray-600 mb-3">View recent login activity</p>
+                                        <button type="button" onclick="viewLoginActivity()" class="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                                            <i class="fas fa-history mr-2"></i>View Activity
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Actions -->
+                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                            <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                <i class="fas fa-tools mr-2 text-orange-500"></i>
+                                Account Actions
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <button type="button" onclick="exportData()" class="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                    <i class="fas fa-download text-blue-500 text-2xl mb-2"></i>
+                                    <span class="font-medium text-blue-700">Export Data</span>
+                                    <span class="text-xs text-blue-600">Download your data</span>
+                                </button>
+
+                                <button type="button" onclick="deactivateAccount()" class="flex flex-col items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                                    <i class="fas fa-pause text-yellow-500 text-2xl mb-2"></i>
+                                    <span class="font-medium text-yellow-700">Deactivate</span>
+                                    <span class="text-xs text-yellow-600">Temporarily disable</span>
+                                </button>
+
+                                <button type="button" onclick="deleteAccount()" class="flex flex-col items-center p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                                    <i class="fas fa-trash text-red-500 text-2xl mb-2"></i>
+                                    <span class="font-medium text-red-700">Delete Account</span>
+                                    <span class="text-xs text-red-600">Permanently remove</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-6 border-t border-gray-200">
+                            <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-bold hover:from-purple-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                                <i class="fas fa-save mr-2"></i>Save Account Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced vendor settings with modern UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize settings page
+    initializeSettingsTabs();
+    initializeBusinessHours();
+    initializeFormValidation();
+
+    // Auto-save functionality
+    initializeAutoSave();
+});
+
+// Settings tabs functionality
+function initializeSettingsTabs() {
+    // Show first tab by default
+    showTab('notifications');
+}
+
+function showTab(tabName) {
+    // Hide all content sections
+    const contents = document.querySelectorAll('.settings-content');
+    contents.forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    // Remove active class from all tabs
+    const tabs = document.querySelectorAll('.settings-tab');
+    tabs.forEach(tab => {
+        tab.classList.remove('active', 'bg-harrier-red', 'text-white');
+        tab.classList.add('text-gray-600', 'hover:text-harrier-red');
+    });
+
+    // Show selected content
+    const selectedContent = document.getElementById(tabName + '-content');
+    if (selectedContent) {
+        selectedContent.classList.remove('hidden');
+        selectedContent.classList.add('animate-fade-in-up');
+    }
+
+    // Activate selected tab
+    const selectedTab = document.getElementById('tab-' + tabName);
+    if (selectedTab) {
+        selectedTab.classList.add('active', 'bg-harrier-red', 'text-white');
+        selectedTab.classList.remove('text-gray-600', 'hover:text-harrier-red');
+    }
+
+    // Store active tab
+    localStorage.setItem('vendor_settings_active_tab', tabName);
+}
+
+// Business hours functionality
+function initializeBusinessHours() {
+    // Add event listeners for closed checkboxes
+    const closedCheckboxes = document.querySelectorAll('input[name$="_closed"]');
+    closedCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const day = this.name.replace('_closed', '');
+            const openInput = document.querySelector(`input[name="${day}_open"]`);
+            const closeInput = document.querySelector(`input[name="${day}_close"]`);
+
+            if (this.checked) {
+                openInput.disabled = true;
+                closeInput.disabled = true;
+                openInput.style.opacity = '0.5';
+                closeInput.style.opacity = '0.5';
+            } else {
+                openInput.disabled = false;
+                closeInput.disabled = false;
+                openInput.style.opacity = '1';
+                closeInput.style.opacity = '1';
+            }
+        });
+
+        // Trigger change event to set initial state
+        checkbox.dispatchEvent(new Event('change'));
+    });
+}
+
+// Quick setup functions for business hours
+function setStandardHours() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const weekendDays = ['saturday', 'sunday'];
+
+    days.forEach(day => {
+        document.querySelector(`input[name="${day}_open"]`).value = '09:00';
+        document.querySelector(`input[name="${day}_close"]`).value = '18:00';
+        document.querySelector(`input[name="${day}_closed"]`).checked = false;
+    });
+
+    weekendDays.forEach(day => {
+        document.querySelector(`input[name="${day}_closed"]`).checked = true;
+    });
+
+    // Trigger change events
+    document.querySelectorAll('input[name$="_closed"]').forEach(cb => {
+        cb.dispatchEvent(new Event('change'));
+    });
+
+    showMessage('✅ Standard business hours applied!', 'success');
+}
+
+function setExtendedHours() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+    days.forEach(day => {
+        document.querySelector(`input[name="${day}_open"]`).value = '08:00';
+        document.querySelector(`input[name="${day}_close"]`).value = '20:00';
+        document.querySelector(`input[name="${day}_closed"]`).checked = false;
+    });
+
+    document.querySelector('input[name="sunday_closed"]').checked = true;
+
+    // Trigger change events
+    document.querySelectorAll('input[name$="_closed"]').forEach(cb => {
+        cb.dispatchEvent(new Event('change'));
+    });
+
+    showMessage('✅ Extended business hours applied!', 'success');
+}
+
+function set24Hours() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    days.forEach(day => {
+        document.querySelector(`input[name="${day}_open"]`).value = '00:00';
+        document.querySelector(`input[name="${day}_close"]`).value = '23:59';
+        document.querySelector(`input[name="${day}_closed"]`).checked = false;
+    });
+
+    // Trigger change events
+    document.querySelectorAll('input[name$="_closed"]').forEach(cb => {
+        cb.dispatchEvent(new Event('change'));
+    });
+
+    showMessage('✅ 24/7 operations schedule applied!', 'success');
+}
+
+// Security functions
+function setup2FA() {
+    showMessage('🔐 Opening 2FA setup...', 'info');
+    // This would typically open a modal or redirect to 2FA setup
+    setTimeout(() => {
+        showMessage('ℹ️ 2FA setup feature coming soon!', 'info');
+    }, 1000);
+}
+
+function changePassword() {
+    showMessage('🔑 Opening password change...', 'info');
+    // This would typically open a modal or redirect to password change
+    setTimeout(() => {
+        showMessage('ℹ️ Password change feature coming soon!', 'info');
+    }, 1000);
+}
+
+function viewLoginActivity() {
+    showMessage('📊 Loading login activity...', 'info');
+    // This would typically show login history
+    setTimeout(() => {
+        showMessage('ℹ️ Login activity feature coming soon!', 'info');
+    }, 1000);
+}
+
+// Account action functions
+function exportData() {
+    if (confirm('📦 Export all your vendor data?\n\nThis will create a downloadable file with all your listings, inquiries, and account information.')) {
+        showMessage('📊 Preparing data export...', 'info');
+
+        // Simulate export process
+        setTimeout(() => {
+            const link = document.createElement('a');
+            link.href = '/dashboard/vendor/export-data/';
+            link.download = `vendor_data_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+
+            showMessage('✅ Data export completed!', 'success');
+        }, 2000);
+    }
+}
+
+function deactivateAccount() {
+    if (confirm('⚠️ Temporarily deactivate your vendor account?\n\nThis will:\n• Hide all your listings\n• Pause new inquiries\n• Keep your data safe\n\nYou can reactivate anytime.')) {
+        showMessage('⏸️ Deactivating account...', 'warning');
+
+        // This would typically make an API call
+        setTimeout(() => {
+            showMessage('✅ Account deactivated. Contact support to reactivate.', 'success');
+        }, 2000);
+    }
+}
+
+function deleteAccount() {
+    const confirmation = prompt('⚠️ DANGER: Delete your vendor account permanently?\n\nThis action CANNOT be undone and will:\n• Delete all your listings\n• Remove all inquiries\n• Permanently delete your data\n\nType "DELETE MY ACCOUNT" to confirm:');
+
+    if (confirmation === 'DELETE MY ACCOUNT') {
+        showMessage('🗑️ Processing account deletion...', 'error');
+
+        // This would typically make an API call
+        setTimeout(() => {
+            showMessage('❌ Account deletion initiated. You will be logged out shortly.', 'error');
+        }, 2000);
+    } else if (confirmation !== null) {
+        showMessage('❌ Account deletion cancelled - confirmation text did not match.', 'warning');
+    }
+}
+
+// Auto-save functionality
+function initializeAutoSave() {
+    const forms = document.querySelectorAll('form');
+
+    forms.forEach(form => {
+        const inputs = form.querySelectorAll('input, textarea, select');
+
+        inputs.forEach(input => {
+            input.addEventListener('change', function() {
+                showSaveIndicator();
+            });
+        });
+    });
+}
+
+function showSaveIndicator() {
+    // Remove existing indicator
+    const existing = document.getElementById('saveIndicator');
+    if (existing) {
+        existing.remove();
+    }
+
+    // Create new indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'saveIndicator';
+    indicator.className = 'fixed top-4 left-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-2 rounded-xl shadow-xl z-50 animate-fade-in-up';
+    indicator.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span class="font-medium">Unsaved changes detected</span>
+        </div>
+    `;
+
+    document.body.appendChild(indicator);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (indicator.parentNode) {
+            indicator.style.transform = 'translateX(-100%)';
+            indicator.style.opacity = '0';
+            setTimeout(() => indicator.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Form validation
+function initializeFormValidation() {
+    const forms = document.querySelectorAll('form');
+
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalContent = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+            submitBtn.disabled = true;
+
+            // Re-enable after 3 seconds (in case of slow response)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+    });
+}
+
+// Enhanced message display
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    const icons = {
+        'success': '✅',
+        'error': '❌',
+        'info': 'ℹ️',
+        'warning': '⚠️'
+    };
+
+    const colors = {
+        'success': 'bg-gradient-to-r from-green-500 to-green-600',
+        'error': 'bg-gradient-to-r from-red-500 to-red-600',
+        'info': 'bg-gradient-to-r from-blue-500 to-blue-600',
+        'warning': 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+    };
+
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type] || colors.info} animate-fade-in-up`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <span class="mr-2 text-lg">${icons[type] || icons.info}</span>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Load saved tab on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTab = localStorage.getItem('vendor_settings_active_tab');
+    if (savedTab) {
+        showTab(savedTab);
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + S to save current form
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        const activeForm = document.querySelector('.settings-content:not(.hidden) form');
+        if (activeForm) {
+            activeForm.submit();
+            showMessage('💾 Saving settings...', 'info');
+        }
+    }
+
+    // Tab navigation with Ctrl + 1-4
+    if (event.ctrlKey && ['1', '2', '3', '4'].includes(event.key)) {
+        event.preventDefault();
+        const tabs = ['notifications', 'business-hours', 'payment', 'account'];
+        const tabIndex = parseInt(event.key) - 1;
+        if (tabs[tabIndex]) {
+            showTab(tabs[tabIndex]);
+        }
+    }
+});
+</script>
+
+<style>
+.settings-tab.active {
+    background: linear-gradient(135deg, #ed6663, #b91c1c);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.settings-tab:not(.active) {
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.settings-tab:not(.active):hover {
+    color: #ed6663;
+    background: rgba(237, 102, 99, 0.05);
+}
+</style>
+{% endblock %}

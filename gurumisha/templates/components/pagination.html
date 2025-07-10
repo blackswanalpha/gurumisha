@@ -1,0 +1,35 @@
+<!-- Reusable Pagination Component -->
+{% load static %}
+
+{% if page_obj.has_other_pages %}
+    <div class="flex justify-center mt-12">
+        <nav class="flex items-center space-x-2">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                    <i class="fas fa-chevron-left mr-1"></i>Previous
+                </a>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-md">
+                        {{ num }}
+                    </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                       class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                    Next<i class="fas fa-chevron-right ml-1"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+{% endif %}

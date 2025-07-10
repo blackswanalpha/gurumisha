@@ -1,0 +1,239 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Car Listings Management{% endblock %}
+{% block page_title %}Car Listings Management{% endblock %}
+{% block page_description %}Manage car listings and approvals{% endblock %}
+
+
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Car Listings</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    {% csrf_token %}
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value">{{ total_cars|default:0 }}</div>
+            <div class="admin-stat-label">Total Listings</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">{{ approved_cars|default:0 }}</div>
+            <div class="admin-stat-label">Approved Listings</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-orange-600">{{ pending_cars|default:0 }}</div>
+            <div class="admin-stat-label">Pending Approval</div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <!-- Status Filter -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-harrier-dark">Status:</label>
+                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm" 
+                            onchange="window.location.href='?status=' + this.value">
+                        <option value="">All Listings</option>
+                        <option value="approved" {% if current_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="pending" {% if current_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="flex items-center space-x-2">
+                <form method="GET" class="flex">
+                    <input type="text" name="search" placeholder="Search listings..." 
+                           value="{{ request.GET.search }}"
+                           class="px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-harrier-red focus:border-harrier-red text-sm">
+                    <button type="submit" class="bg-harrier-red text-white px-4 py-2 rounded-r-lg hover:bg-red-600 transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Car Listings Table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-heading font-bold text-harrier-dark">Car Listings</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Car Details
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Vendor
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Price
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Listed Date
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for car in cars %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-16 w-16">
+                                        {% if car.main_image %}
+                                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" 
+                                                 class="h-16 w-16 object-cover rounded-lg">
+                                        {% else %}
+                                            <div class="h-16 w-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-car text-gray-400 text-xl"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-harrier-dark">{{ car.title }}</div>
+                                        <div class="text-sm text-gray-500">{{ car.brand.name }} {{ car.model.name }}</div>
+                                        <div class="text-xs text-gray-500">{{ car.year }} • {{ car.get_condition_display }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-harrier-dark">{{ car.vendor.company_name }}</div>
+                                <div class="text-sm text-gray-500">{{ car.vendor.user.get_full_name|default:car.vendor.user.username }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-harrier-dark">KSh {{ car.price|floatformat:0 }}</div>
+                                {% if car.negotiable %}
+                                    <div class="text-xs text-blue-600">Negotiable</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if car.is_approved %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>Approved
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                        <i class="fas fa-clock mr-1"></i>Pending
+                                    </span>
+                                {% endif %}
+                                {% if car.status == 'featured' %}
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                            <i class="fas fa-star mr-1"></i>Featured
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ car.created_at|date:"M d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex items-center space-x-2">
+                                    {% if not car.is_approved %}
+                                        <button onclick="approveCar({{ car.id }})" 
+                                                class="text-green-600 hover:text-green-900 transition-colors">
+                                            <i class="fas fa-check mr-1"></i>Approve
+                                        </button>
+                                        <span class="text-gray-300">|</span>
+                                        <button onclick="rejectCar({{ car.id }})" 
+                                                class="text-red-600 hover:text-red-900 transition-colors">
+                                            <i class="fas fa-times mr-1"></i>Reject
+                                        </button>
+                                        <span class="text-gray-300">|</span>
+                                    {% endif %}
+                                    <a href="{% url 'core:car_detail' car.id %}" target="_blank" 
+                                       class="text-harrier-red hover:text-harrier-dark transition-colors">
+                                        <i class="fas fa-eye mr-1"></i>View
+                                    </a>
+                                    <span class="text-gray-300">|</span>
+                                    <a href="#" class="text-harrier-red hover:text-harrier-dark transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="text-gray-500">
+                                    <i class="fas fa-car text-4xl mb-4"></i>
+                                    <p class="text-lg">No car listings found</p>
+                                    <p class="text-sm">No car listings match your current filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function approveCar(carId) {
+    if (confirm('Are you sure you want to approve this car listing?')) {
+        fetch(`/dashboard/admin/approve-car/${carId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'approved') {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while approving the car listing.');
+        });
+    }
+}
+
+function rejectCar(carId) {
+    if (confirm('Are you sure you want to reject this car listing? This action cannot be undone.')) {
+        fetch(`/dashboard/admin/reject-car/${carId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'rejected') {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while rejecting the car listing.');
+        });
+    }
+}
+</script>
+{% endblock %}

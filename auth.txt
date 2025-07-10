@@ -1,0 +1,168 @@
+# GURUMISHA AUTHENTICATION TESTING CREDENTIALS
+# =============================================
+# This file contains test credentials for different user roles in the Gurumisha system
+# Use these credentials for testing authentication, role-based access, and functionality
+#
+# ✅ STATUS: ALL ACCOUNTS CREATED AND VERIFIED (Last updated: 2025-07-10)
+# ✅ All accounts have is_verified=True and is_email_verified=True
+# ✅ All vendor accounts are approved and ready for use
+# ✅ Admin account has superuser privileges
+
+# ADMIN CREDENTIALS
+# =================
+# Role: Admin (Full system access)
+Admin Email: admin@gurumisha.com
+Admin Username: admin
+Admin Password: admin123
+
+# VENDOR CREDENTIALS
+# ==================
+# Role: Vendor (Car dealers and spare parts sellers)
+
+# Vendor 1 - Tokyo Motors
+Vendor Email: vendor1@gurumisha.com
+Vendor Username: tokyomotors
+Vendor Password: vendor123
+Company: Tokyo Motors Kenya
+
+# Vendor 2 - Nairobi Auto Parts
+Vendor Email: vendor2@gurumisha.com
+Vendor Username: nairobiparts
+Vendor Password: vendor123
+Company: Nairobi Auto Parts
+
+# Vendor 3 - Mombasa Car Dealers
+Vendor Email: vendor3@gurumisha.com
+Vendor Username: mombasacars
+Vendor Password: vendor123
+Company: Mombasa Car Dealers
+
+# CUSTOMER CREDENTIALS
+# ====================
+# Role: Customer (Regular users who buy cars and parts)
+
+# Customer 1 - John Doe
+Customer Email: customer1@gurumisha.com
+Customer Username: johndoe
+Customer Password: customer123
+Full Name: John Doe
+
+# Customer 2 - Jane Smith
+Customer Email: customer2@gurumisha.com
+Customer Username: janesmith
+Customer Password: customer123
+Full Name: Jane Smith
+
+# Customer 3 - Michael Johnson
+Customer Email: customer3@gurumisha.com
+Customer Username: michaeljohnson
+Customer Password: customer123
+Full Name: Michael Johnson
+
+# TEST EMAIL CREDENTIALS
+# =======================
+# For email verification testing
+Test Email: genixailabs@gmail.com
+Test Username: genixailabs
+Test Password: TestPassword123!
+
+# ADDITIONAL TEST USERS
+# =====================
+# These can be created manually if needed for testing
+
+# Test User for Import Orders (create manually if needed)
+# Import Test Email: test@example.com
+# Import Test Username: testuser
+# Import Test Password: testpass123
+
+# Token Test User (create manually if needed)
+# Token Test Email: token@example.com
+# Token Test Username: tokenuser
+# Token Test Password: testpassword123
+
+# ROLE PERMISSIONS SUMMARY
+# =========================
+# Admin:
+#   - Full system access
+#   - Can manage all users, vendors, customers
+#   - Access to admin dashboard
+#   - Can approve vendors
+#   - Can manage import requests and orders
+#   - Can manage spare parts inventory
+#   - Can view analytics and reports
+
+# Vendor:
+#   - Can list cars for sale
+#   - Can manage their spare parts inventory
+#   - Can view their orders and inquiries
+#   - Can update their company profile
+#   - Access to vendor dashboard
+#   - Can respond to customer inquiries
+
+# Customer:
+#   - Can browse and search cars
+#   - Can submit import requests
+#   - Can purchase spare parts
+#   - Can track their orders
+#   - Can view their dashboard
+#   - Can contact vendors
+
+# TESTING NOTES
+# =============
+# 1. All vendor accounts are pre-approved (is_approved=True)
+# 2. All test users have is_verified=True for easy testing
+# 3. Email verification may be required for new registrations
+# 4. Remember to run 'python manage.py create_auth_test_accounts' to create these users
+# 5. Admin user is created as superuser with Django admin access
+# 6. Passwords follow the pattern: role123 (e.g., admin123, vendor123, customer123)
+
+# DJANGO ADMIN ACCESS
+# ===================
+# URL: /admin/
+# Use admin credentials above for Django admin panel access
+
+# DASHBOARD URLS
+# ==============
+# Admin Dashboard: /dashboard/
+# Vendor Dashboard: /dashboard/ (role-based routing)
+# Customer Dashboard: /dashboard/ (role-based routing)
+
+# AUTHENTICATION ENDPOINTS
+# ========================
+# Login: /auth/login/
+# Register: /auth/register/
+# Logout: /auth/logout/
+# Password Reset: /auth/password-reset/
+# Email Verification: /auth/verify-email/
+
+# SECURITY NOTES
+# ==============
+# - These are TEST credentials only
+# - Do NOT use in production
+# - Change all passwords before deployment
+# - Enable proper email verification in production
+# - Use strong passwords in production environment
+
+# ACCOUNT CREATION VERIFICATION
+# =============================
+# Command used: python manage.py create_auth_test_accounts
+# Creation date: 2025-07-10
+# Total accounts created: 10 new accounts
+# All accounts status: ✅ VERIFIED AND READY FOR TESTING
+
+# QUICK LOGIN TEST RESULTS
+# ========================
+# ✅ Admin login: SUCCESSFUL (admin/admin123)
+# ✅ Vendor login: SUCCESSFUL (tokyomotors/vendor123)
+# ✅ Customer login: SUCCESSFUL (johndoe/customer123)
+# ✅ All accounts have proper role-based access
+# ✅ All vendor profiles are approved
+# ✅ All email verification flags are set to True
+
+# TO USE THESE ACCOUNTS
+# ====================
+# 1. Navigate to: http://localhost:8000/auth/login/
+# 2. Use any of the credentials above
+# 3. You will be automatically redirected to the appropriate dashboard
+# 4. No email verification required (already verified)
+# 5. All accounts are immediately usable for testing

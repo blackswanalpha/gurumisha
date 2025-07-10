@@ -1,0 +1,147 @@
+{% load static %}
+
+<!-- Lazy Loading Image Component -->
+<!-- Usage: {% include 'components/lazy_image.html' with src='images/products-images/p1.jpg' alt='Product Image' class='w-full h-64 object-cover' placeholder_class='h-64' %} -->
+
+<div class="lazy-image-container relative overflow-hidden {{ container_class|default:'' }}" 
+     data-src="{% if src %}{% static src %}{% endif %}"
+     data-alt="{{ alt|default:'Image' }}">
+    
+    <!-- Placeholder/Skeleton -->
+    <div class="lazy-image-placeholder bg-gray-300 animate-pulse {{ placeholder_class|default:'w-full h-48' }} flex items-center justify-center">
+        <!-- Loading icon -->
+        <div class="text-gray-500">
+            <svg class="w-8 h-8 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                </path>
+            </svg>
+        </div>
+    </div>
+    
+    <!-- Actual Image (hidden initially) -->
+    <img class="lazy-image hidden {{ class|default:'w-full h-48 object-cover' }} transition-opacity duration-300" 
+         data-src="{% if src %}{% static src %}{% endif %}"
+         alt="{{ alt|default:'Image' }}"
+         loading="lazy">
+    
+    <!-- Error state -->
+    <div class="lazy-image-error hidden bg-gray-200 {{ placeholder_class|default:'w-full h-48' }} flex items-center justify-center">
+        <div class="text-gray-500 text-center">
+            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                </path>
+            </svg>
+            <p class="text-xs">Failed to load</p>
+        </div>
+    </div>
+</div>
+
+<!-- Lazy Loading JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Intersection Observer for lazy loading
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                loadLazyImage(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        rootMargin: '50px 0px', // Start loading 50px before the image comes into view
+        threshold: 0.1
+    });
+    
+    // Observe all lazy image containers
+    document.querySelectorAll('.lazy-image-container').forEach(container => {
+        imageObserver.observe(container);
+    });
+    
+    function loadLazyImage(container) {
+        const placeholder = container.querySelector('.lazy-image-placeholder');
+        const image = container.querySelector('.lazy-image');
+        const errorDiv = container.querySelector('.lazy-image-error');
+        const src = container.dataset.src;
+        
+        if (!src) {
+            showError();
+            return;
+        }
+        
+        // Create a new image to preload
+        const img = new Image();
+        
+        img.onload = function() {
+            // Image loaded successfully
+            image.src = src;
+            image.classList.remove('hidden');
+            image.classList.add('opacity-100');
+            placeholder.classList.add('hidden');
+        };
+        
+        img.onerror = function() {
+            // Image failed to load
+            showError();
+        };
+        
+        function showError() {
+            placeholder.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+        }
+        
+        // Start loading the image
+        img.src = src;
+    }
+});
+</script>
+
+<!-- Lazy Image Styles -->
+<style>
+    .lazy-image-container {
+        position: relative;
+    }
+    
+    .lazy-image {
+        transition: opacity 0.3s ease-in-out;
+    }
+    
+    .lazy-image.loaded {
+        opacity: 1;
+    }
+    
+    /* Ensure proper aspect ratio maintenance */
+    .lazy-image-placeholder,
+    .lazy-image-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Shimmer effect for placeholder */
+    .lazy-image-placeholder::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent
+        );
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% {
+            left: -100%;
+        }
+        100% {
+            left: 100%;
+        }
+    }
+</style>

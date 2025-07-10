@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ car.title }} - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="bg-harrier-gray py-4">
+    <div class="container mx-auto px-4">
+        <nav class="text-sm">
+            <ol class="flex items-center space-x-2">
+                <li><a href="{% url 'core:homepage' %}" class="text-harrier-dark hover:text-harrier-red">Home</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li><a href="{% url 'core:car_list' %}" class="text-harrier-dark hover:text-harrier-red">Cars</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li><a href="{% url 'core:car_list' %}?brand={{ car.brand.id }}" class="text-harrier-dark hover:text-harrier-red">{{ car.brand.name }}</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li class="text-harrier-red font-semibold">{{ car.model.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Page Header -->
+<div class="bg-harrier-dark text-white py-8">
+    <div class="container mx-auto px-4">
+        <h1 style="font-family: 'Saira Condensed', sans-serif; font-size: 46px; font-weight: 600; text-transform: uppercase; color: #fff; letter-spacing: 1px;">PRODUCT DETAIL</h1>
+    </div>
+</div>
+
+<!-- Car Detail -->
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Image Gallery -->
+            <div class="product-img-box">
+                <!-- Badges -->
+                {% if car.status == 'featured' %}
+                    <div class="badge-harrier-new">FEATURED</div>
+                {% endif %}
+                {% if car.condition == 'new' %}
+                    <div class="absolute top-2 left-20 bg-green-500 text-white px-2 py-1 text-xs font-semibold rounded">NEW</div>
+                {% endif %}
+
+                <!-- Main Image -->
+                <div class="product-image mb-4">
+                    <div class="product-full">
+                        {% if car.main_image %}
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-96 object-cover rounded" id="main-image">
+                        {% else %}
+                            <div class="w-full h-96 bg-gray-200 rounded flex items-center justify-center">
+                                <i class="fas fa-car text-gray-400 text-6xl"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Thumbnail Gallery -->
+                    {% if car.images.all %}
+                        <div class="more-views mt-4">
+                            <div class="grid grid-cols-4 gap-2">
+                                {% if car.main_image %}
+                                    <div class="more-views-items">
+                                        <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-20 object-cover rounded cursor-pointer border-2 border-harrier-red thumbnail" onclick="changeMainImage('{{ car.main_image.url }}')">
+                                    </div>
+                                {% endif %}
+                                {% for image in car.images.all %}
+                                    <div class="more-views-items">
+                                        <img src="{{ image.image.url }}" alt="{{ image.caption }}" class="w-full h-20 object-cover rounded cursor-pointer border-2 border-transparent hover:border-harrier-red thumbnail" onclick="changeMainImage('{{ image.image.url }}')">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Contact Actions -->
+                <div class="space-y-3 mt-6">
+                    <div class="toll-free">
+                        <a href="tel:+254700000000" class="flex items-center text-harrier-red hover:text-red-600">
+                            <i class="fa fa-phone mr-2"></i> +254 700 000 000
+                        </a>
+                    </div>
+                    <div class="ask-question">
+                        <a href="#" onclick="openInquiryModal()" class="flex items-center text-harrier-red hover:text-red-600">
+                            <i class="fa fa-question mr-2"></i> Ask a Question
+                        </a>
+                    </div>
+                    <div class="request-call">
+                        <a href="#" class="flex items-center text-harrier-red hover:text-red-600">
+                            <i class="fa fa-calculator mr-2"></i> Finance Calculator
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Car Information -->
+            <div class="product-shop">
+                <!-- Brand -->
+                <div class="brand text-xs text-harrier-red font-semibold uppercase tracking-wide mb-2">{{ car.brand.name }}</div>
+
+                <!-- Product Name -->
+                <div class="product-name mb-4">
+                    <h1 style="font-size: 24px; font-weight: normal; font-family: 'Saira Condensed', sans-serif; color: #333; text-transform: uppercase; letter-spacing: 0.5px;">{{ car.title }}</h1>
+                </div>
+
+                <!-- Ratings -->
+                <div class="ratings mb-4">
+                    <div class="rating-box flex items-center">
+                        <div class="flex text-yellow-400 mr-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                        <p class="rating-links text-sm text-harrier-muted">
+                            <a href="#" class="hover:text-harrier-red">{{ car.views_count }} View{{ car.views_count|pluralize }}</a>
+                            <span class="separator mx-2">|</span>
+                            <a href="#" class="hover:text-harrier-red">Add Your Review</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Price Block -->
+                <div class="price-block mb-6">
+                    <div class="price-box">
+                        <p class="special-price">
+                            <span class="price-label text-sm text-harrier-muted">Price:</span>
+                            <span class="price text-3xl font-bold text-harrier-red">KSh {{ car.price|floatformat:0 }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Specifications Table -->
+                <div class="spec-row mb-8" id="summarySpecs">
+                    <h2 style="font-family: 'Saira Condensed', sans-serif; font-size: 22px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #333; margin-bottom: 20px;">SPECIFICATIONS</h2>
+                    <table class="w-full spec-table-harrier">
+                        <tbody>
+                            <tr>
+                                <td class="label-spec">Mileage <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.mileage|floatformat:0 }} km</td>
+                            </tr>
+                            <tr>
+                                <td class="label-spec">Engine Size <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.engine_size|default:"N/A" }}</td>
+                            </tr>
+                            <tr class="odd">
+                                <td class="label-spec">Transmission <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.transmission|title }}</td>
+                            </tr>
+                            <tr class="odd">
+                                <td class="label-spec">Fuel Type <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.fuel_type|title }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-spec">Model Year <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.year }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-spec">Color <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.color }}</td>
+                            </tr>
+                            <tr class="odd">
+                                <td class="label-spec">Condition <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.condition|title }}</td>
+                            </tr>
+                            <tr class="odd">
+                                <td class="label-spec">Body Type <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.body_type|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-spec">Dealer <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.vendor.company_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-spec">Listed Date <span class="coln">:</span></td>
+                                <td class="value-spec">{{ car.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Email and Add to Links -->
+                <div class="email-addto-box mb-6">
+                    <ul class="add-to-links flex space-x-4 mb-4">
+                        <li>
+                            <a class="link-wishlist flex items-center text-harrier-red hover:text-red-600" href="#">
+                                <i class="fas fa-heart mr-2"></i><span>Add to Wishlist</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="link-compare flex items-center text-harrier-red hover:text-red-600" href="#">
+                                <i class="fas fa-balance-scale mr-2"></i><span>Add to Compare</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <p class="email-friend">
+                        <a href="#" onclick="openInquiryModal()" class="btn-harrier-primary px-6 py-3 w-full text-center block">
+                            <i class="fas fa-envelope mr-2"></i>CONTACT DEALER
+                        </a>
+                    </p>
+                </div>
+
+                <!-- Social Sharing -->
+                <div class="social mb-8">
+                    <h4 class="text-sm font-semibold text-harrier-dark mb-3">SHARE THIS CAR:</h4>
+                    <ul class="link flex space-x-2">
+                        <li class="fb">
+                            <a href="#" class="w-10 h-10 bg-blue-600 text-white rounded flex items-center justify-center hover:bg-blue-700 transition-colors">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                        </li>
+                        <li class="tw">
+                            <a href="#" class="w-10 h-10 bg-blue-400 text-white rounded flex items-center justify-center hover:bg-blue-500 transition-colors">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                        </li>
+                        <li class="googleplus">
+                            <a href="#" class="w-10 h-10 bg-red-600 text-white rounded flex items-center justify-center hover:bg-red-700 transition-colors">
+                                <i class="fab fa-google-plus-g"></i>
+                            </a>
+                        </li>
+                        <li class="linkedin">
+                            <a href="#" class="w-10 h-10 bg-blue-700 text-white rounded flex items-center justify-center hover:bg-blue-800 transition-colors">
+                                <i class="fab fa-linkedin-in"></i>
+                            </a>
+                        </li>
+                        <li class="whatsapp">
+                            <a href="#" class="w-10 h-10 bg-green-500 text-white rounded flex items-center justify-center hover:bg-green-600 transition-colors">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Dealer Info Card -->
+                <div class="bg-harrier-gray p-6 rounded-lg border">
+                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 18px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #333; margin-bottom: 20px;">DEALER INFORMATION</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-building text-harrier-red mr-3"></i>
+                            <span class="font-semibold">{{ car.vendor.company_name }}</span>
+                        </div>
+                        {% if car.vendor.user.phone %}
+                            <div class="flex items-center">
+                                <i class="fas fa-phone text-harrier-red mr-3"></i>
+                                <span>{{ car.vendor.user.phone }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope text-harrier-red mr-3"></i>
+                            <span>{{ car.vendor.user.email }}</span>
+                        </div>
+                        {% if car.vendor.is_approved %}
+                            <div class="flex items-center text-green-600">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="text-sm font-semibold">Verified Dealer</span>
+                            </div>
+                        {% endif %}
+                        <div class="pt-3 border-t border-gray-300">
+                            <a href="#" onclick="openInquiryModal()" class="btn-harrier-secondary w-full text-center block py-2">
+                                VIEW DEALER PROFILE
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Description and Features -->
+<section class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Description -->
+            <div>
+                <h2 class="text-2xl font-heading font-bold text-midnight mb-6">Description</h2>
+                <div class="prose prose-gray max-w-none">
+                    <p>{{ car.description }}</p>
+                </div>
+            </div>
+            
+            <!-- Features -->
+            <div>
+                <h2 class="text-2xl font-heading font-bold text-midnight mb-6">Features</h2>
+                {% if car.get_features_list %}
+                    <div class="grid grid-cols-1 gap-2">
+                        {% for feature in car.get_features_list %}
+                            <div class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span>{{ feature }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">No specific features listed.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Cars -->
+{% if related_cars %}
+<section class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-2xl font-heading font-bold text-midnight mb-8">Similar Cars</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for related_car in related_cars %}
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <div class="relative">
+                        {% if related_car.main_image %}
+                            <img src="{{ related_car.main_image.url }}" alt="{{ related_car.title }}" class="w-full h-40 object-cover">
+                        {% else %}
+                            <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-car text-gray-400 text-3xl"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-midnight mb-2 truncate">{{ related_car.title }}</h3>
+                        <p class="text-sm text-gray-600 mb-3">{{ related_car.year }} • {{ related_car.mileage|floatformat:0 }} km</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-bold text-crimson">KSh {{ related_car.price|floatformat:0 }}</span>
+                            <a href="{% url 'core:car_detail' related_car.pk %}" class="text-sm bg-crimson text-white px-3 py-1 rounded hover:bg-electric-red transition-colors">View</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Inquiry Modal -->
+<div id="inquiryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">Contact Dealer</h3>
+                <button onclick="closeInquiryModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form hx-post="{% url 'core:create_inquiry' %}" hx-target="#inquiry-result" hx-swap="innerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="inquiry_type" value="car">
+                <input type="hidden" name="car_id" value="{{ car.id }}">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <input type="text" name="subject" value="Inquiry about {{ car.title }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crimson focus:border-transparent" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                        <textarea name="message" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crimson focus:border-transparent" placeholder="I'm interested in this car. Please provide more details..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone (Optional)</label>
+                        <input type="tel" name="phone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crimson focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div id="inquiry-result" class="mt-4"></div>
+                
+                <div class="flex space-x-4 mt-6">
+                    <button type="button" onclick="closeInquiryModal()" class="flex-1 btn-secondary py-3">Cancel</button>
+                    <button type="submit" class="flex-1 btn-primary py-3">Send Inquiry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function changeMainImage(src) {
+        document.getElementById('main-image').src = src;
+        
+        // Update thumbnail borders
+        document.querySelectorAll('.thumbnail').forEach(thumb => {
+            thumb.classList.remove('border-crimson');
+            thumb.classList.add('border-transparent');
+        });
+        
+        // Add border to clicked thumbnail
+        event.target.classList.remove('border-transparent');
+        event.target.classList.add('border-crimson');
+    }
+    
+    function openInquiryModal() {
+        document.getElementById('inquiryModal').classList.remove('hidden');
+    }
+    
+    function closeInquiryModal() {
+        document.getElementById('inquiryModal').classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('inquiryModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeInquiryModal();
+        }
+    });
+</script>
+{% endblock %}

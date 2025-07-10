@@ -1,0 +1,900 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block dashboard_title %}Business Analytics{% endblock %}
+{% block page_title %}Business Analytics{% endblock %}
+{% block page_description %}Track your performance and business insights{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Analytics</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Analytics Header -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 font-montserrat">Business Analytics</h2>
+                    <p class="text-blue-100 text-lg font-raleway">Track your performance and grow your business</p>
+                    <div class="flex items-center mt-4 space-x-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            <span class="text-sm">Performance Insights</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-trending-up mr-2"></i>
+                            <span class="text-sm">Growth Metrics</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-users mr-2"></i>
+                            <span class="text-sm">Customer Analytics</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-chart-bar text-4xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-car text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_cars }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Listings</div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-green-600 font-medium">+12% this month</span>
+                </div>
+                <i class="fas fa-arrow-up text-green-500"></i>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-eye text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-blue-600 font-montserrat">{{ total_views }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Views</div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    <span class="text-blue-600 font-medium">+8% this month</span>
+                </div>
+                <i class="fas fa-arrow-up text-blue-500"></i>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-envelope text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600 font-montserrat">{{ total_inquiries }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Inquiries</div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-green-600 font-medium">+15% this month</span>
+                </div>
+                <i class="fas fa-arrow-up text-green-500"></i>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-percentage text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-yellow-600 font-montserrat">{{ conversion_rate|default:"2.5" }}%</div>
+                    <div class="text-sm text-gray-600 font-raleway">Conversion Rate</div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                    <span class="text-yellow-600 font-medium">-2% this month</span>
+                </div>
+                <i class="fas fa-arrow-down text-yellow-500"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Enhanced Views Chart -->
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-blue-500/5 to-transparent">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chart-line text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Views Over Time</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Daily views for the last 30 days</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="changeChartPeriod('viewsChart', '7d')" class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">7D</button>
+                        <button onclick="changeChartPeriod('viewsChart', '30d')" class="px-3 py-1 text-xs bg-blue-500 text-white rounded-lg">30D</button>
+                        <button onclick="changeChartPeriod('viewsChart', '90d')" class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">90D</button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="relative">
+                    <canvas id="viewsChart" width="400" height="250"></canvas>
+                    <div id="viewsChartLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 hidden">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i>
+                            <span class="text-blue-600 font-medium">Loading chart...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Inquiries Chart -->
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-green-500/5 to-transparent">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chart-pie text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Inquiries by Status</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Current inquiry distribution</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-600 font-montserrat">{{ total_inquiries }}</div>
+                        <div class="text-xs text-gray-500">Total Inquiries</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="relative">
+                    <canvas id="inquiriesChart" width="400" height="250"></canvas>
+                    <div id="inquiriesChartLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 hidden">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-green-500 mr-2"></i>
+                            <span class="text-green-600 font-medium">Loading chart...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Revenue Chart -->
+    <div class="mb-8 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-red/5 to-transparent">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-dollar-sign text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Revenue Analytics</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Monthly revenue and growth trends</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-harrier-red font-montserrat">KSh {{ monthly_revenue|default:"0"|floatformat:0 }}</div>
+                            <div class="text-xs text-gray-500">This Month</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeChartPeriod('revenueChart', '6m')" class="px-3 py-1 text-xs bg-harrier-red text-white rounded-lg">6M</button>
+                            <button onclick="changeChartPeriod('revenueChart', '12m')" class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">12M</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="relative">
+                    <canvas id="revenueChart" width="800" height="300"></canvas>
+                    <div id="revenueChartLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 hidden">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-harrier-red mr-2"></i>
+                            <span class="text-harrier-red font-medium">Loading revenue data...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Performance Tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-fade-in-up" style="animation-delay: 0.4s;">
+        <!-- Enhanced Top Performing Cars -->
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-purple-500/5 to-transparent">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-trophy text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Top Performing Cars</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Most viewed listings this month</p>
+                        </div>
+                    </div>
+                    <button onclick="exportTopCars()" class="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors">
+                        <i class="fas fa-download mr-1"></i>Export
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">Car</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">Views</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">Inquiries</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for car in top_cars %}
+                            <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="relative">
+                                            {% if car.main_image %}
+                                                <img class="h-12 w-12 rounded-xl object-cover shadow-lg" src="{{ car.main_image.url }}" alt="{{ car.title }}">
+                                            {% else %}
+                                                <div class="h-12 w-12 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl flex items-center justify-center shadow-lg">
+                                                    <i class="fas fa-car text-gray-400"></i>
+                                                </div>
+                                            {% endif %}
+                                            {% if forloop.counter <= 3 %}
+                                                <div class="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
+                                                    <span class="text-xs font-bold text-white">{{ forloop.counter }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-bold text-harrier-dark font-montserrat">{{ car.title|truncatechars:25 }}</div>
+                                            <div class="text-sm text-harrier-red font-semibold">KSh {{ car.price|floatformat:0 }}</div>
+                                            <div class="text-xs text-gray-500">{{ car.year }} • {{ car.fuel_type|title }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-eye text-blue-500 mr-2"></i>
+                                        <span class="text-sm font-bold text-gray-900">{{ car.views_count|default:0 }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-envelope text-green-500 mr-2"></i>
+                                        <span class="text-sm font-bold text-gray-900">{{ car.inquiries.count }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if car.views_count > 0 %}
+                                        {% with rate=car.inquiries.count|mul:100|div:car.views_count|floatformat:1 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold
+                                                {% if rate|floatformat:0|add:0 >= 5 %}bg-green-100 text-green-800
+                                                {% elif rate|floatformat:0|add:0 >= 2 %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                                {{ rate }}%
+                                            </span>
+                                        {% endwith %}
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-800">0%</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fas fa-chart-bar text-4xl text-gray-300 mb-4"></i>
+                                        <h4 class="font-bold text-gray-600 mb-2 font-montserrat">No Performance Data</h4>
+                                        <p class="text-gray-500 text-sm font-raleway">Start listing cars to see performance metrics</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Enhanced Recent Activity -->
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-indigo-500/5 to-transparent">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-history text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Activity</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Latest interactions with your listings</p>
+                        </div>
+                    </div>
+                    <button onclick="refreshActivity()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                        <i class="fas fa-refresh mr-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4" id="activityFeed">
+                    <div class="flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50/50 rounded-lg px-3 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-4 shadow-lg">
+                                <i class="fas fa-eye text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-harrier-dark font-montserrat">New view on Toyota Camry 2020</p>
+                                <p class="text-xs text-gray-600 font-raleway">Someone viewed your listing from Nairobi</p>
+                                <div class="flex items-center mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-eye mr-1"></i>View
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 font-medium">2 hours ago</span>
+                            <div class="text-xs text-blue-600 font-semibold">+1 view</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50/50 rounded-lg px-3 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-4 shadow-lg">
+                                <i class="fas fa-envelope text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-harrier-dark font-montserrat">New inquiry received</p>
+                                <p class="text-xs text-gray-600 font-raleway">Customer interested in Honda Civic pricing</p>
+                                <div class="flex items-center mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-envelope mr-1"></i>Inquiry
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 font-medium">4 hours ago</span>
+                            <div class="text-xs text-green-600 font-semibold">High priority</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50/50 rounded-lg px-3 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-4 shadow-lg">
+                                <i class="fas fa-check text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-harrier-dark font-montserrat">Listing approved</p>
+                                <p class="text-xs text-gray-600 font-raleway">BMW X5 2021 is now live on the platform</p>
+                                <div class="flex items-center mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        <i class="fas fa-check mr-1"></i>Approved
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 font-medium">1 day ago</span>
+                            <div class="text-xs text-purple-600 font-semibold">Status update</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between py-4 hover:bg-gray-50/50 rounded-lg px-3 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mr-4 shadow-lg">
+                                <i class="fas fa-star text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-harrier-dark font-montserrat">Listing featured</p>
+                                <p class="text-xs text-gray-600 font-raleway">Mercedes C-Class promoted to featured listing</p>
+                                <div class="flex items-center mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <i class="fas fa-star mr-1"></i>Featured
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 font-medium">2 days ago</span>
+                            <div class="text-xs text-yellow-600 font-semibold">Promotion</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View All Activity Button -->
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <button onclick="viewAllActivity()" class="w-full px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105">
+                        <i class="fas fa-list mr-2"></i>View All Activity
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Performance -->
+    <div class="dashboard-card">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-heading font-bold text-harrier-dark">Monthly Performance</h3>
+            <p class="text-sm text-gray-600">Performance metrics for the last 6 months</p>
+        </div>
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cars Added</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Views</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inquiries</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for data in monthly_data %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ data.month }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ data.cars_added }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ data.views }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ data.inquiries }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {% if data.views > 0 %}
+                                        {{ data.inquiries|mul:100|div:data.views|floatformat:1 }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No data available</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+// Enhanced analytics with modern charts and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all charts
+    initializeViewsChart();
+    initializeInquiriesChart();
+    initializeRevenueChart();
+
+    // Auto-refresh charts every 5 minutes
+    setInterval(refreshAllCharts, 300000);
+});
+
+// Enhanced Views Chart with gradient and animations
+function initializeViewsChart() {
+    const ctx = document.getElementById('viewsChart').getContext('2d');
+
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+
+    window.viewsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: generateDateLabels(30), // Last 30 days
+            datasets: [{
+                label: 'Daily Views',
+                data: generateViewsData(30),
+                borderColor: '#3B82F6',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#3B82F6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#3B82F6',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return 'Date: ' + context[0].label;
+                        },
+                        label: function(context) {
+                            return 'Views: ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            family: 'Raleway'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(107, 114, 128, 0.1)'
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            family: 'Raleway'
+                        },
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+// Enhanced Inquiries Chart with modern styling
+function initializeInquiriesChart() {
+    const ctx = document.getElementById('inquiriesChart').getContext('2d');
+
+    window.inquiriesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Open', 'In Progress', 'Resolved'],
+            datasets: [{
+                data: [{{ open_inquiries|default:0 }}, {{ in_progress_inquiries|default:0 }}, {{ resolved_inquiries|default:0 }}],
+                backgroundColor: [
+                    '#F59E0B', // Yellow for open
+                    '#3B82F6', // Blue for in progress
+                    '#10B981'  // Green for resolved
+                ],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            family: 'Raleway',
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                duration: 2000
+            }
+        }
+    });
+}
+
+// New Revenue Chart
+function initializeRevenueChart() {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+
+    // Create gradient for revenue
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+    gradient.addColorStop(1, 'rgba(239, 68, 68, 0.05)');
+
+    window.revenueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Revenue (KSh)',
+                data: [150000, 230000, 180000, 320000, 280000, 350000],
+                backgroundColor: gradient,
+                borderColor: '#EF4444',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#EF4444',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Revenue: KSh ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            family: 'Raleway'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(107, 114, 128, 0.1)'
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            family: 'Raleway'
+                        },
+                        callback: function(value) {
+                            return 'KSh ' + (value / 1000) + 'K';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+// Utility functions for chart data generation
+function generateDateLabels(days) {
+    const labels = [];
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    }
+    return labels;
+}
+
+function generateViewsData(days) {
+    // Generate realistic sample data - replace with actual data from backend
+    const data = [];
+    for (let i = 0; i < days; i++) {
+        data.push(Math.floor(Math.random() * 100) + 20);
+    }
+    return data;
+}
+
+// Chart interaction functions
+function changeChartPeriod(chartId, period) {
+    showMessage(`📊 Loading ${period} data...`, 'info');
+
+    // Show loading state
+    const loadingElement = document.getElementById(chartId + 'Loading');
+    if (loadingElement) {
+        loadingElement.classList.remove('hidden');
+    }
+
+    // Simulate data loading
+    setTimeout(() => {
+        if (loadingElement) {
+            loadingElement.classList.add('hidden');
+        }
+        showMessage('✅ Chart updated successfully!', 'success');
+    }, 1500);
+}
+
+function refreshAllCharts() {
+    showMessage('🔄 Refreshing all analytics...', 'info');
+
+    // Refresh each chart
+    if (window.viewsChart) {
+        window.viewsChart.update();
+    }
+    if (window.inquiriesChart) {
+        window.inquiriesChart.update();
+    }
+    if (window.revenueChart) {
+        window.revenueChart.update();
+    }
+
+    setTimeout(() => {
+        showMessage('✅ Analytics refreshed!', 'success');
+    }, 1000);
+}
+
+// Activity feed functions
+function refreshActivity() {
+    showMessage('🔄 Refreshing activity feed...', 'info');
+
+    // Simulate activity refresh
+    setTimeout(() => {
+        showMessage('✅ Activity feed updated!', 'success');
+    }, 1000);
+}
+
+function viewAllActivity() {
+    showMessage('📋 Opening full activity log...', 'info');
+    // This would typically open a modal or navigate to a full activity page
+}
+
+// Export functions
+function exportTopCars() {
+    showMessage('📊 Preparing top cars export...', 'info');
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = '/dashboard/vendor/analytics/export-top-cars/';
+    link.download = `top_cars_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    setTimeout(() => {
+        showMessage('✅ Top cars exported successfully!', 'success');
+    }, 1000);
+}
+
+// Enhanced message display
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    const icons = {
+        'success': '✅',
+        'error': '❌',
+        'info': 'ℹ️',
+        'warning': '⚠️'
+    };
+
+    const colors = {
+        'success': 'bg-gradient-to-r from-green-500 to-green-600',
+        'error': 'bg-gradient-to-r from-red-500 to-red-600',
+        'info': 'bg-gradient-to-r from-blue-500 to-blue-600',
+        'warning': 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+    };
+
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type] || colors.info} animate-fade-in-up`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <span class="mr-2 text-lg">${icons[type] || icons.info}</span>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Keyboard shortcuts for analytics
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + R for refresh
+    if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+        event.preventDefault();
+        refreshAllCharts();
+    }
+
+    // Ctrl/Cmd + E for export
+    if ((event.ctrlKey || event.metaKey) && event.key === 'e') {
+        event.preventDefault();
+        exportTopCars();
+    }
+});
+
+// Real-time updates simulation
+setInterval(function() {
+    // Simulate real-time data updates
+    const randomUpdate = Math.random();
+    if (randomUpdate > 0.95) { // 5% chance every interval
+        showMessage('📈 New activity detected!', 'info');
+        refreshActivity();
+    }
+}, 30000); // Check every 30 seconds
+</script>
+{% endblock %}

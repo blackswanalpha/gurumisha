@@ -1,0 +1,109 @@
+<!-- Modern Reusable Car Card Component -->
+{% load static %}
+
+<div class="bg-primary-white rounded-2xl shadow-modern overflow-hidden hover:shadow-modern-xl transition-all duration-500 group border border-gray-100">
+    <!-- Car Image -->
+    <div class="relative overflow-hidden">
+        {% if car.main_image %}
+            <img src="{{ car.main_image.url }}" alt="{{ car.title }}"
+                 class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500">
+        {% else %}
+            <div class="w-full h-56 bg-gradient-to-br from-accent-gray to-gray-200 flex items-center justify-center">
+                <i class="fas fa-car text-text-light text-5xl"></i>
+            </div>
+        {% endif %}
+        
+        <!-- Modern Badges -->
+        {% if car.status == 'featured' %}
+            <div class="absolute top-4 left-4">
+                <span class="bg-primary-red text-primary-white px-4 py-2 rounded-full text-sm font-bold shadow-modern">FEATURED</span>
+            </div>
+        {% endif %}
+        {% if car.condition == 'new' %}
+            <div class="absolute top-4 right-4">
+                <span class="bg-primary-blue text-primary-white px-4 py-2 rounded-full text-sm font-bold shadow-modern">NEW</span>
+            </div>
+        {% elif car.condition == 'certified' %}
+            <div class="absolute top-4 right-4">
+                <span class="bg-gradient-to-r from-primary-blue to-primary-red text-primary-white px-4 py-2 rounded-full text-sm font-bold shadow-modern">CERTIFIED</span>
+            </div>
+        {% endif %}
+
+        <!-- Modern Quick Actions -->
+        <div class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div class="flex space-x-3">
+                <button class="w-12 h-12 bg-primary-white bg-opacity-95 rounded-full flex items-center justify-center hover:bg-primary-red hover:text-primary-white transition-all duration-300 shadow-modern hover:scale-110"
+                        title="Add to Wishlist" onclick="toggleWishlist({{ car.pk }})">
+                    <i class="fas fa-heart text-lg"></i>
+                </button>
+                <button class="w-12 h-12 bg-primary-white bg-opacity-95 rounded-full flex items-center justify-center hover:bg-primary-blue hover:text-primary-white transition-all duration-300 shadow-modern hover:scale-110"
+                        title="Quick View" onclick="quickView({{ car.pk }})">
+                    <i class="fas fa-eye text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modern Car Details -->
+    <div class="p-8">
+        <!-- Title and Price -->
+        <div class="mb-6">
+            <h3 class="text-xl font-heading font-bold text-text-dark mb-3 group-hover:text-primary-red transition-colors duration-300 leading-tight">
+                <a href="{% url 'core:car_detail' car.pk %}" class="hover:no-underline">{{ car.title }}</a>
+            </h3>
+            <div class="flex items-center justify-between">
+                <span class="text-2xl font-bold text-primary-red font-display">
+                    KES {{ car.price|floatformat:0|add:","|join:"," }}
+                </span>
+                <span class="text-base font-semibold text-text-light bg-accent-gray px-3 py-1 rounded-full">{{ car.year }}</span>
+            </div>
+        </div>
+        
+        <!-- Car Specs -->
+        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+            <div class="flex items-center text-gray-600">
+                <i class="fas fa-tachometer-alt mr-2 text-harrier-red"></i>
+                <span>{{ car.mileage|floatformat:0 }} km</span>
+            </div>
+            <div class="flex items-center text-gray-600">
+                <i class="fas fa-gas-pump mr-2 text-harrier-red"></i>
+                <span>{{ car.get_fuel_type_display }}</span>
+            </div>
+            <div class="flex items-center text-gray-600">
+                <i class="fas fa-cogs mr-2 text-harrier-red"></i>
+                <span>{{ car.get_transmission_display }}</span>
+            </div>
+            <div class="flex items-center text-gray-600">
+                <i class="fas fa-palette mr-2 text-harrier-red"></i>
+                <span>{{ car.color }}</span>
+            </div>
+        </div>
+        
+        <!-- Vendor Info -->
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mr-2">
+                    <i class="fas fa-store text-harrier-red text-sm"></i>
+                </div>
+                <span class="text-sm text-gray-600">{{ car.vendor.company_name }}</span>
+            </div>
+            <div class="flex items-center text-sm text-gray-500">
+                <i class="fas fa-eye mr-1"></i>
+                <span>{{ car.views_count }}</span>
+            </div>
+        </div>
+        
+        <!-- Modern Action Buttons -->
+        <div class="flex space-x-3">
+            <a href="{% url 'core:car_detail' car.pk %}"
+               class="flex-1 btn-harrier-primary text-center py-3 text-sm font-semibold">
+                <i class="fas fa-info-circle mr-2"></i>VIEW DETAILS
+            </a>
+            <button class="btn-harrier-secondary px-6 py-3 text-sm font-semibold"
+                    onclick="openInquiryModal({{ car.pk }}, '{{ car.title|escapejs }}')"
+                    title="Send Inquiry">
+                <i class="fas fa-envelope"></i>
+            </button>
+        </div>
+    </div>
+</div>

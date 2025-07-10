@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ post.title }} - Gurumisha Motors Resources{% endblock %}
+
+{% block meta_description %}{{ post.meta_description|default:post.excerpt|default:post.content|truncatewords:25 }}{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<section class="bg-harrier-gray py-4">
+    <div class="container mx-auto px-4">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                <li><a href="{% url 'core:homepage' %}" class="text-gray-500 hover:text-harrier-red">Home</a></li>
+                <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+                <li><a href="{% url 'core:resources' %}" class="text-gray-500 hover:text-harrier-red">Resources</a></li>
+                <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+                <li class="text-harrier-dark">{{ post.title|truncatewords:5 }}</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Article -->
+<article class="py-12 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Article Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">{{ post.title }}</h1>
+            
+            <div class="flex items-center text-gray-600 mb-6">
+                <div class="flex items-center mr-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-crimson to-electric-red rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                        {{ post.author.first_name|first|default:post.author.username|first }}{{ post.author.last_name|first|default:"" }}
+                    </div>
+                    <div>
+                        <p class="font-medium">{{ post.author.get_full_name|default:post.author.username }}</p>
+                        <p class="text-sm text-gray-500">Author</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4 text-sm">
+                    <span><i class="fas fa-calendar mr-1"></i> {{ post.published_at|date:"M d, Y" }}</span>
+                    <span><i class="fas fa-clock mr-1"></i> {{ post.content|wordcount|floatformat:0|add:"200"|floatformat:0|div:200 }} min read</span>
+                </div>
+            </div>
+            
+            <!-- Featured Image -->
+            {% if post.featured_image %}
+                <div class="mb-8">
+                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="w-full h-64 md:h-96 object-cover rounded-2xl">
+                </div>
+            {% endif %}
+        </header>
+        
+        <!-- Article Content -->
+        <div class="prose prose-lg prose-gray max-w-none">
+            {% if post.excerpt %}
+                <div class="text-xl text-gray-600 font-medium mb-8 p-6 bg-gray-50 rounded-xl border-l-4 border-crimson">
+                    {{ post.excerpt }}
+                </div>
+            {% endif %}
+            
+            <div class="leading-relaxed">
+                {{ post.content|linebreaks }}
+            </div>
+        </div>
+        
+        <!-- Article Footer -->
+        <footer class="mt-12 pt-8 border-t border-gray-200">
+            <!-- Tags/Keywords -->
+            {% if post.meta_keywords %}
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Tags:</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for keyword in post.meta_keywords|split:"," %}
+                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ keyword|trim }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Share Buttons -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Share this article:</h3>
+                    <div class="flex space-x-3">
+                        <a href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ request.build_absolute_uri }}" 
+                           target="_blank" class="w-10 h-10 bg-blue-400 text-white rounded-full flex items-center justify-center hover:bg-blue-500 transition-colors">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                           target="_blank" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" 
+                           target="_blank" class="w-10 h-10 bg-blue-700 text-white rounded-full flex items-center justify-center hover:bg-blue-800 transition-colors">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <button onclick="copyToClipboard()" class="w-10 h-10 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-right">
+                    <a href="{% url 'core:blog' %}" class="btn-secondary">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Blog
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
+</article>
+
+<!-- Related Articles -->
+<section class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-2xl font-heading font-bold text-midnight mb-8 text-center">Related Articles</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- You can add logic here to show related posts -->
+            <div class="text-center py-8">
+                <p class="text-gray-500">More articles coming soon...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Signup -->
+<section class="py-16 bg-gradient-to-r from-deep-ocean to-azure text-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">Stay Updated</h2>
+        <p class="text-xl mb-8 opacity-90">Get the latest automotive news and insights delivered to your inbox.</p>
+        
+        <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" id="newsletter-form">
+            <input type="email" placeholder="Enter your email address" class="flex-1 px-6 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white" required>
+            <button type="submit" class="bg-white text-deep-ocean px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                Subscribe
+            </button>
+        </form>
+        
+        <p class="text-sm opacity-75 mt-4">We respect your privacy. Unsubscribe at any time.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyToClipboard() {
+        navigator.clipboard.writeText(window.location.href).then(function() {
+            // Show a temporary success message
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.classList.add('bg-green-600');
+            button.classList.remove('bg-gray-600');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-gray-600');
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}

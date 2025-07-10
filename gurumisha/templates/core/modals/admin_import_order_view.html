@@ -1,0 +1,588 @@
+{% load static %}
+
+<!-- View Import Order Modal -->
+<div class="fixed inset-0 z-50 overflow-y-auto" 
+     id="view-import-order-modal"
+     x-data="{ show: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+    
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity modal-backdrop"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Panel -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden modal-panel"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-6 py-4 rounded-t-2xl modal-header">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-eye text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">Import Order Details</h3>
+                            <p class="text-white text-opacity-90 text-sm font-raleway">Order #{{ import_order.order_number }} - Complete Information</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="text-white hover:text-gray-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-10 rounded-lg"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-[70vh] overflow-y-auto modal-body">
+                
+                <!-- Order Summary Header -->
+                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mr-4">
+                                <i class="fas fa-car text-white text-2xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-2xl font-bold text-gray-900 font-montserrat">{{ import_order.year }} {{ import_order.brand }} {{ import_order.model }}</h4>
+                                <p class="text-lg text-gray-600 font-raleway">Order #{{ import_order.order_number }}</p>
+                                <div class="flex items-center mt-2">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-{{ import_order.get_status_color }}-100 text-{{ import_order.get_status_color }}-800">
+                                        <i class="fas fa-{{ import_order.get_status_icon }} mr-1"></i>
+                                        {{ import_order.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-green-600 font-montserrat">KES {{ import_order.total_cost|floatformat:0 }}</div>
+                            <div class="text-sm text-gray-500">Total Cost</div>
+                            <div class="mt-2">
+                                <div class="text-sm text-gray-500">Progress</div>
+                                <div class="w-32 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full" 
+                                         style="width: {{ import_order.get_progress_percentage }}%"></div>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1">{{ import_order.get_progress_percentage }}% Complete</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Information Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    
+                    <!-- Customer Information -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm info-card">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-user mr-2 text-blue-600"></i>
+                            Customer Information
+                        </h5>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                    <span class="text-blue-600 font-bold">{{ import_order.customer.first_name|first|default:import_order.customer.username|first|upper }}</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">{{ import_order.customer.get_full_name|default:import_order.customer.username }}</div>
+                                    <div class="text-sm text-gray-600">{{ import_order.customer.email }}</div>
+                                    {% if import_order.customer.phone %}
+                                    <div class="text-sm text-gray-600">{{ import_order.customer.phone }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <div class="text-sm text-gray-500">Customer Since</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.customer.date_joined|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Specifications -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm info-card">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-cog mr-2 text-red-600"></i>
+                            Vehicle Specifications
+                        </h5>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-sm text-gray-500">Brand</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.brand }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Model</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.model }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Year</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.year }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Color</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.color|default:"Not specified" }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Engine Size</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.engine_size|default:"Not specified" }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Fuel Type</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.fuel_type|default:"Not specified" }}</div>
+                            </div>
+                            {% if import_order.transmission %}
+                            <div>
+                                <div class="text-sm text-gray-500">Transmission</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.transmission }}</div>
+                            </div>
+                            {% endif %}
+                            {% if import_order.mileage %}
+                            <div>
+                                <div class="text-sm text-gray-500">Mileage</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.mileage|floatformat:0 }} km</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping & Documentation -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    
+                    <!-- Shipping Information -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm info-card">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-ship mr-2 text-green-600"></i>
+                            Shipping Information
+                        </h5>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Chassis Number</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.chassis_number|default:"Not available" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Bill of Lading</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.bill_of_lading|default:"Not available" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Vessel Name</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.vessel_name|default:"Not specified" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Origin Port</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.origin_port|default:"Japan" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Destination Port</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.destination_port|default:"Mombasa, Kenya" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Estimated Arrival</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.estimated_arrival|date:"M d, Y"|default:"TBD" }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Information -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm info-card">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-money-bill-wave mr-2 text-yellow-600"></i>
+                            Financial Information
+                        </h5>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Total Cost</span>
+                                <span class="font-bold text-green-600 text-lg">KES {{ import_order.total_cost|floatformat:0 }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Amount Paid</span>
+                                <span class="font-semibold text-gray-900">KES {{ import_order.amount_paid|floatformat:0|default:"0" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Balance Due</span>
+                                <span class="font-semibold text-red-600">KES {{ import_order.get_balance_due|floatformat:0 }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Payment Status</span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-{{ import_order.get_payment_status_color }}-100 text-{{ import_order.get_payment_status_color }}-800">
+                                    {{ import_order.get_payment_status_display }}
+                                </span>
+                            </div>
+                            {% if import_order.currency_rate %}
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Exchange Rate</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.currency_rate }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Timeline & Notes -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Order Dates -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm info-card">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-calendar-alt mr-2 text-purple-600"></i>
+                            Important Dates
+                        </h5>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Order Created</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Last Updated</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.updated_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% if import_order.confirmed_at %}
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Confirmed</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.confirmed_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                            {% if import_order.shipped_at %}
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Shipped</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.shipped_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                            {% if import_order.delivered_at %}
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-500">Delivered</span>
+                                <span class="font-semibold text-gray-900">{{ import_order.delivered_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Admin Notes -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm info-card">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-sticky-note mr-2 text-orange-600"></i>
+                            Admin Notes
+                        </h5>
+                        {% if import_order.admin_notes %}
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-gray-700 font-raleway">{{ import_order.admin_notes }}</p>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-alt text-gray-300 text-3xl mb-2"></i>
+                            <p class="text-gray-500 font-raleway">No admin notes available</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if import_order.created_by %}
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="text-sm text-gray-500">Created by</div>
+                            <div class="font-semibold text-gray-900">{{ import_order.created_by.get_full_name|default:import_order.created_by.username }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 rounded-b-2xl border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
+                    <div class="text-sm text-gray-600 font-raleway">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Order ID: {{ import_order.id }} | Created: {{ import_order.created_at|date:"M d, Y" }}
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <!-- Print Button -->
+                        <button type="button" 
+                                class="enhanced-btn enhanced-btn-secondary"
+                                onclick="window.print()"
+                                title="Print order details">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-print"></i>
+                                </div>
+                                <span class="btn-text">Print</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Edit Button -->
+                        <button type="button" 
+                                class="enhanced-btn enhanced-btn-primary"
+                                hx-get="{% url 'core:admin_import_order_edit_modal' import_order.id %}"
+                                hx-target="body"
+                                hx-swap="beforeend"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"
+                                title="Edit order">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-edit"></i>
+                                </div>
+                                <span class="btn-text">Edit</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Close Button -->
+                        <button type="button" 
+                                class="enhanced-btn enhanced-btn-neutral"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-times"></i>
+                                </div>
+                                <span class="btn-text">Close</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Enhanced Modal Styles */
+    .modal-panel {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Information Cards */
+    .info-card {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    /* Enhanced Button Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(0);
+        font-family: 'Montserrat', sans-serif;
+        min-width: 120px;
+        border: none;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enhanced-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .enhanced-btn:active {
+        transform: translateY(0);
+    }
+
+    /* Button Content Layout */
+    .btn-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .btn-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-icon {
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-text {
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    /* Button Variants */
+    .enhanced-btn-secondary {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #6b7280;
+        border: 2px solid #d1d5db;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.15);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        color: #4b5563;
+        box-shadow: 0 8px 20px rgba(107, 114, 128, 0.25);
+    }
+
+    .enhanced-btn-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 15%, #a855f7 35%, #c084fc 65%, #d8b4fe 85%, #e9d5ff 100%);
+        background-size: 300% 100%;
+        background-position: 0% 50%;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4), 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .enhanced-btn-primary:hover {
+        background-position: 100% 50%;
+        box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5), 0 6px 16px rgba(139, 92, 246, 0.4);
+    }
+
+    .enhanced-btn-neutral {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+
+    .enhanced-btn-neutral:hover {
+        background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        box-shadow: 0 8px 20px rgba(107, 114, 128, 0.4);
+    }
+
+    /* Status Badge Styles */
+    .status-badge {
+        transition: all 0.2s ease;
+    }
+
+    .status-badge:hover {
+        transform: scale(1.05);
+    }
+
+    /* Progress Bar Animation */
+    .progress-bar {
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        animation: progressGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes progressGlow {
+        0% {
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+        }
+        100% {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.9);
+        }
+    }
+
+    /* Grid Item Hover Effects */
+    .grid > div {
+        transition: all 0.3s ease;
+    }
+
+    .grid > div:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Print Styles */
+    @media print {
+        .modal-backdrop,
+        .enhanced-btn,
+        .modal-header button {
+            display: none !important;
+        }
+
+        .modal-panel {
+            box-shadow: none !important;
+            border: 1px solid #000 !important;
+            background: white !important;
+        }
+
+        .info-card {
+            border: 1px solid #ccc !important;
+            background: white !important;
+            box-shadow: none !important;
+        }
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+        .modal-panel {
+            margin: 1rem;
+            max-width: calc(100vw - 2rem);
+        }
+
+        .grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .enhanced-btn {
+            @apply px-3 py-2 text-xs;
+            min-width: 100px;
+        }
+
+        .text-2xl {
+            @apply text-xl;
+        }
+
+        .text-3xl {
+            @apply text-2xl;
+        }
+    }
+
+    /* Accessibility Enhancements */
+    @media (prefers-reduced-motion: reduce) {
+        .info-card,
+        .enhanced-btn,
+        .progress-bar {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .info-card:hover,
+        .enhanced-btn:hover {
+            transform: none !important;
+        }
+    }
+
+    /* High Contrast Mode */
+    @media (prefers-contrast: high) {
+        .info-card {
+            border: 2px solid #000 !important;
+            background: white !important;
+        }
+
+        .enhanced-btn-secondary {
+            border: 2px solid #000 !important;
+            color: #000 !important;
+        }
+
+        .enhanced-btn-primary {
+            background: #000 !important;
+            color: white !important;
+        }
+    }
+</style>

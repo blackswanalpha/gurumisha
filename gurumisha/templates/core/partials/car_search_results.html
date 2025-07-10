@@ -1,0 +1,165 @@
+<!-- Car Search Results Partial for HTMX -->
+{% load static %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for car in cars %}
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+            <!-- Car Image -->
+            <div class="relative overflow-hidden">
+                {% if car.main_image %}
+                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}" 
+                         class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
+                {% else %}
+                    <div class="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <i class="fas fa-car text-gray-400 text-4xl"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- Badges -->
+                {% if car.status == 'featured' %}
+                    <div class="absolute top-2 left-2 bg-harrier-red text-white px-2 py-1 text-xs font-semibold rounded">
+                        FEATURED
+                    </div>
+                {% endif %}
+                {% if car.condition == 'new' %}
+                    <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 text-xs font-semibold rounded">
+                        NEW
+                    </div>
+                {% endif %}
+                
+                <!-- Quick Actions -->
+                <div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div class="flex space-x-2">
+                        <button class="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-harrier-red hover:text-white transition-colors"
+                                title="Add to Wishlist">
+                            <i class="fas fa-heart text-sm"></i>
+                        </button>
+                        <button class="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-harrier-red hover:text-white transition-colors"
+                                title="Quick View">
+                            <i class="fas fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Car Details -->
+            <div class="p-6">
+                <!-- Title and Price -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2 group-hover:text-harrier-red transition-colors">
+                        <a href="{% url 'core:car_detail' car.pk %}">{{ car.title }}</a>
+                    </h3>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-harrier-red">
+                            KES {{ car.price|floatformat:0 }}
+                        </span>
+                        <span class="text-sm text-gray-500">{{ car.year }}</span>
+                    </div>
+                </div>
+                
+                <!-- Car Specs -->
+                <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                    <div class="flex items-center text-gray-600">
+                        <i class="fas fa-tachometer-alt mr-2 text-harrier-red"></i>
+                        <span>{{ car.mileage|floatformat:0 }} km</span>
+                    </div>
+                    <div class="flex items-center text-gray-600">
+                        <i class="fas fa-gas-pump mr-2 text-harrier-red"></i>
+                        <span>{{ car.get_fuel_type_display }}</span>
+                    </div>
+                    <div class="flex items-center text-gray-600">
+                        <i class="fas fa-cogs mr-2 text-harrier-red"></i>
+                        <span>{{ car.get_transmission_display }}</span>
+                    </div>
+                    <div class="flex items-center text-gray-600">
+                        <i class="fas fa-palette mr-2 text-harrier-red"></i>
+                        <span>{{ car.color }}</span>
+                    </div>
+                </div>
+                
+                <!-- Vendor Info -->
+                <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-store text-harrier-red text-sm"></i>
+                        </div>
+                        <span class="text-sm text-gray-600">{{ car.vendor.company_name }}</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-eye mr-1"></i>
+                        <span>{{ car.views_count }}</span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-2">
+                    <a href="{% url 'core:car_detail' car.pk %}" 
+                       class="flex-1 btn-harrier-primary text-center py-2 text-sm">
+                        <i class="fas fa-info-circle mr-1"></i>VIEW DETAILS
+                    </a>
+                    <button class="btn-harrier-secondary px-4 py-2 text-sm" 
+                            onclick="openInquiryModal({{ car.pk }}, '{{ car.title|escapejs }}')"
+                            title="Send Inquiry">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-full text-center py-12">
+            <div class="max-w-md mx-auto">
+                <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-heading font-bold text-harrier-dark mb-2">No Cars Found</h3>
+                <p class="text-gray-600 mb-6">
+                    We couldn't find any cars matching your search criteria. Try adjusting your filters or search terms.
+                </p>
+                <a href="{% url 'core:car_list' %}" class="btn-harrier-primary">
+                    <i class="fas fa-refresh mr-2"></i>CLEAR FILTERS
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if cars.has_other_pages %}
+    <div class="mt-12 flex justify-center">
+        <nav class="flex items-center space-x-2">
+            {% if cars.has_previous %}
+                <a href="?page={{ cars.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                    <i class="fas fa-chevron-left mr-1"></i>Previous
+                </a>
+            {% endif %}
+            
+            {% for num in cars.paginator.page_range %}
+                {% if cars.number == num %}
+                    <span class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-md">
+                        {{ num }}
+                    </span>
+                {% elif num > cars.number|add:'-3' and num < cars.number|add:'3' %}
+                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                       class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if cars.has_next %}
+                <a href="?page={{ cars.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                    Next<i class="fas fa-chevron-right ml-1"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+{% endif %}
+
+<!-- Inquiry Modal (to be included in main template) -->
+<script>
+function openInquiryModal(carId, carTitle) {
+    // This would open a modal for car inquiry
+    // Implementation depends on your modal system
+    console.log('Opening inquiry modal for car:', carId, carTitle);
+}
+</script>

@@ -1,0 +1,575 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Profile Settings{% endblock %}
+{% block page_title %}Profile Settings{% endblock %}
+{% block page_description %}Manage your personal information and account settings{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Profile</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Profile Header -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-6">
+                    <div class="relative">
+                        {% if user.profile_picture %}
+                            <img class="h-20 w-20 object-cover rounded-full border-4 border-white/20 shadow-xl" src="{{ user.profile_picture.url }}" alt="Profile picture">
+                        {% else %}
+                            <div class="h-20 w-20 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-white/20 shadow-xl backdrop-blur-sm">
+                                {{ user.first_name|first|default:user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                        <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2 font-montserrat">{{ user.first_name }} {{ user.last_name }}</h2>
+                        <p class="text-blue-100 text-lg font-raleway">{{ user.get_role_display }}</p>
+                        {% if user.role == 'vendor' and vendor %}
+                            <p class="text-blue-200 text-sm font-raleway">{{ vendor.company_name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden md:block text-right">
+                    <div class="text-sm text-blue-100 mb-1">Member since</div>
+                    <div class="text-lg font-bold">{{ user.date_joined|date:"M Y" }}</div>
+                    {% if user.role == 'vendor' and vendor.is_approved %}
+                        <div class="inline-flex items-center mt-2 px-3 py-1 bg-green-500/20 rounded-full text-green-200 text-sm">
+                            <i class="fas fa-shield-alt mr-1"></i>Verified Vendor
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <!-- Enhanced Profile Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-red/5 to-transparent">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user-edit text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Personal Information</h3>
+                            <p class="text-sm text-gray-600 font-raleway">Update your personal details and contact information</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form method="post" enctype="multipart/form-data" class="space-y-8">
+                        {% csrf_token %}
+
+                        <!-- Enhanced Profile Picture Section -->
+                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                            <h4 class="font-bold text-harrier-dark mb-4 font-montserrat">Profile Picture</h4>
+                            <div class="flex items-center space-x-6">
+                                <div class="relative">
+                                    {% if user.profile_picture %}
+                                        <img class="h-20 w-20 object-cover rounded-xl shadow-lg" src="{{ user.profile_picture.url }}" alt="Profile picture" id="profilePreview">
+                                    {% else %}
+                                        <div class="h-20 w-20 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg" id="profilePreview">
+                                            {{ user.first_name|first|default:user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <button type="button" onclick="document.getElementById('profilePictureInput').click()" class="absolute -bottom-2 -right-2 w-8 h-8 bg-harrier-red rounded-full flex items-center justify-center text-white hover:bg-harrier-red-dark transition-colors shadow-lg">
+                                        <i class="fas fa-camera text-sm"></i>
+                                    </button>
+                                </div>
+                                <div class="flex-1">
+                                    <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" class="hidden" onchange="previewImage(this)">
+                                    <div class="text-sm text-gray-600 font-raleway">
+                                        <p class="font-medium mb-1">Upload a new profile picture</p>
+                                        <p class="text-xs">JPG, PNG or GIF. Max size 2MB. Recommended 400x400px.</p>
+                                    </div>
+                                    <button type="button" onclick="document.getElementById('profilePictureInput').click()" class="mt-3 inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105">
+                                        <i class="fas fa-upload mr-2"></i>Choose File
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Error Display -->
+                        {% if user_form.errors %}
+                            <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-6 animate-fade-in-up">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                                    </div>
+                                    <h4 class="text-red-800 font-bold font-montserrat">Please correct the following errors:</h4>
+                                </div>
+                                <ul class="text-red-700 text-sm space-y-2 font-raleway">
+                                    {% for field, errors in user_form.errors.items %}
+                                        {% for error in errors %}
+                                            <li class="flex items-center">
+                                                <i class="fas fa-times-circle mr-2"></i>
+                                                <span><strong>{{ field|title }}:</strong> {{ error }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <!-- Enhanced Personal Information Section -->
+                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                            <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                <i class="fas fa-user mr-2 text-harrier-red"></i>
+                                Personal Details
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label for="{{ user_form.first_name.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                        <i class="fas fa-user mr-1 text-harrier-red"></i>First Name
+                                    </label>
+                                    <input type="text" name="{{ user_form.first_name.name }}" value="{{ user_form.first_name.value|default:'' }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                           placeholder="Enter your first name">
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="{{ user_form.last_name.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                        <i class="fas fa-user mr-1 text-harrier-red"></i>Last Name
+                                    </label>
+                                    <input type="text" name="{{ user_form.last_name.name }}" value="{{ user_form.last_name.value|default:'' }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                           placeholder="Enter your last name">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Contact Information Section -->
+                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                            <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                <i class="fas fa-address-book mr-2 text-blue-500"></i>
+                                Contact Information
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div class="space-y-2">
+                                    <label for="{{ user_form.email.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                        <i class="fas fa-envelope mr-1 text-blue-500"></i>Email Address
+                                    </label>
+                                    <input type="email" name="{{ user_form.email.name }}" value="{{ user_form.email.value|default:'' }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                           placeholder="Enter your email address">
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="{{ user_form.phone.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                        <i class="fas fa-phone mr-1 text-green-500"></i>Phone Number
+                                    </label>
+                                    <input type="tel" name="{{ user_form.phone.name }}" value="{{ user_form.phone.value|default:'' }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                           placeholder="Enter your phone number">
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="{{ user_form.username.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                    <i class="fas fa-at mr-1 text-purple-500"></i>Username
+                                </label>
+                                <input type="text" name="{{ user_form.username.name }}" value="{{ user_form.username.value|default:'' }}"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                       placeholder="Enter your username">
+                            </div>
+                        </div>
+
+                        {% if user.role == 'vendor' and vendor_form %}
+                            <!-- Enhanced Vendor Business Information Section -->
+                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
+                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
+                                    <i class="fas fa-building mr-2 text-orange-500"></i>
+                                    Business Information
+                                </h4>
+
+                                <!-- Enhanced Vendor Form Errors -->
+                                {% if vendor_form.errors %}
+                                    <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-6 mb-6 animate-fade-in-up">
+                                        <div class="flex items-center mb-3">
+                                            <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                                            </div>
+                                            <h4 class="text-red-800 font-bold font-montserrat">Please correct the following business information errors:</h4>
+                                        </div>
+                                        <ul class="text-red-700 text-sm space-y-2 font-raleway">
+                                            {% for field, errors in vendor_form.errors.items %}
+                                                {% for error in errors %}
+                                                    <li class="flex items-center">
+                                                        <i class="fas fa-times-circle mr-2"></i>
+                                                        <span><strong>{{ field|title }}:</strong> {{ error }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div class="space-y-2">
+                                        <label for="{{ vendor_form.company_name.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                            <i class="fas fa-building mr-1 text-orange-500"></i>Company Name
+                                        </label>
+                                        <input type="text" name="{{ vendor_form.company_name.name }}" value="{{ vendor_form.company_name.value|default:'' }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                               placeholder="Enter your company name">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label for="{{ vendor_form.business_license.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                            <i class="fas fa-certificate mr-1 text-yellow-500"></i>Business License
+                                        </label>
+                                        <input type="text" name="{{ vendor_form.business_license.name }}" value="{{ vendor_form.business_license.value|default:'' }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                               placeholder="Enter your business license number">
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 mb-6">
+                                    <label for="{{ vendor_form.website.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                        <i class="fas fa-globe mr-1 text-blue-500"></i>Website URL
+                                    </label>
+                                    <input type="url" name="{{ vendor_form.website.name }}" value="{{ vendor_form.website.value|default:'' }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                           placeholder="https://www.yourcompany.com">
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label for="{{ vendor_form.description.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
+                                        <i class="fas fa-file-alt mr-1 text-green-500"></i>Business Description
+                                    </label>
+                                    <textarea name="{{ vendor_form.description.name }}" rows="4"
+                                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
+                                              placeholder="Describe your business, services, and specialties...">{{ vendor_form.description.value|default:'' }}</textarea>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <span id="descriptionCount">0</span> characters (recommended: 100-500 characters)
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Enhanced Submit Button -->
+                        <div class="flex items-center justify-between pt-8 border-t border-gray-200">
+                            <div class="text-sm text-gray-600 font-raleway">
+                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                                Changes will be saved to your profile immediately
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <button type="button" onclick="resetForm()" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
+                                    <i class="fas fa-undo mr-2"></i>Reset
+                                </button>
+                                <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-xl font-bold hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                                    <i class="fas fa-save mr-2"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Information Sidebar -->
+        <div class="space-y-6">
+            <!-- Account Status -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Account Status</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Account Type</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                            {% if user.role == 'vendor' %}bg-blue-100 text-blue-800
+                            {% elif user.role == 'admin' %}bg-purple-100 text-purple-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Member Since</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ user.date_joined|date:"M Y" }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Email Verified</span>
+                        {% if user.is_verified %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check mr-1"></i>Verified
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-clock mr-1"></i>Pending
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if user.role == 'vendor' and vendor %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Vendor Status</span>
+                            {% if vendor.is_approved %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check mr-1"></i>Approved
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-clock mr-1"></i>Pending Review
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Security</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <a href="#" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <i class="fas fa-key text-gray-400 mr-3"></i>
+                            <span class="text-sm font-medium text-harrier-dark">Change Password</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
+                    
+                    <a href="#" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <i class="fas fa-shield-alt text-gray-400 mr-3"></i>
+                            <span class="text-sm font-medium text-harrier-dark">Two-Factor Authentication</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
+                    
+                    <a href="#" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-shield text-gray-400 mr-3"></i>
+                            <span class="text-sm font-medium text-harrier-dark">Privacy Settings</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="dashboard-card border-red-200">
+                <div class="p-6 border-b border-red-200">
+                    <h3 class="text-lg font-heading font-bold text-red-600">Danger Zone</h3>
+                </div>
+                <div class="p-6">
+                    <button type="button" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Delete Account
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">This action cannot be undone.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced profile management with modern UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize character counter for description
+    initializeCharacterCounter();
+
+    // Auto-save functionality
+    initializeAutoSave();
+
+    // Form validation
+    initializeFormValidation();
+
+    // Profile picture preview
+    initializeProfilePicturePreview();
+});
+
+// Character counter for description field
+function initializeCharacterCounter() {
+    const descriptionField = document.querySelector('textarea[name*="description"]');
+    const counter = document.getElementById('descriptionCount');
+
+    if (descriptionField && counter) {
+        function updateCounter() {
+            const count = descriptionField.value.length;
+            counter.textContent = count;
+
+            // Color coding based on length
+            if (count < 100) {
+                counter.className = 'text-red-500 font-medium';
+            } else if (count <= 500) {
+                counter.className = 'text-green-500 font-medium';
+            } else {
+                counter.className = 'text-yellow-500 font-medium';
+            }
+        }
+
+        descriptionField.addEventListener('input', updateCounter);
+        updateCounter(); // Initial count
+    }
+}
+
+// Profile picture preview functionality
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        const preview = document.getElementById('profilePreview');
+
+        reader.onload = function(e) {
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                // Replace div with img
+                const img = document.createElement('img');
+                img.id = 'profilePreview';
+                img.className = 'h-20 w-20 object-cover rounded-xl shadow-lg';
+                img.src = e.target.result;
+                preview.parentNode.replaceChild(img, preview);
+            }
+
+            showMessage('✅ Profile picture updated! Remember to save changes.', 'success');
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function initializeProfilePicturePreview() {
+    // This function is called from the HTML when file is selected
+    window.previewImage = previewImage;
+}
+
+// Auto-save indicator
+function initializeAutoSave() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    let hasChanges = false;
+
+    inputs.forEach(input => {
+        const originalValue = input.value;
+
+        input.addEventListener('input', function() {
+            if (input.value !== originalValue) {
+                hasChanges = true;
+                showSaveIndicator();
+            }
+        });
+    });
+
+    // Warn before leaving if there are unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (hasChanges) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+
+    // Reset changes flag on successful save
+    form.addEventListener('submit', function() {
+        hasChanges = false;
+    });
+}
+
+function showSaveIndicator() {
+    // Remove existing indicator
+    const existing = document.getElementById('saveIndicator');
+    if (existing) {
+        existing.remove();
+    }
+
+    // Create new indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'saveIndicator';
+    indicator.className = 'fixed top-4 left-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-2 rounded-xl shadow-xl z-50 animate-fade-in-up';
+    indicator.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span class="font-medium">Unsaved changes detected</span>
+        </div>
+    `;
+
+    document.body.appendChild(indicator);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (indicator.parentNode) {
+            indicator.style.transform = 'translateX(-100%)';
+            indicator.style.opacity = '0';
+            setTimeout(() => indicator.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Reset form function
+function resetForm() {
+    if (confirm('🔄 Are you sure you want to reset all changes?\n\nThis will restore all fields to their original values.')) {
+        location.reload();
+    }
+}
+
+// Enhanced message display
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    const icons = {
+        'success': '✅',
+        'error': '❌',
+        'info': 'ℹ️',
+        'warning': '⚠️'
+    };
+
+    const colors = {
+        'success': 'bg-gradient-to-r from-green-500 to-green-600',
+        'error': 'bg-gradient-to-r from-red-500 to-red-600',
+        'info': 'bg-gradient-to-r from-blue-500 to-blue-600',
+        'warning': 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+    };
+
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type] || colors.info} animate-fade-in-up`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <span class="mr-2 text-lg">${icons[type] || icons.info}</span>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + S to save
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        document.querySelector('form').submit();
+        showMessage('💾 Saving profile...', 'info');
+    }
+
+    // Ctrl/Cmd + R to reset (with confirmation)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+        event.preventDefault();
+        resetForm();
+    }
+});
+</script>
+{% endblock %}

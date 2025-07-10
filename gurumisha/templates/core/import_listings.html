@@ -1,0 +1,377 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Car Import Services - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section with Background Image -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <!-- Background Image with Parallax Effect -->
+    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
+         style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('{% static 'images/banner-image-1-1920x500.jpg' %}');">
+    </div>
+
+    <!-- Overlay Gradients -->
+    <div class="absolute inset-0 bg-gradient-to-r from-harrier-dark via-harrier-dark/80 to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30"></div>
+
+    <!-- Animated Background Elements -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-harrier-red/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="relative z-10 w-full py-20 lg:py-32">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Left Content -->
+                <div class="text-left space-y-8">
+                    <!-- Badge -->
+                    <div class="inline-flex items-center px-4 py-2 bg-harrier-red/20 border border-harrier-red/30 rounded-full text-harrier-red text-sm font-medium backdrop-blur-sm">
+                        <i class="fas fa-star mr-2"></i>
+                        Trusted Import Specialists Since 2020
+                    </div>
+
+                    <!-- Main Heading -->
+                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white leading-tight">
+                        IMPORT YOUR
+                        <span class="block text-harrier-red bg-gradient-to-r from-harrier-red to-red-400 bg-clip-text text-transparent">
+                            DREAM CAR
+                        </span>
+                        <span class="block text-3xl md:text-4xl lg:text-5xl text-gray-300 font-normal mt-2">
+                            From Anywhere
+                        </span>
+                    </h1>
+
+                    <!-- Description -->
+                    <p class="text-xl md:text-2xl text-gray-300 leading-relaxed max-w-2xl">
+                        Access global automotive markets and import high-quality vehicles from
+                        <span class="text-white font-semibold">Japan, Germany, UK, USA</span> and more.
+                        Professional handling from auction to your doorstep.
+                    </p>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-3 gap-6 py-6">
+                        <div class="text-center lg:text-left">
+                            <div class="text-3xl md:text-4xl font-bold text-harrier-red">500+</div>
+                            <div class="text-gray-400 text-sm">Cars Imported</div>
+                        </div>
+                        <div class="text-center lg:text-left">
+                            <div class="text-3xl md:text-4xl font-bold text-harrier-red">15+</div>
+                            <div class="text-gray-400 text-sm">Countries</div>
+                        </div>
+                        <div class="text-center lg:text-left">
+                            <div class="text-3xl md:text-4xl font-bold text-harrier-red">98%</div>
+                            <div class="text-gray-400 text-sm">Success Rate</div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="{% url 'core:import_request' %}"
+                           class="group btn-harrier-primary text-lg px-8 py-4 inline-flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-paper-plane mr-3 group-hover:translate-x-1 transition-transform"></i>
+                            START IMPORT REQUEST
+                        </a>
+                        <a href="{% url 'core:import_order_tracking' %}"
+                           class="group btn-harrier-secondary text-lg px-8 py-4 inline-flex items-center justify-center transform hover:scale-105 transition-all duration-300">
+                            <i class="fas fa-search mr-3 group-hover:rotate-12 transition-transform"></i>
+                            TRACK YOUR ORDER
+                        </a>
+                    </div>
+
+                    <!-- Quick Search -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                        <h3 class="text-white font-semibold mb-4 flex items-center">
+                            <i class="fas fa-bolt text-harrier-red mr-2"></i>
+                            Quick Chassis Search
+                        </h3>
+                        <form action="{% url 'core:chassis_number_search' %}" method="get" class="flex gap-3">
+                            <input type="text"
+                                   name="chassis_number"
+                                   placeholder="Enter chassis number..."
+                                   class="flex-1 px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-harrier-red focus:border-transparent backdrop-blur-sm">
+                            <button type="submit"
+                                    class="px-6 py-3 bg-harrier-red hover:bg-red-600 text-white rounded-lg font-medium transition-colors">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Content - Visual Elements -->
+                <div class="relative lg:block hidden">
+                    <!-- Floating Cards -->
+                    <div class="relative">
+                        <!-- Main Car Card -->
+                        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="w-12 h-12 bg-harrier-red rounded-full flex items-center justify-center">
+                                    <i class="fas fa-car text-white text-xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-semibold">2023 Toyota Prius</h4>
+                                    <p class="text-gray-300 text-sm">From Japan</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-300">Status:</span>
+                                    <span class="text-green-400 font-medium">In Transit</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-harrier-red h-2 rounded-full w-3/4"></div>
+                                </div>
+                                <div class="text-xs text-gray-400">75% Complete</div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Stats -->
+                        <div class="absolute -top-6 -right-6 bg-harrier-red/90 backdrop-blur-lg rounded-xl p-4 border border-red-400/30 animate-bounce">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-white">7-14</div>
+                                <div class="text-xs text-red-100">Days Delivery</div>
+                            </div>
+                        </div>
+
+                        <!-- Process Steps -->
+                        <div class="absolute -bottom-8 -left-8 bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                <div class="w-3 h-3 bg-harrier-red rounded-full animate-pulse"></div>
+                                <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                            </div>
+                            <div class="text-xs text-white mt-2">Import Progress</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
+        <div class="flex flex-col items-center space-y-2">
+            <span class="text-sm text-gray-300">Scroll to explore</span>
+            <i class="fas fa-chevron-down text-harrier-red"></i>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Import Countries -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-harrier-dark mb-4">
+                POPULAR IMPORT DESTINATIONS
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                We have established partnerships with trusted dealers and auction houses worldwide to bring you the best vehicles
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% for import in popular_imports %}
+                <div class="bg-harrier-gray rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow group">
+                    <div class="h-48 bg-gradient-to-br from-harrier-red to-harrier-dark relative overflow-hidden">
+                        <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center text-white">
+                                <i class="fas fa-flag text-4xl mb-3"></i>
+                                <h3 class="text-2xl font-heading font-bold">{{ import.country }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-gray-600 mb-4">{{ import.description }}</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-harrier-red font-semibold">Popular Choice</span>
+                            <a href="{% url 'core:import_request' %}" class="text-harrier-red hover:text-harrier-dark transition-colors">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Import Process -->
+<section id="process" class="py-16 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-harrier-dark mb-4">
+                HOW IMPORT WORKS
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                Our streamlined 5-step process makes importing your dream car simple, transparent, and stress-free
+            </p>
+        </div>
+        
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-8">
+                {% for step in import_process %}
+                    <div class="text-center">
+                        <div class="relative mb-6">
+                            <div class="w-20 h-20 bg-harrier-red text-white rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-lg">
+                                {{ step.step }}
+                            </div>
+                            {% if not forloop.last %}
+                                <div class="hidden md:block absolute top-10 left-full w-full h-1 bg-harrier-red bg-opacity-30 transform -translate-y-1/2"></div>
+                            {% endif %}
+                        </div>
+                        <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">{{ step.title }}</h3>
+                        <p class="text-gray-600 text-sm">{{ step.description }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="text-center mt-12">
+            <a href="{% url 'core:import_request' %}" class="btn-harrier-primary text-lg px-8 py-4">
+                <i class="fas fa-rocket mr-2"></i>START YOUR IMPORT JOURNEY
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Imports -->
+{% if recent_imports %}
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-harrier-dark mb-4">
+                RECENT SUCCESSFUL IMPORTS
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                See what our satisfied customers have successfully imported through our platform
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for import in recent_imports %}
+                <div class="bg-harrier-gray rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="h-48 bg-gradient-to-br from-green-500 to-green-600 relative">
+                        <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center text-white">
+                                <i class="fas fa-check-circle text-4xl mb-2"></i>
+                                <p class="text-sm font-semibold">COMPLETED</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">
+                            {{ import.brand }} {{ import.model }} ({{ import.year }})
+                        </h3>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex items-center justify-between">
+                                <span>Origin:</span>
+                                <span class="font-semibold">{{ import.origin_country }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Budget Range:</span>
+                                <span class="font-semibold">KES {{ import.budget_min|floatformat:0 }} - {{ import.budget_max|floatformat:0 }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Completed:</span>
+                                <span class="font-semibold">{{ import.updated_at|date:"M Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Why Choose Our Import Service -->
+<section class="py-16 bg-harrier-dark text-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">
+                WHY CHOOSE OUR IMPORT SERVICE?
+            </h2>
+            <p class="text-lg text-gray-300 max-w-3xl mx-auto">
+                We've helped thousands of customers import their dream cars with complete peace of mind
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-heading font-bold mb-3">Trusted & Secure</h3>
+                <p class="text-gray-300">All transactions are secure and we work only with verified dealers and auction houses worldwide.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-dollar-sign text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-heading font-bold mb-3">Transparent Pricing</h3>
+                <p class="text-gray-300">No hidden costs. We provide detailed breakdown of all charges including shipping and customs.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-headset text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-heading font-bold mb-3">Expert Support</h3>
+                <p class="text-gray-300">Our experienced team guides you through every step of the import process.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clock text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-heading font-bold mb-3">Fast Processing</h3>
+                <p class="text-gray-300">Quick response times and efficient processing to get your car to you faster.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-file-alt text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-heading font-bold mb-3">Complete Documentation</h3>
+                <p class="text-gray-300">We handle all paperwork, customs clearance, and registration processes.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-truck text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-heading font-bold mb-3">Door-to-Door Delivery</h3>
+                <p class="text-gray-300">We deliver your imported car directly to your preferred location in Kenya.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-harrier-red">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-white mb-4">
+                Ready to Import Your Dream Car?
+            </h2>
+            <p class="text-xl text-white text-opacity-90 mb-8">
+                Join thousands of satisfied customers who have successfully imported their cars through our platform
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'core:import_request' %}" class="bg-white text-harrier-red hover:bg-gray-100 font-bold py-4 px-8 rounded-lg transition-colors text-lg">
+                    <i class="fas fa-paper-plane mr-2"></i>START IMPORT REQUEST
+                </a>
+                <a href="{% url 'core:contact_us' %}" class="border-2 border-white text-white hover:bg-white hover:text-harrier-red font-bold py-4 px-8 rounded-lg transition-colors text-lg">
+                    <i class="fas fa-phone mr-2"></i>SPEAK TO EXPERT
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

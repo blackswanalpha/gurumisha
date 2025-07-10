@@ -1,0 +1,879 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gurumisha Motors - Premium Automotive Marketplace{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section with Video Background -->
+<section class="main-banner">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'images/video.mp4' %}" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="video-overlay"></div>
+
+    <div class="hero-content">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-screen py-20">
+                <!-- Hero Text Content -->
+                <div class="text-white space-y-8">
+                    <div class="space-y-6">
+                        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight animate-fade-in-up font-montserrat">
+                            Find Your
+                            <span class="text-gradient bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                                Perfect
+                            </span>
+                            Vehicle
+                        </h1>
+                        <p class="text-xl md:text-2xl text-gray-200 leading-relaxed max-w-2xl animate-fade-in-up animate-delay-300 font-inter">
+                            Discover premium vehicles from trusted dealers. Buy, sell, or import with confidence in Kenya's leading automotive marketplace.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up animate-delay-600">
+                        <a href="{% url 'core:car_list' %}"
+                           class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl btn-animate font-montserrat"
+                           style="background: linear-gradient(135deg, #ed563b, #dc2626);">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Browse Cars
+                        </a>
+                        <a href="{% url 'core:sell_car' %}"
+                           class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white rounded-lg transition-all duration-300 hover:bg-white hover:text-gray-900 btn-animate font-montserrat">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Sell Your Car
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Car Search Form -->
+                <div class="car-search-form bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Find Your Perfect Car</h3>
+                    <form id="car-search-form" action="{% url 'core:car_list' %}" method="GET">
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="condition" class="block text-sm font-semibold text-gray-700 mb-2">Condition</label>
+                                    <select name="condition" id="condition" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">Any Condition</option>
+                                        <option value="new">New</option>
+                                        <option value="used">Used</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="brand" class="block text-sm font-semibold text-gray-700 mb-2">Brand</label>
+                                    <select name="brand" id="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">Select Brand</option>
+                                        {% for brand in car_brands %}
+                                            <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="vehicle_type" class="block text-sm font-semibold text-gray-700 mb-2">Vehicle Type</label>
+                                    <select name="vehicle_type" id="vehicle_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">Any Type</option>
+                                        {% for type in vehicle_types %}
+                                            <option value="{{ type|lower }}">{{ type }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="fuel_type" class="block text-sm font-semibold text-gray-700 mb-2">Fuel Type</label>
+                                    <select name="fuel_type" id="fuel_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">Any Fuel</option>
+                                        <option value="petrol">Petrol</option>
+                                        <option value="diesel">Diesel</option>
+                                        <option value="hybrid">Hybrid</option>
+                                        <option value="electric">Electric</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="min_price" class="block text-sm font-semibold text-gray-700 mb-2">Min Price (KSh)</label>
+                                    <select name="min_price" id="min_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">No Min</option>
+                                        <option value="500000">500K</option>
+                                        <option value="1000000">1M</option>
+                                        <option value="2000000">2M</option>
+                                        <option value="3000000">3M</option>
+                                        <option value="5000000">5M</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="max_price" class="block text-sm font-semibold text-gray-700 mb-2">Max Price (KSh)</label>
+                                    <select name="max_price" id="max_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">No Max</option>
+                                        <option value="1000000">1M</option>
+                                        <option value="2000000">2M</option>
+                                        <option value="5000000">5M</option>
+                                        <option value="10000000">10M</option>
+                                        <option value="20000000">20M+</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="year" class="block text-sm font-semibold text-gray-700 mb-2">Year</label>
+                                <select name="year" id="year" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <option value="">Any Year</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                    <option value="2020">2020</option>
+                                    <option value="2019">2019</option>
+                                    <option value="2018">2018</option>
+                                    <option value="2017">2017</option>
+                                    <option value="2016">2016</option>
+                                    <option value="2015">2015</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                🔍 Search Cars
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Browse by Vehicle Type Section -->
+<section class="py-20 bg-primary-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="section-title-harrier mb-6">BROWSE BY VEHICLE TYPE</h2>
+            <p class="text-lg text-text-light max-w-2xl mx-auto font-body">Find the perfect vehicle for your needs from our diverse collection of premium automobiles</p>
+        </div>
+
+        <!-- Vehicle Type Grid with Navigation -->
+        <div class="relative">
+            <!-- Navigation Controls -->
+            <div class="hidden md:flex justify-between items-center absolute inset-y-0 left-0 right-0 z-10 pointer-events-none">
+                <!-- Previous Button -->
+                <button id="prevVehicleBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-primary-white rounded-full shadow-modern-lg hover:shadow-modern-xl transition-all duration-300 hover:bg-primary-red hover:text-primary-white group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-white disabled:hover:text-text-dark border-2 border-gray-100 hover:border-primary-red -ml-6">
+                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-text-dark group-hover:text-primary-white"></i>
+                </button>
+
+                <!-- Next Button -->
+                <button id="nextVehicleBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-primary-white rounded-full shadow-modern-lg hover:shadow-modern-xl transition-all duration-300 hover:bg-primary-red hover:text-primary-white group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-white disabled:hover:text-text-dark border-2 border-gray-100 hover:border-primary-red -mr-6">
+                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-text-dark group-hover:text-primary-white"></i>
+                </button>
+            </div>
+
+            <!-- Vehicle Type List Container - 90% Total Width Increase (60% + 30%) -->
+            <div class="overflow-hidden">
+                <div id="vehicleTypeGrid" class="flex gap-8 lg:gap-12 transition-transform duration-500 ease-in-out" style="width: max-content;">
+                    {% load static %}
+                    {% for type in vehicle_types %}
+                        <div class="flex-shrink-0 group cursor-pointer transition-all duration-300 hover:scale-105 hover:-translate-y-1 w-48 sm:w-56 md:w-64 lg:w-72 xl:w-80" onclick="window.location.href='{% url 'core:car_list' %}?vehicle_type={{ type|lower }}'">
+                            <!-- Enhanced Vehicle Image - 30% Additional Width Increase -->
+                            <div class="relative mb-4">
+                                {% if forloop.counter <= 8 %}
+                                    <img src="{% static 'images/products-images/p' %}{{ forloop.counter }}.jpg"
+                                         alt="{{ type }} vehicles"
+                                         class="w-full h-32 sm:h-36 md:h-44 lg:h-48 object-cover rounded-xl transition-all duration-300 group-hover:brightness-110 group-hover:shadow-modern-lg"
+                                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-32 sm:h-36 md:h-44 lg:h-48 bg-gradient-to-br from-primary-blue to-primary-red flex items-center justify-center rounded-xl\'><i class=\'fas fa-car text-primary-white text-3xl\'></i></div>'">
+                                {% else %}
+                                    <div class="w-full h-32 sm:h-36 md:h-44 lg:h-48 bg-gradient-to-br from-primary-blue to-primary-red flex items-center justify-center rounded-xl">
+                                        <i class="fas fa-car text-primary-white text-3xl"></i>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Subtle Hover Overlay -->
+                                <div class="absolute inset-0 bg-primary-red opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl"></div>
+                            </div>
+
+                            <!-- Vehicle Type Name -->
+                            <h3 class="text-center text-sm sm:text-base lg:text-lg font-heading font-bold text-text-dark group-hover:text-primary-red transition-colors duration-300">
+                                {{ type }}
+                            </h3>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Mobile Navigation Dots -->
+            <div class="flex md:hidden justify-center mt-8 space-x-2">
+                <div id="mobileDots" class="flex space-x-2">
+                    <!-- Dots will be generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Site Features Overview -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Why Choose Gurumisha Motors</h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Experience the difference with our comprehensive automotive services</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="text-center group">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-deep-ocean to-azure rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-shield-alt text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-midnight mb-3">Verified Dealers</h3>
+                <p class="text-gray-600">All our dealers are thoroughly vetted and verified for your peace of mind</p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-search text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-midnight mb-3">Quality Inspection</h3>
+                <p class="text-gray-600">Every vehicle undergoes comprehensive quality checks before listing</p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-shipping-fast text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-midnight mb-3">Import Services</h3>
+                <p class="text-gray-600">Seamless car import services from Japan, UK, and other countries</p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-headset text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-midnight mb-3">24/7 Support</h3>
+                <p class="text-gray-600">Round-the-clock customer support to assist you at every step</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Cars Showcase -->
+<section class="py-20 bg-primary-white">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-16">
+            <div class="mb-6 lg:mb-0">
+                <h2 class="section-title-harrier mb-6">FEATURED CARS</h2>
+                <p class="text-lg text-text-light max-w-2xl font-body">Handpicked premium vehicles from trusted dealers, featuring the latest models and best deals</p>
+            </div>
+            <a href="{% url 'core:car_list' %}" class="btn-harrier-secondary hidden md:inline-flex">
+                <i class="fas fa-car mr-2"></i>VIEW ALL CARS
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10" id="featured-cars">
+            {% for car in featured_cars %}
+                <div class="bg-primary-white rounded-2xl shadow-modern overflow-hidden hover:shadow-modern-xl transition-all duration-500 group border border-gray-100">
+                    <div class="relative overflow-hidden">
+                        {% if car.main_image %}
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500">
+                        {% else %}
+                            <div class="w-full h-56 bg-gradient-to-br from-accent-gray to-gray-200 flex items-center justify-center">
+                                <i class="fas fa-car text-text-light text-5xl"></i>
+                            </div>
+                        {% endif %}
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-primary-red text-primary-white px-4 py-2 rounded-full text-sm font-bold shadow-modern">Featured</span>
+                        </div>
+                        <div class="absolute top-4 right-4">
+                            <button class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-crimson hover:text-white transition-colors">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <!-- Brand -->
+                        <div style="font-size: 12px; color: #ed6663; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; font-family: 'Open Sans', sans-serif;">{{ car.brand.name }}</div>
+
+                        <!-- Title -->
+                        <h3 class="product-title-harrier">{{ car.title }}</h3>
+
+                        <!-- Rating (placeholder) -->
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="far fa-star text-xs"></i>
+                            </div>
+                            <span class="text-xs text-harrier-muted ml-2">({{ car.views_count }} views)</span>
+                        </div>
+
+                        <!-- Other Info -->
+                        <div class="other-info">
+                            <div class="col-km" style="float: left; width: 33.3%;">
+                                <i class="fas fa-tachometer-alt" style="display: block; margin-bottom: 5px; color: #ccc;"></i>
+                                {{ car.mileage|floatformat:0 }} km
+                            </div>
+                            <div class="col-engine" style="float: left; width: 33.3%;">
+                                <i class="fas fa-gas-pump" style="display: block; margin-bottom: 5px; color: #ccc;"></i>
+                                {{ car.fuel_type|title }}
+                            </div>
+                            <div class="col-date" style="float: left; width: 33.3%; font-size: 14px;">
+                                <i class="fas fa-calendar" style="display: block; margin-bottom: 5px; color: #ccc;"></i>
+                                {{ car.year }}
+                            </div>
+                            <div style="clear: both;"></div>
+                        </div>
+
+                        <!-- Price and Actions -->
+                        <div class="flex justify-between items-center pt-3 border-t border-gray-100 mt-4">
+                            <div>
+                                <span class="price-harrier">KSh {{ car.price|floatformat:0 }}</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:border-harrier-red hover:text-harrier-red transition-colors" title="Compare">
+                                    <i class="fas fa-balance-scale text-xs"></i>
+                                </button>
+                                <a href="{% url 'core:car_detail' car.pk %}" class="btn-harrier-primary px-4 py-2 text-sm">VIEW</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-car text-gray-300 text-6xl mb-4"></i>
+                    <p class="text-gray-500 text-lg">No featured cars available at the moment.</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-8 md:hidden">
+            <a href="{% url 'core:car_list' %}" class="btn-secondary">View All Cars</a>
+        </div>
+    </div>
+</section>
+
+<!-- Car Brands Display -->
+<section class="py-20 bg-primary-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="section-title-harrier mb-6">TRUSTED BRANDS</h2>
+            <p class="text-lg text-text-light max-w-2xl mx-auto font-body">We work with the world's leading automotive brands to bring you quality and reliability</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-8 items-center">
+            {% for brand in car_brands %}
+                <div class="text-center group cursor-pointer">
+                    <div class="bg-accent-gray rounded-2xl p-8 hover:bg-primary-white hover:shadow-modern transition-all duration-300 border border-gray-100">
+                        {% if brand.logo %}
+                            <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" class="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300">
+                        {% else %}
+                            <div class="w-20 h-20 mx-auto bg-gradient-to-br from-primary-blue to-primary-red rounded-xl flex items-center justify-center">
+                                <span class="text-primary-white font-bold text-lg">{{ brand.name|slice:":2" }}</span>
+                            </div>
+                        {% endif %}
+                        <p class="mt-4 text-base font-semibold text-text-dark group-hover:text-primary-red transition-colors">{{ brand.name }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Sell Your Car CTA -->
+<section class="py-16 sell-car-bg-section" style="background-image: url('{% static 'images/slide2.jpg' %}'); min-height: 500px;">
+    <!-- Content -->
+    <div class="content container mx-auto px-4">
+        <div class="text-center text-white">
+            <h2 class="section-title-harrier mb-6" style="background: #ed6663; display: inline-block; color: white;">READY TO SELL YOUR CAR?</h2>
+            <p style="font-family: 'Saira Condensed', sans-serif; font-size: 18px; line-height: 23px; letter-spacing: 0.5px; color: #fff; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">Get the best value for your vehicle with our trusted platform. List your car today and reach thousands of potential buyers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="text-center">
+                    <div class="w-20 h-20 mx-auto mb-6 bg-harrier-red rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-camera text-white text-3xl"></i>
+                    </div>
+                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 10px;">UPLOAD PHOTOS</h3>
+                    <p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #fff; opacity: 0.9;">Add high-quality photos of your vehicle to attract more buyers</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-20 h-20 mx-auto mb-6 bg-harrier-red rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-edit text-white text-3xl"></i>
+                    </div>
+                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 10px;">ADD DETAILS</h3>
+                    <p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #fff; opacity: 0.9;">Provide comprehensive vehicle information and specifications</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-20 h-20 mx-auto mb-6 bg-harrier-red rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-handshake text-white text-3xl"></i>
+                    </div>
+                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 10px;">GET OFFERS</h3>
+                    <p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #fff; opacity: 0.9;">Receive inquiries from thousands of interested buyers</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="#" class="btn-harrier-primary text-lg px-8 py-4 inline-flex items-center justify-center">
+                    <i class="fas fa-car mr-2"></i>SELL YOUR CAR
+                </a>
+                <a href="#" style="padding: 10px 20px 8px 20px; font-size: 16px; text-transform: uppercase; font-weight: 400; color: #fff; letter-spacing: 1px; background: transparent; border: 2px solid #fff; border-radius: 0px; font-family: 'Saira Condensed', sans-serif; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#fff'; this.style.color='#333';" onmouseout="this.style.background='transparent'; this.style.color='#fff';">
+                    <i class="fas fa-calculator mr-2"></i>GET VALUATION
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Hot Deals Section -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-12">
+            <div>
+                <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Hot Deals</h2>
+                <p class="text-lg text-gray-600">Limited time offers on premium vehicles</p>
+            </div>
+            <div class="hidden md:flex items-center space-x-4">
+                <button class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-crimson hover:text-white transition-colors" id="deals-prev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-crimson hover:text-white transition-colors" id="deals-next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="hot-deals">
+            {% for car in hot_deals %}
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                    <div class="relative">
+                        {% if car.main_image %}
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
+                        {% else %}
+                            <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-car text-gray-400 text-3xl"></i>
+                            </div>
+                        {% endif %}
+                        <div class="absolute top-3 left-3">
+                            <span class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">Hot Deal</span>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        <h3 class="font-semibold text-midnight mb-1 truncate">{{ car.title }}</h3>
+                        <p class="text-sm text-gray-600 mb-3">{{ car.year }} • {{ car.mileage|floatformat:0 }} km</p>
+
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-bold text-crimson">KSh {{ car.price|floatformat:0 }}</span>
+                            <a href="{% url 'core:car_detail' car.pk %}" class="text-sm bg-crimson text-white px-3 py-1 rounded hover:bg-electric-red transition-colors">View</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500">No hot deals available at the moment.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Spare Parts Preview -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Genuine Spare Parts</h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Quality spare parts for all major car brands. Keep your vehicle running smoothly with our authentic parts.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {% for category in spare_part_categories %}
+                <div class="bg-gray-50 rounded-xl p-6 text-center hover:bg-gray-100 transition-colors duration-300 group cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-deep-ocean to-azure rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-cog text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-midnight mb-2">{{ category }}</h3>
+                    <p class="text-sm text-gray-600">High-quality parts available</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center">
+            <a href="{% url 'core:spare_parts' %}" class="btn-primary text-lg px-8 py-4">Browse Spare Parts</a>
+        </div>
+    </div>
+</section>
+
+<!-- Customer Testimonials -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">What Our Customers Say</h2>
+            <p class="text-lg text-gray-600">Real experiences from satisfied customers</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {% for testimonial in testimonials %}
+                <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        {% if testimonial.rating >= 1 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                        {% if testimonial.rating >= 2 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                        {% if testimonial.rating >= 3 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                        {% if testimonial.rating >= 4 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                        {% if testimonial.rating >= 5 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                    </div>
+                    <p class="text-gray-700 mb-6 italic">"{{ testimonial.content }}"</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-crimson to-electric-red rounded-full flex items-center justify-center text-white font-semibold">
+                            {{ testimonial.customer.first_name|first|default:testimonial.customer.username|first }}{{ testimonial.customer.last_name|first|default:"" }}
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-semibold text-midnight">{{ testimonial.customer.get_full_name|default:testimonial.customer.username }}</p>
+                            <p class="text-sm text-gray-600">Verified Customer</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500">No testimonials available yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Resources Preview -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-12">
+            <div>
+                <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Latest Resources</h2>
+                <p class="text-lg text-gray-600">Stay updated with automotive news, tips, and insights</p>
+            </div>
+            <a href="{% url 'core:resources' %}" class="btn-secondary hidden md:inline-flex">View All Resources</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {% for post in blog_posts %}
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+                    <div class="relative overflow-hidden">
+                        {% if post.featured_image %}
+                            <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
+                        {% else %}
+                            <div class="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                <i class="fas fa-newspaper text-gray-400 text-4xl"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="p-6">
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <i class="fas fa-calendar mr-2"></i>
+                            <span>{{ post.published_at|date:"M d, Y" }}</span>
+                            <span class="mx-2">•</span>
+                            <span>{{ post.author.get_full_name|default:post.author.username }}</span>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-midnight mb-3 group-hover:text-crimson transition-colors">
+                            <a href="{% url 'core:resource_detail' post.slug %}">{{ post.title }}</a>
+                        </h3>
+
+                        <p class="text-gray-600 mb-4">{{ post.excerpt|default:post.content|truncatewords:20 }}</p>
+
+                        <a href="{% url 'core:resource_detail' post.slug %}" class="text-crimson font-semibold hover:text-electric-red transition-colors">
+                            Read More <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500">No resources available yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-8 md:hidden">
+            <a href="{% url 'core:resources' %}" class="btn-secondary">View All Resources</a>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Enhanced Vehicle Type List Navigation JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vehicleTypeGrid = document.getElementById('vehicleTypeGrid');
+    const prevBtn = document.getElementById('prevVehicleBtn');
+    const nextBtn = document.getElementById('nextVehicleBtn');
+    const mobileDots = document.getElementById('mobileDots');
+    const container = vehicleTypeGrid?.parentElement;
+
+    if (!vehicleTypeGrid || !container) return;
+
+    const items = Array.from(vehicleTypeGrid.children);
+    const totalItems = items.length;
+    let currentIndex = 0;
+    let scrollAmount = 0;
+
+    // Calculate scroll amount based on screen size and item width
+    function getScrollAmount() {
+        const width = window.innerWidth;
+        if (width >= 1280) return 320; // xl: scroll by ~1 item (w-80 = 320px)
+        if (width >= 1024) return 288; // lg: scroll by ~1 item (w-72 = 288px)
+        if (width >= 768) return 256;  // md: scroll by ~1 item (w-64 = 256px)
+        if (width >= 640) return 224;  // sm: scroll by ~1 item (w-56 = 224px)
+        return 192; // mobile: scroll by ~1 item (w-48 = 192px)
+    }
+
+    // Calculate how many items are visible
+    function getVisibleItems() {
+        const containerWidth = container.offsetWidth;
+        const itemWidth = getScrollAmount();
+        return Math.floor(containerWidth / itemWidth);
+    }
+
+    // Calculate maximum scroll position
+    function getMaxScroll() {
+        const containerWidth = container.offsetWidth;
+        const totalWidth = vehicleTypeGrid.scrollWidth;
+        return Math.max(0, totalWidth - containerWidth);
+    }
+
+    // Calculate total pages for mobile dots
+    function getTotalPages() {
+        const visibleItems = getVisibleItems();
+        return Math.ceil(totalItems / visibleItems);
+    }
+
+    function updateNavigation() {
+        const maxScroll = getMaxScroll();
+
+        if (prevBtn && nextBtn) {
+            // Update button states based on scroll position
+            prevBtn.disabled = scrollAmount <= 0;
+            nextBtn.disabled = scrollAmount >= maxScroll;
+
+            // Add visual feedback
+            if (prevBtn.disabled) {
+                prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            if (nextBtn.disabled) {
+                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Update mobile dots
+        updateMobileDots();
+
+        // Apply smooth transform
+        vehicleTypeGrid.style.transform = `translateX(-${scrollAmount}px)`;
+    }
+
+    function updateMobileDots() {
+        if (!mobileDots) return;
+
+        const totalPages = getTotalPages();
+        const visibleItems = getVisibleItems();
+        const currentPage = Math.floor(currentIndex / visibleItems);
+
+        mobileDots.innerHTML = '';
+
+        // Only show dots if there are multiple pages
+        if (totalPages > 1) {
+            for (let i = 0; i < totalPages; i++) {
+                const dot = document.createElement('button');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${
+                    i === currentPage
+                        ? 'bg-primary-red w-6'
+                        : 'bg-gray-300 hover:bg-gray-400'
+                }`;
+                dot.addEventListener('click', () => goToPage(i));
+                mobileDots.appendChild(dot);
+            }
+        }
+    }
+
+    function goToPage(page) {
+        const visibleItems = getVisibleItems();
+        const newIndex = page * visibleItems;
+        const itemScrollAmount = getScrollAmount();
+
+        currentIndex = Math.min(newIndex, totalItems - 1);
+        scrollAmount = Math.min(currentIndex * itemScrollAmount, getMaxScroll());
+
+        updateNavigation();
+    }
+
+    function goToPrevious() {
+        const itemScrollAmount = getScrollAmount();
+        const newScrollAmount = Math.max(0, scrollAmount - itemScrollAmount);
+
+        if (newScrollAmount !== scrollAmount) {
+            scrollAmount = newScrollAmount;
+            currentIndex = Math.max(0, currentIndex - 1);
+            updateNavigation();
+        }
+    }
+
+    function goToNext() {
+        const itemScrollAmount = getScrollAmount();
+        const maxScroll = getMaxScroll();
+        const newScrollAmount = Math.min(maxScroll, scrollAmount + itemScrollAmount);
+
+        if (newScrollAmount !== scrollAmount) {
+            scrollAmount = newScrollAmount;
+            currentIndex = Math.min(totalItems - 1, currentIndex + 1);
+            updateNavigation();
+        }
+    }
+
+    // Event listeners
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            goToPrevious();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            goToNext();
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        // Recalculate on resize
+        scrollAmount = 0;
+        currentIndex = 0;
+        updateNavigation();
+    });
+
+    // Touch/swipe support for mobile
+    let startX = 0;
+    let startY = 0;
+    let isScrolling = false;
+
+    container.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isScrolling = false;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', function(e) {
+        if (!startX || !startY) return;
+
+        const diffX = Math.abs(e.touches[0].clientX - startX);
+        const diffY = Math.abs(e.touches[0].clientY - startY);
+
+        // Determine if user is scrolling vertically
+        if (diffY > diffX) {
+            isScrolling = true;
+        }
+    }, { passive: true });
+
+    container.addEventListener('touchend', function(e) {
+        if (!startX || isScrolling) return;
+
+        const endX = e.changedTouches[0].clientX;
+        const diffX = startX - endX;
+        const threshold = 50; // Minimum swipe distance
+
+        if (Math.abs(diffX) > threshold) {
+            if (diffX > 0) {
+                // Swiped left - go to next
+                goToNext();
+            } else {
+                // Swiped right - go to previous
+                goToPrevious();
+            }
+        }
+
+        startX = 0;
+        startY = 0;
+        isScrolling = false;
+    }, { passive: true });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.target.closest('#vehicleTypeGrid')) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goToPrevious();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                goToNext();
+            }
+        }
+    });
+
+    // Auto-scroll functionality (optional)
+    let autoScrollInterval;
+
+    function startAutoScroll() {
+        autoScrollInterval = setInterval(function() {
+            const maxScroll = getMaxScroll();
+            if (scrollAmount >= maxScroll) {
+                // Reset to beginning
+                scrollAmount = 0;
+                currentIndex = 0;
+            } else {
+                goToNext();
+            }
+        }, 4000); // Auto-scroll every 4 seconds
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+        }
+    }
+
+    // Start auto-scroll
+    startAutoScroll();
+
+    // Pause auto-scroll on hover or interaction
+    const section = container.closest('section');
+    if (section) {
+        section.addEventListener('mouseenter', stopAutoScroll);
+        section.addEventListener('mouseleave', startAutoScroll);
+    }
+
+    // Pause auto-scroll on button interaction
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            stopAutoScroll();
+            setTimeout(startAutoScroll, 8000); // Resume after 8 seconds
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            stopAutoScroll();
+            setTimeout(startAutoScroll, 8000); // Resume after 8 seconds
+        });
+    }
+
+    // Initialize
+    updateNavigation();
+});
+</script>
+
+{% endblock %}

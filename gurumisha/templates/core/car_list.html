@@ -1,0 +1,710 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Browse Cars - Gurumisha Motors{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/car-listing-enhancements.css' %}">
+{% endblock %}
+
+{% block content %}
+
+
+<!-- Enhanced Hero Section -->
+<section class="relative bg-gradient-to-br from-primary-black via-primary-blue to-primary-red min-h-[60vh] flex items-center overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0 z-0">
+        <img src="{% static 'images/car-image-1-1200x600.jpg' %}" alt="Car Listing Hero" class="w-full h-full object-cover opacity-30">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-black/80 via-primary-blue/60 to-primary-red/70"></div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="relative z-10 container mx-auto px-4 py-16">
+        <div class="max-w-4xl mx-auto text-center text-white">
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight animate-fade-in-up font-montserrat" style="text-transform: uppercase; letter-spacing: 2px;">
+                DISCOVER YOUR
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">PERFECT</span>
+                VEHICLE
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 text-gray-200 leading-relaxed max-w-3xl mx-auto animate-fade-in-up animate-delay-200 font-inter">
+                Browse through our premium collection of vehicles from trusted dealers across Kenya
+            </p>
+
+            <!-- Quick Search in Hero -->
+            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto">
+                <form method="GET" class="flex flex-col md:flex-row gap-4" id="hero-search-form">
+                    <div class="flex-1">
+                        <input type="text" name="search" value="{{ current_filters.search }}"
+                               placeholder="Search by brand, model, or keyword..."
+                               class="w-full px-4 py-3 rounded-lg border-0 bg-white/90 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-primary-red focus:bg-white transition-all">
+                    </div>
+                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-primary-red to-accent-red text-white font-bold rounded-lg hover:from-accent-red hover:to-primary-red transform hover:scale-105 transition-all duration-300 shadow-lg">
+                        <i class="fas fa-search mr-2"></i>SEARCH CARS
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
+        <i class="fas fa-chevron-down text-2xl"></i>
+    </div>
+</section>
+
+<!-- Car Brand Features Section -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-primary-black mb-4" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
+                FEATURED AUTOMOTIVE BRANDS
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Discover vehicles from the world's most trusted automotive manufacturers
+            </p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {% for i in "123456" %}
+                <div class="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 p-6 border border-gray-100 hover:border-primary-red">
+                    <div class="text-center">
+                        <div class="mb-4 flex justify-center">
+                            <img src="{% static 'images/brand' %}{{ i }}.png" alt="Brand {{ i }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300">
+                        </div>
+                        <div class="space-y-2">
+                            <h3 class="font-semibold text-primary-black text-sm uppercase tracking-wide">
+                                {% if i == "1" %}Toyota{% elif i == "2" %}Honda{% elif i == "3" %}Nissan{% elif i == "4" %}BMW{% elif i == "5" %}Mercedes{% else %}Audi{% endif %}
+                            </h3>
+                            <p class="text-xs text-gray-500">
+                                {% if i == "1" %}Reliability & Innovation{% elif i == "2" %}Performance & Efficiency{% elif i == "3" %}Technology & Style{% elif i == "4" %}Luxury & Performance{% elif i == "5" %}Elegance & Power{% else %}Precision & Design{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Pill Section for Listing Types -->
+<section class="py-8 bg-gradient-to-r from-harrier-gray to-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-primary-black mb-3" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
+                BROWSE BY CATEGORY
+            </h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Discover vehicles from different sources and find exactly what you're looking for
+            </p>
+        </div>
+
+        <!-- Pill Navigation -->
+        <div class="flex flex-wrap justify-center gap-3 mb-6" role="tablist" aria-label="Car listing categories">
+            <!-- All Listings Pill -->
+            <button class="pill-button {% if not current_filters.listing_type %}pill-active{% endif %}"
+                    data-listing-type=""
+                    role="tab"
+                    aria-selected="{% if not current_filters.listing_type %}true{% else %}false{% endif %}"
+                    aria-controls="cars-results">
+                <i class="fas fa-car mr-2" aria-hidden="true"></i>
+                <span>All Listings</span>
+                <span class="pill-count" id="count-all">{{ total_cars }}</span>
+            </button>
+
+            <!-- Imported Cars Pill -->
+            <button class="pill-button {% if current_filters.listing_type == 'imported' %}pill-active{% endif %}"
+                    data-listing-type="imported"
+                    role="tab"
+                    aria-selected="{% if current_filters.listing_type == 'imported' %}true{% else %}false{% endif %}"
+                    aria-controls="cars-results">
+                <i class="fas fa-ship mr-2" aria-hidden="true"></i>
+                <span>Imported Cars</span>
+                <span class="pill-count" id="count-imported">{{ imported_count }}</span>
+            </button>
+
+            <!-- Sell on Behalf Pill -->
+            <button class="pill-button {% if current_filters.listing_type == 'sell_behalf' %}pill-active{% endif %}"
+                    data-listing-type="sell_behalf"
+                    role="tab"
+                    aria-selected="{% if current_filters.listing_type == 'sell_behalf' %}true{% else %}false{% endif %}"
+                    aria-controls="cars-results">
+                <i class="fas fa-handshake mr-2" aria-hidden="true"></i>
+                <span>Sell on Behalf</span>
+                <span class="pill-count" id="count-sell-behalf">{{ sell_behalf_count }}</span>
+            </button>
+
+            <!-- Auctioned Pill -->
+            <button class="pill-button {% if current_filters.listing_type == 'auction' %}pill-active{% endif %}"
+                    data-listing-type="auction"
+                    role="tab"
+                    aria-selected="{% if current_filters.listing_type == 'auction' %}true{% else %}false{% endif %}"
+                    aria-controls="cars-results">
+                <i class="fas fa-gavel mr-2" aria-hidden="true"></i>
+                <span>Auctioned</span>
+                <span class="pill-count" id="count-auction">{{ auction_count }}</span>
+            </button>
+        </div>
+
+        <!-- Category Descriptions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="w-12 h-12 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-car text-white text-lg"></i>
+                </div>
+                <h3 class="font-semibold text-primary-black mb-2">All Listings</h3>
+                <p class="text-sm text-gray-600">Browse our complete inventory of available vehicles</p>
+            </div>
+
+            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-ship text-white text-lg"></i>
+                </div>
+                <h3 class="font-semibold text-primary-black mb-2">Imported Cars</h3>
+                <p class="text-sm text-gray-600">Premium vehicles imported from international markets</p>
+            </div>
+
+            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-handshake text-white text-lg"></i>
+                </div>
+                <h3 class="font-semibold text-primary-black mb-2">Sell on Behalf</h3>
+                <p class="text-sm text-gray-600">Vehicles sold on behalf of individual owners</p>
+            </div>
+
+            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-gavel text-white text-lg"></i>
+                </div>
+                <h3 class="font-semibold text-primary-black mb-2">Auctioned</h3>
+                <p class="text-sm text-gray-600">Vehicles available through auction processes</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content Section with Sidebar Filters -->
+<section class="py-12 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Left Sidebar - Advanced Filters -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-xl shadow-lg p-6 sticky top-4">
+                    <!-- Mobile Filter Toggle -->
+                    <div class="lg:hidden mb-4">
+                        <button id="mobile-filter-toggle"
+                                class="w-full flex items-center justify-between p-3 bg-primary-red text-white rounded-lg font-semibold focus:ring-2 focus:ring-primary-red focus:ring-offset-2"
+                                aria-expanded="false"
+                                aria-controls="filter-container"
+                                aria-label="Toggle filter options">
+                            <span><i class="fas fa-filter mr-2" aria-hidden="true"></i>FILTERS</span>
+                            <i class="fas fa-chevron-down transition-transform duration-300" id="filter-chevron" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filter Form -->
+                    <div id="filter-container" class="lg:block hidden" role="region" aria-labelledby="filter-heading">
+                        <h3 id="filter-heading" class="text-lg font-bold text-primary-black mb-6 uppercase tracking-wide" style="font-family: 'Saira Condensed', sans-serif;">
+                            <i class="fas fa-sliders-h mr-2 text-primary-red" aria-hidden="true"></i>REFINE SEARCH
+                        </h3>
+
+                        <form method="GET" id="filter-form"
+                              hx-get="{% url 'core:car_list' %}"
+                              hx-target="#cars-results"
+                              hx-trigger="change, submit"
+                              hx-indicator="#loading-indicator"
+                              role="search"
+                              aria-label="Car search filters">
+
+                            <!-- Hidden input for listing type (pill section) -->
+                            <input type="hidden" name="listing_type" value="{{ current_filters.listing_type }}">
+
+                            <!-- Search -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-search mr-2 text-primary-red"></i>SEARCH
+                                </label>
+                                <input type="text" name="search" value="{{ current_filters.search }}"
+                                       placeholder="Search cars..."
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                            </div>
+
+                            <!-- Brand Filter -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-car mr-2 text-primary-red"></i>BRAND
+                                </label>
+                                <select name="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="">All Brands</option>
+                                    {% for brand in brands %}
+                                        <option value="{{ brand.id }}" {% if current_filters.brand == brand.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ brand.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Price Range -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-money-bill-wave mr-2 text-primary-red"></i>PRICE RANGE
+                                </label>
+                                <select name="max_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="">Any Price</option>
+                                    <option value="500000" {% if current_filters.max_price == "500000" %}selected{% endif %}>Under 500K KSh</option>
+                                    <option value="1000000" {% if current_filters.max_price == "1000000" %}selected{% endif %}>Under 1M KSh</option>
+                                    <option value="2000000" {% if current_filters.max_price == "2000000" %}selected{% endif %}>Under 2M KSh</option>
+                                    <option value="5000000" {% if current_filters.max_price == "5000000" %}selected{% endif %}>Under 5M KSh</option>
+                                    <option value="10000000" {% if current_filters.max_price == "10000000" %}selected{% endif %}>Under 10M KSh</option>
+                                </select>
+                            </div>
+
+                            <!-- Year Range -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-calendar-alt mr-2 text-primary-red"></i>YEAR
+                                </label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select name="min_year" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all text-sm">
+                                        <option value="">Min Year</option>
+                                        {% for year in year_range %}
+                                            <option value="{{ year }}" {% if current_filters.min_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <select name="max_year" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all text-sm">
+                                        <option value="">Max Year</option>
+                                        {% for year in year_range %}
+                                            <option value="{{ year }}" {% if current_filters.max_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Mileage -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-tachometer-alt mr-2 text-primary-red"></i>MILEAGE
+                                </label>
+                                <select name="max_mileage" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="">Any Mileage</option>
+                                    <option value="50000" {% if current_filters.max_mileage == "50000" %}selected{% endif %}>Under 50,000 km</option>
+                                    <option value="100000" {% if current_filters.max_mileage == "100000" %}selected{% endif %}>Under 100,000 km</option>
+                                    <option value="150000" {% if current_filters.max_mileage == "150000" %}selected{% endif %}>Under 150,000 km</option>
+                                    <option value="200000" {% if current_filters.max_mileage == "200000" %}selected{% endif %}>Under 200,000 km</option>
+                                </select>
+                            </div>
+
+                            <!-- Fuel Type -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-gas-pump mr-2 text-primary-red"></i>FUEL TYPE
+                                </label>
+                                <select name="fuel_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="">Any Fuel</option>
+                                    {% for value, label in fuel_types %}
+                                        <option value="{{ value }}" {% if current_filters.fuel_type == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Transmission -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-cogs mr-2 text-primary-red"></i>TRANSMISSION
+                                </label>
+                                <select name="transmission" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="">Any Transmission</option>
+                                    {% for value, label in transmission_types %}
+                                        <option value="{{ value }}" {% if current_filters.transmission == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Condition -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-primary-black mb-3 uppercase tracking-wide">
+                                    <i class="fas fa-star mr-2 text-primary-red"></i>CONDITION
+                                </label>
+                                <select name="condition" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="">Any Condition</option>
+                                    {% for value, label in condition_types %}
+                                        <option value="{{ value }}" {% if current_filters.condition == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Clear Filters Button -->
+                            <div class="mb-4">
+                                <a href="{% url 'core:car_list' %}" class="w-full block text-center py-3 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-times mr-2"></i>CLEAR ALL FILTERS
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Content Area -->
+            <div class="lg:w-3/4">
+                <div id="cars-results">
+                    <!-- Results Header -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-white p-6 rounded-xl shadow-lg">
+                        <div>
+                            <h2 class="text-2xl font-bold text-primary-black mb-2" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">
+                                {% if cars %}
+                                    {{ cars|length }} CAR{{ cars|length|pluralize }} FOUND
+                                {% else %}
+                                    NO CARS FOUND
+                                {% endif %}
+                            </h2>
+                            {% if current_filters.search %}
+                                <p class="text-gray-600">Search results for "<span class="font-semibold text-primary-red">{{ current_filters.search }}</span>"</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                            <!-- Sort Dropdown -->
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm font-semibold text-gray-600">SORT BY:</label>
+                                <select name="sort" form="filter-form" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all">
+                                    <option value="-created_at" {% if current_filters.sort == "-created_at" %}selected{% endif %}>Newest First</option>
+                                    <option value="price" {% if current_filters.sort == "price" %}selected{% endif %}>Price: Low to High</option>
+                                    <option value="-price" {% if current_filters.sort == "-price" %}selected{% endif %}>Price: High to Low</option>
+                                    <option value="year" {% if current_filters.sort == "year" %}selected{% endif %}>Year: Old to New</option>
+                                    <option value="-year" {% if current_filters.sort == "-year" %}selected{% endif %}>Year: New to Old</option>
+                                </select>
+                            </div>
+
+                            <!-- View Toggle -->
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-semibold text-gray-600">VIEW:</span>
+                                <button class="p-2 border border-gray-300 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-colors" id="grid-view" title="Grid View">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <button class="p-2 border border-gray-300 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-colors" id="list-view" title="List View">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loading-indicator" class="htmx-indicator">
+                        <div class="flex justify-center items-center py-12">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
+                        </div>
+                    </div>
+
+                    <!-- Cars Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="cars-grid">
+                        {% for car in cars %}
+                            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group card-animate animate-entrance animate-delay-{{ forloop.counter }}00">
+                                <div class="relative overflow-hidden">
+                                    {% if car.main_image %}
+                                        <img data-src="{{ car.main_image.url }}" src="{% static 'images/products-images/p1.jpg' %}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500 image-zoom loading-shimmer" loading="lazy">
+                                    {% else %}
+                                        <div class="w-full h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                            <i class="fas fa-car text-gray-400 text-5xl"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Enhanced Badges -->
+                                    {% if car.status == 'featured' %}
+                                        <div class="absolute top-3 left-3 bg-gradient-to-r from-primary-red to-accent-red text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-star mr-1"></i>FEATURED
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Listing Type Badge -->
+                                    {% if car.listing_type == 'imported' %}
+                                        <div class="absolute top-3 {% if car.status == 'featured' %}left-24{% else %}left-3{% endif %} bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-ship mr-1"></i>IMPORTED
+                                        </div>
+                                    {% elif car.listing_type == 'sell_behalf' %}
+                                        <div class="absolute top-3 {% if car.status == 'featured' %}left-24{% else %}left-3{% endif %} bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-handshake mr-1"></i>SELL ON BEHALF
+                                        </div>
+                                    {% elif car.listing_type == 'auction' %}
+                                        <div class="absolute top-3 {% if car.status == 'featured' %}left-24{% else %}left-3{% endif %} bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-gavel mr-1"></i>AUCTION
+                                        </div>
+                                    {% endif %}
+
+                                    {% if car.condition == 'new' %}
+                                        <div class="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">NEW</div>
+                                    {% elif car.condition == 'used' %}
+                                        <div class="absolute top-3 right-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">USED</div>
+                                    {% elif car.condition == 'certified' %}
+                                        <div class="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">CERTIFIED</div>
+                                    {% endif %}
+
+                                    <!-- Wishlist Button -->
+                                    <div class="absolute bottom-3 right-3">
+                                        <button class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-primary-red hover:text-white transition-all duration-300 shadow-lg">
+                                            <i class="fas fa-heart text-sm"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Quick View Overlay -->
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-6">
+                                        <a href="{% url 'core:car_detail' car.pk %}" class="bg-white text-primary-black px-6 py-3 rounded-lg font-bold hover:bg-primary-red hover:text-white transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shadow-lg">
+                                            <i class="fas fa-eye mr-2"></i>VIEW DETAILS
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="p-6">
+                                    <!-- Brand -->
+                                    <div class="text-xs text-primary-red font-bold uppercase tracking-wider mb-2">{{ car.brand.name }}</div>
+
+                                    <!-- Title -->
+                                    <h3 class="text-lg font-bold text-primary-black mb-3 line-clamp-2 leading-tight" style="font-family: 'Saira Condensed', sans-serif;">{{ car.title }}</h3>
+
+                                    <!-- Rating and Views -->
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex text-yellow-400">
+                                            <i class="fas fa-star text-sm"></i>
+                                            <i class="fas fa-star text-sm"></i>
+                                            <i class="fas fa-star text-sm"></i>
+                                            <i class="fas fa-star text-sm"></i>
+                                            <i class="far fa-star text-sm"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                            <i class="fas fa-eye mr-1"></i>{{ car.views_count }} views
+                                        </span>
+                                    </div>
+
+                                    <!-- Enhanced Specs -->
+                                    <div class="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar text-primary-red mr-2"></i>
+                                            <span>{{ car.year }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-tachometer-alt text-primary-red mr-2"></i>
+                                            <span>{{ car.mileage|floatformat:0 }}km</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-gas-pump text-primary-red mr-2"></i>
+                                            <span>{{ car.fuel_type|title }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-cogs text-primary-red mr-2"></i>
+                                            <span>{{ car.transmission|title }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Price and Actions -->
+                                    <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                                        <div>
+                                            <span class="text-2xl font-bold text-primary-red" style="font-family: 'Saira Condensed', sans-serif;">
+                                                KSh {{ car.price|floatformat:0 }}
+                                            </span>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="w-10 h-10 border-2 border-gray-200 rounded-lg flex items-center justify-center hover:border-primary-red hover:text-primary-red transition-all duration-300" title="Compare">
+                                                <i class="fas fa-balance-scale text-sm"></i>
+                                            </button>
+                                            <a href="{% url 'core:car_detail' car.pk %}" class="bg-gradient-to-r from-primary-red to-accent-red text-white px-6 py-2 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg">
+                                                VIEW
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-span-full text-center py-20 bg-white rounded-xl shadow-lg">
+                                <div class="max-w-md mx-auto">
+                                    <i class="fas fa-search text-gray-300 text-6xl mb-6"></i>
+                                    <h3 class="text-2xl font-bold text-primary-black mb-4" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">
+                                        NO CARS FOUND
+                                    </h3>
+                                    <p class="text-gray-600 mb-8 leading-relaxed">
+                                        We couldn't find any vehicles matching your criteria. Try adjusting your filters or browse our complete collection.
+                                    </p>
+                                    <a href="{% url 'core:car_list' %}" class="bg-gradient-to-r from-primary-red to-accent-red text-white px-8 py-3 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg">
+                                        <i class="fas fa-car mr-2"></i>BROWSE ALL CARS
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Enhanced Pagination -->
+                    {% if is_paginated %}
+                        <div class="flex justify-center mt-12">
+                            <nav class="flex items-center space-x-2 bg-white rounded-xl shadow-lg p-4">
+                                {% if page_obj.has_previous %}
+                                    <a href="?page=1{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                                       class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                                        <i class="fas fa-angle-double-left mr-1"></i>FIRST
+                                    </a>
+                                    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                                       class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                                        <i class="fas fa-angle-left mr-1"></i>PREV
+                                    </a>
+                                {% endif %}
+
+                                <span class="px-6 py-2 bg-gradient-to-r from-primary-red to-accent-red text-white rounded-lg font-bold shadow-lg">
+                                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                                </span>
+
+                                {% if page_obj.has_next %}
+                                    <a href="?page={{ page_obj.next_page_number }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                                       class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                                        NEXT<i class="fas fa-angle-right ml-1"></i>
+                                    </a>
+                                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}"
+                                       class="px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-primary-red hover:text-white hover:border-primary-red transition-all duration-300 font-semibold">
+                                        LAST<i class="fas fa-angle-double-right ml-1"></i>
+                                    </a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile filter toggle
+        const mobileFilterToggle = document.getElementById('mobile-filter-toggle');
+        const filterContainer = document.getElementById('filter-container');
+        const filterChevron = document.getElementById('filter-chevron');
+
+        if (mobileFilterToggle) {
+            mobileFilterToggle.addEventListener('click', function() {
+                const isExpanded = filterContainer.classList.contains('hidden');
+                filterContainer.classList.toggle('hidden');
+                filterChevron.classList.toggle('rotate-180');
+
+                // Update ARIA attributes for accessibility
+                mobileFilterToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+
+                // Add smooth transition class
+                filterContainer.classList.add('filter-transition');
+            });
+        }
+
+        // Auto-submit form on filter change with HTMX
+        document.querySelectorAll('#filter-form select, #filter-form input').forEach(element => {
+            element.addEventListener('change', function() {
+                // Trigger HTMX request
+                htmx.trigger('#filter-form', 'submit');
+            });
+        });
+
+        // Search input with debounce
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    htmx.trigger('#filter-form', 'submit');
+                }, 500);
+            });
+        }
+
+        // View toggle functionality
+        const gridView = document.getElementById('grid-view');
+        const listView = document.getElementById('list-view');
+        const carsGrid = document.getElementById('cars-grid');
+
+        if (gridView && listView && carsGrid) {
+            gridView.addEventListener('click', function() {
+                carsGrid.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6';
+                gridView.classList.add('bg-primary-red', 'text-white', 'border-primary-red');
+                listView.classList.remove('bg-primary-red', 'text-white', 'border-primary-red');
+            });
+
+            listView.addEventListener('click', function() {
+                carsGrid.className = 'grid grid-cols-1 gap-6';
+                listView.classList.add('bg-primary-red', 'text-white', 'border-primary-red');
+                gridView.classList.remove('bg-primary-red', 'text-white', 'border-primary-red');
+            });
+        }
+
+        // Smooth scroll for hero scroll indicator
+        const scrollIndicator = document.querySelector('.animate-bounce');
+        if (scrollIndicator) {
+            scrollIndicator.addEventListener('click', function() {
+                document.querySelector('.py-16').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        // Pill section functionality
+        const pillButtons = document.querySelectorAll('.pill-button');
+        const filterForm = document.getElementById('filter-form');
+
+        pillButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const listingType = this.getAttribute('data-listing-type');
+
+                // Update active state
+                pillButtons.forEach(btn => {
+                    btn.classList.remove('pill-active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+                this.classList.add('pill-active');
+                this.setAttribute('aria-selected', 'true');
+
+                // Add loading state
+                this.classList.add('pill-loading');
+
+                // Update or create hidden input for listing_type
+                let listingTypeInput = filterForm.querySelector('input[name="listing_type"]');
+                if (!listingTypeInput) {
+                    listingTypeInput = document.createElement('input');
+                    listingTypeInput.type = 'hidden';
+                    listingTypeInput.name = 'listing_type';
+                    filterForm.appendChild(listingTypeInput);
+                }
+                listingTypeInput.value = listingType;
+
+                // Clear search input when switching categories
+                const searchInput = filterForm.querySelector('input[name="search"]');
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+
+                // Trigger HTMX request
+                htmx.trigger(filterForm, 'submit');
+
+                // Remove loading state after a delay
+                setTimeout(() => {
+                    this.classList.remove('pill-loading');
+                }, 1000);
+            });
+        });
+
+        // Enhanced loading states
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+
+            // Remove loading state from all pill buttons
+            pillButtons.forEach(btn => {
+                btn.classList.remove('pill-loading');
+            });
+        });
+    });
+</script>
+{% endblock %}

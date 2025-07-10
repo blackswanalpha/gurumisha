@@ -1,0 +1,716 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - Gurumisha Motors{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth-pages.css' %}">
+<style>
+/* Inline Critical CSS for Authentication Pages */
+.auth-hero {
+    position: relative;
+    min-height: 60vh;
+    background: linear-gradient(135deg, #DC2626 0%, #1F2937 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.auth-hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.auth-hero-title {
+    font-family: 'Montserrat', 'Raleway', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-hero-subtitle {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    font-weight: 400;
+    line-height: 1.6;
+    opacity: 0.95;
+    margin-bottom: 2rem;
+}
+
+.auth-hero-features {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.auth-hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.auth-form-container {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 40px rgba(220, 38, 38, 0.1) !important;
+    overflow: hidden !important;
+}
+
+.auth-form-section {
+    padding: 3rem;
+    position: relative;
+}
+
+.auth-form-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+
+.auth-form-subtitle {
+    font-family: 'Raleway', sans-serif;
+    color: #6B7280;
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+}
+
+.auth-form-group {
+    margin-bottom: 1.75rem !important;
+    position: relative;
+}
+
+.auth-form-label {
+    font-family: 'Raleway', sans-serif !important;
+    font-weight: 600 !important;
+    color: #1F2937 !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+.auth-form-input {
+    width: 100% !important;
+    padding: 1rem 1.25rem !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    font-size: 1rem !important;
+    font-family: 'Inter', sans-serif !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.25s ease;
+}
+
+.auth-form-input:focus {
+    outline: none !important;
+    border-color: #DC2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    transform: translateY(-1px);
+}
+
+.auth-submit-btn {
+    width: 100% !important;
+    padding: 1.25rem 2rem !important;
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 4px 20px rgba(220, 38, 38, 0.3) !important;
+}
+
+.auth-submit-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 8px 30px rgba(220, 38, 38, 0.4) !important;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
+}
+
+.auth-side-panel {
+    background: linear-gradient(135deg, #DC2626 0%, #1F2937 100%) !important;
+    color: white !important;
+    padding: 3rem !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-side-title {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 1.5rem !important;
+    line-height: 1.2;
+}
+
+.auth-side-description {
+    font-family: 'Raleway', sans-serif !important;
+    font-size: 1.1rem !important;
+    line-height: 1.6;
+    opacity: 0.95;
+    margin-bottom: 2.5rem !important;
+}
+
+.auth-features-list {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.auth-features-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    margin-bottom: 1.25rem !important;
+    font-family: 'Raleway', sans-serif !important;
+    font-size: 1rem !important;
+    opacity: 0.9;
+}
+
+.auth-features-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 1.1rem !important;
+    flex-shrink: 0;
+}
+
+/* Features Showcase Section */
+.auth-features-showcase {
+    padding: 5rem 0 !important;
+    background: linear-gradient(135deg, #F9FAFB 0%, #ffffff 100%) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-features-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.auth-features-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.auth-features-header h2 {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: clamp(2rem, 4vw, 3rem) !important;
+    font-weight: 700 !important;
+    color: #1F2937 !important;
+    margin-bottom: 1rem !important;
+    line-height: 1.2;
+}
+
+.auth-features-header p {
+    font-family: 'Raleway', sans-serif !important;
+    font-size: 1.2rem !important;
+    color: #6B7280 !important;
+    max-width: 600px;
+    margin: 0 auto !important;
+    line-height: 1.6;
+}
+
+.auth-features-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 2.5rem !important;
+    margin-bottom: 3rem !important;
+}
+
+.auth-feature-card {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 1rem !important;
+    padding: 2.5rem !important;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.auth-feature-card:hover {
+    transform: translateY(-8px) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.auth-feature-icon-wrapper {
+    width: 4rem !important;
+    height: 4rem !important;
+    background: linear-gradient(135deg, #DC2626 0%, #1E3A8A 100%) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto 1.5rem !important;
+    color: white !important;
+    font-size: 1.5rem !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-feature-title {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    color: #1F2937 !important;
+    margin-bottom: 1rem !important;
+    line-height: 1.3;
+}
+
+.auth-feature-description {
+    font-family: 'Raleway', sans-serif !important;
+    color: #6B7280 !important;
+    line-height: 1.6;
+    font-size: 0.95rem !important;
+}
+
+/* Trust Indicators */
+.auth-trust-section {
+    background: white !important;
+    padding: 3rem 0 !important;
+    border-top: 1px solid #e5e7eb !important;
+}
+
+.auth-trust-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    text-align: center;
+}
+
+.auth-trust-stats {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 2rem !important;
+    margin-bottom: 2rem !important;
+}
+
+.auth-trust-number {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    color: #DC2626 !important;
+    display: block !important;
+    line-height: 1;
+}
+
+.auth-trust-label {
+    font-family: 'Raleway', sans-serif !important;
+    color: #6B7280 !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .auth-hero {
+        min-height: 50vh !important;
+        padding: 2rem 1rem !important;
+    }
+
+    .auth-hero-content {
+        padding: 1rem !important;
+    }
+
+    .auth-hero-features {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    .auth-form-container {
+        margin: 1rem !important;
+        border-radius: 0.75rem !important;
+    }
+
+    .auth-form-section {
+        padding: 2rem 1.5rem !important;
+    }
+
+    .auth-form-title {
+        font-size: 1.75rem !important;
+    }
+
+    .auth-side-panel {
+        padding: 2rem 1.5rem !important;
+    }
+
+    .auth-side-title {
+        font-size: 1.5rem !important;
+    }
+
+    .auth-features-content {
+        padding: 0 1rem !important;
+    }
+
+    .auth-features-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+
+    .auth-feature-card {
+        padding: 2rem 1.5rem !important;
+    }
+
+    .auth-trust-stats {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1rem !important;
+    }
+
+    .auth-trust-number {
+        font-size: 2rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-hero-title {
+        font-size: 2rem !important;
+    }
+
+    .auth-hero-subtitle {
+        font-size: 1rem !important;
+    }
+
+    .auth-form-section {
+        padding: 1.5rem 1rem !important;
+    }
+
+    .auth-form-title {
+        font-size: 1.5rem !important;
+    }
+
+    .auth-form-input {
+        padding: 0.875rem 1rem !important;
+    }
+
+    .auth-submit-btn {
+        padding: 1rem 1.5rem !important;
+        font-size: 1rem !important;
+    }
+
+    .auth-side-panel {
+        padding: 1.5rem 1rem !important;
+    }
+
+    .auth-features-showcase {
+        padding: 3rem 0 !important;
+    }
+
+    .auth-feature-card {
+        padding: 1.5rem 1rem !important;
+    }
+
+    .auth-trust-stats {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth-enhancements.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="auth-hero">
+    <div class="auth-hero-content">
+        <h1 class="auth-hero-title">
+            Welcome Back to Gurumisha
+        </h1>
+        <p class="auth-hero-subtitle">
+            Access your dashboard and manage your automotive journey with Kenya's most trusted marketplace
+        </p>
+        <div class="auth-hero-features">
+            <div class="auth-hero-feature">
+                <i class="fas fa-shield-alt"></i>
+                <span>Secure Platform</span>
+            </div>
+            <div class="auth-hero-feature">
+                <i class="fas fa-car"></i>
+                <span>Premium Vehicles</span>
+            </div>
+            <div class="auth-hero-feature">
+                <i class="fas fa-users"></i>
+                <span>Trusted Community</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Login Form Section -->
+<section class="py-16 bg-gradient-to-br from-harrier-gray to-white">
+    <div class="container mx-auto px-4">
+        <div class="max-w-5xl mx-auto">
+            <div class="auth-form-container">
+                <div class="grid grid-cols-1 lg:grid-cols-2">
+                    <!-- Login Form -->
+                    <div class="auth-form-section">
+                        <div class="mb-8">
+                            <h2 class="auth-form-title">Welcome Back</h2>
+                            <p class="auth-form-subtitle">Sign in to your account to continue your automotive journey</p>
+                        </div>
+
+                        <!-- Display Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="post" class="space-y-6" id="login-form">
+                            {% csrf_token %}
+
+                            <!-- Email Field -->
+                            <div class="auth-form-group">
+                                <label for="{{ form.username.id_for_label }}" class="auth-form-label">
+                                    <i class="fas fa-envelope mr-2"></i>Email Address
+                                </label>
+                                <input type="email"
+                                       name="{{ form.username.name }}"
+                                       id="{{ form.username.id_for_label }}"
+                                       class="auth-form-input {% if form.username.errors %}error{% endif %}"
+                                       placeholder="Enter your email address"
+                                       value="{{ form.username.value|default:'' }}"
+                                       required>
+                                {% if form.username.errors %}
+                                    <div class="auth-error-message">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.username.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.username.help_text %}
+                                    <p class="mt-2 text-sm text-gray-500">
+                                        <i class="fas fa-info-circle mr-1"></i>{{ form.username.help_text }}
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="auth-form-group">
+                                <label for="{{ form.password.id_for_label }}" class="auth-form-label">
+                                    <i class="fas fa-lock mr-2"></i>Password
+                                </label>
+                                <input type="password"
+                                       name="{{ form.password.name }}"
+                                       id="{{ form.password.id_for_label }}"
+                                       class="auth-form-input {% if form.password.errors %}error{% endif %}"
+                                       placeholder="Enter your password"
+                                       required>
+                                {% if form.password.errors %}
+                                    <div class="auth-error-message">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.password.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Enhanced Remember Me Section -->
+                            <div class="remember-me-container">
+                                <div class="auth-checkbox-group" id="remember-me-group">
+                                    <input type="checkbox"
+                                           name="{{ form.remember_me.name }}"
+                                           id="{{ form.remember_me.id_for_label }}"
+                                           class="auth-checkbox">
+                                    <div class="flex-1">
+                                        <label for="{{ form.remember_me.id_for_label }}" class="auth-checkbox-label">
+                                            <i class="fas fa-clock mr-2"></i>{{ form.remember_me.label }}
+                                        </label>
+                                        {% if form.remember_me.help_text %}
+                                            <div class="remember-me-info">
+                                                <i class="fas fa-info-circle mr-1"></i>{{ form.remember_me.help_text }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Forgot Password Link -->
+                            <div class="text-center mb-4">
+                                <a href="{% url 'core:forgot_password' %}" class="text-harrier-red hover:text-harrier-dark font-medium transition-colors">
+                                    <i class="fas fa-key mr-1"></i>Forgot password?
+                                </a>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="auth-submit-btn">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Your Account
+                            </button>
+
+                            <!-- Non-field errors -->
+                            {% if form.non_field_errors %}
+                                <div class="auth-error-message text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>{{ form.non_field_errors.0 }}
+                                </div>
+                            {% endif %}
+                        </form>
+
+                        <!-- Register Link -->
+                        <div class="mt-8 text-center">
+                            <p class="text-gray-600">
+                                Don't have an account?
+                                <a href="{% url 'core:register' %}" class="text-harrier-red hover:text-harrier-dark font-semibold transition-colors">
+                                    <i class="fas fa-user-plus mr-1"></i>Create one here
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Side Panel -->
+                    <div class="auth-side-panel">
+                        <div class="auth-side-content">
+                            <div class="mb-8">
+                                <h3 class="auth-side-title">Join Gurumisha Motors</h3>
+                                <p class="auth-side-description">
+                                    Access exclusive features and manage your automotive journey with Kenya's most trusted marketplace.
+                                </p>
+                            </div>
+
+                            <ul class="auth-features-list">
+                                <li class="auth-features-item">
+                                    <div class="auth-features-icon">
+                                        <i class="fas fa-car"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Buy & Sell Cars</h4>
+                                        <p class="text-sm opacity-80">List your car for sale or browse our extensive inventory</p>
+                                    </div>
+                                </li>
+
+                                <li class="auth-features-item">
+                                    <div class="auth-features-icon">
+                                        <i class="fas fa-ship"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Import Services</h4>
+                                        <p class="text-sm opacity-80">Request car imports from Japan, Germany, UK and more</p>
+                                    </div>
+                                </li>
+
+                                <li class="auth-features-item">
+                                    <div class="auth-features-icon">
+                                        <i class="fas fa-tools"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Spare Parts</h4>
+                                        <p class="text-sm opacity-80">Find genuine spare parts for your vehicle</p>
+                                    </div>
+                                </li>
+
+                                <li class="auth-features-item">
+                                    <div class="auth-features-icon">
+                                        <i class="fas fa-user-shield"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Trusted Platform</h4>
+                                        <p class="text-sm opacity-80">Verified dealers and secure transactions</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Showcase Section -->
+<section class="auth-features-showcase">
+    <div class="auth-features-content">
+        <div class="auth-features-header">
+            <h2>Why Choose Gurumisha Motors?</h2>
+            <p>Join thousands of satisfied customers who trust us with their automotive needs</p>
+        </div>
+
+        <div class="auth-features-grid">
+            <div class="auth-feature-card">
+                <div class="auth-feature-icon-wrapper">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="auth-feature-title">Secure & Trusted</h3>
+                <p class="auth-feature-description">
+                    All transactions are secured with bank-level encryption. Verified dealers and genuine vehicles only.
+                </p>
+            </div>
+
+            <div class="auth-feature-card">
+                <div class="auth-feature-icon-wrapper">
+                    <i class="fas fa-globe-africa"></i>
+                </div>
+                <h3 class="auth-feature-title">Import Expertise</h3>
+                <p class="auth-feature-description">
+                    Professional import services from Japan, UK, Germany with full documentation and clearance support.
+                </p>
+            </div>
+
+            <div class="auth-feature-card">
+                <div class="auth-feature-icon-wrapper">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3 class="auth-feature-title">24/7 Support</h3>
+                <p class="auth-feature-description">
+                    Round-the-clock customer support to assist you with any questions or concerns about your purchase.
+                </p>
+            </div>
+        </div>
+
+        <!-- Trust Indicators -->
+        <div class="auth-trust-section">
+            <div class="auth-trust-content">
+                <div class="auth-trust-stats">
+                    <div class="auth-trust-stat">
+                        <span class="auth-trust-number">5,000+</span>
+                        <span class="auth-trust-label">Happy Customers</span>
+                    </div>
+                    <div class="auth-trust-stat">
+                        <span class="auth-trust-number">1,200+</span>
+                        <span class="auth-trust-label">Cars Sold</span>
+                    </div>
+                    <div class="auth-trust-stat">
+                        <span class="auth-trust-number">500+</span>
+                        <span class="auth-trust-label">Imports Completed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

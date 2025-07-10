@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resources - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="bg-harrier-dark py-16">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
+                AUTOMOTIVE RESOURCES
+            </h1>
+            <p class="text-xl text-gray-300">
+                Expert guides, tips, and insights to help you make informed automotive decisions
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Resource Articles -->
+<section class="py-16 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        {% if posts %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for post in posts %}
+                    <article class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+                        <div class="relative overflow-hidden">
+                            {% if post.featured_image %}
+                                <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
+                            {% else %}
+                                <div class="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-newspaper text-gray-400 text-4xl"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="p-6">
+                            <div class="flex items-center text-sm text-gray-500 mb-3">
+                                <i class="fas fa-calendar mr-2"></i>
+                                <span>{{ post.published_at|date:"M d, Y" }}</span>
+                                <span class="mx-2">•</span>
+                                <span>{{ post.author.get_full_name|default:post.author.username }}</span>
+                            </div>
+                            
+                            <h2 class="text-xl font-semibold text-harrier-dark mb-3 group-hover:text-harrier-red transition-colors">
+                                <a href="{% url 'core:resource_detail' post.slug %}">{{ post.title }}</a>
+                            </h2>
+
+                            <p class="text-gray-600 mb-4">{{ post.excerpt|default:post.content|truncatewords:20 }}</p>
+
+                            <a href="{% url 'core:resource_detail' post.slug %}" class="text-harrier-red font-semibold hover:text-harrier-dark transition-colors">
+                                Read More <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="flex justify-center mt-12">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">First</a>
+                            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Previous</a>
+                        {% endif %}
+                        
+                        <span class="px-4 py-2 bg-crimson text-white rounded-lg">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Last</a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-16">
+                <i class="fas fa-newspaper text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">No blog posts yet</h3>
+                <p class="text-gray-500">Check back soon for automotive news and insights.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Newsletter Signup -->
+<section class="py-16 bg-gradient-to-r from-deep-ocean to-azure text-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">Stay Updated</h2>
+        <p class="text-xl mb-8 opacity-90">Get the latest automotive news and insights delivered to your inbox.</p>
+        
+        <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" id="newsletter-form">
+            <input type="email" placeholder="Enter your email address" class="flex-1 px-6 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white" required>
+            <button type="submit" class="bg-white text-deep-ocean px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                Subscribe
+            </button>
+        </form>
+        
+        <p class="text-sm opacity-75 mt-4">We respect your privacy. Unsubscribe at any time.</p>
+    </div>
+</section>
+{% endblock %}

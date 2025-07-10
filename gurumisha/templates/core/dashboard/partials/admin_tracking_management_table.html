@@ -1,0 +1,267 @@
+{% load static %}
+
+<div class="overflow-x-auto" id="tracking-management-table">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                    Order Details
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                    Customer
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                    Vehicle Info
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                    Current Status
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                    Progress Timeline
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-montserrat">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% if import_orders %}
+                {% for order in import_orders %}
+                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-harrier-dark font-raleway">{{ order.order_number }}</div>
+                        <div class="text-sm text-gray-500">{{ order.created_at|date:"M d, Y" }}</div>
+                        {% if order.chassis_number %}
+                        <div class="text-xs text-gray-600 mt-1">
+                            <i class="fas fa-barcode mr-1"></i>{{ order.chassis_number }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-harrier-red rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                                {{ order.customer.first_name|first|default:order.customer.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ order.customer.get_full_name|default:order.customer.username }}</div>
+                                <div class="text-sm text-gray-500">{{ order.customer.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900 font-raleway">{{ order.year }} {{ order.brand }} {{ order.model }}</div>
+                        <div class="text-sm text-gray-500">{{ order.engine_size }} {{ order.fuel_type }}</div>
+                        {% if order.bill_of_lading %}
+                        <div class="text-xs text-gray-600 mt-1">
+                            <i class="fas fa-file-alt mr-1"></i>B/L: {{ order.bill_of_lading }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-montserrat transition-all duration-200 hover:scale-105
+                            {% if order.status == 'confirmed' %}bg-blue-100 text-blue-800 border border-blue-200
+                            {% elif order.status == 'auction_won' %}bg-purple-100 text-purple-800 border border-purple-200
+                            {% elif order.status == 'shipped' %}bg-indigo-100 text-indigo-800 border border-indigo-200
+                            {% elif order.status == 'in_transit' %}bg-orange-100 text-orange-800 border border-orange-200
+                            {% elif order.status == 'arrived_docked' %}bg-teal-100 text-teal-800 border border-teal-200
+                            {% elif order.status == 'under_clearance' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                            {% elif order.status == 'registered' %}bg-green-100 text-green-800 border border-green-200
+                            {% elif order.status == 'ready_for_dispatch' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                            {% elif order.status == 'delivered' %}bg-green-100 text-green-800 border border-green-200
+                            {% elif order.status == 'cancelled' %}bg-red-100 text-red-800 border border-red-200
+                            {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                            <div class="w-2 h-2 rounded-full mr-2
+                                {% if order.status == 'confirmed' %}bg-blue-500
+                                {% elif order.status == 'auction_won' %}bg-purple-500
+                                {% elif order.status == 'shipped' %}bg-indigo-500
+                                {% elif order.status == 'in_transit' %}bg-orange-500
+                                {% elif order.status == 'arrived_docked' %}bg-teal-500
+                                {% elif order.status == 'under_clearance' %}bg-yellow-500
+                                {% elif order.status == 'registered' %}bg-green-500
+                                {% elif order.status == 'ready_for_dispatch' %}bg-emerald-500
+                                {% elif order.status == 'delivered' %}bg-green-500
+                                {% elif order.status == 'cancelled' %}bg-red-500
+                                {% else %}bg-gray-500{% endif %}"></div>
+                            {{ order.get_status_display }}
+                        </span>
+                        {% if order.vessel_name %}
+                        <div class="text-xs text-gray-600 mt-1">
+                            <i class="fas fa-ship mr-1"></i>{{ order.vessel_name }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                            <div class="bg-gradient-to-r from-harrier-red to-harrier-dark h-3 rounded-full transition-all duration-500 ease-out"
+                                 style="width: {{ order.get_progress_percentage }}%"></div>
+                        </div>
+                        <div class="text-xs text-gray-600 mt-1 font-medium">
+                            {{ order.get_progress_percentage }}% Complete
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <!-- Edit Order Button -->
+                            <button class="action-btn action-btn-edit group"
+                                    hx-get="{% url 'core:admin_import_order_edit_modal' order.id %}"
+                                    hx-target="body"
+                                    hx-swap="beforeend"
+                                    title="Edit Order">
+                                <i class="fas fa-edit group-hover:scale-110 transition-transform duration-200"></i>
+                            </button>
+
+                            <!-- View Timeline Button -->
+                            <button class="action-btn action-btn-timeline group"
+                                    hx-get="{% url 'core:admin_tracking_timeline_modal' order.id %}"
+                                    hx-target="body"
+                                    hx-swap="beforeend"
+                                    title="View Timeline">
+                                <i class="fas fa-history group-hover:scale-110 transition-transform duration-200"></i>
+                            </button>
+
+                            <!-- Location Tracking Button -->
+                            <button class="action-btn action-btn-location group"
+                                    hx-get="{% url 'core:admin_tracking_location_modal' order.id %}"
+                                    hx-target="body"
+                                    hx-swap="beforeend"
+                                    title="Track Location">
+                                <i class="fas fa-map-marker-alt group-hover:scale-110 transition-transform duration-200"></i>
+                            </button>
+
+                            <!-- View Details Button -->
+                            <button class="action-btn action-btn-view group"
+                                    hx-get="{% url 'core:admin_tracking_details_modal' order.id %}"
+                                    hx-target="body"
+                                    hx-swap="beforeend"
+                                    title="View Details">
+                                <i class="fas fa-eye group-hover:scale-110 transition-transform duration-200"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-ship text-gray-400 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No import orders yet</h4>
+                        <p class="text-gray-600 font-raleway">Import orders will appear here when requests are moved to tracking.</p>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /* Enhanced Action Button Styles */
+    .action-btn {
+        @apply w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent;
+        font-size: 0.875rem;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn:active {
+        transform: translateY(0);
+    }
+
+    /* Edit Button */
+    .action-btn-edit {
+        @apply bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700;
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .action-btn-edit:hover {
+        border-color: rgba(59, 130, 246, 0.4);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    /* Timeline Button */
+    .action-btn-timeline {
+        @apply bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700;
+        border-color: rgba(147, 51, 234, 0.2);
+    }
+
+    .action-btn-timeline:hover {
+        border-color: rgba(147, 51, 234, 0.4);
+        box-shadow: 0 4px 12px rgba(147, 51, 234, 0.25);
+    }
+
+    /* Location Button */
+    .action-btn-location {
+        @apply bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700;
+        border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .action-btn-location:hover {
+        border-color: rgba(34, 197, 94, 0.4);
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+    }
+
+    /* View Button */
+    .action-btn-view {
+        @apply bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-700;
+        border-color: rgba(107, 114, 128, 0.2);
+    }
+
+    .action-btn-view:hover {
+        border-color: rgba(107, 114, 128, 0.4);
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
+    }
+
+    /* Icon Animations */
+    .action-btn .fas {
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover .fas {
+        transform: scale(1.1);
+    }
+
+    /* Loading State */
+    .action-btn.htmx-request {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .action-btn.htmx-request .fas {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+        .action-btn {
+            @apply w-7 h-7;
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Accessibility */
+    .action-btn:focus {
+        outline: 2px solid rgba(59, 130, 246, 0.5);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .action-btn,
+        .action-btn .fas {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .action-btn:hover {
+            transform: none !important;
+        }
+    }
+</style>

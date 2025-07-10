@@ -1,0 +1,46 @@
+<!-- Timeline partial for HTMX updates -->
+<div class="space-y-4">
+    {% for history in status_history %}
+        <div class="flex items-start border-l-4 border-harrier-red pl-4 py-2">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="font-medium text-harrier-dark">
+                        {{ history.get_new_status_display }}
+                    </span>
+                    <span class="text-sm text-gray-500">
+                        {{ history.created_at|date:"M d, Y H:i" }}
+                    </span>
+                    {% if history.created_at|timesince < "1 hour" %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                            New
+                        </span>
+                    {% endif %}
+                </div>
+                {% if history.change_reason %}
+                    <p class="text-gray-600 text-sm">{{ history.change_reason }}</p>
+                {% endif %}
+                {% if history.estimated_date %}
+                    <p class="text-sm text-blue-600">
+                        <i class="fas fa-calendar mr-1"></i>
+                        Estimated: {{ history.estimated_date|date:"M d, Y" }}
+                    </p>
+                {% endif %}
+                {% if history.actual_date %}
+                    <p class="text-sm text-green-600">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Completed: {{ history.actual_date|date:"M d, Y" }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-8">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-clock text-gray-400 text-2xl"></i>
+            </div>
+            <p class="text-gray-600">No status updates available yet.</p>
+            <p class="text-sm text-gray-500 mt-2">Updates will appear here as your order progresses.</p>
+        </div>
+    {% endfor %}
+</div>

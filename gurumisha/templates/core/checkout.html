@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Checkout Page -->
+<section class="py-12 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-heading font-bold text-harrier-dark mb-2">Checkout</h1>
+            <p class="text-gray-600">Complete your order securely</p>
+        </div>
+
+        <!-- Checkout Progress -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center space-x-4">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-harrier-red text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
+                    <span class="ml-2 text-sm font-medium text-harrier-dark">Cart</span>
+                </div>
+                <div class="w-16 h-1 bg-harrier-red"></div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-harrier-red text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
+                    <span class="ml-2 text-sm font-medium text-harrier-dark">Checkout</span>
+                </div>
+                <div class="w-16 h-1 bg-gray-300"></div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-300 text-gray-500 rounded-full flex items-center justify-center text-sm font-semibold">3</div>
+                    <span class="ml-2 text-sm font-medium text-gray-500">Complete</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Checkout Form -->
+            <div class="lg:col-span-2">
+                <form id="checkout-form" class="space-y-8">
+                    {% csrf_token %}
+                    
+                    <!-- Customer Information -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-harrier-dark mb-6">Customer Information</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-harrier-dark mb-2">Full Name *</label>
+                                <input type="text" name="customer_name" value="{{ user.get_full_name }}" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-harrier-dark mb-2">Email Address *</label>
+                                <input type="email" name="customer_email" value="{{ user.email }}" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-harrier-dark mb-2">Phone Number *</label>
+                                <input type="tel" name="customer_phone" value="{{ user.phone }}" required
+                                       placeholder="e.g., +254712345678"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Shipping Information -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-harrier-dark mb-6">Shipping Information</h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-harrier-dark mb-2">Shipping Address *</label>
+                                <textarea name="shipping_address" rows="3" required
+                                          placeholder="Enter your full shipping address"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">{{ user.address }}</textarea>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-harrier-dark mb-2">City *</label>
+                                    <input type="text" name="shipping_city" required
+                                           placeholder="e.g., Nairobi"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-semibold text-harrier-dark mb-2">Postal Code</label>
+                                    <input type="text" name="shipping_postal_code"
+                                           placeholder="e.g., 00100"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-harrier-dark mb-6">Payment Method</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="border border-gray-200 rounded-xl p-4 hover:border-harrier-red transition-colors">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment_method" value="mpesa" checked
+                                           class="w-4 h-4 text-harrier-red border-gray-300 focus:ring-harrier-red">
+                                    <div class="ml-3 flex items-center">
+                                        <img src="{% static 'images/mpesa-logo.png' %}" alt="M-Pesa" class="w-8 h-8 mr-3" onerror="this.style.display='none'">
+                                        <div>
+                                            <div class="font-semibold text-harrier-dark">M-Pesa</div>
+                                            <div class="text-sm text-gray-500">Pay securely with M-Pesa STK Push</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div class="border border-gray-200 rounded-xl p-4 hover:border-harrier-red transition-colors">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment_method" value="bank_transfer"
+                                           class="w-4 h-4 text-harrier-red border-gray-300 focus:ring-harrier-red">
+                                    <div class="ml-3 flex items-center">
+                                        <i class="fas fa-university text-harrier-red text-2xl mr-3"></i>
+                                        <div>
+                                            <div class="font-semibold text-harrier-dark">Bank Transfer</div>
+                                            <div class="text-sm text-gray-500">Pay via bank transfer</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div class="border border-gray-200 rounded-xl p-4 hover:border-harrier-red transition-colors">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment_method" value="cash"
+                                           class="w-4 h-4 text-harrier-red border-gray-300 focus:ring-harrier-red">
+                                    <div class="ml-3 flex items-center">
+                                        <i class="fas fa-money-bill-wave text-harrier-red text-2xl mr-3"></i>
+                                        <div>
+                                            <div class="font-semibold text-harrier-dark">Cash on Delivery</div>
+                                            <div class="text-sm text-gray-500">Pay when you receive your order</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Notes -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-harrier-dark mb-6">Additional Notes</h2>
+                        
+                        <textarea name="notes" rows="4"
+                                  placeholder="Any special instructions for your order (optional)"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                    <h2 class="text-xl font-semibold text-harrier-dark mb-6">Order Summary</h2>
+                    
+                    <!-- Order Items -->
+                    <div class="space-y-4 mb-6">
+                        {% for item in cart_items %}
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    {% if item.spare_part.main_image %}
+                                        <img src="{{ item.spare_part.main_image.url }}" 
+                                             alt="{{ item.spare_part.name }}" 
+                                             class="w-full h-full object-cover rounded-lg">
+                                    {% else %}
+                                        <i class="fas fa-cog text-gray-400"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-harrier-dark truncate">{{ item.spare_part.name }}</p>
+                                    <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
+                                </div>
+                                <p class="text-sm font-semibold text-harrier-red">KSh {{ item.total_price|floatformat:0 }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Totals -->
+                    <div class="space-y-4 border-t border-gray-200 pt-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Subtotal</span>
+                            <span class="font-semibold">KSh {{ cart.total_amount|floatformat:0 }}</span>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Shipping</span>
+                            <span class="font-semibold">KSh {{ shipping_cost|floatformat:0 }}</span>
+                        </div>
+                        
+                        <div class="border-t border-gray-200 pt-4">
+                            <div class="flex justify-between text-lg font-bold">
+                                <span class="text-harrier-dark">Total</span>
+                                <span class="text-harrier-red">KSh {{ total_amount|floatformat:0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Place Order Button -->
+                    <div class="mt-6">
+                        <button type="button" onclick="processCheckout()" id="place-order-btn"
+                                class="w-full btn-harrier-primary px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:transform hover:scale-105">
+                            <i class="fas fa-lock mr-2"></i>
+                            Place Order
+                        </button>
+                    </div>
+                    
+                    <!-- Security Info -->
+                    <div class="mt-6 text-center">
+                        <div class="inline-flex items-center text-sm text-gray-500">
+                            <i class="fas fa-shield-alt text-green-500 mr-2"></i>
+                            Your payment information is secure
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 text-center max-w-sm mx-4">
+        <i class="fas fa-spinner fa-spin text-harrier-red text-3xl mb-4"></i>
+        <p class="text-harrier-dark font-semibold mb-2">Processing your order...</p>
+        <p class="text-sm text-gray-500">Please wait while we process your payment</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function processCheckout() {
+        const form = document.getElementById('checkout-form');
+        const formData = new FormData(form);
+        
+        // Validate form
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Show loading
+        showLoading();
+        
+        fetch('{% url "core:process_checkout" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            if (data.success) {
+                showMessage(data.message, 'success');
+                
+                // Redirect to order page after a short delay
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 2000);
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showMessage('An error occurred while processing your order', 'error');
+        });
+    }
+    
+    function showLoading() {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        document.getElementById('place-order-btn').disabled = true;
+    }
+    
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        document.getElementById('place-order-btn').disabled = false;
+    }
+    
+    function showMessage(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

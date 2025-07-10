@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Page Not Found - Gurumisha Motors{% endblock %}
+
+{% block meta_description %}The page you're looking for doesn't exist. Browse our car listings or return to homepage.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/404-animations.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- 404 Error Page with Harrier Design -->
+<div class="min-h-screen bg-gradient-to-br from-accent-gray via-white to-harrier-gray flex items-center justify-center relative overflow-hidden">
+    
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('{% static 'images/pattern.svg' %}'); background-size: 100px 100px; background-repeat: repeat;"></div>
+    </div>
+
+    <!-- Floating Car Images -->
+    <div class="absolute inset-0 pointer-events-none">
+        <img src="{% static 'images/products-images/p1.jpg' %}" alt="" class="floating-car floating-car-1 w-20 h-12 object-cover rounded-lg shadow-lg opacity-20">
+        <img src="{% static 'images/products-images/p3.jpg' %}" alt="" class="floating-car floating-car-2 w-16 h-10 object-cover rounded-lg shadow-lg opacity-15">
+        <img src="{% static 'images/products-images/p5.jpg' %}" alt="" class="floating-car floating-car-3 w-24 h-14 object-cover rounded-lg shadow-lg opacity-25">
+        <img src="{% static 'images/products-images/p7.jpg' %}" alt="" class="floating-car floating-car-4 w-18 h-11 object-cover rounded-lg shadow-lg opacity-20">
+    </div>
+
+    <div class="container mx-auto px-4 py-16 relative z-10">
+        <div class="max-w-4xl mx-auto text-center">
+            
+            <!-- 404 Hero Section -->
+            <div class="mb-12 animate-fade-in-up">
+                <!-- Large 404 Number -->
+                <div class="relative mb-8">
+                    <h1 class="text-9xl md:text-[12rem] lg:text-[15rem] font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-red via-primary-blue to-primary-red leading-none select-none animate-pulse-slow" 
+                        style="font-family: 'Montserrat', 'Inter', sans-serif; font-weight: 900;">
+                        404
+                    </h1>
+                    <!-- Car Icon Overlay -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center shadow-2xl animate-bounce-slow">
+                            <i class="fas fa-car text-white text-4xl md:text-5xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div class="mb-8 animate-fade-in-up animation-delay-200">
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-black mb-4" 
+                        style="font-family: 'Montserrat', 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 2px;">
+                        OOPS! PAGE NOT FOUND
+                    </h2>
+                    <p class="text-lg md:text-xl text-text-light max-w-2xl mx-auto leading-relaxed" 
+                       style="font-family: 'Inter', sans-serif;">
+                        The page you're looking for seems to have taken a detour. Don't worry, we'll help you get back on track and find the perfect vehicle!
+                    </p>
+                </div>
+
+                <!-- Car Showcase -->
+                <div class="mb-12 animate-fade-in-up animation-delay-400">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                        <div class="group cursor-pointer transform hover:scale-105 transition-all duration-300 animate-slide-in-up animation-delay-100">
+                            <div class="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
+                                <img src="{% static 'images/products-images/p1.jpg' %}"
+                                     alt="Featured Car 1"
+                                     class="w-full h-24 md:h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                                     loading="lazy">
+                                <div class="absolute inset-0 bg-gradient-to-t from-primary-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div class="absolute bottom-2 left-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <p class="text-xs font-semibold">View Details</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group cursor-pointer transform hover:scale-105 transition-all duration-300 animate-slide-in-up animation-delay-200">
+                            <div class="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
+                                <img src="{% static 'images/products-images/p2.jpg' %}"
+                                     alt="Featured Car 2"
+                                     class="w-full h-24 md:h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                                     loading="lazy">
+                                <div class="absolute inset-0 bg-gradient-to-t from-primary-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div class="absolute bottom-2 left-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <p class="text-xs font-semibold">View Details</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group cursor-pointer transform hover:scale-105 transition-all duration-300 animate-slide-in-up animation-delay-300">
+                            <div class="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
+                                <img src="{% static 'images/products-images/p3.jpg' %}"
+                                     alt="Featured Car 3"
+                                     class="w-full h-24 md:h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                                     loading="lazy">
+                                <div class="absolute inset-0 bg-gradient-to-t from-primary-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div class="absolute bottom-2 left-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <p class="text-xs font-semibold">View Details</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="group cursor-pointer transform hover:scale-105 transition-all duration-300 animate-slide-in-up animation-delay-400">
+                            <div class="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
+                                <img src="{% static 'images/products-images/p4.jpg' %}"
+                                     alt="Featured Car 4"
+                                     class="w-full h-24 md:h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                                     loading="lazy">
+                                <div class="absolute inset-0 bg-gradient-to-t from-primary-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div class="absolute bottom-2 left-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <p class="text-xs font-semibold">View Details</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-text-light mt-4 font-medium">Browse our featured vehicles instead</p>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="mb-12 animate-fade-in-up animation-delay-600">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-100">
+                    <h3 class="text-2xl font-bold text-primary-black mb-6" 
+                        style="font-family: 'Montserrat', 'Inter', sans-serif; text-transform: uppercase;">
+                        <i class="fas fa-search text-primary-red mr-3"></i>Find What You're Looking For
+                    </h3>
+                    
+                    <form action="{% url 'core:car_list' %}" method="GET" class="max-w-2xl mx-auto">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <input type="text" 
+                                       name="search" 
+                                       placeholder="Search for cars, brands, models..."
+                                       class="w-full px-6 py-4 rounded-xl border-2 border-gray-200 focus:border-primary-red focus:ring-2 focus:ring-primary-red/20 focus:outline-none transition-all duration-300 text-lg"
+                                       style="font-family: 'Inter', sans-serif;">
+                            </div>
+                            <button type="submit" 
+                                    class="px-8 py-4 bg-gradient-to-r from-primary-red to-accent-red text-white font-bold rounded-xl hover:from-accent-red hover:to-primary-red transform hover:scale-105 transition-all duration-300 shadow-lg text-lg">
+                                <i class="fas fa-search mr-2"></i>SEARCH CARS
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col md:flex-row gap-6 justify-center items-center animate-fade-in-up animation-delay-800">
+                <a href="{% url 'core:homepage' %}" 
+                   class="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-red to-accent-red text-white font-bold rounded-xl hover:from-accent-red hover:to-primary-red transform hover:scale-105 transition-all duration-300 shadow-lg text-lg"
+                   style="font-family: 'Montserrat', 'Inter', sans-serif;">
+                    <i class="fas fa-home mr-3 group-hover:animate-bounce"></i>
+                    BACK TO HOMEPAGE
+                </a>
+                
+                <a href="{% url 'core:car_list' %}" 
+                   class="group inline-flex items-center px-8 py-4 border-2 border-primary-red text-primary-red font-bold rounded-xl hover:bg-primary-red hover:text-white transform hover:scale-105 transition-all duration-300 text-lg"
+                   style="font-family: 'Montserrat', 'Inter', sans-serif;">
+                    <i class="fas fa-car mr-3 group-hover:animate-bounce"></i>
+                    BROWSE CARS
+                </a>
+                
+                <a href="{% url 'core:spare_parts' %}" 
+                   class="group inline-flex items-center px-8 py-4 border-2 border-primary-blue text-primary-blue font-bold rounded-xl hover:bg-primary-blue hover:text-white transform hover:scale-105 transition-all duration-300 text-lg"
+                   style="font-family: 'Montserrat', 'Inter', sans-serif;">
+                    <i class="fas fa-cogs mr-3 group-hover:animate-bounce"></i>
+                    SPARE PARTS
+                </a>
+            </div>
+
+            <!-- Help Section -->
+            <div class="mt-16 animate-fade-in-up animation-delay-1000">
+                <div class="bg-gradient-to-r from-primary-blue/10 to-primary-red/10 rounded-2xl p-8 border border-primary-blue/20">
+                    <h4 class="text-xl font-bold text-primary-black mb-4" 
+                        style="font-family: 'Montserrat', 'Inter', sans-serif;">
+                        Need Help?
+                    </h4>
+                    <p class="text-text-light mb-6" style="font-family: 'Inter', sans-serif;">
+                        Our support team is here to assist you. Contact us if you can't find what you're looking for.
+                    </p>
+                    <a href="{% url 'core:contact_us' %}" 
+                       class="inline-flex items-center px-6 py-3 bg-primary-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                        <i class="fas fa-headset mr-2"></i>
+                        Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add entrance animations to elements
+    const animatedElements = document.querySelectorAll('.animate-fade-in-up, .animate-slide-in-up');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    });
+    
+    animatedElements.forEach(el => observer.observe(el));
+    
+    // Add floating animation to car images
+    const floatingCars = document.querySelectorAll('.floating-car');
+    floatingCars.forEach((car, index) => {
+        car.style.animationDelay = `${index * 0.5}s`;
+    });
+});
+</script>
+{% endblock %}

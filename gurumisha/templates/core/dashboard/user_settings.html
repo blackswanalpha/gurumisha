@@ -1,0 +1,547 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Settings{% endblock %}
+{% block page_title %}Account Settings{% endblock %}
+{% block page_description %}Manage your account preferences and privacy settings{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Settings</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Settings Navigation -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-8">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-xl font-bold text-harrier-dark">Account Settings</h3>
+            <p class="text-gray-600 text-sm mt-1">Manage your account preferences and security settings</p>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <!-- Settings Sidebar -->
+                <div class="lg:col-span-1">
+                    <nav class="space-y-2">
+                        <button onclick="showSettingsTab('profile')"
+                                class="settings-tab-btn active w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center">
+                            <i class="fas fa-user mr-3 w-5"></i>
+                            Profile Information
+                        </button>
+                        <button onclick="showSettingsTab('security')"
+                                class="settings-tab-btn w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center">
+                            <i class="fas fa-shield-alt mr-3 w-5"></i>
+                            Security & Privacy
+                        </button>
+                        <button onclick="showSettingsTab('notifications')"
+                                class="settings-tab-btn w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center">
+                            <i class="fas fa-bell mr-3 w-5"></i>
+                            Notifications
+                        </button>
+                        <button onclick="showSettingsTab('preferences')"
+                                class="settings-tab-btn w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center">
+                            <i class="fas fa-cog mr-3 w-5"></i>
+                            Preferences
+                        </button>
+                        <button onclick="showSettingsTab('billing')"
+                                class="settings-tab-btn w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center">
+                            <i class="fas fa-credit-card mr-3 w-5"></i>
+                            Billing & Payments
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Settings Content -->
+                <div class="lg:col-span-3">
+                    <!-- Profile Information Tab -->
+                    <div id="profile-tab" class="settings-tab-content">
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-6">Profile Information</h4>
+
+                            <form class="space-y-6">
+                                <!-- Profile Picture -->
+                                <div class="flex items-center space-x-6">
+                                    <div class="w-20 h-20 bg-harrier-red rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                        {{ user.first_name.0|default:user.username.0|upper }}
+                                    </div>
+                                    <div>
+                                        <button type="button" class="bg-harrier-red hover:bg-harrier-dark text-white px-4 py-2 rounded-lg font-medium transition-all duration-200">
+                                            Change Photo
+                                        </button>
+                                        <p class="text-sm text-gray-600 mt-1">JPG, PNG or GIF. Max size 2MB.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Personal Information -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">First Name</label>
+                                        <input type="text" value="{{ user.first_name }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Last Name</label>
+                                        <input type="text" value="{{ user.last_name }}"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+                                    <input type="email" value="{{ user.email }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
+                                    <input type="tel" value="{{ user.phone|default:'' }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Bio</label>
+                                    <textarea rows="4"
+                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"
+                                              placeholder="Tell us about yourself...">{{ user.bio|default:'' }}</textarea>
+                                </div>
+
+                                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                                    <button type="button" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-200">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="px-6 py-3 bg-harrier-red hover:bg-harrier-dark text-white rounded-lg transition-all duration-200">
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Security & Privacy Tab -->
+                    <div id="security-tab" class="settings-tab-content hidden">
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-6">Security & Privacy</h4>
+
+                            <!-- Change Password -->
+                            <div class="bg-white rounded-lg p-6 mb-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">Change Password</h5>
+                                <form class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Current Password</label>
+                                        <input type="password"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">New Password</label>
+                                        <input type="password"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Confirm New Password</label>
+                                        <input type="password"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                                    </div>
+                                    <button type="submit" class="bg-harrier-red hover:bg-harrier-dark text-white px-6 py-3 rounded-lg transition-all duration-200">
+                                        Update Password
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Two-Factor Authentication -->
+                            <div class="bg-white rounded-lg p-6 mb-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h5 class="font-bold text-harrier-dark">Two-Factor Authentication</h5>
+                                        <p class="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Privacy Settings -->
+                            <div class="bg-white rounded-lg p-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">Privacy Settings</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Profile Visibility</p>
+                                            <p class="text-sm text-gray-600">Control who can see your profile information</p>
+                                        </div>
+                                        <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+                                            <option>Public</option>
+                                            <option>Private</option>
+                                            <option>Friends Only</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Activity Status</p>
+                                            <p class="text-sm text-gray-600">Show when you're active on the platform</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Tab -->
+                    <div id="notifications-tab" class="settings-tab-content hidden">
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-6">Notification Preferences</h4>
+
+                            <!-- Email Notifications -->
+                            <div class="bg-white rounded-lg p-6 mb-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">Email Notifications</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Order Updates</p>
+                                            <p class="text-sm text-gray-600">Get notified about order status changes</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Import Status</p>
+                                            <p class="text-sm text-gray-600">Updates on your car import requests</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Promotional Emails</p>
+                                            <p class="text-sm text-gray-600">Special offers and new arrivals</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SMS Notifications -->
+                            <div class="bg-white rounded-lg p-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">SMS Notifications</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Critical Updates</p>
+                                            <p class="text-sm text-gray-600">Important account and security alerts</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Delivery Updates</p>
+                                            <p class="text-sm text-gray-600">SMS updates for deliveries and pickups</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preferences Tab -->
+                    <div id="preferences-tab" class="settings-tab-content hidden">
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-6">Account Preferences</h4>
+
+                            <!-- Language & Region -->
+                            <div class="bg-white rounded-lg p-6 mb-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">Language & Region</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Language</label>
+                                        <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+                                            <option>English</option>
+                                            <option>Swahili</option>
+                                            <option>French</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Currency</label>
+                                        <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+                                            <option>KSh (Kenyan Shilling)</option>
+                                            <option>USD (US Dollar)</option>
+                                            <option>EUR (Euro)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Display Preferences -->
+                            <div class="bg-white rounded-lg p-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">Display Preferences</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Dark Mode</p>
+                                            <p class="text-sm text-gray-600">Switch to dark theme</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-harrier-red/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-harrier-red"></div>
+                                        </label>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Items per Page</label>
+                                        <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+                                            <option>10</option>
+                                            <option selected>20</option>
+                                            <option>50</option>
+                                            <option>100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Billing Tab -->
+                    <div id="billing-tab" class="settings-tab-content hidden">
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-6">Billing & Payments</h4>
+
+                            <!-- Payment Methods -->
+                            <div class="bg-white rounded-lg p-6 mb-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h5 class="font-bold text-harrier-dark">Payment Methods</h5>
+                                    <button class="bg-harrier-red hover:bg-harrier-dark text-white px-4 py-2 rounded-lg transition-all duration-200">
+                                        Add Payment Method
+                                    </button>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-8 bg-blue-600 rounded flex items-center justify-center mr-4">
+                                                <span class="text-white text-xs font-bold">VISA</span>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900">•••• •••• •••• 4242</p>
+                                                <p class="text-sm text-gray-600">Expires 12/25</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Default</span>
+                                            <button class="text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-400 hover:text-red-600">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-8 bg-green-600 rounded flex items-center justify-center mr-4">
+                                                <span class="text-white text-xs font-bold">MPESA</span>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900">+254 ••• ••• 789</p>
+                                                <p class="text-sm text-gray-600">M-Pesa Account</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-400 hover:text-red-600">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Billing History -->
+                            <div class="bg-white rounded-lg p-6">
+                                <h5 class="font-bold text-harrier-dark mb-4">Recent Transactions</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Order #ORD-2024-001</p>
+                                            <p class="text-sm text-gray-600">Jan 15, 2024</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-bold text-harrier-red">KSh 2,500,000</p>
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Completed</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Import Request #IMP-2024-002</p>
+                                            <p class="text-sm text-gray-600">Jan 10, 2024</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-bold text-harrier-red">KSh 50,000</p>
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Processing</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <button class="text-harrier-red hover:text-harrier-dark font-medium">
+                                        View All Transactions
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showSettingsTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.settings-tab-content');
+    tabContents.forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.settings-tab-btn');
+    tabButtons.forEach(button => {
+        button.classList.remove('active');
+        button.classList.remove('bg-harrier-red', 'text-white');
+        button.classList.add('text-gray-700', 'hover:bg-gray-100');
+    });
+
+    // Show selected tab content
+    const selectedTab = document.getElementById(tabName + '-tab');
+    if (selectedTab) {
+        selectedTab.classList.remove('hidden');
+    }
+
+    // Add active class to selected tab button
+    const selectedButton = event.target;
+    selectedButton.classList.add('active', 'bg-harrier-red', 'text-white');
+    selectedButton.classList.remove('text-gray-700', 'hover:bg-gray-100');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize first tab as active
+    const firstTabButton = document.querySelector('.settings-tab-btn');
+    if (firstTabButton) {
+        firstTabButton.classList.add('bg-harrier-red', 'text-white');
+        firstTabButton.classList.remove('text-gray-700', 'hover:bg-gray-100');
+    }
+
+    // Add default styling to non-active tab buttons
+    const tabButtons = document.querySelectorAll('.settings-tab-btn:not(.active)');
+    tabButtons.forEach(button => {
+        button.classList.add('text-gray-700', 'hover:bg-gray-100');
+    });
+
+    // Form submission handlers
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Show loading state
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.textContent = 'Saving...';
+            submitButton.disabled = true;
+
+            // Simulate API call
+            setTimeout(() => {
+                submitButton.textContent = 'Saved!';
+                submitButton.classList.remove('bg-harrier-red');
+                submitButton.classList.add('bg-green-500');
+
+                setTimeout(() => {
+                    submitButton.textContent = originalText;
+                    submitButton.classList.remove('bg-green-500');
+                    submitButton.classList.add('bg-harrier-red');
+                    submitButton.disabled = false;
+                }, 2000);
+            }, 1000);
+        });
+    });
+
+    // Toggle switches
+    const toggles = document.querySelectorAll('input[type="checkbox"]');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            // Show feedback for toggle changes
+            const label = this.closest('label');
+            if (label) {
+                label.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    label.style.transform = 'scale(1)';
+                }, 150);
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.settings-tab-btn.active {
+    background: linear-gradient(135deg, #DC2626 0%, #1E3A8A 100%);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.settings-tab-btn:not(.active) {
+    color: #374151;
+}
+
+.settings-tab-btn:not(.active):hover {
+    background-color: #F3F4F6;
+}
+
+.settings-tab-content {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

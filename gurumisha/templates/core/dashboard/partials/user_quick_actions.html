@@ -1,0 +1,64 @@
+{% load static %}
+
+<!-- User Quick Actions Partial for Lazy Loading -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <a href="{% url 'core:car_list' %}" class="dashboard-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <i class="fas fa-search text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Browse Cars</h3>
+                <p class="text-sm text-gray-600">Find your next car</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:import_order_tracking' %}" class="dashboard-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                <i class="fas fa-ship text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Track Imports</h3>
+                <p class="text-sm text-gray-600">View import order status</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:import_request' %}" class="dashboard-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <i class="fas fa-plus text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">New Import</h3>
+                <p class="text-sm text-gray-600">Request car import</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:spare_parts' %}" class="dashboard-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                <i class="fas fa-cogs text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Spare Parts</h3>
+                <p class="text-sm text-gray-600">Find car parts</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:profile' %}" class="dashboard-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                <i class="fas fa-user text-gray-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">My Profile</h3>
+                <p class="text-sm text-gray-600">Update your info</p>
+            </div>
+        </div>
+    </a>
+</div>

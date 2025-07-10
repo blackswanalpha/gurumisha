@@ -1,0 +1,373 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Wishlist{% endblock %}
+{% block page_title %}My Wishlist{% endblock %}
+{% block page_description %}Your saved cars and favorite items{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Wishlist</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Wishlist Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-heart text-pink-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-2xl font-bold text-harrier-dark">{{ wishlist_count|default:0 }}</p>
+                    <p class="text-gray-600 text-sm font-medium">Total Items</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-car text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-2xl font-bold text-blue-600">0</p>
+                    <p class="text-gray-600 text-sm font-medium">Cars</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-tools text-purple-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-2xl font-bold text-purple-600">0</p>
+                    <p class="text-gray-600 text-sm font-medium">Spare Parts</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-calendar text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-2xl font-bold text-green-600">0</p>
+                    <p class="text-gray-600 text-sm font-medium">This Week</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- Category Filter -->
+                <div class="relative">
+                    <select name="category" class="appearance-none bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 pr-8 focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                        <option value="">All Categories</option>
+                        <option value="cars">Cars</option>
+                        <option value="spare_parts">Spare Parts</option>
+                        <option value="accessories">Accessories</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+                
+                <!-- Sort Filter -->
+                <div class="relative">
+                    <select name="sort" class="appearance-none bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 pr-8 focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="name">Name A-Z</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- Search -->
+                <div class="relative">
+                    <input type="text" 
+                           name="search" 
+                           placeholder="Search wishlist..." 
+                           class="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200 w-full sm:w-80">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                
+                <!-- Clear All Button -->
+                <button onclick="clearWishlist()" 
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center whitespace-nowrap">
+                    <i class="fas fa-trash mr-2"></i>
+                    Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wishlist Items -->
+    {% if wishlist_items %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in wishlist_items %}
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                    <div class="relative">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
+                        {% else %}
+                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-car text-4xl text-gray-400"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Wishlist Actions -->
+                        <div class="absolute top-4 right-4 flex items-center space-x-2">
+                            <button onclick="removeFromWishlist({{ item.id }})" 
+                                    class="w-10 h-10 bg-white bg-opacity-90 hover:bg-red-500 hover:text-white text-red-500 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg">
+                                <i class="fas fa-heart-broken text-sm"></i>
+                            </button>
+                            <button onclick="shareItem({{ item.id }})" 
+                                    class="w-10 h-10 bg-white bg-opacity-90 hover:bg-blue-500 hover:text-white text-blue-500 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg">
+                                <i class="fas fa-share text-sm"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Category Badge -->
+                        <div class="absolute top-4 left-4">
+                            <span class="px-3 py-1 bg-harrier-red text-white text-xs font-bold rounded-full">
+                                {{ item.category|title }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-bold text-harrier-dark group-hover:text-harrier-red transition-colors mb-2">
+                                {{ item.title }}
+                            </h3>
+                            <p class="text-gray-600 text-sm">{{ item.description|truncatewords:15 }}</p>
+                        </div>
+                        
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="text-2xl font-bold text-harrier-red">
+                                KSh {{ item.price|floatformat:0 }}
+                            </div>
+                            {% if item.original_price and item.original_price != item.price %}
+                                <div class="text-sm text-gray-500 line-through">
+                                    KSh {{ item.original_price|floatformat:0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex items-center justify-between mb-4 text-sm text-gray-600">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar mr-1 text-blue-500"></i>
+                                <span>Added {{ item.added_at|date:"M d, Y" }}</span>
+                            </div>
+                            {% if item.availability %}
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                                    <span class="text-green-600">Available</span>
+                                </div>
+                            {% else %}
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 bg-red-400 rounded-full mr-1"></div>
+                                    <span class="text-red-600">Unavailable</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <a href="{{ item.get_absolute_url }}" 
+                               class="flex-1 bg-harrier-red hover:bg-harrier-dark text-white text-center py-3 px-4 rounded-lg font-medium transition-all duration-200">
+                                View Details
+                            </a>
+                            {% if item.availability %}
+                                <button onclick="addToCart({{ item.id }})" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg transition-all duration-200">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        <div class="mt-8 flex items-center justify-center">
+            <nav class="flex items-center space-x-2">
+                <button class="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-all duration-200">
+                    <i class="fas fa-chevron-left mr-1"></i>Previous
+                </button>
+                <button class="px-4 py-2 text-sm bg-harrier-red text-white rounded-lg">1</button>
+                <button class="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-all duration-200">2</button>
+                <button class="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-all duration-200">3</button>
+                <button class="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 transition-all duration-200">
+                    Next<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </nav>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
+            <div class="w-24 h-24 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-heart text-4xl text-pink-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-harrier-dark mb-4">Your Wishlist is Empty</h3>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                Start adding cars and spare parts to your wishlist to keep track of items you're interested in.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="{% url 'core:car_list' %}" 
+                   class="bg-gradient-to-r from-harrier-red to-harrier-dark hover:from-harrier-dark hover:to-harrier-red text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 inline-flex items-center">
+                    <i class="fas fa-car mr-3"></i>
+                    Browse Cars
+                </a>
+                <a href="{% url 'core:spare_parts' %}" 
+                   class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 inline-flex items-center">
+                    <i class="fas fa-tools mr-3"></i>
+                    Shop Parts
+                </a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function removeFromWishlist(itemId) {
+    if (confirm('Remove this item from your wishlist?')) {
+        // This would typically make an AJAX request to remove the item
+        console.log('Removing item from wishlist:', itemId);
+        
+        // For demo purposes, just hide the item
+        const itemElement = event.target.closest('.group');
+        if (itemElement) {
+            itemElement.style.transition = 'all 0.3s ease';
+            itemElement.style.opacity = '0';
+            itemElement.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                itemElement.remove();
+            }, 300);
+        }
+    }
+}
+
+function shareItem(itemId) {
+    // This would typically open a share modal or use the Web Share API
+    console.log('Sharing item:', itemId);
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Check out this item',
+            text: 'I found this interesting item on Gurumisha Motors',
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    }
+}
+
+function addToCart(itemId) {
+    // This would typically make an AJAX request to add the item to cart
+    console.log('Adding item to cart:', itemId);
+    
+    // Show success message
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.remove('bg-green-500', 'hover:bg-green-600');
+    button.classList.add('bg-green-600');
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('bg-green-600');
+        button.classList.add('bg-green-500', 'hover:bg-green-600');
+    }, 2000);
+}
+
+function clearWishlist() {
+    if (confirm('Are you sure you want to clear your entire wishlist? This action cannot be undone.')) {
+        // This would typically make an AJAX request to clear the wishlist
+        console.log('Clearing wishlist');
+        
+        // For demo purposes, just hide all items
+        const items = document.querySelectorAll('.group');
+        items.forEach((item, index) => {
+            setTimeout(() => {
+                item.style.transition = 'all 0.3s ease';
+                item.style.opacity = '0';
+                item.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    item.remove();
+                }, 300);
+            }, index * 100);
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced filtering and search functionality
+    const categoryFilter = document.querySelector('select[name="category"]');
+    const sortFilter = document.querySelector('select[name="sort"]');
+    const searchInput = document.querySelector('input[name="search"]');
+    
+    function filterWishlist() {
+        // This would typically make an AJAX request to filter items
+        console.log('Filtering wishlist...');
+    }
+    
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', filterWishlist);
+    }
+    
+    if (sortFilter) {
+        sortFilter.addEventListener('change', filterWishlist);
+    }
+    
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(filterWishlist, 500);
+        });
+    }
+    
+    // Smooth animations for cards
+    const cards = document.querySelectorAll('.group');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('animate-fade-in-up');
+    });
+});
+</script>
+
+<style>
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+}
+</style>
+{% endblock %}

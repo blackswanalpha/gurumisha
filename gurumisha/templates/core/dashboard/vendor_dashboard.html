@@ -1,0 +1,559 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Vendor Dashboard{% endblock %}
+{% block page_title %}{{ vendor.company_name }} Dashboard{% endblock %}
+{% block page_description %}Manage your inventory, orders, and business analytics{% endblock %}
+
+{% block vendor_sidebar_nav %}
+    <!-- Main Navigation Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Main</h4>
+        <li>
+            <a href="{% url 'core:dashboard' %}" class="dashboard-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+                <div class="ml-auto">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:profile' %}" class="dashboard-nav-link {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-building"></i>
+                <span>Company Profile</span>
+            </a>
+        </li>
+    </div>
+
+    <!-- Inventory & Products Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Inventory & Products</h4>
+        <li>
+            <a href="{% url 'core:vendor_listings' %}" class="dashboard-nav-link {% if 'listings' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-car"></i>
+                <span>My Listings</span>
+                {% if vendor_cars %}
+                    <span class="ml-auto bg-harrier-red text-white text-xs rounded-full px-2 py-1">{{ vendor_cars|length }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:sell_car' %}" class="dashboard-nav-link">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add New Car</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:vendor_spare_parts' %}" class="dashboard-nav-link {% if 'spare_parts' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-cogs"></i>
+                <span>Spare Parts</span>
+            </a>
+        </li>
+    </div>
+
+    <!-- Business & Sales Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Business & Sales</h4>
+        <li>
+            <a href="{% url 'core:vendor_orders' %}" class="dashboard-nav-link {% if 'orders' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Orders</span>
+                {% if pending_orders %}
+                    <span class="ml-auto bg-blue-500 text-white text-xs rounded-full px-2 py-1">{{ pending_orders }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:vendor_inquiries' %}" class="dashboard-nav-link {% if 'inquiries' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-envelope"></i>
+                <span>Inquiries</span>
+                {% if pending_inquiries %}
+                    <span class="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-1">{{ pending_inquiries|length }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:vendor_analytics' %}" class="dashboard-nav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+        </li>
+    </div>
+
+    <!-- Account & Settings Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Account & Settings</h4>
+        <li>
+            <a href="{% url 'core:vendor_settings' %}" class="dashboard-nav-link {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+    </div>
+{% endblock %}
+
+{% block sidebar_stats %}
+    <!-- Enhanced Business Stats with Glassmorphism -->
+    <div class="mt-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 p-5 backdrop-blur-sm">
+        <div class="flex items-center mb-4">
+            <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-chart-line text-white text-sm"></i>
+            </div>
+            <h3 class="text-sm font-bold text-harrier-dark uppercase tracking-wide font-montserrat">Business Stats</h3>
+        </div>
+        <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-100 hover:bg-white/80 transition-all duration-200">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-harrier-red rounded-full mr-2"></div>
+                    <span class="text-sm text-gray-700 font-medium">Active Listings</span>
+                </div>
+                <span class="text-lg font-bold text-harrier-red">{{ vendor_cars|length }}</span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-100 hover:bg-white/80 transition-all duration-200">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                    <span class="text-sm text-gray-700 font-medium">Pending Inquiries</span>
+                </div>
+                <span class="text-lg font-bold text-yellow-600">{{ pending_inquiries|length }}</span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-100 hover:bg-white/80 transition-all duration-200">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    <span class="text-sm text-gray-700 font-medium">Total Views</span>
+                </div>
+                <span class="text-lg font-bold text-blue-600">{{ total_views|default:0 }}</span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-100 hover:bg-white/80 transition-all duration-200">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-sm text-gray-700 font-medium">This Month</span>
+                </div>
+                <span class="text-lg font-bold text-green-600">+{{ monthly_growth|default:0 }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Vendor Status with Modern Design -->
+    <div class="mt-4 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 p-5 backdrop-blur-sm">
+        <div class="flex items-center mb-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-harrier-blue to-blue-700 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-shield-alt text-white text-sm"></i>
+            </div>
+            <h3 class="text-sm font-bold text-harrier-dark uppercase tracking-wide font-montserrat">Account Status</h3>
+        </div>
+        <div class="p-3 bg-white/60 rounded-lg border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    {% if vendor.is_approved %}
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                        <div>
+                            <span class="text-sm text-green-700 font-semibold block">Verified Vendor</span>
+                            <span class="text-xs text-gray-500">Full access enabled</span>
+                        </div>
+                    {% else %}
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3 animate-pulse"></div>
+                        <div>
+                            <span class="text-sm text-yellow-700 font-semibold block">Pending Approval</span>
+                            <span class="text-xs text-gray-500">Limited access</span>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if vendor.is_approved %}
+                    <i class="fas fa-check-circle text-green-500"></i>
+                {% else %}
+                    <i class="fas fa-clock text-yellow-500"></i>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Welcome Banner with Enhanced Design -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 font-montserrat">Welcome back, {{ vendor.company_name }}!</h2>
+                    <p class="text-blue-100 text-lg font-raleway">Manage your inventory and grow your business</p>
+                    <div class="flex items-center mt-4 space-x-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-car mr-2"></i>
+                            <span class="text-sm">{{ vendor_cars|length }} Active Listings</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-eye mr-2"></i>
+                            <span class="text-sm">{{ total_views|default:0 }} Total Views</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            <span class="text-sm">{{ pending_inquiries|length }} Pending Inquiries</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-store text-4xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Quick Actions with Modern Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <a href="{% url 'core:sell_car' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-harrier-red/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div class="absolute inset-0 bg-gradient-to-br from-harrier-red/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-plus text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-harrier-red transition-colors">Add New Car</h3>
+                        <p class="text-sm text-gray-600 font-raleway">List a new vehicle</p>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'core:vendor_inquiries' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-blue-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-envelope text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-blue-600 transition-colors">Inquiries</h3>
+                        <p class="text-sm text-gray-600 font-raleway">{{ pending_inquiries|length }} pending</p>
+                        {% if pending_inquiries %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
+                                Action Required
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'core:vendor_analytics' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-green-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div class="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-green-600 transition-colors">Analytics</h3>
+                        <p class="text-sm text-gray-600 font-raleway">View performance</p>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'core:vendor_spare_parts' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-purple-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-tools text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-purple-600 transition-colors">Spare Parts</h3>
+                        <p class="text-sm text-gray-600 font-raleway">Manage inventory</p>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Enhanced Performance Overview with Modern Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-car text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ vendor_cars|length }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Active Listings</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-green-600 font-medium">+2 this week</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-eye text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_views|default:0 }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Views</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                <span class="text-blue-600 font-medium">+8% this month</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-envelope text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ pending_inquiries|length }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Pending Inquiries</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                {% if pending_inquiries %}
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div>
+                    <span class="text-yellow-600 font-medium">Needs attention</span>
+                {% else %}
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-green-600 font-medium">All caught up</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600 font-montserrat">{{ monthly_growth|default:0 }}%</div>
+                    <div class="text-sm text-gray-600 font-raleway">Monthly Growth</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-green-600 font-medium">Trending up</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content with Enhanced Design -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <!-- Recent Listings with Enhanced Lazy Loading -->
+        <div class="lazy-content-container lazy-recent-listings"
+             hx-get="{% url 'core:vendor_recent_listings' %}"
+             hx-trigger="revealed"
+             hx-swap="outerHTML">
+
+            <!-- Enhanced Loading Skeleton -->
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-red/5 to-transparent">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gray-300 rounded-lg animate-pulse mr-3"></div>
+                            <div class="h-6 bg-gray-300 rounded w-32 animate-pulse"></div>
+                        </div>
+                        <div class="h-4 bg-gray-300 rounded w-16 animate-pulse"></div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for i in "12345" %}
+                        <div class="border border-gray-200/50 rounded-xl p-4 animate-pulse bg-white/50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-16 h-16 bg-gray-300 rounded-xl mr-4"></div>
+                                    <div>
+                                        <div class="h-5 bg-gray-300 rounded w-32 mb-2"></div>
+                                        <div class="h-4 bg-gray-300 rounded w-20 mb-1"></div>
+                                        <div class="h-3 bg-gray-300 rounded w-16"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="h-6 bg-gray-300 rounded-full w-16"></div>
+                                    <div class="h-4 bg-gray-300 rounded w-4"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Recent Inquiries -->
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+            <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-blue-500/5 to-transparent">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-envelope text-white text-sm"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Inquiries</h3>
+                    </div>
+                    <a href="{% url 'core:vendor_inquiries' %}" class="text-sm text-harrier-red hover:text-harrier-dark font-medium transition-colors">View All</a>
+                </div>
+            </div>
+            <div class="p-6">
+                {% if pending_inquiries %}
+                    <div class="space-y-4">
+                        {% for inquiry in pending_inquiries %}
+                            <div class="border border-gray-200/50 rounded-xl p-4 hover:border-harrier-red/30 transition-all duration-300 bg-white/60 hover:bg-white/80 group">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center mr-3">
+                                                <span class="text-white text-xs font-bold">{{ inquiry.customer.first_name|first|default:inquiry.customer.username|first }}</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-harrier-dark font-montserrat group-hover:text-harrier-red transition-colors">{{ inquiry.subject }}</h4>
+                                                <p class="text-xs text-gray-500">From: {{ inquiry.customer.first_name|default:inquiry.customer.username }}</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-3 font-raleway">{{ inquiry.message|truncatewords:15 }}</p>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                {% if inquiry.status == 'resolved' %}bg-green-100 text-green-800
+                                                {% elif inquiry.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                                {% elif inquiry.status == 'open' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ inquiry.get_status_display }}
+                                            </span>
+                                            <span class="text-xs text-gray-500">{{ inquiry.created_at|date:"M d, Y" }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <button class="bg-harrier-red text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-harrier-red-dark transition-colors">
+                                            <i class="fas fa-reply mr-1"></i>Respond
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-envelope text-2xl text-gray-400"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-600 mb-2 font-montserrat">No pending inquiries</h4>
+                        <p class="text-gray-500 text-sm font-raleway">You're all caught up! New inquiries will appear here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Business Overview -->
+    <div class="mt-8 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-dark/5 to-transparent">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-gradient-to-br from-harrier-dark to-gray-700 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-building text-white text-sm"></i>
+                </div>
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Business Overview</h3>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Company Information -->
+                <div class="bg-white/60 rounded-xl p-5 border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-info-circle text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-harrier-dark font-montserrat">Company Information</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-building text-gray-400 w-4 mr-3"></i>
+                            <span class="text-sm text-gray-700 font-medium">{{ vendor.company_name }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope text-gray-400 w-4 mr-3"></i>
+                            <span class="text-sm text-gray-700">{{ vendor.user.email }}</span>
+                        </div>
+                        {% if vendor.website %}
+                            <div class="flex items-center">
+                                <i class="fas fa-globe text-gray-400 w-4 mr-3"></i>
+                                <a href="{{ vendor.website }}" target="_blank" class="text-sm text-harrier-red hover:text-harrier-dark">{{ vendor.website }}</a>
+                            </div>
+                        {% endif %}
+                        {% if vendor.business_license %}
+                            <div class="flex items-center">
+                                <i class="fas fa-certificate text-gray-400 w-4 mr-3"></i>
+                                <span class="text-sm text-gray-700">{{ vendor.business_license }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'core:profile' %}" class="inline-flex items-center mt-4 bg-harrier-red text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-harrier-red-dark transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Edit Profile
+                    </a>
+                </div>
+
+                <!-- Account Status -->
+                <div class="bg-white/60 rounded-xl p-5 border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user-check text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-harrier-dark font-montserrat">Account Status</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar text-gray-400 w-4 mr-3"></i>
+                            <span class="text-sm text-gray-700">Member since {{ vendor.created_at|date:"M Y" }}</span>
+                        </div>
+                        {% if vendor.approval_date %}
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-gray-400 w-4 mr-3"></i>
+                                <span class="text-sm text-gray-700">Approved on {{ vendor.approval_date|date:"M d, Y" }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="mt-4">
+                            <span class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium
+                                {% if vendor.is_approved %}bg-green-100 text-green-800 border border-green-200{% else %}bg-yellow-100 text-yellow-800 border border-yellow-200{% endif %}">
+                                {% if vendor.is_approved %}
+                                    <i class="fas fa-shield-alt mr-2"></i>Verified Vendor
+                                {% else %}
+                                    <i class="fas fa-clock mr-2"></i>Pending Approval
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white/60 rounded-xl p-5 border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-bolt text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-harrier-dark font-montserrat">Quick Actions</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <a href="{% url 'core:vendor_listings' %}" class="flex items-center p-3 bg-white rounded-lg border border-gray-100 hover:border-harrier-red/30 hover:bg-harrier-red/5 transition-all duration-200 group">
+                            <i class="fas fa-car text-harrier-red mr-3 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-harrier-red">Manage Inventory</span>
+                        </a>
+                        <a href="{% url 'core:vendor_analytics' %}" class="flex items-center p-3 bg-white rounded-lg border border-gray-100 hover:border-harrier-red/30 hover:bg-harrier-red/5 transition-all duration-200 group">
+                            <i class="fas fa-chart-bar text-harrier-red mr-3 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-harrier-red">View Analytics</span>
+                        </a>
+                        <a href="#" class="flex items-center p-3 bg-white rounded-lg border border-gray-100 hover:border-harrier-red/30 hover:bg-harrier-red/5 transition-all duration-200 group">
+                            <i class="fas fa-cog text-harrier-red mr-3 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-harrier-red">Business Settings</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

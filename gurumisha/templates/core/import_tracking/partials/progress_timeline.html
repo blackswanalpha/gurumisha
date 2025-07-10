@@ -1,0 +1,216 @@
+<!-- Reusable Progress Timeline Component -->
+{% load static %}
+
+<div class="progress-timeline">
+    <!-- Mobile Progress Indicator -->
+    <div class="block md:hidden mb-6">
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
+            <span>Stage {{ order.current_stage_number }} of 7</span>
+            <span>{{ order.progress_percentage }}% Complete</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-harrier-red h-3 rounded-full transition-all duration-500" 
+                 style="width: {{ order.progress_percentage }}%"></div>
+        </div>
+        <div class="text-center mt-2">
+            <span class="text-sm font-medium text-harrier-dark">{{ order.get_status_display }}</span>
+        </div>
+    </div>
+
+    <!-- Desktop Timeline -->
+    <div class="hidden md:block">
+        <div class="relative">
+            <!-- Progress Line -->
+            <div class="absolute top-5 left-0 w-full h-0.5 bg-gray-200"></div>
+            <div class="absolute top-5 left-0 h-0.5 bg-harrier-red transition-all duration-1000" 
+                 style="width: {{ order.progress_percentage }}%"></div>
+            
+            <!-- Timeline Steps -->
+            <div class="relative flex justify-between">
+                {% for stage in stages %}
+                    <div class="flex flex-col items-center group cursor-pointer" 
+                         data-stage="{{ stage.number }}"
+                         data-tooltip="{{ stage.description }}">
+                        <!-- Step Circle -->
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-300 transform group-hover:scale-110
+                            {% if stage.is_completed %}
+                                bg-green-500 shadow-lg
+                            {% elif stage.is_current %}
+                                bg-harrier-red shadow-lg animate-pulse
+                            {% else %}
+                                bg-gray-300
+                            {% endif %}">
+                            {% if stage.is_completed %}
+                                <i class="fas fa-check"></i>
+                            {% elif stage.is_current %}
+                                <i class="fas fa-clock"></i>
+                            {% else %}
+                                {{ stage.number }}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Step Label -->
+                        <div class="mt-3 text-center max-w-24">
+                            <div class="text-xs font-medium text-harrier-dark
+                                {% if stage.is_current %}text-harrier-red{% endif %}">
+                                {{ stage.title }}
+                            </div>
+                            {% if stage.is_current %}
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-harrier-red bg-opacity-10 text-harrier-red">
+                                        Current
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Tooltip -->
+                        <div class="absolute bottom-full mb-2 hidden group-hover:block z-10">
+                            <div class="bg-harrier-dark text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                                {{ stage.description }}
+                                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-harrier-dark"></div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Stage Details -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for stage in stages %}
+                {% if stage.is_current or stage.is_completed %}
+                    <div class="bg-white border rounded-lg p-4 
+                        {% if stage.is_current %}border-harrier-red bg-harrier-red bg-opacity-5{% else %}border-gray-200{% endif %}">
+                        <div class="flex items-center mb-2">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs
+                                {% if stage.is_completed %}bg-green-500{% else %}bg-harrier-red{% endif %}">
+                                {% if stage.is_completed %}
+                                    <i class="fas fa-check"></i>
+                                {% else %}
+                                    {{ stage.number }}
+                                {% endif %}
+                            </div>
+                            <h4 class="ml-2 font-medium text-harrier-dark">{{ stage.title }}</h4>
+                        </div>
+                        <p class="text-sm text-gray-600">{{ stage.description }}</p>
+                        
+                        <!-- Stage-specific information -->
+                        {% if stage.number == 1 and order.quotation_amount %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">Quotation:</span>
+                                <span class="font-medium">KSh {{ order.quotation_amount|floatformat:0 }}</span>
+                            </div>
+                        {% elif stage.number == 2 and order.auction_house %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">Auction House:</span>
+                                <span class="font-medium">{{ order.auction_house }}</span>
+                            </div>
+                        {% elif stage.number == 3 and order.vessel_name %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">Vessel:</span>
+                                <span class="font-medium">{{ order.vessel_name }}</span>
+                            </div>
+                        {% elif stage.number == 4 and order.estimated_arrival_date %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">ETA:</span>
+                                <span class="font-medium">{{ order.estimated_arrival_date|date:"M d, Y" }}</span>
+                            </div>
+                        {% elif stage.number == 5 and order.actual_arrival_date %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">Arrived:</span>
+                                <span class="font-medium">{{ order.actual_arrival_date|date:"M d, Y" }}</span>
+                            </div>
+                        {% elif stage.number == 6 and order.registration_number %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">Registration:</span>
+                                <span class="font-medium">{{ order.registration_number }}</span>
+                            </div>
+                        {% elif stage.number == 7 and order.delivery_date %}
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-600">Delivered:</span>
+                                <span class="font-medium">{{ order.delivery_date|date:"M d, Y" }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Estimated Timeline -->
+{% if order.status != 'delivered' and order.status != 'cancelled' %}
+<div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div class="flex items-center mb-2">
+        <i class="fas fa-clock text-blue-600 mr-2"></i>
+        <h4 class="font-medium text-blue-800">Estimated Timeline</h4>
+    </div>
+    <p class="text-sm text-blue-700">
+        {% if order.estimated_days_remaining > 0 %}
+            Your order is estimated to be completed in approximately <strong>{{ order.estimated_days_remaining }} days</strong>.
+        {% else %}
+            Your order should be completed soon.
+        {% endif %}
+        This is an estimate and actual timelines may vary based on various factors including customs processing and shipping conditions.
+    </p>
+</div>
+{% endif %}
+
+<style>
+.progress-timeline .group:hover .absolute {
+    display: block;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+.animate-pulse-ring {
+    animation: pulse-ring 2s infinite;
+}
+</style>
+
+<script>
+// Add interactive tooltips for mobile
+document.addEventListener('DOMContentLoaded', function() {
+    const timelineSteps = document.querySelectorAll('[data-stage]');
+    
+    timelineSteps.forEach(step => {
+        step.addEventListener('click', function() {
+            const tooltip = this.querySelector('.absolute');
+            if (tooltip) {
+                tooltip.classList.toggle('hidden');
+                // Hide other tooltips
+                timelineSteps.forEach(otherStep => {
+                    if (otherStep !== this) {
+                        const otherTooltip = otherStep.querySelector('.absolute');
+                        if (otherTooltip) {
+                            otherTooltip.classList.add('hidden');
+                        }
+                    }
+                });
+            }
+        });
+    });
+    
+    // Close tooltips when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('[data-stage]')) {
+            timelineSteps.forEach(step => {
+                const tooltip = step.querySelector('.absolute');
+                if (tooltip) {
+                    tooltip.classList.add('hidden');
+                }
+            });
+        }
+    });
+});
+</script>

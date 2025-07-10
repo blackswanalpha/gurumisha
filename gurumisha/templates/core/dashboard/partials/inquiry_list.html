@@ -1,0 +1,186 @@
+{% load static %}
+
+{% if inquiries %}
+    <div class="space-y-6">
+        {% for inquiry in inquiries %}
+            <div id="inquiry-{{ inquiry.id }}" class="dashboard-card hover:shadow-lg transition-shadow">
+                <div class="p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-lg font-semibold text-harrier-dark">{{ inquiry.subject }}</h3>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                    {% if inquiry.status == 'resolved' %}bg-green-100 text-green-800
+                                    {% elif inquiry.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                    {% elif inquiry.status == 'open' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ inquiry.get_status_display }}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center text-sm text-gray-600 mb-3">
+                                <div class="flex items-center mr-6">
+                                    <i class="fas fa-user mr-2"></i>
+                                    <span>{{ inquiry.customer.first_name|default:inquiry.customer.username }}</span>
+                                </div>
+                                <div class="flex items-center mr-6">
+                                    <i class="fas fa-envelope mr-2"></i>
+                                    <span>{{ inquiry.customer.email }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    <span>{{ inquiry.created_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                            </div>
+                            
+                            {% if inquiry.car %}
+                                <div class="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
+                                    {% if inquiry.car.main_image %}
+                                        <img src="{{ inquiry.car.main_image.url }}" alt="{{ inquiry.car.title }}" class="w-12 h-12 object-cover rounded-lg mr-3">
+                                    {% else %}
+                                        <div class="w-12 h-12 bg-gray-200 rounded-lg mr-3 flex items-center justify-center">
+                                            <i class="fas fa-car text-gray-400"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h4 class="font-medium text-harrier-dark">{{ inquiry.car.title }}</h4>
+                                        <p class="text-sm text-gray-600">KSh {{ inquiry.car.price|floatformat:0 }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Message -->
+                    <div class="mb-4">
+                        <h4 class="font-medium text-harrier-dark mb-2">Customer Message:</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-gray-700">{{ inquiry.message }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Response Section -->
+                    {% if inquiry.status == 'resolved' %}
+                        <div class="mb-4">
+                            <div class="bg-green-50 border-l-4 border-green-400 rounded-lg p-4">
+                                <p class="text-green-700 font-medium">This inquiry has been resolved.</p>
+                                <p class="text-sm text-green-600 mt-1">
+                                    Resolved on {{ inquiry.updated_at|date:"M d, Y H:i" }}
+                                </p>
+                            </div>
+                        </div>
+                    {% elif inquiry.status == 'in_progress' %}
+                        <div class="mb-4">
+                            <div class="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-4">
+                                <p class="text-blue-700 font-medium">This inquiry is being processed.</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div class="flex items-center space-x-4">
+                            {% if inquiry.customer.phone %}
+                                <a href="tel:{{ inquiry.customer.phone }}" class="text-harrier-red hover:text-harrier-dark text-sm font-medium">
+                                    <i class="fas fa-phone mr-1"></i>Call Customer
+                                </a>
+                            {% endif %}
+                            <a href="mailto:{{ inquiry.customer.email }}" class="text-harrier-red hover:text-harrier-dark text-sm font-medium">
+                                <i class="fas fa-envelope mr-1"></i>Email Customer
+                            </a>
+                            {% if inquiry.car %}
+                                <a href="{% url 'core:car_detail' inquiry.car.pk %}" class="text-harrier-red hover:text-harrier-dark text-sm font-medium">
+                                    <i class="fas fa-car mr-1"></i>View Car
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            {% if inquiry.status == 'open' %}
+                                <button 
+                                    type="button" 
+                                    class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                    onclick="updateInquiryStatus({{ inquiry.id }}, 'in_progress')">
+                                    Mark In Progress
+                                </button>
+                            {% endif %}
+                            
+                            {% if inquiry.status != 'resolved' %}
+                                <button 
+                                    type="button" 
+                                    class="btn-harrier-primary text-sm"
+                                    onclick="respondToInquiry({{ inquiry.id }})">
+                                    <i class="fas fa-reply mr-1"></i>Respond
+                                </button>
+                            {% endif %}
+                            
+                            {% if inquiry.status != 'resolved' %}
+                                <button 
+                                    type="button" 
+                                    class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                    onclick="updateInquiryStatus({{ inquiry.id }}, 'resolved')">
+                                    Mark Resolved
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if inquiries.has_other_pages %}
+        <div class="mt-8 flex items-center justify-center">
+            <nav class="flex items-center space-x-2">
+                {% if inquiries.has_previous %}
+                    <a 
+                        href="?page={{ inquiries.previous_page_number }}" 
+                        class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                        hx-get="?page={{ inquiries.previous_page_number }}"
+                        hx-target="#inquiries-list">
+                        Previous
+                    </a>
+                {% endif %}
+                
+                {% for num in inquiries.paginator.page_range %}
+                    {% if inquiries.number == num %}
+                        <span class="px-3 py-2 text-sm bg-harrier-red text-white rounded-lg">{{ num }}</span>
+                    {% elif num > inquiries.number|add:'-3' and num < inquiries.number|add:'3' %}
+                        <a 
+                            href="?page={{ num }}" 
+                            class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                            hx-get="?page={{ num }}"
+                            hx-target="#inquiries-list">
+                            {{ num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if inquiries.has_next %}
+                    <a 
+                        href="?page={{ inquiries.next_page_number }}" 
+                        class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                        hx-get="?page={{ inquiries.next_page_number }}"
+                        hx-target="#inquiries-list">
+                        Next
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    {% endif %}
+{% else %}
+    <!-- Empty State -->
+    <div class="dashboard-card">
+        <div class="p-12 text-center">
+            <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-envelope text-4xl text-gray-400"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-harrier-dark mb-2">No Inquiries Found</h3>
+            <p class="text-gray-600 mb-6">You don't have any customer inquiries yet. When customers are interested in your cars, their inquiries will appear here.</p>
+            <a href="{% url 'core:sell_car' %}" class="btn-harrier-primary">
+                <i class="fas fa-plus mr-2"></i>Add More Cars
+            </a>
+        </div>
+    </div>
+{% endif %}

@@ -1,0 +1,33 @@
+<!-- Reusable Alert Component -->
+{% load static %}
+
+<div class="p-4 rounded-lg border {% if type == 'error' %}bg-red-100 border-red-400 text-red-700{% elif type == 'success' %}bg-green-100 border-green-400 text-green-700{% elif type == 'warning' %}bg-yellow-100 border-yellow-400 text-yellow-700{% elif type == 'info' %}bg-blue-100 border-blue-400 text-blue-700{% else %}bg-gray-100 border-gray-400 text-gray-700{% endif %} {% if dismissible %}relative{% endif %}">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            {% if type == 'error' %}
+                <i class="fas fa-exclamation-circle text-red-500"></i>
+            {% elif type == 'success' %}
+                <i class="fas fa-check-circle text-green-500"></i>
+            {% elif type == 'warning' %}
+                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+            {% elif type == 'info' %}
+                <i class="fas fa-info-circle text-blue-500"></i>
+            {% else %}
+                <i class="fas fa-bell text-gray-500"></i>
+            {% endif %}
+        </div>
+        <div class="ml-3 flex-1">
+            {% if title %}
+                <h3 class="text-sm font-semibold mb-1">{{ title }}</h3>
+            {% endif %}
+            <div class="text-sm">{{ message }}</div>
+        </div>
+        {% if dismissible %}
+            <div class="ml-4 flex-shrink-0">
+                <button type="button" class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none" onclick="this.parentElement.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>

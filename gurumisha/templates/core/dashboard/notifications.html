@@ -1,0 +1,151 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Notifications{% endblock %}
+{% block page_description %}Manage your system notifications{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+    <!-- Notifications Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-bold text-harrier-dark font-montserrat">Notifications</h2>
+            <p class="text-gray-600 mt-1">Stay updated with system activities and important messages</p>
+        </div>
+        
+        {% if unread_count > 0 %}
+        <button 
+            hx-post="{% url 'core:mark_all_notifications_read' %}"
+            hx-target="#notifications-container"
+            hx-swap="outerHTML"
+            class="btn-admin-secondary text-sm"
+        >
+            <i class="fas fa-check-double mr-2"></i>Mark All Read
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Notifications Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value">{{ notifications.count }}</div>
+            <div class="admin-stat-label">Total Notifications</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-harrier-red">{{ unread_count }}</div>
+            <div class="admin-stat-label">Unread</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">{{ notifications.count|add:"-"|add:unread_count }}</div>
+            <div class="admin-stat-label">Read</div>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div id="notifications-container" class="admin-card">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-harrier-dark mb-4 font-montserrat">Recent Notifications</h3>
+            
+            {% if notifications %}
+                <div class="space-y-4">
+                    {% for notification in notifications %}
+                    <div class="notification-item flex items-start space-x-4 p-4 rounded-lg border {% if not notification.is_read %}bg-blue-50 border-blue-200{% else %}bg-gray-50 border-gray-200{% endif %} transition-all duration-300">
+                        <!-- Notification Icon -->
+                        <div class="flex-shrink-0">
+                            {% if notification.notification_type == 'success' %}
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600"></i>
+                                </div>
+                            {% elif notification.notification_type == 'warning' %}
+                                <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                                </div>
+                            {% elif notification.notification_type == 'error' %}
+                                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-times text-red-600"></i>
+                                </div>
+                            {% elif notification.notification_type == 'system' %}
+                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-cog text-purple-600"></i>
+                                </div>
+                            {% else %}
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-info text-blue-600"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Notification Content -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-semibold text-gray-900 font-raleway">{{ notification.title }}</h4>
+                                    <p class="text-sm text-gray-600 mt-1">{{ notification.message }}</p>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        <i class="fas fa-clock mr-1"></i>{{ notification.created_at|timesince }} ago
+                                    </p>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex items-center space-x-2 ml-4">
+                                    {% if notification.action_url and notification.action_text %}
+                                    <a href="{{ notification.action_url }}" class="text-xs bg-harrier-red text-white px-3 py-1 rounded-full hover:bg-harrier-dark transition-colors">
+                                        {{ notification.action_text }}
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if not notification.is_read %}
+                                    <button 
+                                        hx-post="{% url 'core:mark_notification_read' notification.id %}"
+                                        hx-target="closest .notification-item"
+                                        hx-swap="outerHTML"
+                                        class="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                                        title="Mark as read"
+                                    >
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-bell text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No notifications yet</h3>
+                    <p class="text-gray-600">You'll see notifications here when there are updates or important messages.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .notification-item {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .notification-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}

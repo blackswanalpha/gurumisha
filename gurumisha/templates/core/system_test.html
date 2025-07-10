@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Test - Activity, Audit & Notifications{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-harrier-gray to-white py-12">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-harrier-dark font-montserrat mb-4">
+                System Test Dashboard
+            </h1>
+            <p class="text-lg text-gray-600 font-inter">
+                Test Activity Logging, Audit Trails, and Notification System
+            </p>
+        </div>
+
+        <!-- Test Grid -->
+        <div class="grid lg:grid-cols-3 gap-8">
+            
+            <!-- Activity Logging Tests -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                    <i class="fas fa-activity text-harrier-red mr-2"></i>
+                    Activity Logging
+                </h2>
+                
+                <div class="space-y-4">
+                    <button onclick="testUserActivity()" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-user mr-2"></i>Test User Activity
+                    </button>
+                    
+                    <button onclick="testCarActivity()" 
+                            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-car mr-2"></i>Test Car Activity
+                    </button>
+                    
+                    <button onclick="testSearchActivity()" 
+                            class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-search mr-2"></i>Test Search Activity
+                    </button>
+                    
+                    <button onclick="testOrderActivity()" 
+                            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-shopping-cart mr-2"></i>Test Order Activity
+                    </button>
+                </div>
+
+                <!-- Activity Results -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="font-semibold text-gray-700 mb-2">Recent Activities:</h3>
+                    <div id="activity-results" class="text-sm text-gray-600 space-y-1">
+                        <p>Click buttons above to test activity logging...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Logging Tests -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                    <i class="fas fa-shield-alt text-harrier-red mr-2"></i>
+                    Audit Logging
+                </h2>
+                
+                <div class="space-y-4">
+                    <button onclick="testSecurityEvent()" 
+                            class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Test Security Event
+                    </button>
+                    
+                    <button onclick="testDataChange()" 
+                            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-edit mr-2"></i>Test Data Change
+                    </button>
+                    
+                    <button onclick="testPermissionChange()" 
+                            class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-key mr-2"></i>Test Permission Change
+                    </button>
+                    
+                    <button onclick="testSystemConfig()" 
+                            class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-cog mr-2"></i>Test System Config
+                    </button>
+                </div>
+
+                <!-- Audit Results -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="font-semibold text-gray-700 mb-2">Recent Audit Events:</h3>
+                    <div id="audit-results" class="text-sm text-gray-600 space-y-1">
+                        <p>Click buttons above to test audit logging...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Tests -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                    <i class="fas fa-bell text-harrier-red mr-2"></i>
+                    Notifications
+                </h2>
+                
+                <div class="space-y-4">
+                    <button onclick="testEmailNotification()" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-envelope mr-2"></i>Test Email
+                    </button>
+                    
+                    <button onclick="testInAppNotification()" 
+                            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-desktop mr-2"></i>Test In-App
+                    </button>
+                    
+                    <button onclick="testMultiChannelNotification()" 
+                            class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-broadcast-tower mr-2"></i>Test Multi-Channel
+                    </button>
+                    
+                    <button onclick="testScheduledNotification()" 
+                            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-clock mr-2"></i>Test Scheduled
+                    </button>
+                </div>
+
+                <!-- Notification Results -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="font-semibold text-gray-700 mb-2">Notification Status:</h3>
+                    <div id="notification-results" class="text-sm text-gray-600 space-y-1">
+                        <p>Click buttons above to test notifications...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                <i class="fas fa-chart-line text-harrier-red mr-2"></i>
+                System Status
+            </h2>
+            
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600" id="activity-count">0</div>
+                    <div class="text-sm text-gray-600">Activities Logged</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-600" id="audit-count">0</div>
+                    <div class="text-sm text-gray-600">Audit Events</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600" id="notification-count">0</div>
+                    <div class="text-sm text-gray-600">Notifications Sent</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600" id="queue-count">0</div>
+                    <div class="text-sm text-gray-600">Queue Items</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="mt-8 text-center space-x-4">
+            {% if user.is_authenticated %}
+                <a href="{% url 'core:activity_logs' %}" class="btn-admin-primary">
+                    <i class="fas fa-history mr-2"></i>View My Activities
+                </a>
+                <a href="{% url 'core:notification_preferences' %}" class="btn-admin-secondary">
+                    <i class="fas fa-cog mr-2"></i>Notification Settings
+                </a>
+                {% if user.role == 'admin' %}
+                    <a href="{% url 'core:admin_audit_logs' %}" class="btn-admin-secondary">
+                        <i class="fas fa-shield-alt mr-2"></i>Audit Logs
+                    </a>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'core:login' %}" class="btn-admin-primary">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login to Test
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Test Functions
+function testUserActivity() {
+    fetch('/api/test/activity/user/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'profile_update',
+            description: 'Test user activity logging'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('activity-results', '✅ User activity logged: ' + data.message);
+        updateCount('activity-count');
+        showSuccess('User activity test completed!');
+    })
+    .catch(error => {
+        addResult('activity-results', '❌ Error: ' + error.message);
+        showError('User activity test failed!');
+    });
+}
+
+function testCarActivity() {
+    fetch('/api/test/activity/car/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'car_view',
+            description: 'Test car activity logging'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('activity-results', '✅ Car activity logged: ' + data.message);
+        updateCount('activity-count');
+        showSuccess('Car activity test completed!');
+    })
+    .catch(error => {
+        addResult('activity-results', '❌ Error: ' + error.message);
+        showError('Car activity test failed!');
+    });
+}
+
+function testSearchActivity() {
+    fetch('/api/test/activity/search/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            query: 'Toyota Camry',
+            filters: {year: 2020, price_max: 2000000}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('activity-results', '✅ Search activity logged: ' + data.message);
+        updateCount('activity-count');
+        showSuccess('Search activity test completed!');
+    })
+    .catch(error => {
+        addResult('activity-results', '❌ Error: ' + error.message);
+        showError('Search activity test failed!');
+    });
+}
+
+function testOrderActivity() {
+    fetch('/api/test/activity/order/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'order_create',
+            description: 'Test order activity logging'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('activity-results', '✅ Order activity logged: ' + data.message);
+        updateCount('activity-count');
+        showSuccess('Order activity test completed!');
+    })
+    .catch(error => {
+        addResult('activity-results', '❌ Error: ' + error.message);
+        showError('Order activity test failed!');
+    });
+}
+
+function testSecurityEvent() {
+    fetch('/api/test/audit/security/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            event_type: 'test_security_event',
+            description: 'Test security event logging'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('audit-results', '🔒 Security event logged: ' + data.message);
+        updateCount('audit-count');
+        showWarning('Security event test completed!');
+    })
+    .catch(error => {
+        addResult('audit-results', '❌ Error: ' + error.message);
+        showError('Security event test failed!');
+    });
+}
+
+function testDataChange() {
+    fetch('/api/test/audit/data-change/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            table_name: 'test_table',
+            field_name: 'test_field',
+            old_value: 'old_value',
+            new_value: 'new_value'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('audit-results', '📝 Data change logged: ' + data.message);
+        updateCount('audit-count');
+        showInfo('Data change test completed!');
+    })
+    .catch(error => {
+        addResult('audit-results', '❌ Error: ' + error.message);
+        showError('Data change test failed!');
+    });
+}
+
+function testPermissionChange() {
+    fetch('/api/test/audit/permission/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            permission_change: 'Test permission change'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('audit-results', '🔑 Permission change logged: ' + data.message);
+        updateCount('audit-count');
+        showWarning('Permission change test completed!');
+    })
+    .catch(error => {
+        addResult('audit-results', '❌ Error: ' + error.message);
+        showError('Permission change test failed!');
+    });
+}
+
+function testSystemConfig() {
+    fetch('/api/test/audit/system-config/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            config_change: 'Test system configuration change'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('audit-results', '⚙️ System config logged: ' + data.message);
+        updateCount('audit-count');
+        showInfo('System config test completed!');
+    })
+    .catch(error => {
+        addResult('audit-results', '❌ Error: ' + error.message);
+        showError('System config test failed!');
+    });
+}
+
+function testEmailNotification() {
+    fetch('/api/test/notification/email/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: 'Test Email Notification',
+            message: 'This is a test email notification'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('notification-results', '📧 Email notification queued: ' + data.message);
+        updateCount('notification-count');
+        updateCount('queue-count');
+        showSuccess('Email notification test completed!');
+    })
+    .catch(error => {
+        addResult('notification-results', '❌ Error: ' + error.message);
+        showError('Email notification test failed!');
+    });
+}
+
+function testInAppNotification() {
+    fetch('/api/test/notification/in-app/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: 'Test In-App Notification',
+            message: 'This is a test in-app notification'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('notification-results', '🖥️ In-app notification sent: ' + data.message);
+        updateCount('notification-count');
+        showSuccess('In-app notification test completed!');
+    })
+    .catch(error => {
+        addResult('notification-results', '❌ Error: ' + error.message);
+        showError('In-app notification test failed!');
+    });
+}
+
+function testMultiChannelNotification() {
+    fetch('/api/test/notification/multi-channel/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: 'Test Multi-Channel Notification',
+            message: 'This is a test multi-channel notification',
+            channels: ['email', 'in_app', 'push']
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('notification-results', '📡 Multi-channel notification sent: ' + data.message);
+        updateCount('notification-count');
+        updateCount('queue-count');
+        showSuccess('Multi-channel notification test completed!');
+    })
+    .catch(error => {
+        addResult('notification-results', '❌ Error: ' + error.message);
+        showError('Multi-channel notification test failed!');
+    });
+}
+
+function testScheduledNotification() {
+    fetch('/api/test/notification/scheduled/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: 'Test Scheduled Notification',
+            message: 'This is a test scheduled notification',
+            delay_minutes: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addResult('notification-results', '⏰ Scheduled notification queued: ' + data.message);
+        updateCount('queue-count');
+        showInfo('Scheduled notification test completed!');
+    })
+    .catch(error => {
+        addResult('notification-results', '❌ Error: ' + error.message);
+        showError('Scheduled notification test failed!');
+    });
+}
+
+// Helper Functions
+function addResult(containerId, message) {
+    const container = document.getElementById(containerId);
+    const p = document.createElement('p');
+    p.textContent = new Date().toLocaleTimeString() + ': ' + message;
+    p.className = 'text-xs';
+    container.appendChild(p);
+    
+    // Keep only last 5 results
+    while (container.children.length > 5) {
+        container.removeChild(container.firstChild);
+    }
+}
+
+function updateCount(counterId) {
+    const counter = document.getElementById(counterId);
+    const currentCount = parseInt(counter.textContent) || 0;
+    counter.textContent = currentCount + 1;
+}
+
+// Auto-refresh counts every 30 seconds
+setInterval(function() {
+    fetch('/api/system/status/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('activity-count').textContent = data.activity_count || 0;
+            document.getElementById('audit-count').textContent = data.audit_count || 0;
+            document.getElementById('notification-count').textContent = data.notification_count || 0;
+            document.getElementById('queue-count').textContent = data.queue_count || 0;
+        })
+        .catch(error => console.log('Status update failed:', error));
+}, 30000);
+</script>
+{% endblock %}

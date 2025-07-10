@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Import Order Tracking - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="bg-harrier-dark py-16">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
+                IMPORT ORDER TRACKING
+            </h1>
+            <p class="text-xl text-gray-300">
+                Track your import orders from quotation to delivery
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Section -->
+<section class="py-16 bg-harrier-gray">
+    <div class="container mx-auto px-4">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-list-alt text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-harrier-dark mb-2">{{ total_orders }}</h3>
+                <p class="text-gray-600">Total Orders</p>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clock text-blue-600 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-harrier-dark mb-2">{{ active_orders }}</h3>
+                <p class="text-gray-600">Active Orders</p>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-harrier-dark mb-2">{{ delivered_orders }}</h3>
+                <p class="text-gray-600">Delivered</p>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex flex-col lg:flex-row gap-4">
+                <!-- Search Form -->
+                <div class="flex-1">
+                    <form method="get" class="flex gap-2">
+                        <input type="text" 
+                               name="search" 
+                               value="{{ search_query|default:'' }}"
+                               placeholder="Search by order number, chassis number, brand, or model..."
+                               class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                        <button type="submit" class="btn-harrier-primary px-6">
+                            <i class="fas fa-search mr-2"></i>Search
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Chassis Number Quick Search -->
+                <div class="lg:w-80">
+                    <form action="{% url 'core:chassis_number_search' %}" method="get" class="flex gap-2">
+                        <input type="text" 
+                               name="chassis_number" 
+                               placeholder="Enter chassis number..."
+                               class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                        <button type="submit" class="btn-harrier-secondary px-4">
+                            <i class="fas fa-car mr-2"></i>Track
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Status Filter -->
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a href="{% url 'core:import_order_tracking' %}" 
+                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {% if not current_filter %}bg-harrier-red text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                    All Orders
+                </a>
+                {% for status_code, status_name in status_choices %}
+                    <a href="?status={{ status_code }}" 
+                       class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {% if current_filter == status_code %}bg-harrier-red text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                        {{ status_name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Orders List -->
+        <div class="space-y-4 md:space-y-6">
+            {% for order in orders %}
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <!-- Mobile-first design -->
+                    <div class="p-4 md:p-6">
+                        <!-- Header with order number and status -->
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                            <div class="mb-2 sm:mb-0">
+                                <h3 class="text-lg md:text-xl font-heading font-bold text-harrier-dark">
+                                    {{ order.order_number }}
+                                </h3>
+                                <p class="text-sm text-gray-600">{{ order.year }} {{ order.brand }} {{ order.model }}</p>
+                            </div>
+                            <span class="self-start sm:self-center px-3 py-1 rounded-full text-xs md:text-sm font-medium
+                                {% if order.status == 'delivered' %}bg-green-100 text-green-800
+                                {% elif order.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% elif order.status in 'in_transit,shipped' %}bg-blue-100 text-blue-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+
+                        <!-- Progress Bar - Mobile optimized -->
+                        <div class="mb-4">
+                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                <span>Progress</span>
+                                <span class="font-medium">{{ order.progress_percentage }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div class="bg-harrier-red h-3 rounded-full transition-all duration-500 relative overflow-hidden"
+                                     style="width: {{ order.progress_percentage }}%">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                Stage {{ order.current_stage_number }} of 7
+                                {% if order.estimated_days_remaining > 0 %}
+                                    • ~{{ order.estimated_days_remaining }} days remaining
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Order details - Responsive grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 text-sm">
+                            {% if order.chassis_number %}
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-600 block">Chassis Number:</span>
+                                <p class="font-medium text-harrier-dark truncate">{{ order.chassis_number }}</p>
+                            </div>
+                            {% endif %}
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-600 block">Origin:</span>
+                                <p class="font-medium text-harrier-dark">{{ order.origin_country }}</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-600 block">Order Date:</span>
+                                <p class="font-medium text-harrier-dark">{{ order.created_at|date:"M d, Y" }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons - Mobile optimized -->
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            <a href="{% url 'core:import_order_detail' order.order_number %}"
+                               class="flex-1 btn-harrier-primary text-center py-3 text-sm font-medium">
+                                <i class="fas fa-eye mr-2"></i>View Details
+                            </a>
+                            {% if order.chassis_number %}
+                            <button onclick="copyToClipboard('{{ order.chassis_number }}')"
+                                    class="sm:w-auto btn-harrier-secondary py-3 text-sm font-medium">
+                                <i class="fas fa-copy mr-2"></i>Copy Chassis
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quick status indicator bar -->
+                    <div class="h-1 bg-gradient-to-r
+                        {% if order.status == 'delivered' %}from-green-400 to-green-600
+                        {% elif order.status == 'cancelled' %}from-red-400 to-red-600
+                        {% elif order.status in 'in_transit,shipped' %}from-blue-400 to-blue-600
+                        {% else %}from-yellow-400 to-yellow-600{% endif %}">
+                    </div>
+                </div>
+            {% empty %}
+                <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-shipping-fast text-gray-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-heading font-bold text-harrier-dark mb-2">No Import Orders Found</h3>
+                    <p class="text-gray-600 mb-6">
+                        {% if search_query or current_filter %}
+                            No orders match your search criteria. Try adjusting your filters.
+                        {% else %}
+                            You haven't placed any import orders yet. Start by requesting an import quote.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'core:import_request' %}" class="btn-harrier-primary">
+                        <i class="fas fa-plus mr-2"></i>Request Import
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Quick Actions Section -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-harrier-dark mb-4">
+                Need Help?
+            </h2>
+            <p class="text-xl text-gray-600">
+                Get assistance with your import orders
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-phone text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Call Support</h3>
+                <p class="text-gray-600 mb-4">Speak with our import specialists</p>
+                <a href="tel:+254700000000" class="text-harrier-red font-medium hover:text-harrier-dark">
+                    +254 700 000 000
+                </a>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-envelope text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">Email Us</h3>
+                <p class="text-gray-600 mb-4">Get detailed assistance via email</p>
+                <a href="mailto:imports@gurumisha.com" class="text-harrier-red font-medium hover:text-harrier-dark">
+                    imports@gurumisha.com
+                </a>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-harrier-red bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-plus text-harrier-red text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-heading font-bold text-harrier-dark mb-2">New Import</h3>
+                <p class="text-gray-600 mb-4">Start a new import request</p>
+                <a href="{% url 'core:import_request' %}" class="btn-harrier-secondary">
+                    Request Import
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mobile-optimized JavaScript for import tracking dashboard
+
+// Copy to clipboard functionality
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Chassis number copied to clipboard!', 'success');
+        }).catch(() => {
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        document.execCommand('copy');
+        showToast('Chassis number copied to clipboard!', 'success');
+    } catch (err) {
+        showToast('Failed to copy chassis number', 'error');
+    }
+
+    document.body.removeChild(textArea);
+}
+
+// Toast notification system
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium transform transition-all duration-300 translate-x-full ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+        'bg-blue-500'
+    }`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Enhanced search functionality with debouncing
+let searchTimeout;
+const searchInput = document.querySelector('input[name="search"]');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            // Auto-submit search after 500ms of no typing
+            if (this.value.length >= 3 || this.value.length === 0) {
+                this.form.submit();
+            }
+        }, 500);
+    });
+}
+
+// Smooth scroll to top functionality
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+// Add scroll to top button for mobile
+if (window.innerWidth <= 768) {
+    const scrollButton = document.createElement('button');
+    scrollButton.innerHTML = '<i class="fas fa-chevron-up"></i>';
+    scrollButton.className = 'fixed bottom-4 right-4 w-12 h-12 bg-harrier-red text-white rounded-full shadow-lg opacity-0 transition-opacity duration-300 z-40';
+    scrollButton.onclick = scrollToTop;
+    document.body.appendChild(scrollButton);
+
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            scrollButton.style.opacity = '1';
+        } else {
+            scrollButton.style.opacity = '0';
+        }
+    });
+}
+
+// Pull-to-refresh functionality for mobile
+let startY = 0;
+let pullDistance = 0;
+const pullThreshold = 100;
+let isPulling = false;
+
+if ('ontouchstart' in window) {
+    document.addEventListener('touchstart', (e) => {
+        if (window.pageYOffset === 0) {
+            startY = e.touches[0].pageY;
+            isPulling = true;
+        }
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (isPulling && window.pageYOffset === 0) {
+            pullDistance = e.touches[0].pageY - startY;
+            if (pullDistance > 0) {
+                e.preventDefault();
+                // Visual feedback for pull-to-refresh
+                document.body.style.transform = `translateY(${Math.min(pullDistance / 3, 50)}px)`;
+                document.body.style.opacity = Math.max(0.7, 1 - pullDistance / 300);
+            }
+        }
+    });
+
+    document.addEventListener('touchend', () => {
+        if (isPulling) {
+            document.body.style.transform = '';
+            document.body.style.opacity = '';
+
+            if (pullDistance > pullThreshold) {
+                showToast('Refreshing orders...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+
+            isPulling = false;
+            pullDistance = 0;
+        }
+    });
+}
+
+// Enhanced filter animations
+document.querySelectorAll('a[href*="status="]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        // Add loading state
+        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + this.textContent;
+    });
+});
+
+// Auto-refresh for real-time updates (every 2 minutes)
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        // Only refresh if page is visible
+        const currentUrl = new URL(window.location);
+        fetch(currentUrl.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => {
+            if (response.ok) {
+                // Subtle notification of updates
+                const updateIndicator = document.createElement('div');
+                updateIndicator.className = 'fixed top-0 left-0 w-full h-1 bg-harrier-red opacity-50 z-50';
+                document.body.appendChild(updateIndicator);
+
+                setTimeout(() => {
+                    document.body.removeChild(updateIndicator);
+                }, 1000);
+            }
+        }).catch(() => {
+            // Silently fail
+        });
+    }
+}, 120000); // 2 minutes
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+
+    // Escape to clear search
+    if (e.key === 'Escape') {
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput && searchInput === document.activeElement) {
+            searchInput.value = '';
+            searchInput.blur();
+        }
+    }
+});
+
+// Initialize tooltips for mobile
+document.querySelectorAll('[data-tooltip]').forEach(element => {
+    element.addEventListener('click', function(e) {
+        e.preventDefault();
+        showToast(this.dataset.tooltip, 'info');
+    });
+});
+</script>
+
+<style>
+/* Additional mobile-optimized styles */
+@media (max-width: 768px) {
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+
+    .btn-harrier-primary,
+    .btn-harrier-secondary {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Enhanced touch targets */
+    button, a, input {
+        min-height: 44px;
+    }
+
+    /* Improved readability */
+    body {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    /* Smooth animations */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .transition-all {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* Loading states */
+.htmx-request {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+/* Progress bar animations */
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-shimmer {
+    animation: shimmer 2s infinite;
+}
+
+/* Status badge animations */
+.status-badge {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card hover effects */
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus states for accessibility */
+input:focus,
+button:focus,
+a:focus {
+    outline: 2px solid #dc2626;
+    outline-offset: 2px;
+}
+</style>
+{% endblock %}

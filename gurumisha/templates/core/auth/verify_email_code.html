@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Email Code - Gurumisha Motors{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth-pages.css' %}">
+<style>
+/* Verification Code Input Styling */
+.verification-code-input {
+    font-family: 'Courier New', monospace !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    letter-spacing: 0.5rem !important;
+    padding: 1.5rem 1rem !important;
+    border: 2px solid #E5E7EB !important;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 100% !important;
+    max-width: 300px !important;
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+.verification-code-input:focus {
+    border-color: #DC2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+    background: white !important;
+    outline: none !important;
+}
+
+.verification-code-input::placeholder {
+    color: #9CA3AF !important;
+    opacity: 0.7 !important;
+}
+
+.code-input-container {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.code-help-text {
+    color: #6B7280;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.resend-code-link {
+    color: #DC2626;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.resend-code-link:hover {
+    color: #B91C1C;
+    text-decoration: underline;
+}
+
+.verification-info-box {
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    border: 1px solid #3B82F6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.verification-info-title {
+    color: #1E40AF;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.verification-info-text {
+    color: #1F2937;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+    .verification-code-input {
+        font-size: 1.5rem !important;
+        letter-spacing: 0.3rem !important;
+        padding: 1rem 0.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="auth-hero">
+    <div class="auth-hero-content">
+        <h1 class="auth-hero-title">
+            Email Verification
+        </h1>
+        <p class="auth-hero-subtitle">
+            Enter the 6-digit code sent to your email
+        </p>
+    </div>
+</section>
+
+<!-- Email Verification Code Section -->
+<section class="py-16 bg-gradient-to-br from-harrier-gray to-white">
+    <div class="container mx-auto px-4">
+        <div class="max-w-lg mx-auto">
+            <div class="auth-form-container">
+                <div class="auth-form-section">
+                    <!-- Verification Icon -->
+                    <div class="auth-success-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+
+                    <div class="mb-8">
+                        <h2 class="auth-form-title">Verify Your Email</h2>
+                        <p class="auth-form-subtitle">
+                            We've sent a 6-digit verification code to your email address. 
+                            Enter the code below to complete your email verification.
+                        </p>
+                    </div>
+
+                    <!-- Verification Info Box -->
+                    <div class="verification-info-box">
+                        <div class="verification-info-title">
+                            <i class="fas fa-envelope mr-2"></i>Check Your Email
+                        </div>
+                        <div class="verification-info-text">
+                            The verification code was sent to your registered email address. 
+                            It may take a few minutes to arrive. Don't forget to check your spam folder!
+                        </div>
+                    </div>
+
+                    <!-- Verification Form -->
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <div class="code-input-container">
+                            <label for="{{ form.code.id_for_label }}" class="auth-form-label">
+                                Verification Code
+                            </label>
+                            {{ form.code }}
+                            <div class="code-help-text">
+                                Enter the 6-digit code exactly as shown in your email
+                            </div>
+                            {% if form.code.errors %}
+                                <div class="auth-form-error">
+                                    {% for error in form.code.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="auth-action-btn">
+                                <i class="fas fa-check mr-2"></i>Verify Email
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Resend Code Section -->
+                    <div class="mt-8 text-center">
+                        <p class="text-gray-600 mb-4">
+                            Didn't receive the code?
+                        </p>
+                        <a href="{% url 'core:request_verification_code' %}" class="resend-code-link">
+                            <i class="fas fa-redo mr-1"></i>Send New Code
+                        </a>
+                    </div>
+
+                    <!-- Additional Help -->
+                    <div class="mt-8 text-center">
+                        <p class="text-gray-600 mb-4">
+                            Need help with verification?
+                        </p>
+                        <a href="{% url 'core:contact_us' %}" class="text-harrier-red hover:text-harrier-dark font-semibold transition-colors">
+                            <i class="fas fa-headset mr-1"></i>Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Auto-format verification code input
+document.addEventListener('DOMContentLoaded', function() {
+    const codeInput = document.querySelector('.verification-code-input');
+    if (codeInput) {
+        codeInput.addEventListener('input', function(e) {
+            // Remove any non-numeric characters
+            let value = e.target.value.replace(/\D/g, '');
+            
+            // Limit to 6 digits
+            if (value.length > 6) {
+                value = value.slice(0, 6);
+            }
+            
+            e.target.value = value;
+            
+            // Auto-submit when 6 digits are entered
+            if (value.length === 6) {
+                // Optional: Auto-submit the form
+                // e.target.closest('form').submit();
+            }
+        });
+        
+        // Focus the input on page load
+        codeInput.focus();
+    }
+});
+</script>
+{% endblock %}

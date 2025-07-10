@@ -1,0 +1,52 @@
+{% load static %}
+
+<!-- Admin Quick Actions Partial for Lazy Loading -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <a href="{% url 'core:admin_users' %}" class="admin-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <i class="fas fa-users text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Manage Users</h3>
+                <p class="text-sm text-gray-600">{{ total_users|default:0 }} total users</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:admin_vendors' %}" class="admin-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                <i class="fas fa-store text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Manage Vendors</h3>
+                <p class="text-sm text-gray-600">{{ total_vendors|default:0 }} vendors</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:admin_listings' %}" class="admin-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
+                <i class="fas fa-car text-yellow-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Car Listings</h3>
+                <p class="text-sm text-gray-600">{{ total_cars|default:0 }} total cars</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:admin_listings' %}" class="admin-card p-6 hover:shadow-lg transition-all duration-200 group">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                <i class="fas fa-clock text-red-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-harrier-dark">Pending Approvals</h3>
+                <p class="text-sm text-gray-600">{{ pending_approvals|default:0 }} pending</p>
+            </div>
+        </div>
+    </a>
+</div>

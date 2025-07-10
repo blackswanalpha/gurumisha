@@ -1,0 +1,184 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}My Car Listings{% endblock %}
+{% block page_title %}My Car Listings{% endblock %}
+{% block page_description %}Manage your car listings and track their approval status{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">My Listings</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Header Section -->
+    <div class="mb-8 bg-white rounded-xl shadow-lg border border-gray-200/50 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-harrier-dark font-montserrat">
+                    <i class="fas fa-car mr-3 text-harrier-red"></i>My Car Listings
+                </h1>
+                <p class="text-gray-600 font-raleway">Track your submitted car listings and their approval status</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-center">
+                    <div class="text-xl font-bold text-harrier-dark">{{ total_cars }}</div>
+                    <div class="text-sm text-gray-500">Total</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xl font-bold text-green-600">{{ approved_cars }}</div>
+                    <div class="text-sm text-gray-500">Approved</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xl font-bold text-yellow-600">{{ pending_cars }}</div>
+                    <div class="text-sm text-gray-500">Pending</div>
+                </div>
+                <a href="{% url 'core:sell_car' %}" class="btn-harrier-primary">
+                    <i class="fas fa-plus mr-2"></i>List New Car
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="mb-6 bg-white rounded-xl shadow-lg border border-gray-200/50 p-6">
+        <form method="get" class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-64">
+                <input type="text" name="search" value="{{ search_query }}" 
+                       placeholder="Search your listings..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+            </div>
+            <div>
+                <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red">
+                    <option value="">All Status</option>
+                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-harrier-primary">
+                <i class="fas fa-search mr-2"></i>Filter
+            </button>
+        </form>
+    </div>
+
+    <!-- Listings Container -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+        {% if cars %}
+            <div class="p-6">
+                <div class="space-y-6">
+                    {% for car in cars %}
+                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                            <div class="flex items-start space-x-6">
+                                <!-- Car Image -->
+                                <div class="flex-shrink-0">
+                                    {% if car.main_image %}
+                                        <img src="{{ car.main_image.url }}" alt="{{ car.title }}" 
+                                             class="w-32 h-24 object-cover rounded-lg">
+                                    {% else %}
+                                        <div class="w-32 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-car text-gray-400 text-2xl"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Car Details -->
+                                <div class="flex-1">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-harrier-dark">{{ car.title }}</h3>
+                                            <p class="text-gray-600">{{ car.brand.name }} {{ car.model.name }} {{ car.year }}</p>
+                                            <p class="text-xl font-bold text-harrier-red mt-2">KSh {{ car.price|floatformat:0 }}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            {% if car.is_approved %}
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>Approved
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                    <i class="fas fa-clock mr-1"></i>Pending Review
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Car Info -->
+                                    <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                                        <div>
+                                            <i class="fas fa-tachometer-alt mr-1"></i>
+                                            {{ car.mileage|floatformat:0 }} km
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-gas-pump mr-1"></i>
+                                            {{ car.get_fuel_type_display }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-cogs mr-1"></i>
+                                            {{ car.get_transmission_display }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-calendar mr-1"></i>
+                                            {{ car.created_at|date:"M d, Y" }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="mt-4 flex items-center space-x-4">
+                                        {% if car.is_approved %}
+                                            <a href="{% url 'core:car_detail' car.pk %}" 
+                                               class="text-harrier-red hover:text-harrier-dark font-medium">
+                                                <i class="fas fa-eye mr-1"></i>View Listing
+                                            </a>
+                                        {% endif %}
+                                        <span class="text-gray-400">|</span>
+                                        <span class="text-sm text-gray-500">
+                                            <i class="fas fa-eye mr-1"></i>{{ car.views_count }} views
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if cars.has_other_pages %}
+                    <div class="flex justify-center mt-8">
+                        <nav class="flex items-center space-x-2">
+                            {% if cars.has_previous %}
+                                <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">First</a>
+                                <a href="?page={{ cars.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Previous</a>
+                            {% endif %}
+                            
+                            <span class="px-4 py-2 bg-harrier-red text-white rounded-lg">
+                                Page {{ cars.number }} of {{ cars.paginator.num_pages }}
+                            </span>
+                            
+                            {% if cars.has_next %}
+                                <a href="?page={{ cars.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Next</a>
+                                <a href="?page={{ cars.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Last</a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-car text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">No car listings found</h3>
+                <p class="text-gray-500 mb-6">You haven't submitted any car listings yet.</p>
+                <a href="{% url 'core:sell_car' %}" class="btn-harrier-primary px-6 py-3 rounded-xl font-semibold">
+                    <i class="fas fa-plus mr-2"></i>List Your First Car
+                </a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

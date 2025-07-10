@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static core_extras %}
+
+{% block title %}Toast System Test - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-harrier-gray to-white py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-harrier-dark font-montserrat mb-4">
+                Toast Notification System Test
+            </h1>
+            <p class="text-lg text-gray-600 font-inter">
+                Test the comprehensive toast notification system with different types and methods
+            </p>
+        </div>
+
+        <!-- Test Cards Grid -->
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- JavaScript Toast Tests -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                    <i class="fas fa-code text-harrier-red mr-2"></i>
+                    JavaScript Toasts
+                </h2>
+                
+                <div class="space-y-4">
+                    <button onclick="showSuccess('Operation completed successfully!')" 
+                            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-check-circle mr-2"></i>Success Toast
+                    </button>
+                    
+                    <button onclick="showError('An error occurred. Please try again.')" 
+                            class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-exclamation-circle mr-2"></i>Error Toast
+                    </button>
+                    
+                    <button onclick="showWarning('Please check your input before proceeding.')" 
+                            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Warning Toast
+                    </button>
+                    
+                    <button onclick="showInfo('New feature available! Check it out.')" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-info-circle mr-2"></i>Info Toast
+                    </button>
+                </div>
+
+                <!-- Advanced Toast Tests -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Advanced Features</h3>
+                    
+                    <div class="space-y-3">
+                        <button onclick="showPersistentToast()" 
+                                class="w-full bg-harrier-red hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm">
+                            Persistent Toast
+                        </button>
+                        
+                        <button onclick="showActionToast()" 
+                                class="w-full bg-harrier-blue hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm">
+                            Toast with Action
+                        </button>
+                        
+                        <button onclick="showLongToast()" 
+                                class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm">
+                            Long Duration Toast
+                        </button>
+                        
+                        <button onclick="clearToasts()" 
+                                class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm">
+                            Clear All Toasts
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Django/HTMX Toast Tests -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                    <i class="fas fa-server text-harrier-red mr-2"></i>
+                    Django/HTMX Toasts
+                </h2>
+                
+                <!-- Custom Message Form -->
+                <form class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Custom Message:</label>
+                    <input type="text" id="custom-message" value="Custom test message" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                </form>
+                
+                <div class="space-y-4">
+                    <button hx-post="{% url 'core:toast_test' %}" 
+                            hx-vals='{"toast_type": "success", "message": "HTMX Success message!"}'
+                            hx-trigger="click"
+                            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-check-circle mr-2"></i>HTMX Success
+                    </button>
+                    
+                    <button hx-post="{% url 'core:toast_test' %}" 
+                            hx-vals='{"toast_type": "error", "message": "HTMX Error message!"}'
+                            hx-trigger="click"
+                            class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-exclamation-circle mr-2"></i>HTMX Error
+                    </button>
+                    
+                    <button hx-post="{% url 'core:toast_test' %}" 
+                            hx-vals='{"toast_type": "warning", "message": "HTMX Warning message!"}'
+                            hx-trigger="click"
+                            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>HTMX Warning
+                    </button>
+                    
+                    <button hx-post="{% url 'core:toast_test' %}" 
+                            hx-vals='{"toast_type": "info", "message": "HTMX Info message!"}'
+                            hx-trigger="click"
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-info-circle mr-2"></i>HTMX Info
+                    </button>
+                </div>
+
+                <!-- Django Messages Form -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Django Messages</h3>
+                    
+                    <form method="post" class="space-y-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="message" value="Django message test">
+                        
+                        <button type="submit" name="toast_type" value="success" 
+                                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm">
+                            Django Success
+                        </button>
+                        
+                        <button type="submit" name="toast_type" value="error" 
+                                class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm">
+                            Django Error
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Simulation -->
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <h2 class="text-2xl font-semibold text-harrier-dark font-montserrat mb-6">
+                <i class="fas fa-bug text-harrier-red mr-2"></i>
+                Error Handling Tests
+            </h2>
+            
+            <div class="grid md:grid-cols-3 gap-4">
+                <button onclick="simulateJSError()" 
+                        class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>JS Error
+                </button>
+                
+                <button onclick="simulateNetworkError()" 
+                        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                    <i class="fas fa-wifi mr-2"></i>Network Error
+                </button>
+                
+                <button onclick="simulatePromiseRejection()" 
+                        class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                    <i class="fas fa-code mr-2"></i>Promise Error
+                </button>
+            </div>
+        </div>
+
+        <!-- Documentation Link -->
+        <div class="mt-8 text-center">
+            <a href="/static/docs/TOAST_SYSTEM.md" target="_blank" 
+               class="inline-flex items-center px-6 py-3 bg-harrier-blue hover:bg-blue-800 text-white font-semibold rounded-lg transition-colors duration-200">
+                <i class="fas fa-book mr-2"></i>
+                View Documentation
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Advanced toast examples
+function showPersistentToast() {
+    showToast('This toast will stay until dismissed', 'warning', {
+        persistent: true,
+        dismissible: true
+    });
+}
+
+function showActionToast() {
+    showToast('File deleted successfully', 'success', {
+        action: {
+            text: 'Undo',
+            handler: () => {
+                showToast('File restored!', 'info');
+            }
+        }
+    });
+}
+
+function showLongToast() {
+    showToast('This toast will stay for 15 seconds', 'info', {
+        duration: 15000
+    });
+}
+
+// Error simulation functions
+function simulateJSError() {
+    // This will trigger the global error handler
+    throw new Error('Simulated JavaScript error');
+}
+
+function simulateNetworkError() {
+    fetch('/non-existent-endpoint')
+        .catch(error => {
+            showError('Network request failed: ' + error.message);
+        });
+}
+
+function simulatePromiseRejection() {
+    Promise.reject(new Error('Simulated promise rejection'));
+}
+
+// HTMX configuration for custom messages
+document.body.addEventListener('htmx:configRequest', function(evt) {
+    const customMessage = document.getElementById('custom-message').value;
+    if (customMessage && evt.detail.parameters.message === 'HTMX Success message!') {
+        evt.detail.parameters.message = customMessage;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,600 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Spare Parts Inventory{% endblock %}
+{% block page_title %}Spare Parts Management{% endblock %}
+{% block page_description %}Manage your spare parts inventory, stock levels, and sales{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">Spare Parts</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Spare Parts Header -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 font-montserrat">Spare Parts Inventory</h2>
+                    <p class="text-blue-100 text-lg font-raleway">Manage your parts, track stock levels, and monitor sales</p>
+                    <div class="flex items-center mt-4 space-x-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-boxes mr-2"></i>
+                            <span class="text-sm">{{ total_parts }} Parts</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-dollar-sign mr-2"></i>
+                            <span class="text-sm">KSh {{ total_stock_value|floatformat:0 }} Value</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            <span class="text-sm">Analytics</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-cogs text-4xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Inventory Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-boxes text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_parts }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Parts</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: 85%"></div>
+                </div>
+                <span class="text-blue-600 font-medium">85%</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-dollar-sign text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_stock_value|floatformat:0 }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Stock Value (KSh)</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style="width: 92%"></div>
+                </div>
+                <span class="text-green-600 font-medium">+12%</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-exclamation-triangle text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ low_stock_count }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Low Stock</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                    <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2 rounded-full" style="width: 25%"></div>
+                </div>
+                <span class="text-yellow-600 font-medium">Alert</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-times-circle text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ out_of_stock_count }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Out of Stock</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                    <div class="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full" style="width: 15%"></div>
+                </div>
+                <span class="text-red-600 font-medium">Critical</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Filters and Actions -->
+    <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden mb-8 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-red/5 to-transparent">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-filter text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Inventory Management</h3>
+                        <p class="text-sm text-gray-600 font-raleway">Filter and manage your spare parts inventory</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="exportInventory()" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                    <button onclick="openAddPartModal()" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg text-sm font-bold hover:from-harrier-red-dark hover:to-harrier-red transition-all duration-200 transform hover:scale-105 shadow-lg font-montserrat">
+                        <i class="fas fa-plus mr-2"></i>Add New Part
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" hx-get="{% url 'core:vendor_spare_parts' %}" hx-target="#parts-container" hx-trigger="change">
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-harrier-dark font-montserrat">
+                        <i class="fas fa-search mr-1 text-blue-500"></i>Search Parts
+                    </label>
+                    <input type="text" name="search" value="{{ search }}"
+                           placeholder="Search parts, SKU, or part number..."
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-harrier-dark font-montserrat">
+                        <i class="fas fa-tags mr-1 text-green-500"></i>Category
+                    </label>
+                    <select name="category" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-harrier-dark font-montserrat">
+                        <i class="fas fa-warehouse mr-1 text-yellow-500"></i>Stock Status
+                    </label>
+                    <select name="stock_status" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway">
+                        <option value="">All Stock Levels</option>
+                        <option value="available" {% if selected_stock_status == 'available' %}selected{% endif %}>✅ Available</option>
+                        <option value="low" {% if selected_stock_status == 'low' %}selected{% endif %}>⚠️ Low Stock</option>
+                        <option value="out" {% if selected_stock_status == 'out' %}selected{% endif %}>❌ Out of Stock</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-harrier-dark font-montserrat">
+                        <i class="fas fa-sort mr-1 text-purple-500"></i>Sort By
+                    </label>
+                    <select name="sort_by" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway">
+                        <option value="-created_at">Newest First</option>
+                        <option value="name">Name A-Z</option>
+                        <option value="-name">Name Z-A</option>
+                        <option value="price">Price Low-High</option>
+                        <option value="-price">Price High-Low</option>
+                        <option value="stock_quantity">Stock Low-High</option>
+                        <option value="-stock_quantity">Stock High-Low</option>
+                    </select>
+                </div>
+            </form>
+
+            <!-- Quick Filter Pills -->
+            <div class="mt-6 flex flex-wrap gap-3">
+                <button onclick="quickFilter('low_stock')" class="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium hover:bg-yellow-200 transition-colors">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Low Stock ({{ low_stock_count }})
+                </button>
+                <button onclick="quickFilter('out_of_stock')" class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-full text-sm font-medium hover:bg-red-200 transition-colors">
+                    <i class="fas fa-times-circle mr-2"></i>Out of Stock ({{ out_of_stock_count }})
+                </button>
+                <button onclick="quickFilter('high_value')" class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium hover:bg-green-200 transition-colors">
+                    <i class="fas fa-dollar-sign mr-2"></i>High Value Parts
+                </button>
+                <button onclick="quickFilter('recent')" class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors">
+                    <i class="fas fa-clock mr-2"></i>Recently Added
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Enhanced Parts Container -->
+    <div id="parts-container" class="animate-fade-in-up" style="animation-delay: 0.3s;">
+        {% if spare_parts %}
+            <!-- Enhanced Parts Grid -->
+            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-blue-500/5 to-transparent">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-list text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Parts Inventory</h3>
+                                <p class="text-sm text-gray-600 font-raleway">{{ spare_parts|length }} parts found</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="toggleView('grid')" id="gridViewBtn" class="p-2 rounded-lg bg-white text-harrier-red shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button onclick="toggleView('list')" id="listViewBtn" class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid View -->
+                <div id="gridView" class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {% for part in spare_parts %}
+                            <div class="bg-white rounded-xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                                <!-- Part Image -->
+                                <div class="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+                                    {% if part.main_image %}
+                                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="{{ part.main_image.url }}" alt="{{ part.name }}">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <i class="fas fa-cog text-6xl text-gray-400"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Stock Status Badge -->
+                                    <div class="absolute top-3 right-3">
+                                        {% if part.stock_quantity == 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                                                <i class="fas fa-times-circle mr-1"></i>Out of Stock
+                                            </span>
+                                        {% elif part.is_low_stock %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>Low Stock
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>In Stock
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Quick Actions -->
+                                    <div class="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <button onclick="editPart({{ part.id }})" class="w-8 h-8 bg-white/90 rounded-lg flex items-center justify-center text-blue-600 hover:bg-white transition-colors shadow-lg">
+                                            <i class="fas fa-edit text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Part Details -->
+                                <div class="p-5">
+                                    <div class="mb-3">
+                                        <h4 class="font-bold text-harrier-dark font-montserrat text-lg mb-1 group-hover:text-harrier-red transition-colors">{{ part.name }}</h4>
+                                        <p class="text-sm text-gray-600 font-raleway">{{ part.part_number|default:"No part number" }}</p>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3 mb-4">
+                                        <div>
+                                            <div class="text-xs text-gray-500 font-raleway">SKU</div>
+                                            <div class="text-sm font-medium text-harrier-dark">{{ part.sku }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-500 font-raleway">Category</div>
+                                            <div class="text-sm font-medium text-harrier-dark">{{ part.get_category_display }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-500 font-raleway">Stock</div>
+                                            <div class="text-sm font-bold text-harrier-dark">{{ part.stock_quantity }} units</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-500 font-raleway">Price</div>
+                                            <div class="text-lg font-bold text-green-600">KSh {{ part.price|floatformat:0 }}</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="viewPart({{ part.id }})" class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105">
+                                            <i class="fas fa-eye mr-1"></i>View
+                                        </button>
+                                        <button onclick="editPart({{ part.id }})" class="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 transform hover:scale-105">
+                                            <i class="fas fa-edit mr-1"></i>Edit
+                                        </button>
+                                        <button onclick="deletePart({{ part.id }})" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if spare_parts.has_other_pages %}
+                    <div class="flex justify-center mt-6">
+                        <nav class="flex items-center space-x-2">
+                            {% if spare_parts.has_previous %}
+                                <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">First</a>
+                                <a href="?page={{ spare_parts.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Previous</a>
+                            {% endif %}
+                            
+                            <span class="px-4 py-2 bg-harrier-red text-white rounded-lg">
+                                Page {{ spare_parts.number }} of {{ spare_parts.paginator.num_pages }}
+                            </span>
+                            
+                            {% if spare_parts.has_next %}
+                                <a href="?page={{ spare_parts.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Next</a>
+                                <a href="?page={{ spare_parts.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                   class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Last</a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                        {% endif %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <i class="fas fa-cogs text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No spare parts found</h3>
+                    <p class="text-gray-500 mb-6">Start building your inventory by adding spare parts.</p>
+                    <button class="btn-harrier-primary px-6 py-3 rounded-xl font-semibold">
+                        <i class="fas fa-plus mr-2"></i>Add Your First Part
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced spare parts management with modern UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize view toggle
+    initializeViewToggle();
+
+    // Initialize HTMX for real-time filtering
+    initializeHTMX();
+
+    // Initialize quick filters
+    initializeQuickFilters();
+});
+
+// View toggle functionality
+function initializeViewToggle() {
+    const savedView = localStorage.getItem('spare_parts_view') || 'grid';
+    toggleView(savedView);
+}
+
+function toggleView(viewType) {
+    const gridView = document.getElementById('gridView');
+    const listView = document.getElementById('listView');
+    const gridBtn = document.getElementById('gridViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+
+    if (viewType === 'grid') {
+        gridView.classList.remove('hidden');
+        listView.classList.add('hidden');
+        gridBtn.classList.add('bg-white', 'text-harrier-red', 'shadow-sm');
+        gridBtn.classList.remove('text-gray-600');
+        listBtn.classList.remove('bg-white', 'text-harrier-red', 'shadow-sm');
+        listBtn.classList.add('text-gray-600');
+    } else {
+        listView.classList.remove('hidden');
+        gridView.classList.add('hidden');
+        listBtn.classList.add('bg-white', 'text-harrier-red', 'shadow-sm');
+        listBtn.classList.remove('text-gray-600');
+        gridBtn.classList.remove('bg-white', 'text-harrier-red', 'shadow-sm');
+        gridBtn.classList.add('text-gray-600');
+    }
+
+    localStorage.setItem('spare_parts_view', viewType);
+}
+
+// Quick filter functions
+function initializeQuickFilters() {
+    // Add event listeners for quick filter buttons
+    document.querySelectorAll('[onclick^="quickFilter"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filterType = this.getAttribute('onclick').match(/quickFilter\('(.+)'\)/)[1];
+            applyQuickFilter(filterType);
+        });
+    });
+}
+
+function quickFilter(filterType) {
+    const form = document.querySelector('form[method="GET"]');
+    const stockStatusSelect = form.querySelector('select[name="stock_status"]');
+    const sortBySelect = form.querySelector('select[name="sort_by"]');
+
+    // Reset filters first
+    form.reset();
+
+    switch(filterType) {
+        case 'low_stock':
+            stockStatusSelect.value = 'low';
+            break;
+        case 'out_of_stock':
+            stockStatusSelect.value = 'out';
+            break;
+        case 'high_value':
+            sortBySelect.value = '-price';
+            break;
+        case 'recent':
+            sortBySelect.value = '-created_at';
+            break;
+    }
+
+    // Trigger HTMX request
+    htmx.trigger(form, 'change');
+    showMessage(`🔍 Applied ${filterType.replace('_', ' ')} filter`, 'info');
+}
+
+// Part management functions
+function openAddPartModal() {
+    showMessage('🔧 Opening add part form...', 'info');
+    // This would typically open a modal or redirect to add part page
+    setTimeout(() => {
+        showMessage('ℹ️ Add part feature coming soon!', 'info');
+    }, 1000);
+}
+
+function viewPart(partId) {
+    showMessage(`👁️ Loading part details for ID: ${partId}...`, 'info');
+    // This would typically open part details modal or page
+}
+
+function editPart(partId) {
+    showMessage(`✏️ Opening edit form for part ID: ${partId}...`, 'info');
+    // This would typically open edit modal or page
+}
+
+function deletePart(partId) {
+    if (confirm('🗑️ Are you sure you want to delete this spare part?\n\nThis action cannot be undone and will remove the part from your inventory.')) {
+        showMessage(`🗑️ Deleting part ID: ${partId}...`, 'warning');
+
+        // This would typically make an API call to delete the part
+        setTimeout(() => {
+            showMessage('✅ Part deleted successfully!', 'success');
+            // Refresh the parts list
+            location.reload();
+        }, 1500);
+    }
+}
+
+// Export functions
+function exportInventory() {
+    showMessage('📊 Preparing inventory export...', 'info');
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = '/dashboard/vendor/spare-parts/export/';
+    link.download = `spare_parts_inventory_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    setTimeout(() => {
+        showMessage('✅ Inventory exported successfully!', 'success');
+    }, 1000);
+}
+
+// HTMX initialization
+function initializeHTMX() {
+    // Add loading indicators for HTMX requests
+    document.body.addEventListener('htmx:beforeRequest', function(event) {
+        const target = event.target;
+        if (target.matches('form[hx-get]')) {
+            showLoadingIndicator();
+        }
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+        hideLoadingIndicator();
+    });
+}
+
+function showLoadingIndicator() {
+    const indicator = document.createElement('div');
+    indicator.id = 'loadingIndicator';
+    indicator.className = 'fixed top-4 left-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl shadow-xl z-50 animate-fade-in-up';
+    indicator.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-spinner fa-spin mr-2"></i>
+            <span class="font-medium">Loading parts...</span>
+        </div>
+    `;
+
+    document.body.appendChild(indicator);
+}
+
+function hideLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.style.transform = 'translateX(-100%)';
+        indicator.style.opacity = '0';
+        setTimeout(() => indicator.remove(), 300);
+    }
+}
+
+// Enhanced message display
+function showMessage(message, type) {
+    const toast = document.createElement('div');
+    const icons = {
+        'success': '✅',
+        'error': '❌',
+        'info': 'ℹ️',
+        'warning': '⚠️'
+    };
+
+    const colors = {
+        'success': 'bg-gradient-to-r from-green-500 to-green-600',
+        'error': 'bg-gradient-to-r from-red-500 to-red-600',
+        'info': 'bg-gradient-to-r from-blue-500 to-blue-600',
+        'warning': 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+    };
+
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type] || colors.info} animate-fade-in-up`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <span class="mr-2 text-lg">${icons[type] || icons.info}</span>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + N for new part
+    if ((event.ctrlKey || event.metaKey) && event.key === 'n') {
+        event.preventDefault();
+        openAddPartModal();
+    }
+
+    // Ctrl/Cmd + E for export
+    if ((event.ctrlKey || event.metaKey) && event.key === 'e') {
+        event.preventDefault();
+        exportInventory();
+    }
+
+    // V key to toggle view
+    if (event.key === 'v' && !event.ctrlKey && !event.metaKey) {
+        const currentView = localStorage.getItem('spare_parts_view') || 'grid';
+        toggleView(currentView === 'grid' ? 'list' : 'grid');
+    }
+});
+</script>
+{% endblock %}

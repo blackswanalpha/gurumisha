@@ -1,0 +1,441 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Customer Dashboard{% endblock %}
+{% block page_title %}Welcome, {{ user.first_name|default:user.username }}!{% endblock %}
+{% block page_description %}Manage your orders, import requests, and account settings{% endblock %}
+
+{% block user_sidebar_nav %}
+    <!-- Main Navigation Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Main</h4>
+        <li>
+            <a href="{% url 'core:dashboard' %}" class="dashboard-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+                <div class="ml-auto">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:profile' %}" class="dashboard-nav-link {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-user-circle"></i>
+                <span>Profile</span>
+            </a>
+        </li>
+    </div>
+
+    <!-- Orders & Purchases Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Orders & Purchases</h4>
+        <li>
+            <a href="{% url 'core:user_orders' %}" class="dashboard-nav-link {% if 'orders' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-shopping-bag"></i>
+                <span>My Orders</span>
+                {% if pending_orders_count %}
+                    <span class="ml-auto bg-harrier-red text-white text-xs rounded-full px-2 py-1">{{ pending_orders_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:user_import_requests' %}" class="dashboard-nav-link {% if 'import' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-ship"></i>
+                <span>Import Requests</span>
+                {% if pending_imports_count %}
+                    <span class="ml-auto bg-blue-500 text-white text-xs rounded-full px-2 py-1">{{ pending_imports_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </div>
+
+    <!-- My Listings Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">My Listings</h4>
+        <li>
+            <a href="{% url 'core:user_listings' %}" class="dashboard-nav-link {% if 'listings' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-car"></i>
+                <span>My Cars</span>
+                {% if user_pending_cars_count %}
+                    <span class="ml-auto bg-yellow-500 text-white text-xs rounded-full px-2 py-1">{{ user_pending_cars_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </div>
+
+    <!-- Communication Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Communication</h4>
+        <li>
+            <a href="{% url 'core:user_inquiries' %}" class="dashboard-nav-link {% if 'inquiries' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-envelope"></i>
+                <span>Inquiries</span>
+                {% if unread_inquiries_count %}
+                    <span class="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-1">{{ unread_inquiries_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </div>
+
+    <!-- Personal & Settings Section -->
+    <div class="mb-6">
+        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">Personal & Settings</h4>
+        <li>
+            <a href="{% url 'core:user_addresses' %}" class="dashboard-nav-link {% if 'addresses' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Addresses</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:user_wishlist' %}" class="dashboard-nav-link {% if 'wishlist' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+                {% if wishlist_count %}
+                    <span class="ml-auto bg-pink-500 text-white text-xs rounded-full px-2 py-1">{{ wishlist_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:user_settings' %}" class="dashboard-nav-link {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+    </div>
+{% endblock %}
+
+{% block sidebar_stats %}
+    <!-- Enhanced Quick Stats Card -->
+    <div class="mt-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200 p-6 transform hover:scale-105 transition-all duration-300">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-harrier-dark uppercase tracking-wide">Quick Stats</h3>
+            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Import Requests Stat -->
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-harrier-red transition-colors">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-ship text-blue-600 text-sm"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Import Requests</span>
+                </div>
+                <span class="text-lg font-bold text-harrier-red">{{ import_requests|length|default:0 }}</span>
+            </div>
+
+            <!-- Active Inquiries Stat -->
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-harrier-red transition-colors">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-envelope text-orange-600 text-sm"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Active Inquiries</span>
+                </div>
+                <span class="text-lg font-bold text-harrier-red">{{ customer_inquiries|length|default:0 }}</span>
+            </div>
+
+            <!-- Wishlist Stat -->
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-harrier-red transition-colors">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-heart text-pink-600 text-sm"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Saved Cars</span>
+                </div>
+                <span class="text-lg font-bold text-harrier-red">{{ wishlist_count|default:0 }}</span>
+            </div>
+
+            <!-- Total Spent Stat -->
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-harrier-red transition-colors">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-dollar-sign text-green-600 text-sm"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Total Spent</span>
+                </div>
+                <span class="text-lg font-bold text-harrier-red">KSh {{ total_spent|default:0|floatformat:0 }}</span>
+            </div>
+        </div>
+
+        <!-- Quick Action Button -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <a href="{% url 'core:car_list' %}" class="w-full bg-gradient-to-r from-harrier-red to-harrier-dark text-white text-center py-2 px-4 rounded-lg font-medium text-sm hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center">
+                <i class="fas fa-search mr-2"></i>
+                Browse Cars
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Welcome Banner -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-blue-900 rounded-2xl p-8 text-white relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Welcome back, {{ user.first_name|default:user.username }}!</h2>
+                    <p class="text-blue-100 text-lg">Ready to find your next car or manage your orders?</p>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-car text-4xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative elements -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white bg-opacity-5 rounded-full -ml-12 -mb-12"></div>
+    </div>
+
+    <!-- Enhanced Quick Actions Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Browse Cars Action -->
+        <a href="{% url 'core:car_list' %}" class="group relative bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-2xl hover:border-harrier-red transition-all duration-300 transform hover:-translate-y-2">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-search text-white text-xl"></i>
+                </div>
+                <h3 class="font-bold text-harrier-dark text-lg mb-2 group-hover:text-blue-600 transition-colors">Browse Cars</h3>
+                <p class="text-gray-600 text-sm">Discover thousands of quality vehicles</p>
+                <div class="mt-4 flex items-center text-blue-600 text-sm font-medium">
+                    <span>Explore now</span>
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </div>
+        </a>
+
+        <!-- Import Car Action -->
+        <a href="{% url 'core:import_request' %}" class="group relative bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-2xl hover:border-harrier-red transition-all duration-300 transform hover:-translate-y-2">
+            <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-green-100 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-ship text-white text-xl"></i>
+                </div>
+                <h3 class="font-bold text-harrier-dark text-lg mb-2 group-hover:text-green-600 transition-colors">Import Car</h3>
+                <p class="text-gray-600 text-sm">Request custom car imports from abroad</p>
+                <div class="mt-4 flex items-center text-green-600 text-sm font-medium">
+                    <span>Start import</span>
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </div>
+        </a>
+
+        <!-- Spare Parts Action -->
+        <a href="{% url 'core:spare_parts' %}" class="group relative bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-2xl hover:border-harrier-red transition-all duration-300 transform hover:-translate-y-2">
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-tools text-white text-xl"></i>
+                </div>
+                <h3 class="font-bold text-harrier-dark text-lg mb-2 group-hover:text-purple-600 transition-colors">Spare Parts</h3>
+                <p class="text-gray-600 text-sm">Find genuine parts for your vehicle</p>
+                <div class="mt-4 flex items-center text-purple-600 text-sm font-medium">
+                    <span>Shop parts</span>
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </div>
+        </a>
+
+        <!-- Support Action -->
+        <a href="{% url 'core:user_inquiries' %}" class="group relative bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-2xl hover:border-harrier-red transition-all duration-300 transform hover:-translate-y-2">
+            <div class="absolute inset-0 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+                <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-headset text-white text-xl"></i>
+                </div>
+                <h3 class="font-bold text-harrier-dark text-lg mb-2 group-hover:text-orange-600 transition-colors">Support</h3>
+                <p class="text-gray-600 text-sm">Get help from our expert team</p>
+                <div class="mt-4 flex items-center text-orange-600 text-sm font-medium">
+                    <span>Get help</span>
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Enhanced Import Orders Card -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mr-4">
+                            <i class="fas fa-ship text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Import Orders</h3>
+                            <p class="text-blue-100 text-sm">Track your car imports</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'core:import_order_tracking' %}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                        <span>View All</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="p-6">
+                {% if import_orders %}
+                    <div class="space-y-4">
+                        {% for order in import_orders %}
+                            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all duration-300 group">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-harrier-dark text-lg group-hover:text-blue-600 transition-colors">{{ order.order_number }}</h4>
+                                        <p class="text-gray-600 font-medium">{{ order.year }} {{ order.brand }} {{ order.model }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 text-xs font-bold rounded-full
+                                        {% if order.status == 'delivered' %}bg-green-100 text-green-800 border border-green-200
+                                        {% elif order.status == 'cancelled' %}bg-red-100 text-red-800 border border-red-200
+                                        {% elif order.status in 'in_transit,shipped' %}bg-blue-100 text-blue-800 border border-blue-200
+                                        {% else %}bg-yellow-100 text-yellow-800 border border-yellow-200{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1 mr-4">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-xs font-medium text-gray-600">Progress</span>
+                                            <span class="text-xs font-bold text-blue-600">{{ order.progress_percentage }}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
+                                                 style="width: {{ order.progress_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'core:import_order_detail' order.order_number %}"
+                                       class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                                        <i class="fas fa-eye mr-2"></i>
+                                        Details
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-ship text-3xl text-blue-500"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-harrier-dark mb-2">No Import Orders Yet</h4>
+                        <p class="text-gray-600 mb-6">Start your car import journey today</p>
+                        <a href="{% url 'core:import_request' %}" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 inline-flex items-center">
+                            <i class="fas fa-plus mr-2"></i>Request Car Import
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Enhanced Recent Inquiries Card -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300">
+            <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mr-4">
+                            <i class="fas fa-envelope text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Recent Inquiries</h3>
+                            <p class="text-orange-100 text-sm">Your support requests</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'core:user_inquiries' %}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                        <span>View All</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="p-6">
+                {% if customer_inquiries %}
+                    <div class="space-y-4">
+                        {% for inquiry in customer_inquiries %}
+                            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 hover:border-orange-300 hover:shadow-md transition-all duration-300 group">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-bold text-harrier-dark text-lg group-hover:text-orange-600 transition-colors">{{ inquiry.subject }}</h4>
+                                            <span class="px-3 py-1 text-xs font-bold rounded-full
+                                                {% if inquiry.status == 'resolved' %}bg-green-100 text-green-800 border border-green-200
+                                                {% elif inquiry.status == 'in_progress' %}bg-blue-100 text-blue-800 border border-blue-200
+                                                {% elif inquiry.status == 'open' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                                                {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                                {{ inquiry.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm mb-3 leading-relaxed">{{ inquiry.message|truncatewords:20 }}</p>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center text-gray-500 text-xs">
+                                                <i class="fas fa-calendar mr-1"></i>
+                                                <span>{{ inquiry.created_at|date:"M d, Y" }}</span>
+                                                <span class="mx-2">•</span>
+                                                <i class="fas fa-clock mr-1"></i>
+                                                <span>{{ inquiry.created_at|time:"H:i" }}</span>
+                                            </div>
+                                            <button class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                                                <i class="fas fa-eye mr-2"></i>
+                                                View
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-envelope text-3xl text-orange-500"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-harrier-dark mb-2">No Inquiries Yet</h4>
+                        <p class="text-gray-600 mb-6">Need help? Start a conversation with our team</p>
+                        <a href="{% url 'core:user_inquiries' %}" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 inline-flex items-center">
+                            <i class="fas fa-plus mr-2"></i>Create Inquiry
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Overview -->
+    <div class="mt-8 dashboard-card">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-heading font-bold text-harrier-dark">Account Overview</h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h4 class="font-semibold text-harrier-dark mb-2">Contact Information</h4>
+                    <p class="text-sm text-gray-600">{{ user.first_name }} {{ user.last_name }}</p>
+                    <p class="text-sm text-gray-600">{{ user.email }}</p>
+                    {% if user.phone %}
+                        <p class="text-sm text-gray-600">{{ user.phone }}</p>
+                    {% endif %}
+                    <a href="{% url 'core:profile' %}" class="text-harrier-red hover:text-harrier-dark text-sm font-medium mt-2 inline-block">
+                        <i class="fas fa-edit mr-1"></i>Edit Profile
+                    </a>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-harrier-dark mb-2">Account Status</h4>
+                    <p class="text-sm text-gray-600">Member since {{ user.date_joined|date:"M Y" }}</p>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-2">
+                        {% if user.is_verified %}Verified{% else %}Pending Verification{% endif %}
+                    </span>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-harrier-dark mb-2">Quick Actions</h4>
+                    <div class="space-y-2">
+                        <a href="#" class="block text-sm text-harrier-red hover:text-harrier-dark">Change Password</a>
+                        <a href="#" class="block text-sm text-harrier-red hover:text-harrier-dark">Manage Addresses</a>
+                        <a href="#" class="block text-sm text-harrier-red hover:text-harrier-dark">Privacy Settings</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,340 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Audit Logs{% endblock %}
+{% block page_description %}Security and compliance audit trail{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+    <!-- Audit Logs Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-bold text-harrier-dark font-montserrat">Audit Logs</h2>
+            <p class="text-gray-600 mt-1">Security and compliance audit trail for all system operations</p>
+        </div>
+        
+        <!-- Export Button -->
+        <button class="btn-admin-secondary" onclick="exportAuditLogs()">
+            <i class="fas fa-download mr-2"></i>Export Logs
+        </button>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="admin-card">
+        <div class="p-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Action Type</label>
+                    <select name="action_type" class="form-select w-full">
+                        <option value="">All Actions</option>
+                        {% for action in available_actions %}
+                            <option value="{{ action }}" {% if current_filters.action_type == action %}selected{% endif %}>
+                                {{ action|title|replace:"_":" " }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                    <select name="severity" class="form-select w-full">
+                        <option value="">All Severities</option>
+                        {% for value, label in severity_choices %}
+                            <option value="{{ value }}" {% if current_filters.severity == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Table</label>
+                    <select name="table_name" class="form-select w-full">
+                        <option value="">All Tables</option>
+                        {% for table in available_tables %}
+                            <option value="{{ table }}" {% if current_filters.table_name == table %}selected{% endif %}>
+                                {{ table }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <button type="submit" class="btn-admin-primary w-full">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audit Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value">{{ audit_logs.count }}</div>
+            <div class="admin-stat-label">Total Entries</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-red-600">
+                {% with critical_count=audit_logs|filter_by_severity:"critical"|length %}{{ critical_count }}{% endwith %}
+            </div>
+            <div class="admin-stat-label">Critical</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-orange-600">
+                {% with high_count=audit_logs|filter_by_severity:"high"|length %}{{ high_count }}{% endwith %}
+            </div>
+            <div class="admin-stat-label">High</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-yellow-600">
+                {% with medium_count=audit_logs|filter_by_severity:"medium"|length %}{{ medium_count }}{% endwith %}
+            </div>
+            <div class="admin-stat-label">Medium</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-green-600">
+                {% with low_count=audit_logs|filter_by_severity:"low"|length %}{{ low_count }}{% endwith %}
+            </div>
+            <div class="admin-stat-label">Low</div>
+        </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="admin-card">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-harrier-dark mb-6 font-montserrat">
+                <i class="fas fa-shield-alt text-harrier-red mr-2"></i>
+                Audit Trail
+            </h3>
+            
+            {% if audit_logs %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Timestamp
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    User
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Action
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Description
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Severity
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Details
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for log in audit_logs %}
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <div class="flex flex-col">
+                                            <span class="font-medium">{{ log.timestamp|date:"M d, Y" }}</span>
+                                            <span class="text-xs text-gray-500">{{ log.timestamp|time:"H:i:s" }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        {% if log.user %}
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-harrier-red rounded-full flex items-center justify-center text-white text-xs font-semibold mr-2">
+                                                    {{ log.user.first_name|first|default:log.user.username|first|upper }}
+                                                </div>
+                                                <div>
+                                                    <div class="font-medium text-gray-900">{{ log.user.username }}</div>
+                                                    <div class="text-xs text-gray-500">{{ log.user.get_role_display }}</div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-gray-500 italic">System</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if log.action_type == 'create' %}bg-green-100 text-green-800
+                                            {% elif log.action_type == 'update' %}bg-blue-100 text-blue-800
+                                            {% elif log.action_type == 'delete' %}bg-red-100 text-red-800
+                                            {% elif log.action_type == 'login' %}bg-purple-100 text-purple-800
+                                            {% elif log.action_type == 'security_event' %}bg-red-100 text-red-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ log.get_action_type_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                        <div class="max-w-xs truncate" title="{{ log.description }}">
+                                            {{ log.description }}
+                                        </div>
+                                        {% if log.table_name %}
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Table: {{ log.table_name }}
+                                                {% if log.record_id %} | ID: {{ log.record_id }}{% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if log.severity == 'critical' %}bg-red-100 text-red-800
+                                            {% elif log.severity == 'high' %}bg-orange-100 text-orange-800
+                                            {% elif log.severity == 'medium' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-green-100 text-green-800{% endif %}">
+                                            {{ log.get_severity_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <button class="text-harrier-red hover:text-red-700" onclick="showAuditDetails({{ log.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if audit_logs.count >= 200 %}
+                    <div class="mt-6 flex justify-center">
+                        <button class="btn-admin-secondary" onclick="loadMoreAuditLogs()">
+                            <i class="fas fa-chevron-down mr-2"></i>
+                            Load More Entries
+                        </button>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Audit Logs Found</h3>
+                    <p class="text-gray-500">
+                        {% if current_filters.action_type or current_filters.severity or current_filters.table_name %}
+                            No audit logs match your current filter criteria.
+                        {% else %}
+                            No audit logs have been recorded yet.
+                        {% endif %}
+                    </p>
+                    {% if current_filters.action_type or current_filters.severity or current_filters.table_name %}
+                        <a href="{% url 'core:admin_audit_logs' %}" class="btn-admin-secondary mt-4">
+                            <i class="fas fa-times mr-2"></i>Clear Filters
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Audit Details Modal -->
+<div id="audit-details-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-96 overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-harrier-dark">Audit Log Details</h3>
+                    <button onclick="closeAuditDetails()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="audit-details-content">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAuditDetails(logId) {
+    // Show modal
+    document.getElementById('audit-details-modal').classList.remove('hidden');
+    
+    // Load details via HTMX or AJAX
+    fetch(`/dashboard/admin/audit-logs/${logId}/details/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('audit-details-content').innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Timestamp</label>
+                            <p class="text-sm text-gray-900">${data.timestamp}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">User</label>
+                            <p class="text-sm text-gray-900">${data.user || 'System'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">IP Address</label>
+                            <p class="text-sm text-gray-900">${data.ip_address || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Request Path</label>
+                            <p class="text-sm text-gray-900">${data.request_path || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <p class="text-sm text-gray-900">${data.description}</p>
+                    </div>
+                    ${data.field_name ? `
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Old Value</label>
+                                <p class="text-sm text-gray-900 bg-red-50 p-2 rounded">${data.old_value}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">New Value</label>
+                                <p class="text-sm text-gray-900 bg-green-50 p-2 rounded">${data.new_value}</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${data.extra_data ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Additional Data</label>
+                            <pre class="text-xs text-gray-900 bg-gray-50 p-2 rounded overflow-x-auto">${JSON.stringify(data.extra_data, null, 2)}</pre>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('audit-details-content').innerHTML = `
+                <div class="text-center text-red-600">
+                    <i class="fas fa-exclamation-triangle mb-2"></i>
+                    <p>Error loading audit details</p>
+                </div>
+            `;
+        });
+}
+
+function closeAuditDetails() {
+    document.getElementById('audit-details-modal').classList.add('hidden');
+}
+
+function exportAuditLogs() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'csv');
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+}
+
+function loadMoreAuditLogs() {
+    showToast('Loading more audit logs...', 'info');
+    // Implement pagination loading
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeAuditDetails();
+    }
+});
+</script>
+{% endblock %}

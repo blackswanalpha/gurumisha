@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Shopping Cart - Gurumisha Motors{% endblock %}
+
+{% block content %}
+<!-- Cart Page -->
+<section class="py-12 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-heading font-bold text-harrier-dark mb-2">Shopping Cart</h1>
+            <p class="text-gray-600">Review your selected spare parts before checkout</p>
+        </div>
+
+        {% if cart_items %}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Cart Items -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-xl font-semibold text-harrier-dark">Cart Items ({{ cart.total_items }})</h2>
+                        </div>
+                        
+                        <div class="divide-y divide-gray-200">
+                            {% for item in cart_items %}
+                                <div class="p-6 cart-item" id="cart-item-{{ item.id }}">
+                                    <div class="flex items-center space-x-4">
+                                        <!-- Product Image -->
+                                        <div class="flex-shrink-0 w-20 h-20">
+                                            {% if item.spare_part.main_image %}
+                                                <img src="{{ item.spare_part.main_image.url }}" 
+                                                     alt="{{ item.spare_part.name }}" 
+                                                     class="w-full h-full object-cover rounded-lg">
+                                            {% else %}
+                                                <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-cog text-gray-400 text-2xl"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Product Details -->
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-lg font-semibold text-harrier-dark truncate">{{ item.spare_part.name }}</h3>
+                                            <p class="text-sm text-gray-600">SKU: {{ item.spare_part.sku }}</p>
+                                            <p class="text-sm text-gray-600">Sold by: {{ item.spare_part.vendor.company_name }}</p>
+                                            <p class="text-sm text-gray-500">{{ item.spare_part.available_quantity }} available</p>
+                                        </div>
+                                        
+                                        <!-- Quantity Controls -->
+                                        <div class="flex items-center space-x-3">
+                                            <button onclick="updateQuantity({{ item.id }}, {{ item.quantity|add:'-1' }})"
+                                                    class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                                                    {% if item.quantity <= 1 %}disabled{% endif %}>
+                                                <i class="fas fa-minus text-xs"></i>
+                                            </button>
+                                            
+                                            <span class="w-12 text-center font-semibold" id="quantity-{{ item.id }}">{{ item.quantity }}</span>
+                                            
+                                            <button onclick="updateQuantity({{ item.id }}, {{ item.quantity|add:'1' }})"
+                                                    class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                                                    {% if item.quantity >= item.spare_part.available_quantity %}disabled{% endif %}>
+                                                <i class="fas fa-plus text-xs"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Price -->
+                                        <div class="text-right">
+                                            <p class="text-lg font-bold text-harrier-red" id="item-total-{{ item.id }}">
+                                                KSh {{ item.total_price|floatformat:0 }}
+                                            </p>
+                                            <p class="text-sm text-gray-500">KSh {{ item.price|floatformat:0 }} each</p>
+                                        </div>
+                                        
+                                        <!-- Remove Button -->
+                                        <button onclick="removeFromCart({{ item.id }})"
+                                                class="text-red-500 hover:text-red-700 transition-colors p-2">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                        <h2 class="text-xl font-semibold text-harrier-dark mb-6">Order Summary</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span class="font-semibold" id="cart-subtotal">KSh {{ cart.total_amount|floatformat:0 }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Shipping</span>
+                                <span class="font-semibold">KSh {{ shipping_cost|floatformat:0 }}</span>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="flex justify-between text-lg font-bold">
+                                    <span class="text-harrier-dark">Total</span>
+                                    <span class="text-harrier-red" id="cart-total">
+                                        KSh {{ cart.total_amount|add:shipping_cost|floatformat:0 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 space-y-3">
+                            <a href="{% url 'core:checkout' %}" 
+                               class="w-full btn-harrier-primary px-6 py-3 rounded-xl font-semibold text-center block transition-all duration-300 hover:transform hover:scale-105">
+                                <i class="fas fa-credit-card mr-2"></i>
+                                Proceed to Checkout
+                            </a>
+                            
+                            <a href="{% url 'core:spare_parts' %}" 
+                               class="w-full border-2 border-harrier-red text-harrier-red px-6 py-3 rounded-xl font-semibold text-center block hover:bg-harrier-red hover:text-white transition-all duration-300">
+                                <i class="fas fa-arrow-left mr-2"></i>
+                                Continue Shopping
+                            </a>
+                        </div>
+                        
+                        <!-- Security Badge -->
+                        <div class="mt-6 text-center">
+                            <div class="inline-flex items-center text-sm text-gray-500">
+                                <i class="fas fa-shield-alt text-green-500 mr-2"></i>
+                                Secure Checkout
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Empty Cart -->
+            <div class="text-center py-16">
+                <div class="max-w-md mx-auto">
+                    <i class="fas fa-shopping-cart text-gray-300 text-6xl mb-6"></i>
+                    <h2 class="text-2xl font-semibold text-gray-600 mb-4">Your cart is empty</h2>
+                    <p class="text-gray-500 mb-8">Looks like you haven't added any spare parts to your cart yet.</p>
+                    <a href="{% url 'core:spare_parts' %}" 
+                       class="btn-harrier-primary px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:transform hover:scale-105">
+                        <i class="fas fa-search mr-2"></i>
+                        Browse Spare Parts
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 text-center">
+        <i class="fas fa-spinner fa-spin text-harrier-red text-3xl mb-4"></i>
+        <p class="text-harrier-dark font-semibold">Updating cart...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateQuantity(itemId, newQuantity) {
+        if (newQuantity < 1) {
+            removeFromCart(itemId);
+            return;
+        }
+        
+        showLoading();
+        
+        fetch('{% url "core:update_cart_item" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `item_id=${itemId}&quantity=${newQuantity}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            if (data.success) {
+                // Update quantity display
+                document.getElementById(`quantity-${itemId}`).textContent = newQuantity;
+                
+                // Update item total
+                document.getElementById(`item-total-${itemId}`).textContent = `KSh ${Math.round(data.item_total)}`;
+                
+                // Update cart totals
+                updateCartTotals(data.cart_total_amount);
+                
+                // Show success message
+                showMessage(data.message, 'success');
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showMessage('An error occurred while updating the cart', 'error');
+        });
+    }
+    
+    function removeFromCart(itemId) {
+        if (!confirm('Are you sure you want to remove this item from your cart?')) {
+            return;
+        }
+        
+        showLoading();
+        
+        fetch('{% url "core:remove_from_cart" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `item_id=${itemId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            if (data.success) {
+                // Remove item from DOM
+                document.getElementById(`cart-item-${itemId}`).remove();
+                
+                // Update cart totals
+                updateCartTotals(data.cart_total_amount);
+                
+                // Check if cart is empty
+                if (data.cart_total_items === 0) {
+                    location.reload(); // Reload to show empty cart message
+                }
+                
+                showMessage(data.message, 'success');
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showMessage('An error occurred while removing the item', 'error');
+        });
+    }
+    
+    function updateCartTotals(subtotal) {
+        const shippingCost = {{ shipping_cost }};
+        const total = subtotal + shippingCost;
+        
+        document.getElementById('cart-subtotal').textContent = `KSh ${Math.round(subtotal)}`;
+        document.getElementById('cart-total').textContent = `KSh ${Math.round(total)}`;
+    }
+    
+    function showLoading() {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+    }
+    
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+    }
+    
+    function showMessage(message, type) {
+        // Create and show a toast message
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

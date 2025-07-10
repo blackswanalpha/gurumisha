@@ -1,0 +1,541 @@
+{% load static %}
+
+<!-- Location Tracking Modal -->
+<div class="fixed inset-0 z-50 overflow-y-auto" 
+     id="location-modal"
+     x-data="{ show: false, mapLoaded: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+    
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity modal-backdrop"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Panel -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden modal-panel"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-green-600 via-teal-600 to-blue-600 px-6 py-4 rounded-t-2xl modal-header">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-map-marker-alt text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">Location Tracking</h3>
+                            <p class="text-white text-opacity-90 text-sm font-raleway">Order #{{ import_order.order_number }} - Real-time shipment tracking</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="text-white hover:text-gray-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-10 rounded-lg"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-[70vh] overflow-y-auto modal-body">
+                
+                <!-- Current Status Overview -->
+                <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center mr-4">
+                                <i class="fas fa-ship text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900 font-montserrat">{{ import_order.year }} {{ import_order.brand }} {{ import_order.model }}</h4>
+                                <p class="text-sm text-gray-600 font-raleway">Current Status: <span class="font-semibold text-green-600">{{ import_order.get_status_display }}</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-500">Last Updated</div>
+                            <div class="text-lg font-semibold text-gray-900 font-montserrat">{{ import_order.updated_at|date:"M d, H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Container -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+                    <div class="p-4 border-b border-gray-200">
+                        <h4 class="text-lg font-semibold text-gray-900 flex items-center font-montserrat">
+                            <i class="fas fa-globe mr-2 text-green-600"></i>
+                            Live Tracking Map
+                        </h4>
+                    </div>
+                    
+                    <!-- Map Display -->
+                    <div class="relative">
+                        <div id="tracking-map" class="w-full h-96 bg-gray-100 flex items-center justify-center">
+                            <div class="text-center" x-show="!mapLoaded">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-map text-green-600 text-2xl"></i>
+                                </div>
+                                <h5 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">Loading Map...</h5>
+                                <p class="text-gray-600 font-raleway">Initializing real-time tracking</p>
+                                <div class="mt-4">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Map Controls -->
+                        <div class="absolute top-4 right-4 space-y-2">
+                            <button class="bg-white rounded-lg shadow-md p-2 hover:bg-gray-50 transition-colors" 
+                                    onclick="centerMap()" title="Center Map">
+                                <i class="fas fa-crosshairs text-gray-600"></i>
+                            </button>
+                            <button class="bg-white rounded-lg shadow-md p-2 hover:bg-gray-50 transition-colors" 
+                                    onclick="refreshLocation()" title="Refresh Location">
+                                <i class="fas fa-sync text-gray-600"></i>
+                            </button>
+                            <button class="bg-white rounded-lg shadow-md p-2 hover:bg-gray-50 transition-colors" 
+                                    onclick="toggleSatellite()" title="Toggle Satellite View">
+                                <i class="fas fa-satellite text-gray-600"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Current Location -->
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-location-arrow mr-2 text-blue-600"></i>
+                            Current Location
+                        </h5>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-map-pin mr-3 text-gray-400"></i>
+                                <div>
+                                    <div class="text-sm text-gray-500">Coordinates</div>
+                                    <div class="font-semibold text-gray-900" id="current-coordinates">
+                                        {% if import_order.current_latitude and import_order.current_longitude %}
+                                            {{ import_order.current_latitude|floatformat:6 }}, {{ import_order.current_longitude|floatformat:6 }}
+                                        {% else %}
+                                            Location not available
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-city mr-3 text-gray-400"></i>
+                                <div>
+                                    <div class="text-sm text-gray-500">Current Port/City</div>
+                                    <div class="font-semibold text-gray-900" id="current-location">
+                                        {{ import_order.current_location|default:"Determining location..." }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-clock mr-3 text-gray-400"></i>
+                                <div>
+                                    <div class="text-sm text-gray-500">Last Update</div>
+                                    <div class="font-semibold text-gray-900">
+                                        {{ import_order.location_updated_at|date:"M d, Y H:i"|default:"Never" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vessel Information -->
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                        <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                            <i class="fas fa-ship mr-2 text-purple-600"></i>
+                            Vessel Details
+                        </h5>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-anchor mr-3 text-gray-400"></i>
+                                <div>
+                                    <div class="text-sm text-gray-500">Vessel Name</div>
+                                    <div class="font-semibold text-gray-900">
+                                        {{ import_order.vessel_name|default:"Not specified" }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-file-alt mr-3 text-gray-400"></i>
+                                <div>
+                                    <div class="text-sm text-gray-500">Bill of Lading</div>
+                                    <div class="font-semibold text-gray-900">
+                                        {{ import_order.bill_of_lading|default:"Not available" }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-alt mr-3 text-gray-400"></i>
+                                <div>
+                                    <div class="text-sm text-gray-500">Estimated Arrival</div>
+                                    <div class="font-semibold text-gray-900">
+                                        {{ import_order.estimated_arrival|date:"M d, Y"|default:"TBD" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Route Information -->
+                <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                    <h5 class="text-lg font-semibold text-gray-900 mb-4 flex items-center font-montserrat">
+                        <i class="fas fa-route mr-2 text-orange-600"></i>
+                        Shipping Route
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-play text-blue-600"></i>
+                            </div>
+                            <div class="text-sm text-gray-500">Origin</div>
+                            <div class="font-semibold text-gray-900">{{ import_order.origin_port|default:"Japan" }}</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-ship text-yellow-600"></i>
+                            </div>
+                            <div class="text-sm text-gray-500">Current</div>
+                            <div class="font-semibold text-gray-900">{{ import_order.current_location|default:"In Transit" }}</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-flag-checkered text-green-600"></i>
+                            </div>
+                            <div class="text-sm text-gray-500">Destination</div>
+                            <div class="font-semibold text-gray-900">{{ import_order.destination_port|default:"Mombasa, Kenya" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 rounded-b-2xl border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
+                    <div class="text-sm text-gray-600 font-raleway">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Location updates every 30 minutes
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <!-- Share Location Button -->
+                        <button type="button" 
+                                class="enhanced-btn enhanced-btn-secondary"
+                                onclick="shareLocation()"
+                                title="Share tracking link">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-share-alt"></i>
+                                </div>
+                                <span class="btn-text">Share</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Refresh Button -->
+                        <button type="button" 
+                                class="enhanced-btn enhanced-btn-primary"
+                                onclick="refreshLocation()"
+                                title="Refresh location data">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-sync"></i>
+                                </div>
+                                <span class="btn-text">Refresh</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Close Button -->
+                        <button type="button" 
+                                class="enhanced-btn enhanced-btn-neutral"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-times"></i>
+                                </div>
+                                <span class="btn-text">Close</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Enhanced Modal Styles */
+    .modal-panel {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Map Container Styles */
+    #tracking-map {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Enhanced Button Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(0);
+        font-family: 'Montserrat', sans-serif;
+        min-width: 120px;
+        border: none;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enhanced-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .enhanced-btn:active {
+        transform: translateY(0);
+    }
+
+    /* Button Content Layout */
+    .btn-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .btn-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-icon {
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-text {
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    /* Button Variants */
+    .enhanced-btn-secondary {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #6b7280;
+        border: 2px solid #d1d5db;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.15);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        color: #4b5563;
+        box-shadow: 0 8px 20px rgba(107, 114, 128, 0.25);
+    }
+
+    .enhanced-btn-primary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 15%, #047857 35%, #065f46 65%, #064e3b 85%, #022c22 100%);
+        background-size: 300% 100%;
+        background-position: 0% 50%;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4), 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+
+    .enhanced-btn-primary:hover {
+        background-position: 100% 50%;
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.5), 0 6px 16px rgba(5, 150, 105, 0.4);
+    }
+
+    .enhanced-btn-neutral {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+
+    .enhanced-btn-neutral:hover {
+        background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        box-shadow: 0 8px 20px rgba(107, 114, 128, 0.4);
+    }
+
+    /* Location Cards */
+    .location-card {
+        transition: all 0.3s ease;
+    }
+
+    .location-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Route Progress Animation */
+    .route-step {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .route-step:hover {
+        transform: scale(1.05);
+    }
+
+    /* Loading Animation */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .loading-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+        .modal-panel {
+            margin: 1rem;
+            max-width: calc(100vw - 2rem);
+        }
+
+        #tracking-map {
+            height: 250px;
+        }
+
+        .enhanced-btn {
+            @apply px-3 py-2 text-xs;
+            min-width: 100px;
+        }
+    }
+</style>
+
+<script>
+// Map and location tracking functionality
+let trackingMap = null;
+let currentMarker = null;
+let routePolyline = null;
+
+// Initialize map when modal opens
+document.addEventListener('DOMContentLoaded', function() {
+    // Simulate map loading
+    setTimeout(() => {
+        initializeMap();
+    }, 1000);
+});
+
+function initializeMap() {
+    // Simulate map initialization
+    const mapContainer = document.getElementById('tracking-map');
+    if (mapContainer) {
+        mapContainer.innerHTML = `
+            <div class="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <i class="fas fa-map-marker-alt text-white text-2xl"></i>
+                    </div>
+                    <h5 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">Live Tracking Active</h5>
+                    <p class="text-gray-600 font-raleway">Shipment location updated in real-time</p>
+                    <div class="mt-4 text-sm text-gray-500">
+                        <i class="fas fa-satellite mr-1"></i>
+                        GPS coordinates: {{ import_order.current_latitude|default:"0.0000" }}, {{ import_order.current_longitude|default:"0.0000" }}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Mark map as loaded
+        Alpine.store('mapLoaded', true);
+    }
+}
+
+function centerMap() {
+    // Center map on current location
+    console.log('Centering map on current location');
+    // In a real implementation, this would center the map
+}
+
+function refreshLocation() {
+    // Refresh location data
+    console.log('Refreshing location data');
+
+    // Show loading state
+    const coordinatesEl = document.getElementById('current-coordinates');
+    const locationEl = document.getElementById('current-location');
+
+    if (coordinatesEl) {
+        coordinatesEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Updating...';
+    }
+
+    if (locationEl) {
+        locationEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Locating...';
+    }
+
+    // Simulate API call
+    setTimeout(() => {
+        if (coordinatesEl) {
+            coordinatesEl.textContent = '{{ import_order.current_latitude|default:"0.0000" }}, {{ import_order.current_longitude|default:"0.0000" }}';
+        }
+
+        if (locationEl) {
+            locationEl.textContent = '{{ import_order.current_location|default:"Location updated" }}';
+        }
+    }, 2000);
+}
+
+function toggleSatellite() {
+    // Toggle satellite view
+    console.log('Toggling satellite view');
+    // In a real implementation, this would toggle map view
+}
+
+function shareLocation() {
+    // Share tracking link
+    const trackingUrl = `${window.location.origin}/tracking/{{ import_order.order_number }}/`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: 'Import Order Tracking',
+            text: 'Track your import order: {{ import_order.order_number }}',
+            url: trackingUrl
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(trackingUrl).then(() => {
+            alert('Tracking link copied to clipboard!');
+        });
+    }
+}
+
+// Auto-refresh location every 30 seconds
+setInterval(refreshLocation, 30000);
+</script>
