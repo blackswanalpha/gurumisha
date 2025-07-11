@@ -278,30 +278,93 @@
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 
-    /* Form Styling */
+    /* Enhanced Form Styling */
     .form-group {
-        @apply space-y-2;
+        @apply space-y-3 mb-6;
+        position: relative;
     }
 
     .form-label {
-        @apply block text-sm font-semibold text-gray-700 flex items-center;
+        @apply block text-sm font-bold text-gray-800 flex items-center mb-2;
         font-family: 'Montserrat', sans-serif;
+        letter-spacing: 0.025em;
+    }
+
+    .form-label i {
+        margin-right: 8px;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
     }
 
     .form-input {
-        @apply w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-300;
-        font-family: 'Raleway', sans-serif;
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
+        @apply w-full border-2 rounded-2xl transition-all duration-300 ease-out;
+        font-family: 'Inter', 'Raleway', sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        line-height: 1.5;
+        padding: 16px 20px;
+
+        /* Modern glassmorphism background */
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+        backdrop-filter: blur(12px);
+        border: 2px solid rgba(226, 232, 240, 0.8);
+
+        /* Subtle shadow */
+        box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+
+        /* Text styling */
+        color: #1e293b;
+        letter-spacing: 0.01em;
+    }
+
+    .form-input:hover {
+        border-color: rgba(220, 38, 38, 0.3);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(254, 242, 242, 0.95) 100%);
+        box-shadow:
+            0 2px 8px rgba(220, 38, 38, 0.08),
+            0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        transform: translateY(-1px);
     }
 
     .form-input:focus {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+        outline: none;
+        border-color: #dc2626;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(254, 242, 242, 0.98) 100%);
+        box-shadow:
+            0 4px 20px rgba(220, 38, 38, 0.15),
+            0 0 0 4px rgba(220, 38, 38, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+        transform: translateY(-2px);
     }
 
     .form-input::placeholder {
-        @apply text-gray-400;
+        color: #94a3b8;
+        font-weight: 400;
+        opacity: 0.8;
+    }
+
+    /* Select specific styling */
+    select.form-input {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23dc2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 16px center;
+        background-repeat: no-repeat;
+        background-size: 16px 12px;
+        padding-right: 48px;
+        cursor: pointer;
+    }
+
+    /* Textarea specific styling */
+    textarea.form-input {
+        resize: vertical;
+        min-height: 120px;
+        line-height: 1.6;
+        padding: 16px 20px;
     }
 
     /* Harrier Color System */
@@ -345,19 +408,24 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 1rem 2rem;
+        padding: 12px 20px;
         font-weight: 600;
-        font-size: 1rem;
-        border-radius: 1rem;
+        font-size: 14px;
+        line-height: 1.2;
+        border-radius: 10px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         transform: translateY(0);
         font-family: 'Montserrat', sans-serif;
-        min-width: 160px;
-        border: none;
+        min-width: 120px;
+        max-width: 180px;
+        height: 44px;
+        border: 2px solid transparent;
         cursor: pointer;
         user-select: none;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
+        white-space: nowrap;
+        box-sizing: border-box;
     }
 
     .enhanced-btn::before {

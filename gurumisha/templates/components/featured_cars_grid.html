@@ -1,0 +1,121 @@
+{% load static %}
+{% load promotion_tags %}
+{% load math_filters %}
+
+<!-- Featured Cars Grid Component -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="featured-cars-grid">
+    {% for car in cars %}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group">
+            <div class="relative overflow-hidden">
+                {% if car.main_image %}
+                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500">
+                {% else %}
+                    <div class="w-full h-56 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <i class="fas fa-car text-gray-400 text-5xl"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- Promotion Badges -->
+                {% promotion_badge car %}
+                
+                <!-- Hot Deal Countdown -->
+                {% if car.is_hot_deal %}
+                    <div class="absolute top-4 right-4">
+                        {% if car.hot_deal_details %}
+                            {% with hot_deal=car.hot_deal_details %}
+                                {% hot_deal_countdown hot_deal %}
+                            {% endwith %}
+                        {% else %}
+                            <div class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                                <i class="fas fa-fire mr-1"></i>HOT DEAL
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="p-6">
+                <!-- Car Title -->
+                <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors">
+                    <a href="{% url 'core:car_detail' car.pk %}">{{ car.title }}</a>
+                </h3>
+                
+                <!-- Car Details -->
+                <div class="text-gray-600 mb-4">
+                    <p class="font-medium">{{ car.brand.name }} {{ car.model.name }}</p>
+                    <p class="text-sm">{{ car.year }} • {{ car.mileage|floatformat:0 }} km • {{ car.get_fuel_type_display }}</p>
+                </div>
+                
+                <!-- Star Rating -->
+                {% if car.calculated_rating > 0 %}
+                    <div class="mb-4">
+                        {% star_rating_display car.calculated_rating show_number=True size="text-sm" %}
+                    </div>
+                {% endif %}
+                
+                <!-- Pricing -->
+                <div class="mb-4">
+                    {% if car.is_hot_deal and car.hot_deal_details %}
+                        <div class="flex items-center space-x-2">
+                            <span class="text-2xl font-bold text-red-600">KSh {{ car.hot_deal_details.discounted_price|floatformat:0 }}</span>
+                            <span class="text-lg text-gray-500 line-through">KSh {{ car.hot_deal_details.original_price|floatformat:0 }}</span>
+                        </div>
+                        <p class="text-sm text-green-600 font-medium">
+                            Save: KSh {{ car.hot_deal_details.original_price|sub:car.hot_deal_details.discounted_price|floatformat:0 }}
+                        </p>
+                    {% else %}
+                        <span class="text-2xl font-bold text-gray-900">KSh {{ car.price|floatformat:0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-3">
+                    <a href="{% url 'core:car_detail' car.pk %}" 
+                       class="flex-1 bg-red-600 text-white text-center py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                        View Details
+                    </a>
+                    <button onclick="trackFeaturedClick({{ car.id }})" 
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-full text-center py-16">
+            <i class="fas fa-search text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">No Featured Cars Found</h3>
+            <p class="text-gray-600 mb-4">No cars match your current filters.</p>
+            <button onclick="clearFeaturedFilters()" class="text-red-600 hover:text-red-700 font-medium">
+                <i class="fas fa-times mr-1"></i>Clear filters
+            </button>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+function trackFeaturedClick(carId) {
+    // Track analytics
+    fetch('/analytics/track/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+        },
+        body: JSON.stringify({
+            metric_type: 'featured_clicks',
+            car_id: carId
+        })
+    }).catch(console.error);
+}
+
+function clearFeaturedFilters() {
+    // Reset all filter inputs
+    document.querySelectorAll('#featured-filters select, #featured-filters input').forEach(input => {
+        input.value = '';
+    });
+    
+    // Trigger filter update
+    htmx.trigger('#featured-filters', 'change');
+}
+</script>

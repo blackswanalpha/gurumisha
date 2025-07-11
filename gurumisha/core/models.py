@@ -16,13 +16,67 @@ class User(AbstractUser):
         ('admin', 'Admin'),
     ]
 
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+        ('prefer_not_to_say', 'Prefer not to say'),
+    ]
+
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('sw', 'Swahili'),
+        ('fr', 'French'),
+    ]
+
+    # Basic Information
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
+
+    # Profile Information
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    bio = models.TextField(max_length=500, blank=True, help_text="Brief description about yourself")
+    date_of_birth = models.DateField(blank=True, null=True)
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, default='Kenya')
+
+    # Contact Information
+    secondary_phone = models.CharField(max_length=20, blank=True)
+    whatsapp_number = models.CharField(max_length=20, blank=True)
+
+    # Preferences
+    preferred_language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, default='en')
+    timezone = models.CharField(max_length=50, default='Africa/Nairobi')
+
+    # Notification Preferences
+    email_notifications = models.BooleanField(default=True)
+    sms_notifications = models.BooleanField(default=False)
+    marketing_emails = models.BooleanField(default=True)
+    newsletter_subscription = models.BooleanField(default=True)
+
+    # Privacy Settings
+    profile_visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ('public', 'Public'),
+            ('private', 'Private'),
+            ('contacts_only', 'Contacts Only'),
+        ],
+        default='public'
+    )
+    show_email = models.BooleanField(default=False)
+    show_phone = models.BooleanField(default=True)
+
+    # Account Status
     is_verified = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
     email_verification_token = models.CharField(max_length=100, blank=True, null=True)
     email_verification_sent_at = models.DateTimeField(null=True, blank=True)
+    last_login_ip = models.GenericIPAddressField(blank=True, null=True)
+
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -131,42 +185,220 @@ class VerificationCode(models.Model):
         self.save()
 
 
+class VendorSubscription(models.Model):
+    """Vendor subscription tiers for automatic featuring"""
+    TIER_CHOICES = [
+        ('basic', 'Basic'),
+        ('bronze', 'Bronze'),
+        ('silver', 'Silver'),
+        ('gold', 'Gold'),
+        ('platinum', 'Platinum'),
+    ]
+
+    vendor = models.OneToOneField('Vendor', on_delete=models.CASCADE, related_name='subscription')
+    tier = models.CharField(max_length=20, choices=TIER_CHOICES, default='basic')
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    auto_renew = models.BooleanField(default=False)
+
+    # Tier benefits
+    max_featured_cars = models.PositiveIntegerField(default=0)
+    max_hot_deals = models.PositiveIntegerField(default=0)
+    priority_support = models.BooleanField(default=False)
+    analytics_access = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.vendor.company_name} - {self.get_tier_display()}"
+
+    def is_expired(self):
+        """Check if subscription is expired"""
+        if self.end_date:
+            return timezone.now() > self.end_date
+        return False
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class FeaturedCarTier(models.Model):
+    """Featured car tier configuration"""
+    TIER_CHOICES = [
+        ('bronze', 'Bronze'),
+        ('silver', 'Silver'),
+        ('gold', 'Gold'),
+        ('platinum', 'Platinum'),
+    ]
+
+    name = models.CharField(max_length=20, choices=TIER_CHOICES, unique=True)
+    display_name = models.CharField(max_length=50)
+    priority_order = models.PositiveIntegerField(unique=True, help_text="Lower numbers = higher priority")
+    badge_color = models.CharField(max_length=20, default='bg-gray-500')
+    badge_icon = models.CharField(max_length=50, default='fas fa-star')
+
+    # Tier benefits
+    homepage_slots = models.PositiveIntegerField(default=0, help_text="Number of slots on homepage")
+    listing_boost_percentage = models.PositiveIntegerField(default=0, help_text="Boost in search results")
+
+    # Pricing (for future subscription system)
+    monthly_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta:
+        ordering = ['priority_order']
+
+
 class Vendor(models.Model):
     """Vendor profile for car dealers and spare parts sellers"""
+    BUSINESS_TYPE_CHOICES = [
+        ('dealership', 'Car Dealership'),
+        ('spare_parts', 'Spare Parts Seller'),
+        ('both', 'Both Cars and Spare Parts'),
+        ('service_center', 'Service Center'),
+        ('individual', 'Individual Seller'),
+    ]
+
+    VERIFICATION_STATUS_CHOICES = [
+        ('pending', 'Pending Verification'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+        ('suspended', 'Suspended'),
+    ]
+
+    # Basic Information
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     company_name = models.CharField(max_length=200)
     business_license = models.CharField(max_length=100, blank=True)
+    business_type = models.CharField(max_length=20, choices=BUSINESS_TYPE_CHOICES, default='dealership')
     description = models.TextField(blank=True)
+
+    # Contact Information
     website = models.URLField(blank=True)
+    business_phone = models.CharField(max_length=20, blank=True)
+    business_email = models.EmailField(blank=True)
+    physical_address = models.TextField(blank=True)
+
+    # Visual Identity
+    company_logo = models.ImageField(upload_to='vendor_logos/', blank=True, null=True)
+    cover_image = models.ImageField(upload_to='vendor_covers/', blank=True, null=True)
+
+    # Social Media Links
+    facebook_url = models.URLField(blank=True)
+    twitter_url = models.URLField(blank=True)
+    instagram_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+    youtube_url = models.URLField(blank=True)
+
+    # Business Details
+    year_established = models.PositiveIntegerField(blank=True, null=True)
+    number_of_employees = models.PositiveIntegerField(blank=True, null=True)
+    specializations = models.TextField(blank=True, help_text="Comma-separated list of specializations")
+    service_areas = models.TextField(blank=True, help_text="Areas where services are provided")
+
+    # Verification and Status
     is_approved = models.BooleanField(default=False)
+    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending')
     approval_date = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    verification_documents = models.TextField(blank=True, help_text="JSON formatted verification documents")
 
     # Notification preferences
     email_notifications = models.BooleanField(default=True)
     sms_notifications = models.BooleanField(default=False)
     inquiry_notifications = models.BooleanField(default=True)
     order_notifications = models.BooleanField(default=True)
+    promotion_notifications = models.BooleanField(default=True)
 
     # Business hours and timezone
     business_hours = models.TextField(blank=True, help_text="JSON formatted business hours")
     business_hours_note = models.TextField(blank=True)
     timezone = models.CharField(max_length=50, default='Africa/Nairobi')
 
+    # Operating Days
+    operates_monday = models.BooleanField(default=True)
+    operates_tuesday = models.BooleanField(default=True)
+    operates_wednesday = models.BooleanField(default=True)
+    operates_thursday = models.BooleanField(default=True)
+    operates_friday = models.BooleanField(default=True)
+    operates_saturday = models.BooleanField(default=True)
+    operates_sunday = models.BooleanField(default=False)
+
     # Payment settings
     mpesa_number = models.CharField(max_length=15, blank=True)
+    mpesa_business_shortcode = models.CharField(max_length=10, blank=True)
     bank_name = models.CharField(max_length=100, blank=True)
     account_number = models.CharField(max_length=50, blank=True)
     account_name = models.CharField(max_length=200, blank=True)
+    swift_code = models.CharField(max_length=20, blank=True)
     payment_methods = models.TextField(blank=True, help_text="JSON formatted payment methods")
+    accepts_installments = models.BooleanField(default=False)
+    minimum_deposit_percentage = models.PositiveIntegerField(default=20, help_text="Minimum deposit percentage for installments")
 
     # Account preferences
     public_profile = models.BooleanField(default=True)
     show_contact = models.BooleanField(default=True)
     auto_approve_inquiries = models.BooleanField(default=False)
+    allow_direct_messages = models.BooleanField(default=True)
+    show_business_hours = models.BooleanField(default=True)
+
+    # Auto-response settings
+    auto_response_enabled = models.BooleanField(default=False)
+    auto_response_message = models.TextField(blank=True, max_length=500)
+    auto_response_delay_minutes = models.PositiveIntegerField(default=5)
+
+    # Enhanced vendor metrics
+    total_sales = models.PositiveIntegerField(default=0)
+    total_listings = models.PositiveIntegerField(default=0)
+    average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    response_time_hours = models.PositiveIntegerField(default=24, help_text="Average response time in hours")
+    profile_views = models.PositiveIntegerField(default=0)
+    total_inquiries = models.PositiveIntegerField(default=0)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.company_name
+
+    def get_subscription_tier(self):
+        """Get current subscription tier"""
+        try:
+            subscription = self.subscription
+            if subscription.is_active and not subscription.is_expired():
+                return subscription.tier
+        except VendorSubscription.DoesNotExist:
+            pass
+        return 'basic'
+
+    def can_feature_cars(self):
+        """Check if vendor can feature cars based on subscription"""
+        tier = self.get_subscription_tier()
+        return tier in ['bronze', 'silver', 'gold', 'platinum']
+
+    def get_max_featured_cars(self):
+        """Get maximum number of cars vendor can feature"""
+        try:
+            subscription = self.subscription
+            if subscription.is_active and not subscription.is_expired():
+                return subscription.max_featured_cars
+        except VendorSubscription.DoesNotExist:
+            pass
+        return 0
+
+    def update_average_rating(self):
+        """Update vendor's average rating based on car ratings"""
+        car_ratings = self.cars.exclude(calculated_rating=0).values_list('calculated_rating', flat=True)
+        if car_ratings:
+            self.average_rating = sum(car_ratings) / len(car_ratings)
+            self.save(update_fields=['average_rating'])
 
 
 class CarBrand(models.Model):
@@ -249,6 +481,7 @@ class Car(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     listing_type = models.CharField(max_length=20, choices=LISTING_TYPE_CHOICES, default='local')
+    negotiable = models.BooleanField(default=False)
 
     # Description and Features
     title = models.CharField(max_length=200)
@@ -262,6 +495,25 @@ class Car(models.Model):
     is_approved = models.BooleanField(default=False)
     approval_date = models.DateTimeField(null=True, blank=True)
     views_count = models.PositiveIntegerField(default=0)
+    inquiry_count = models.PositiveIntegerField(default=0)
+
+    # Enhanced Promotion System
+    is_hot_deal = models.BooleanField(default=False, help_text="Mark as hot deal for special promotion")
+    star_rating = models.PositiveIntegerField(default=0, help_text="Legacy star rating from 0-5")
+    calculated_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0,
+                                          help_text="Calculated rating with half-star precision (0.0-5.0)")
+
+    # Featured car system (simplified binary system)
+    is_featured = models.BooleanField(default=False, help_text="Mark car as featured")
+    featured_until = models.DateTimeField(null=True, blank=True, help_text="When featuring expires")
+    auto_featured = models.BooleanField(default=False, help_text="Automatically featured based on vendor subscription")
+
+    # Certified car feature
+    is_certified = models.BooleanField(default=False, help_text="Mark car as certified with additional benefits")
+
+    # Performance metrics for rating calculation
+    last_rating_update = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -277,8 +529,358 @@ class Car(models.Model):
             return [feature.strip() for feature in self.features.split(',')]
         return []
 
+    def is_currently_featured(self):
+        """Check if car is currently featured"""
+        return (self.is_featured and
+                (self.featured_until is None or self.featured_until > timezone.now()))
+
+    def get_star_display(self):
+        """Get star rating display with half-star support"""
+        full_stars = int(self.calculated_rating)
+        half_star = (self.calculated_rating - full_stars) >= 0.5
+        empty_stars = 5 - full_stars - (1 if half_star else 0)
+
+        display = '★' * full_stars
+        if half_star:
+            display += '☆'  # Half star representation
+        display += '☆' * empty_stars
+        return display
+
+    def get_star_display_html(self):
+        """Get HTML star rating display with half-star support"""
+        full_stars = int(self.calculated_rating)
+        half_star = (self.calculated_rating - full_stars) >= 0.5
+        empty_stars = 5 - full_stars - (1 if half_star else 0)
+
+        html = '<div class="flex items-center">'
+        # Full stars
+        for _ in range(full_stars):
+            html += '<i class="fas fa-star text-yellow-400"></i>'
+        # Half star
+        if half_star:
+            html += '<i class="fas fa-star-half-alt text-yellow-400"></i>'
+        # Empty stars
+        for _ in range(empty_stars):
+            html += '<i class="far fa-star text-gray-300"></i>'
+        html += f'<span class="ml-1 text-sm text-gray-600">({self.calculated_rating})</span></div>'
+        return html
+
+    def get_promotion_badges(self):
+        """Get list of promotion badges for this car"""
+        badges = []
+
+        # Featured badge (simplified)
+        if self.is_currently_featured():
+            badges.append({
+                'type': 'featured',
+                'text': 'Featured',
+                'class': 'bg-purple-600',
+                'icon': 'fas fa-star'
+            })
+
+        # Certified badge
+        if self.is_certified:
+            badges.append({
+                'type': 'certified',
+                'text': 'Certified',
+                'class': 'bg-green-600',
+                'icon': 'fas fa-certificate'
+            })
+
+        # Hot deal badge
+        if self.is_hot_deal:
+            badges.append({
+                'type': 'hot_deal',
+                'text': 'Hot Deal',
+                'class': 'bg-red-500',
+                'icon': 'fas fa-fire'
+            })
+
+        # High rating badge
+        if self.calculated_rating >= 4.5:
+            badges.append({
+                'type': 'top_rated',
+                'text': 'Top Rated',
+                'class': 'bg-green-500',
+                'icon': 'fas fa-star'
+            })
+
+        return badges
+
+    def calculate_automatic_rating(self):
+        """Calculate automatic rating based on car metrics"""
+        # Base rating factors
+        base_rating = 3.0
+
+        # Views factor (0-1 points)
+        if self.views_count > 0:
+            views_factor = min(self.views_count / 1000, 1.0)  # Max 1 point for 1000+ views
+            base_rating += views_factor
+
+        # Inquiry factor (0-1 points)
+        if self.inquiry_count > 0:
+            inquiry_factor = min(self.inquiry_count / 50, 1.0)  # Max 1 point for 50+ inquiries
+            base_rating += inquiry_factor
+
+        # Vendor rating factor (0-1 points)
+        if hasattr(self.vendor, 'average_rating') and self.vendor.average_rating > 0:
+            vendor_factor = (self.vendor.average_rating - 3.0) / 2.0  # Convert 3-5 scale to 0-1
+            base_rating += max(0, vendor_factor)
+
+        # Car age factor (-0.5 to 0 points)
+        car_age = timezone.now().year - self.year
+        if car_age <= 2:
+            age_factor = 0
+        elif car_age <= 5:
+            age_factor = -0.1 * (car_age - 2)
+        else:
+            age_factor = -0.5
+        base_rating += age_factor
+
+        # Ensure rating is within bounds and round to nearest 0.5
+        rating = max(0.0, min(5.0, base_rating))
+        return round(rating * 2) / 2  # Round to nearest 0.5
+
+    def update_calculated_rating(self):
+        """Update the calculated rating"""
+        self.calculated_rating = self.calculate_automatic_rating()
+        self.last_rating_update = timezone.now()
+        self.save(update_fields=['calculated_rating', 'last_rating_update'])
+
+    def get_featured_priority(self):
+        """Get priority order for featured cars (lower = higher priority)"""
+        if self.is_currently_featured():
+            return 1  # Featured cars get priority
+        return 999  # Non-featured cars get lowest priority
+
+    @classmethod
+    def get_featured_cars_count(cls):
+        """Get current count of featured cars"""
+        return cls.objects.filter(
+            is_approved=True,
+            is_featured=True
+        ).count()
+
+    @classmethod
+    def can_feature_more_cars(cls):
+        """Check if more cars can be featured (max 9)"""
+        return cls.get_featured_cars_count() < 9
+
+    @classmethod
+    def get_featured_cars_remaining(cls):
+        """Get number of remaining featured car slots"""
+        return max(0, 9 - cls.get_featured_cars_count())
+
+    def can_be_featured(self):
+        """Check if this specific car can be featured"""
+        if not self.is_approved:
+            return False, "Car must be approved before featuring"
+
+        if self.is_currently_featured():
+            return False, "Car is already featured"
+
+        if not self.__class__.can_feature_more_cars():
+            return False, "Maximum featured cars limit (9) reached"
+
+        return True, "Car can be featured"
+
+    def feature_car(self):
+        """Feature this car"""
+        can_feature, message = self.can_be_featured()
+        if not can_feature:
+            return False, message
+
+        self.is_featured = True
+        self.auto_featured = False
+        self.save(update_fields=['is_featured', 'auto_featured'])
+        return True, "Car has been featured successfully"
+
+    def unfeature_car(self):
+        """Remove featured status from this car"""
+        if not self.is_currently_featured():
+            return False, "Car is not currently featured"
+
+        self.is_featured = False
+        self.featured_until = None
+        self.auto_featured = False
+        self.save(update_fields=['is_featured', 'featured_until', 'auto_featured'])
+        return True, "Featured status removed"
+
     class Meta:
         ordering = ['-created_at']
+
+
+class HotDeal(models.Model):
+    """Time-limited hot deals for cars"""
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+
+    car = models.OneToOneField(Car, on_delete=models.CASCADE, related_name='hot_deal_details')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+
+    # Discount configuration
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2,
+                                       help_text="Percentage (0-100) or fixed amount")
+    original_price = models.DecimalField(max_digits=12, decimal_places=2)
+    discounted_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    # Time configuration
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+    # Status
+    is_active = models.BooleanField(default=True)
+    auto_activate = models.BooleanField(default=True, help_text="Automatically activate/deactivate based on dates")
+
+    # Analytics
+    views_count = models.PositiveIntegerField(default=0)
+    clicks_count = models.PositiveIntegerField(default=0)
+    inquiries_count = models.PositiveIntegerField(default=0)
+
+    # Notifications
+    email_sent = models.BooleanField(default=False)
+    sms_sent = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Hot Deal: {self.title}"
+
+    def is_currently_active(self):
+        """Check if deal is currently active"""
+        now = timezone.now()
+        return (self.is_active and
+                self.start_date <= now <= self.end_date)
+
+    def time_remaining(self):
+        """Get time remaining for the deal"""
+        if not self.is_currently_active():
+            return None
+        return self.end_date - timezone.now()
+
+    def time_remaining_formatted(self):
+        """Get formatted time remaining"""
+        remaining = self.time_remaining()
+        if not remaining:
+            return "Expired"
+
+        days = remaining.days
+        hours, remainder = divmod(remaining.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+        elif hours > 0:
+            return f"{hours}h {minutes}m"
+        else:
+            return f"{minutes}m"
+
+    def calculate_discounted_price(self):
+        """Calculate and update discounted price"""
+        if self.discount_type == 'percentage':
+            discount_amount = (self.original_price * self.discount_value) / 100
+            self.discounted_price = self.original_price - discount_amount
+        else:  # fixed
+            self.discounted_price = self.original_price - self.discount_value
+
+        # Ensure discounted price is not negative
+        self.discounted_price = max(0, self.discounted_price)
+
+    def save(self, *args, **kwargs):
+        """Override save to calculate discounted price"""
+        self.calculate_discounted_price()
+        super().save(*args, **kwargs)
+
+        # Update car's hot deal status
+        if self.is_currently_active():
+            self.car.is_hot_deal = True
+            self.car.price = self.discounted_price
+        else:
+            self.car.is_hot_deal = False
+            self.car.price = self.original_price
+        self.car.save(update_fields=['is_hot_deal', 'price'])
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class CarRating(models.Model):
+    """Individual car ratings from customers"""
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='ratings')
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='car_ratings')
+
+    # Rating details
+    rating = models.DecimalField(max_digits=3, decimal_places=1,
+                               help_text="Rating from 0.5 to 5.0 in 0.5 increments")
+    review = models.TextField(blank=True)
+
+    # Rating categories
+    condition_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0)
+    value_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0)
+    service_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0)
+
+    # Status
+    is_verified = models.BooleanField(default=False, help_text="Verified purchase")
+    is_approved = models.BooleanField(default=False)
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.customer.username} rated {self.car.title} - {self.rating} stars"
+
+    def save(self, *args, **kwargs):
+        """Override save to update car's calculated rating"""
+        super().save(*args, **kwargs)
+        # Update car's calculated rating
+        self.car.update_calculated_rating()
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['car', 'customer']  # One rating per customer per car
+
+
+class PromotionAnalytics(models.Model):
+    """Analytics for promotion performance"""
+    METRIC_TYPE_CHOICES = [
+        ('featured_views', 'Featured Car Views'),
+        ('featured_clicks', 'Featured Car Clicks'),
+        ('hot_deal_views', 'Hot Deal Views'),
+        ('hot_deal_clicks', 'Hot Deal Clicks'),
+        ('tier_performance', 'Tier Performance'),
+        ('rating_distribution', 'Rating Distribution'),
+    ]
+
+    metric_type = models.CharField(max_length=30, choices=METRIC_TYPE_CHOICES)
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, null=True, blank=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, null=True, blank=True)
+
+    # Metric data
+    metric_value = models.PositiveIntegerField(default=0)
+    metric_data = models.JSONField(default=dict, help_text="Additional metric data")
+
+    # Time period
+    date = models.DateField(auto_now_add=True)
+    hour = models.PositiveIntegerField(default=0, help_text="Hour of the day (0-23)")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_metric_type_display()} - {self.metric_value}"
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['metric_type', 'date']),
+            models.Index(fields=['car', 'metric_type']),
+            models.Index(fields=['vendor', 'metric_type']),
+        ]
 
 
 class CarImage(models.Model):
@@ -336,6 +938,11 @@ class ImportRequest(models.Model):
     def __str__(self):
         return f"Import Request: {self.year} {self.brand} {self.model} - {self.customer.username}"
 
+    @property
+    def vehicle_details(self):
+        """Return formatted vehicle details string"""
+        return f"{self.year} {self.brand} {self.model}"
+
     class Meta:
         ordering = ['-created_at']
 
@@ -345,8 +952,7 @@ class ImportOrder(models.Model):
 
     # 7-Stage Import Process Status Choices
     STATUS_CHOICES = [
-        ('quotation_pending', 'Quotation Pending'),
-        ('confirmed', 'Confirmed'),
+        ('import_request', 'Import Request'),
         ('auction_won', 'Auction Won'),
         ('shipped', 'Shipped'),
         ('in_transit', 'In Transit'),
@@ -385,7 +991,7 @@ class ImportOrder(models.Model):
     origin_city = models.CharField(max_length=100, blank=True)
 
     # Status and Tracking
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='quotation_pending')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='import_request')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
 
     # Financial Information
@@ -436,6 +1042,11 @@ class ImportOrder(models.Model):
 
     def __str__(self):
         return f"Import Order {self.order_number} - {self.year} {self.brand} {self.model}"
+
+    @property
+    def vehicle_details(self):
+        """Return formatted vehicle details string"""
+        return f"{self.year} {self.brand} {self.model}"
 
     def save(self, *args, **kwargs):
         if not self.order_number:
@@ -598,7 +1209,7 @@ class ImportOrderStatusHistory(models.Model):
     def get_status_icon(self):
         """Return FontAwesome icon for the status"""
         status_icons = {
-            'confirmed': 'check-circle',
+            'import_request': 'file-import',
             'auction_won': 'gavel',
             'shipped': 'ship',
             'in_transit': 'route',
@@ -1774,3 +2385,184 @@ class NotificationDeliveryLog(models.Model):
 
     class Meta:
         ordering = ['-attempted_at']
+
+
+class ProfileView(models.Model):
+    """Track profile views for analytics"""
+    profile_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='profile_views_received')
+    viewer = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profile_views_made')
+    viewer_ip = models.GenericIPAddressField()
+    user_agent = models.TextField(blank=True)
+    referrer = models.URLField(blank=True)
+    session_key = models.CharField(max_length=40, blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['profile_user', 'viewed_at']),
+            models.Index(fields=['viewer', 'viewed_at']),
+            models.Index(fields=['viewer_ip', 'viewed_at']),
+        ]
+
+    def __str__(self):
+        viewer_name = self.viewer.username if self.viewer else f"Anonymous ({self.viewer_ip})"
+        return f"{viewer_name} viewed {self.profile_user.username}'s profile"
+
+
+class VendorAnalytics(models.Model):
+    """Vendor performance analytics"""
+    vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE, related_name='analytics')
+
+    # Profile metrics
+    total_profile_views = models.PositiveIntegerField(default=0)
+    unique_profile_views = models.PositiveIntegerField(default=0)
+    profile_views_this_month = models.PositiveIntegerField(default=0)
+    profile_views_last_month = models.PositiveIntegerField(default=0)
+
+    # Engagement metrics
+    total_inquiries = models.PositiveIntegerField(default=0)
+    inquiries_this_month = models.PositiveIntegerField(default=0)
+    inquiry_response_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    average_response_time_hours = models.PositiveIntegerField(default=24)
+
+    # Sales metrics
+    total_sales = models.PositiveIntegerField(default=0)
+    sales_this_month = models.PositiveIntegerField(default=0)
+    total_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    revenue_this_month = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+
+    # Listing metrics
+    active_listings = models.PositiveIntegerField(default=0)
+    featured_listings = models.PositiveIntegerField(default=0)
+    sold_listings = models.PositiveIntegerField(default=0)
+    average_listing_views = models.PositiveIntegerField(default=0)
+
+    # Rating metrics
+    average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    total_ratings = models.PositiveIntegerField(default=0)
+    five_star_ratings = models.PositiveIntegerField(default=0)
+    four_star_ratings = models.PositiveIntegerField(default=0)
+    three_star_ratings = models.PositiveIntegerField(default=0)
+    two_star_ratings = models.PositiveIntegerField(default=0)
+    one_star_ratings = models.PositiveIntegerField(default=0)
+
+    # Performance scores (0-100)
+    profile_completion_score = models.PositiveIntegerField(default=0)
+    customer_satisfaction_score = models.PositiveIntegerField(default=0)
+    response_time_score = models.PositiveIntegerField(default=0)
+    overall_performance_score = models.PositiveIntegerField(default=0)
+
+    # Timestamps
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def calculate_profile_completion(self):
+        """Calculate profile completion percentage"""
+        vendor = self.vendor
+        user = vendor.user
+
+        fields_to_check = [
+            # User fields
+            (user.first_name, 10),
+            (user.last_name, 10),
+            (user.email, 5),
+            (user.phone, 5),
+            (user.profile_picture, 10),
+            (user.bio, 10),
+
+            # Vendor fields
+            (vendor.company_name, 10),
+            (vendor.description, 15),
+            (vendor.business_phone, 5),
+            (vendor.physical_address, 5),
+            (vendor.company_logo, 10),
+            (vendor.website, 5),
+        ]
+
+        total_score = 0
+        for field_value, weight in fields_to_check:
+            if field_value:
+                total_score += weight
+
+        self.profile_completion_score = min(total_score, 100)
+        return self.profile_completion_score
+
+    def calculate_performance_scores(self):
+        """Calculate various performance scores"""
+        # Response time score (inverse relationship)
+        if self.average_response_time_hours <= 1:
+            self.response_time_score = 100
+        elif self.average_response_time_hours <= 6:
+            self.response_time_score = 90
+        elif self.average_response_time_hours <= 24:
+            self.response_time_score = 75
+        elif self.average_response_time_hours <= 48:
+            self.response_time_score = 50
+        else:
+            self.response_time_score = 25
+
+        # Customer satisfaction score based on ratings
+        if self.total_ratings > 0:
+            weighted_score = (
+                (self.five_star_ratings * 5) +
+                (self.four_star_ratings * 4) +
+                (self.three_star_ratings * 3) +
+                (self.two_star_ratings * 2) +
+                (self.one_star_ratings * 1)
+            )
+            average_rating = weighted_score / self.total_ratings
+            self.customer_satisfaction_score = int((average_rating / 5) * 100)
+        else:
+            self.customer_satisfaction_score = 0
+
+        # Overall performance score (weighted average)
+        self.overall_performance_score = int(
+            (self.profile_completion_score * 0.3) +
+            (self.customer_satisfaction_score * 0.4) +
+            (self.response_time_score * 0.3)
+        )
+
+    def update_analytics(self):
+        """Update all analytics data"""
+        self.calculate_profile_completion()
+        self.calculate_performance_scores()
+        self.save()
+
+    def __str__(self):
+        return f"Analytics for {self.vendor.company_name}"
+
+
+class UserActivityLog(models.Model):
+    """Track user activities for analytics"""
+    ACTION_CHOICES = [
+        ('profile_view', 'Profile View'),
+        ('profile_update', 'Profile Update'),
+        ('login', 'Login'),
+        ('logout', 'Logout'),
+        ('password_change', 'Password Change'),
+        ('inquiry_sent', 'Inquiry Sent'),
+        ('inquiry_received', 'Inquiry Received'),
+        ('listing_created', 'Listing Created'),
+        ('listing_updated', 'Listing Updated'),
+        ('listing_viewed', 'Listing Viewed'),
+        ('order_placed', 'Order Placed'),
+        ('payment_made', 'Payment Made'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_activity_logs')
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    description = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'timestamp']),
+            models.Index(fields=['action', 'timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_action_display()} at {self.timestamp}"

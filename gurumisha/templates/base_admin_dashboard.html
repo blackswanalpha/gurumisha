@@ -1,7 +1,7 @@
 {% extends 'base_admin.html' %}
 {% load static %}
 
-{% block title %}{% block dashboard_title %}Admin Dashboard{% endblock %} - Gurumisha Motors{% endblock %}
+{% block title %}{% block dashboard_title %}Admin Dashboard{% endblock %} - Gurumisha{% endblock %}
 
 {% block content %}
 <!-- Splash Screen -->
@@ -271,13 +271,12 @@
                                                 </div>
                                                 <span class="nav-label">Notifications</span>
                                             </div>
-                                            <div
-                                                hx-get="{% url 'core:notifications_count_htmx' %}"
-                                                hx-trigger="load, every 30s"
-                                                hx-target="this"
-                                                hx-swap="innerHTML"
-                                                class="nav-badge"
-                                            >
+                                            <div class="nav-badge"
+                                                 id="notification-count-badge"
+                                                 hx-get="{% url 'core:notifications_count_htmx' %}"
+                                                 hx-trigger="load, every 30s"
+                                                 hx-swap="innerHTML">
+                                                {{ notification_badges.unread_notifications|default:0 }}
                                                 0
                                             </div>
                                         </div>
@@ -410,6 +409,7 @@
 
 {% block extra_js %}
 {{ block.super }}
+<script src="{% static 'js/toast-manager.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Mobile sidebar functionality

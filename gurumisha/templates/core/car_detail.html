@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ car.title }} - Gurumisha Motors{% endblock %}
+{% block title %}{{ car.title }} - Gurumisha{% endblock %}
 
 {% block content %}
 <!-- Breadcrumb -->
@@ -35,8 +35,11 @@
             <!-- Image Gallery -->
             <div class="product-img-box">
                 <!-- Badges -->
-                {% if car.status == 'featured' %}
+                {% if car.is_currently_featured %}
                     <div class="badge-harrier-new">FEATURED</div>
+                {% endif %}
+                {% if car.is_certified %}
+                    <div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 text-xs font-semibold rounded">CERTIFIED</div>
                 {% endif %}
                 {% if car.condition == 'new' %}
                     <div class="absolute top-2 left-20 bg-green-500 text-white px-2 py-1 text-xs font-semibold rounded">NEW</div>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Fixes Test</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">JavaScript Fixes Test</h1>
+        
+        <!-- Test Toast Manager -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Toast Manager Test</h2>
+            <div class="space-x-4">
+                <button onclick="testToast('success')" class="bg-green-500 text-white px-4 py-2 rounded">Success Toast</button>
+                <button onclick="testToast('error')" class="bg-red-500 text-white px-4 py-2 rounded">Error Toast</button>
+                <button onclick="testToast('warning')" class="bg-yellow-500 text-white px-4 py-2 rounded">Warning Toast</button>
+                <button onclick="testToast('info')" class="bg-blue-500 text-white px-4 py-2 rounded">Info Toast</button>
+            </div>
+        </div>
+        
+        <!-- Test Alpine.js isSubmitting -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Alpine.js isSubmitting Test</h2>
+            <form x-data="{ isSubmitting: false }" @submit.prevent="isSubmitting = true; setTimeout(() => isSubmitting = false, 2000)">
+                <button type="submit" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded"
+                        :disabled="isSubmitting"
+                        :class="{ 'opacity-50 cursor-not-allowed': isSubmitting }">
+                    <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                    <i class="fas fa-check mr-2" x-show="!isSubmitting"></i>
+                    <span x-text="isSubmitting ? 'Submitting...' : 'Submit Form'"></span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Test Modal with isSubmitting -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Modal Test</h2>
+            <button @click="$refs.modal.classList.remove('hidden')" class="bg-purple-500 text-white px-4 py-2 rounded">
+                Open Modal
+            </button>
+            
+            <!-- Modal -->
+            <div x-ref="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" x-data="{ isSubmitting: false }">
+                    <h3 class="text-lg font-semibold mb-4">Test Modal</h3>
+                    <form @submit.prevent="isSubmitting = true; setTimeout(() => { isSubmitting = false; $refs.modal.classList.add('hidden'); }, 2000)">
+                        <div class="mb-4">
+                            <input type="text" placeholder="Enter something..." class="w-full px-3 py-2 border rounded">
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" @click="$refs.modal.classList.add('hidden')" class="px-4 py-2 text-gray-600 border rounded">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-blue-500 text-white rounded"
+                                    :disabled="isSubmitting"
+                                    :class="{ 'opacity-50 cursor-not-allowed': isSubmitting }">
+                                <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                                <span x-text="isSubmitting ? 'Processing...' : 'Submit'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Console Log Test -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibent mb-4">Console Test</h2>
+            <p class="text-gray-600 mb-4">Check the browser console for any JavaScript errors.</p>
+            <button onclick="console.log('Test button clicked - no errors!')" class="bg-gray-500 text-white px-4 py-2 rounded">
+                Test Console Log
+            </button>
+        </div>
+    </div>
+    
+    <!-- Toast Manager Script -->
+    <script src="/static/js/toast-manager.js"></script>
+    
+    <script>
+        function testToast(type) {
+            const messages = {
+                success: 'This is a success message!',
+                error: 'This is an error message!',
+                warning: 'This is a warning message!',
+                info: 'This is an info message!'
+            };
+            
+            if (window.showToast) {
+                window.showToast(messages[type], type);
+            } else {
+                alert('Toast manager not loaded: ' + messages[type]);
+            }
+        }
+        
+        // Test for errors
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded successfully');
+            console.log('Alpine.js available:', typeof Alpine !== 'undefined');
+            console.log('Toast manager available:', typeof window.showToast !== 'undefined');
+            console.log('HTMX available:', typeof htmx !== 'undefined');
+        });
+    </script>
+</body>
+</html>

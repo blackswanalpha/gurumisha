@@ -1,0 +1,281 @@
+{% load static %}
+
+<!-- Enhanced Pagination Component with Harrier Design -->
+{% if is_paginated %}
+<div class="pagination-container bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        
+        <!-- Pagination Info -->
+        <div class="flex items-center space-x-4">
+            <div class="text-sm text-gray-600">
+                Showing 
+                <span class="font-semibold text-harrier-dark">{{ page_obj.start_index }}</span>
+                to 
+                <span class="font-semibold text-harrier-dark">{{ page_obj.end_index }}</span>
+                of 
+                <span class="font-semibold text-harrier-dark">{{ paginator.count }}</span>
+                results
+            </div>
+            
+            <!-- Items per page info -->
+            <div class="hidden sm:flex items-center text-sm text-gray-500">
+                <i class="fas fa-list mr-1"></i>
+                {{ paginator.per_page }} per page
+            </div>
+        </div>
+        
+        <!-- Pagination Controls -->
+        <div class="flex items-center space-x-2">
+            
+            <!-- First Page -->
+            {% if page_obj.has_previous %}
+                <button class="pagination-btn pagination-btn-nav"
+                        hx-get="?page=1{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                        hx-target="#tracking-management-table"
+                        hx-swap="outerHTML"
+                        hx-indicator="#pagination-indicator"
+                        title="First page">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                
+                <!-- Previous Page -->
+                <button class="pagination-btn pagination-btn-nav"
+                        hx-get="?page={{ page_obj.previous_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                        hx-target="#tracking-management-table"
+                        hx-swap="outerHTML"
+                        hx-indicator="#pagination-indicator"
+                        title="Previous page">
+                    <i class="fas fa-angle-left"></i>
+                </button>
+            {% else %}
+                <button class="pagination-btn pagination-btn-disabled" disabled>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="pagination-btn pagination-btn-disabled" disabled>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+            {% endif %}
+            
+            <!-- Page Numbers -->
+            <div class="flex items-center space-x-1">
+                {% for page_num in paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                        <button class="pagination-btn pagination-btn-active">
+                            {{ page_num }}
+                        </button>
+                    {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
+                        <button class="pagination-btn pagination-btn-number"
+                                hx-get="?page={{ page_num }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                                hx-target="#tracking-management-table"
+                                hx-swap="outerHTML"
+                                hx-indicator="#pagination-indicator">
+                            {{ page_num }}
+                        </button>
+                    {% elif page_num == 1 or page_num == paginator.num_pages %}
+                        {% if page_num == 1 and page_obj.number > 4 %}
+                            <button class="pagination-btn pagination-btn-number"
+                                    hx-get="?page=1{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                                    hx-target="#tracking-management-table"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#pagination-indicator">
+                                1
+                            </button>
+                            <span class="pagination-ellipsis">...</span>
+                        {% elif page_num == paginator.num_pages and page_obj.number < paginator.num_pages|add:'-3' %}
+                            <span class="pagination-ellipsis">...</span>
+                            <button class="pagination-btn pagination-btn-number"
+                                    hx-get="?page={{ paginator.num_pages }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                                    hx-target="#tracking-management-table"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#pagination-indicator">
+                                {{ paginator.num_pages }}
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Next Page -->
+            {% if page_obj.has_next %}
+                <button class="pagination-btn pagination-btn-nav"
+                        hx-get="?page={{ page_obj.next_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                        hx-target="#tracking-management-table"
+                        hx-swap="outerHTML"
+                        hx-indicator="#pagination-indicator"
+                        title="Next page">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                
+                <!-- Last Page -->
+                <button class="pagination-btn pagination-btn-nav"
+                        hx-get="?page={{ paginator.num_pages }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                        hx-target="#tracking-management-table"
+                        hx-swap="outerHTML"
+                        hx-indicator="#pagination-indicator"
+                        title="Last page">
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            {% else %}
+                <button class="pagination-btn pagination-btn-disabled" disabled>
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="pagination-btn pagination-btn-disabled" disabled>
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            {% endif %}
+            
+            <!-- Loading Indicator -->
+            <div class="ml-3">
+                <i class="fas fa-spinner fa-spin text-harrier-red hidden" id="pagination-indicator"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Pagination (Simplified) -->
+    <div class="lg:hidden mt-4 pt-4 border-t border-gray-200">
+        <div class="flex justify-between items-center">
+            {% if page_obj.has_previous %}
+                <button class="pagination-btn-mobile pagination-btn-mobile-prev"
+                        hx-get="?page={{ page_obj.previous_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                        hx-target="#tracking-management-table"
+                        hx-swap="outerHTML"
+                        hx-indicator="#pagination-indicator">
+                    <i class="fas fa-chevron-left mr-2"></i>Previous
+                </button>
+            {% else %}
+                <div></div>
+            {% endif %}
+            
+            <div class="text-sm text-gray-600 font-medium">
+                Page {{ page_obj.number }} of {{ paginator.num_pages }}
+            </div>
+            
+            {% if page_obj.has_next %}
+                <button class="pagination-btn-mobile pagination-btn-mobile-next"
+                        hx-get="?page={{ page_obj.next_page_number }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+                        hx-target="#tracking-management-table"
+                        hx-swap="outerHTML"
+                        hx-indicator="#pagination-indicator">
+                    Next<i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            {% else %}
+                <div></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Pagination Styles -->
+<style>
+    /* Pagination Button Base Styles */
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-family: 'Montserrat', sans-serif;
+    }
+    
+    /* Navigation Buttons */
+    .pagination-btn-nav {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+    
+    .pagination-btn-nav:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        border-color: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    
+    /* Number Buttons */
+    .pagination-btn-number {
+        background: white;
+        color: #374151;
+        border-color: #d1d5db;
+    }
+    
+    .pagination-btn-number:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        border-color: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    
+    /* Active Page Button */
+    .pagination-btn-active {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        border-color: #dc2626;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        cursor: default;
+    }
+    
+    /* Disabled Buttons */
+    .pagination-btn-disabled {
+        background: #f9fafb;
+        color: #d1d5db;
+        border-color: #f3f4f6;
+        cursor: not-allowed;
+    }
+    
+    /* Ellipsis */
+    .pagination-ellipsis {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+    
+    /* Mobile Pagination Buttons */
+    .pagination-btn-mobile {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #374151;
+        cursor: pointer;
+    }
+    
+    .pagination-btn-mobile:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        border-color: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        .pagination-btn {
+            min-width: 36px;
+            height: 36px;
+            font-size: 13px;
+        }
+        
+        .pagination-container {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endif %}

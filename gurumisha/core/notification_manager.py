@@ -392,8 +392,10 @@ class NotificationShortcuts:
         """Notify vendor about car listing approval/rejection"""
         status = "approved" if approved else "rejected"
         title = f"Car Listing {status.title()}"
-        message = f"Your car listing '{car.make} {car.model}' has been {status}."
-        
+        car_brand = car.brand.name if car.brand else 'Unknown'
+        car_model = car.model.name if car.model else 'Unknown'
+        message = f"Your car listing '{car_brand} {car_model}' has been {status}."
+
         NotificationManager.send_notification(
             recipient=car.vendor.user,
             title=title,

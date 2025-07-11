@@ -1,0 +1,291 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Business Profile{% endblock %}
+{% block page_title %}Business Profile{% endblock %}
+{% block page_description %}Manage your business information and settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile-forms.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Business Profile</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Vendor Profile Header -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl overflow-hidden animate-fade-in-up relative">
+        <!-- Cover Image Background -->
+        <div class="absolute inset-0">
+            {% if vendor.cover_image %}
+                <img src="{{ vendor.cover_image.url }}" alt="Cover" class="w-full h-full object-cover opacity-30">
+            {% endif %}
+            <div class="absolute inset-0 bg-gradient-to-r from-harrier-red/80 via-harrier-dark/80 to-harrier-blue/80"></div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        
+        <!-- Content -->
+        <div class="relative z-10 p-8">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-6 lg:space-y-0">
+                <!-- Business Info -->
+                <div class="flex items-center space-x-6">
+                    <!-- Company Logo -->
+                    <div class="relative">
+                        {% if vendor.company_logo %}
+                            <img class="h-24 w-24 object-cover rounded-2xl border-4 border-white/20 shadow-xl" 
+                                 src="{{ vendor.company_logo.url }}" alt="Company logo">
+                        {% else %}
+                            <div class="h-24 w-24 bg-white/20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl border-4 border-white/20 shadow-xl backdrop-blur-sm">
+                                {{ vendor.company_name|first|upper }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Verification Badge -->
+                        {% if vendor.is_approved %}
+                            <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xs"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Business Details -->
+                    <div class="text-white">
+                        <h2 class="text-3xl font-bold mb-2 font-montserrat">{{ vendor.company_name }}</h2>
+                        <div class="flex items-center space-x-3 mb-2">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-500/20 text-blue-200">
+                                <i class="fas fa-building mr-1"></i>{{ vendor.get_business_type_display }}
+                            </span>
+                            {% if vendor.is_approved %}
+                                <span class="inline-flex items-center px-2 py-1 bg-green-500/20 rounded-full text-green-200 text-xs">
+                                    <i class="fas fa-shield-check mr-1"></i>Verified Business
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if vendor.description %}
+                            <p class="text-blue-100 text-sm mt-2 max-w-md">{{ vendor.description|truncatewords:25 }}</p>
+                        {% endif %}
+                        
+                        <!-- Business Contact -->
+                        <div class="flex items-center space-x-4 mt-3 text-sm">
+                            {% if vendor.business_phone %}
+                                <span class="text-blue-200">
+                                    <i class="fas fa-phone mr-1"></i>{{ vendor.business_phone }}
+                                </span>
+                            {% endif %}
+                            {% if vendor.website %}
+                                <a href="{{ vendor.website }}" target="_blank" class="text-blue-200 hover:text-white transition-colors">
+                                    <i class="fas fa-globe mr-1"></i>Website
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Business Stats -->
+                <div class="flex flex-col items-end space-y-4">
+                    <!-- Member Since -->
+                    <div class="text-right">
+                        <div class="text-sm text-blue-100 mb-1">Business since</div>
+                        <div class="text-lg font-bold text-white">
+                            {{ vendor.year_established|default:vendor.created_at.year }}
+                        </div>
+                    </div>
+                    
+                    <!-- Business Metrics -->
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="text-white">
+                            <div class="text-xl font-bold">{{ vendor.total_listings }}</div>
+                            <div class="text-xs text-blue-200">Listings</div>
+                        </div>
+                        <div class="text-white">
+                            <div class="text-xl font-bold">{{ vendor.average_rating|floatformat:1 }}</div>
+                            <div class="text-xs text-blue-200">Rating</div>
+                        </div>
+                        <div class="text-white">
+                            <div class="text-xl font-bold">{{ vendor.profile_views }}</div>
+                            <div class="text-xs text-blue-200">Views</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="flex space-x-2">
+                        <button type="button" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm">
+                            <i class="fas fa-eye mr-1"></i>View Public
+                        </button>
+                        <button type="button" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm">
+                            <i class="fas fa-share-alt mr-1"></i>Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Profile Navigation Tabs -->
+    <div class="mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button type="button" class="profile-tab active" data-tab="business">
+                    <i class="fas fa-building mr-2"></i>Business Info
+                </button>
+                <button type="button" class="profile-tab" data-tab="contact">
+                    <i class="fas fa-address-book mr-2"></i>Contact & Social
+                </button>
+                <button type="button" class="profile-tab" data-tab="operations">
+                    <i class="fas fa-clock mr-2"></i>Operations
+                </button>
+                <button type="button" class="profile-tab" data-tab="payments">
+                    <i class="fas fa-credit-card mr-2"></i>Payments
+                </button>
+                <button type="button" class="profile-tab" data-tab="settings">
+                    <i class="fas fa-cog mr-2"></i>Settings
+                </button>
+                <button type="button" class="profile-tab" data-tab="analytics">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Main Vendor Profile Form -->
+        <div class="lg:col-span-3">
+            <form method="post" enctype="multipart/form-data" id="vendorProfileForm" class="space-y-8">
+                {% csrf_token %}
+
+                <!-- Business Information Tab -->
+                <div class="tab-content active" id="business-tab">
+                    <!-- Company Branding -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-orange-500 to-orange-600">
+                                <i class="fas fa-palette text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Company Branding</h3>
+                                <p class="form-section-subtitle">Upload your company logo and cover image</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Logo and Cover Upload Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Company Logo -->
+                            <div>
+                                <label class="form-label">
+                                    <i class="fas fa-image mr-1 text-orange-500"></i>Company Logo
+                                </label>
+                                <div class="flex flex-col items-center space-y-4">
+                                    <div class="relative">
+                                        {% if vendor.company_logo %}
+                                            <img class="h-24 w-24 object-cover rounded-xl shadow-lg border-2 border-gray-200" 
+                                                 src="{{ vendor.company_logo.url }}" alt="Company logo" id="logoPreview">
+                                        {% else %}
+                                            <div class="h-24 w-24 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg" id="logoPreview">
+                                                {{ vendor.company_name|first|upper|default:"L" }}
+                                            </div>
+                                        {% endif %}
+                                        <div class="profile-picture-overlay" onclick="document.getElementById('id_company_logo').click()">
+                                            <i class="fas fa-camera profile-picture-edit-icon"></i>
+                                        </div>
+                                    </div>
+                                    {{ vendor_form.company_logo }}
+                                    <div class="file-upload-area w-full" onclick="document.getElementById('id_company_logo').click()">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                        <div class="file-upload-text">
+                                            <p class="font-medium">Upload company logo</p>
+                                            <p class="text-xs">PNG, JPG up to 2MB (200x200px recommended)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Cover Image -->
+                            <div>
+                                <label class="form-label">
+                                    <i class="fas fa-image mr-1 text-blue-500"></i>Cover Image
+                                </label>
+                                <div class="flex flex-col items-center space-y-4">
+                                    <div class="relative w-full h-24 rounded-xl overflow-hidden">
+                                        {% if vendor.cover_image %}
+                                            <img class="w-full h-full object-cover" src="{{ vendor.cover_image.url }}" alt="Cover image" id="coverPreview">
+                                        {% else %}
+                                            <div class="w-full h-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold" id="coverPreview">
+                                                <i class="fas fa-image text-2xl"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer" onclick="document.getElementById('id_cover_image').click()">
+                                            <i class="fas fa-camera text-white text-lg"></i>
+                                        </div>
+                                    </div>
+                                    {{ vendor_form.cover_image }}
+                                    <div class="file-upload-area w-full" onclick="document.getElementById('id_cover_image').click()">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                        <div class="file-upload-text">
+                                            <p class="font-medium">Upload cover image</p>
+                                            <p class="text-xs">PNG, JPG up to 2MB (1200x400px recommended)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Vendor Sidebar -->
+        <div class="space-y-6">
+            <!-- Business Status -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Business Status</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Verification</span>
+                        {% if vendor.is_approved %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-shield-check mr-1"></i>Verified
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-hourglass-half mr-1"></i>Pending
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Business Type</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ vendor.get_business_type_display }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Member Since</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ vendor.created_at|date:"M Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Vendor profile specific JavaScript will be added here
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize vendor profile components
+    initializeTabs();
+    initializeFileUploads();
+});
+</script>
+{% endblock %}

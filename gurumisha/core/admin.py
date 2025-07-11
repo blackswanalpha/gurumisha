@@ -5,7 +5,8 @@ from .models import (
     ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
     SparePart, SparePartCategory, SparePartImage,
     Supplier, PurchaseOrder, PurchaseOrderItem, StockMovement,
-    InventoryAlert, Inquiry, Message, Testimonial, BlogPost
+    InventoryAlert, Inquiry, Message, Testimonial, BlogPost,
+    VendorSubscription, FeaturedCarTier, HotDeal, CarRating, PromotionAnalytics
 )
 
 
@@ -24,14 +25,90 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'user', 'is_approved', 'created_at')
-    list_filter = ('is_approved', 'created_at')
+    list_display = ('company_name', 'user', 'is_approved', 'get_subscription_tier', 'average_rating', 'total_sales', 'created_at')
+    list_filter = ('is_approved', 'subscription__tier', 'created_at')
     search_fields = ('company_name', 'user__username', 'user__email')
-    actions = ['approve_vendors']
+    actions = ['approve_vendors', 'update_vendor_ratings']
+
+    readonly_fields = ('average_rating', 'total_sales')
+
+    def get_subscription_tier(self, obj):
+        return obj.get_subscription_tier().title()
+    get_subscription_tier.short_description = 'Subscription Tier'
 
     def approve_vendors(self, request, queryset):
         queryset.update(is_approved=True)
     approve_vendors.short_description = "Approve selected vendors"
+
+    def update_vendor_ratings(self, request, queryset):
+        for vendor in queryset:
+            vendor.update_average_rating()
+    update_vendor_ratings.short_description = "Update vendor ratings"
+
+
+@admin.register(VendorSubscription)
+class VendorSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'tier', 'is_active', 'start_date', 'end_date', 'max_featured_cars', 'max_hot_deals')
+    list_filter = ('tier', 'is_active', 'auto_renew', 'start_date')
+    search_fields = ('vendor__company_name', 'vendor__user__username')
+    actions = ['activate_subscriptions', 'deactivate_subscriptions']
+
+    def activate_subscriptions(self, request, queryset):
+        queryset.update(is_active=True)
+    activate_subscriptions.short_description = "Activate selected subscriptions"
+
+    def deactivate_subscriptions(self, request, queryset):
+        queryset.update(is_active=False)
+    deactivate_subscriptions.short_description = "Deactivate selected subscriptions"
+
+
+@admin.register(FeaturedCarTier)
+class FeaturedCarTierAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'name', 'priority_order', 'homepage_slots', 'listing_boost_percentage', 'monthly_price', 'is_active')
+    list_filter = ('is_active',)
+    ordering = ('priority_order',)
+
+
+@admin.register(HotDeal)
+class HotDealAdmin(admin.ModelAdmin):
+    list_display = ('title', 'car', 'discount_type', 'discount_value', 'discounted_price', 'start_date', 'end_date', 'is_active')
+    list_filter = ('discount_type', 'is_active', 'auto_activate', 'start_date', 'end_date')
+    search_fields = ('title', 'car__title', 'car__brand__name')
+    actions = ['activate_deals', 'deactivate_deals']
+
+    readonly_fields = ('discounted_price', 'views_count', 'clicks_count', 'inquiries_count')
+
+    def activate_deals(self, request, queryset):
+        queryset.update(is_active=True)
+    activate_deals.short_description = "Activate selected deals"
+
+    def deactivate_deals(self, request, queryset):
+        queryset.update(is_active=False)
+    deactivate_deals.short_description = "Deactivate selected deals"
+
+
+@admin.register(CarRating)
+class CarRatingAdmin(admin.ModelAdmin):
+    list_display = ('car', 'customer', 'rating', 'is_verified', 'is_approved', 'created_at')
+    list_filter = ('rating', 'is_verified', 'is_approved', 'created_at')
+    search_fields = ('car__title', 'customer__username', 'review')
+    actions = ['approve_ratings', 'verify_ratings']
+
+    def approve_ratings(self, request, queryset):
+        queryset.update(is_approved=True)
+    approve_ratings.short_description = "Approve selected ratings"
+
+    def verify_ratings(self, request, queryset):
+        queryset.update(is_verified=True)
+    verify_ratings.short_description = "Verify selected ratings"
+
+
+@admin.register(PromotionAnalytics)
+class PromotionAnalyticsAdmin(admin.ModelAdmin):
+    list_display = ('metric_type', 'car', 'vendor', 'metric_value', 'date', 'hour')
+    list_filter = ('metric_type', 'date', 'hour')
+    search_fields = ('car__title', 'vendor__company_name')
+    date_hierarchy = 'date'
 
 
 @admin.register(CarBrand)
@@ -55,19 +132,88 @@ class CarImageInline(admin.TabularInline):
 
 @admin.register(Car)
 class CarAdmin(admin.ModelAdmin):
-    list_display = ('title', 'brand', 'model', 'year', 'price', 'status', 'is_approved', 'created_at')
-    list_filter = ('brand', 'status', 'is_approved', 'condition', 'fuel_type', 'created_at')
+    list_display = ('title', 'brand', 'model', 'year', 'price', 'is_featured', 'is_certified', 'calculated_rating', 'is_approved', 'is_hot_deal', 'views_count', 'created_at')
+    list_filter = ('brand', 'status', 'is_approved', 'is_hot_deal', 'is_featured', 'is_certified', 'condition', 'fuel_type', 'auto_featured', 'created_at')
     search_fields = ('title', 'brand__name', 'model__name', 'vendor__company_name')
     inlines = [CarImageInline]
-    actions = ['approve_cars', 'feature_cars']
+    actions = [
+        'approve_cars', 'feature_cars', 'unfeature_cars', 'mark_certified', 'unmark_certified',
+        'mark_hot_deals', 'unmark_hot_deals', 'update_ratings', 'bulk_update_ratings'
+    ]
+
+    readonly_fields = ('calculated_rating', 'last_rating_update', 'views_count', 'inquiry_count')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('vendor', 'title', 'brand', 'model', 'year', 'condition')
+        }),
+        ('Specifications', {
+            'fields': ('engine_size', 'fuel_type', 'transmission', 'mileage', 'body_type', 'color')
+        }),
+        ('Pricing and Status', {
+            'fields': ('price', 'status', 'listing_type', 'negotiable', 'is_approved')
+        }),
+        ('Promotion System', {
+            'fields': ('featured_tier', 'featured_until', 'auto_featured', 'is_hot_deal', 'star_rating', 'calculated_rating', 'last_rating_update'),
+            'classes': ('collapse',)
+        }),
+        ('Performance Metrics', {
+            'fields': ('views_count', 'inquiry_count'),
+            'classes': ('collapse',)
+        }),
+        ('Content', {
+            'fields': ('description', 'features', 'main_image')
+        }),
+    )
 
     def approve_cars(self, request, queryset):
         queryset.update(is_approved=True)
     approve_cars.short_description = "Approve selected cars"
 
-    def feature_cars(self, request, queryset):
-        queryset.update(status='featured')
-    feature_cars.short_description = "Feature selected cars"
+    def feature_bronze(self, request, queryset):
+        queryset.update(featured_tier='bronze', auto_featured=False)
+    feature_bronze.short_description = "Feature as Bronze"
+
+    def feature_silver(self, request, queryset):
+        queryset.update(featured_tier='silver', auto_featured=False)
+    feature_silver.short_description = "Feature as Silver"
+
+    def feature_gold(self, request, queryset):
+        queryset.update(featured_tier='gold', auto_featured=False)
+    feature_gold.short_description = "Feature as Gold"
+
+    def feature_platinum(self, request, queryset):
+        queryset.update(featured_tier='platinum', auto_featured=False)
+    feature_platinum.short_description = "Feature as Platinum"
+
+    def unfeature_cars(self, request, queryset):
+        queryset.update(featured_tier='none', auto_featured=False, featured_until=None)
+    unfeature_cars.short_description = "Remove featured status"
+
+    def mark_hot_deals(self, request, queryset):
+        queryset.update(is_hot_deal=True)
+    mark_hot_deals.short_description = "Mark as Hot Deals"
+
+    def unmark_hot_deals(self, request, queryset):
+        queryset.update(is_hot_deal=False)
+    unmark_hot_deals.short_description = "Remove Hot Deal status"
+
+    def update_ratings(self, request, queryset):
+        for car in queryset:
+            car.update_calculated_rating()
+    update_ratings.short_description = "Update calculated ratings"
+
+    def bulk_update_ratings(self, request, queryset):
+        from django.utils import timezone
+        queryset.update(last_rating_update=timezone.now())
+        for car in queryset:
+            car.calculated_rating = car.calculate_automatic_rating()
+            car.save(update_fields=['calculated_rating'])
+    bulk_update_ratings.short_description = "Bulk update all ratings"
+
+    def set_3_stars(self, request, queryset):
+        queryset.update(star_rating=3)
+    set_3_stars.short_description = "Set 3 stars (Standard)"
 
 
 @admin.register(ImportRequest)

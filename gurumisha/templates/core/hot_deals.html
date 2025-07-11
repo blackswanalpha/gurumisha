@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_filters %}
+{% load promotion_tags %}
+
+{% block title %}Hot Deals - Gurumisha Motors{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/car-listing-enhancements.css' %}">
+<style>
+.deal-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.deal-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.discount-badge {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+.countdown-urgent {
+    animation: flash 1s infinite;
+}
+
+@keyframes flash {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.7; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-red-600 to-red-800 text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                <i class="fas fa-fire mr-3"></i>Hot Deals
+            </h1>
+            <p class="text-xl text-red-100 max-w-2xl mx-auto">
+                Limited time offers on premium vehicles. Don't miss out on these incredible deals!
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Filters Section -->
+<section class="bg-white py-8 border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <form method="GET" class="flex flex-wrap items-center gap-4">
+            <!-- Search -->
+            <div class="flex-1 min-w-64">
+                <input type="text" 
+                       name="search" 
+                       value="{{ search }}"
+                       placeholder="Search hot deals..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+            </div>
+            
+            <!-- Discount Type Filter -->
+            <select name="discount_type" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                <option value="">All Discount Types</option>
+                <option value="percentage" {% if discount_type == 'percentage' %}selected{% endif %}>Percentage Off</option>
+                <option value="fixed" {% if discount_type == 'fixed' %}selected{% endif %}>Fixed Amount Off</option>
+            </select>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <i class="fas fa-search mr-2"></i>Filter
+            </button>
+            
+            <!-- Clear Filters -->
+            {% if search or discount_type %}
+                <a href="{% url 'core:hot_deals_list' %}" class="text-gray-600 hover:text-gray-800 px-4 py-2">
+                    <i class="fas fa-times mr-1"></i>Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</section>
+
+<!-- Hot Deals Grid -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {% if hot_deals %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for deal in hot_deals %}
+                    <div class="deal-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300" 
+                         data-deal-id="{{ deal.id }}">
+                        
+                        <!-- Car Image -->
+                        <div class="relative overflow-hidden">
+                            {% if deal.car.main_image %}
+                                <img src="{{ deal.car.main_image.url }}" 
+                                     alt="{{ deal.car.title }}"
+                                     class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500">
+                            {% else %}
+                                <div class="w-full h-56 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-car text-gray-400 text-5xl"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Discount Badge -->
+                            <div class="absolute top-4 left-4">
+                                <div class="discount-badge text-white px-3 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    {% if deal.discount_type == 'percentage' %}
+                                        {{ deal.discount_value|floatformat:0 }}% OFF
+                                    {% else %}
+                                        KSh {{ deal.discount_value|floatformat:0 }} OFF
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Countdown Timer -->
+                            <div class="absolute top-4 right-4">
+                                <div class="countdown-timer" 
+                                     data-countdown-end="{{ deal.end_date|date:'c' }}"
+                                     data-deal-id="{{ deal.id }}">
+                                    {% hot_deal_countdown deal %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Deal Content -->
+                        <div class="p-6">
+                            <!-- Deal Title -->
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ deal.title }}</h3>
+                            
+                            <!-- Car Details -->
+                            <div class="text-gray-600 mb-4">
+                                <p class="font-medium">{{ deal.car.title }}</p>
+                                <p class="text-sm">{{ deal.car.year }} • {{ deal.car.brand.name }} {{ deal.car.model.name }}</p>
+                            </div>
+                            
+                            <!-- Pricing -->
+                            <div class="mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-2xl font-bold text-red-600">
+                                        KSh {{ deal.discounted_price|floatformat:0 }}
+                                    </span>
+                                    <span class="text-lg text-gray-500 line-through">
+                                        KSh {{ deal.original_price|floatformat:0 }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-green-600 font-medium">
+                                    You save: KSh {{ deal.original_price|sub:deal.discounted_price|floatformat:0 }}
+                                </p>
+                            </div>
+                            
+                            <!-- Description -->
+                            {% if deal.description %}
+                                <p class="text-gray-600 text-sm mb-4">{{ deal.description|truncatewords:15 }}</p>
+                            {% endif %}
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex space-x-3">
+                                <a href="{% url 'core:hot_deal_detail' deal.id %}" 
+                                   class="flex-1 bg-red-600 text-white text-center py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                                   data-deal-click="{{ deal.id }}">
+                                    View Deal
+                                </a>
+                                <a href="{% url 'core:car_detail' deal.car.id %}" 
+                                   class="flex-1 border border-gray-300 text-gray-700 text-center py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                                    View Car
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="mt-12 flex justify-center">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if discount_type %}&discount_type={{ discount_type }}{% endif %}" 
+                               class="px-3 py-2 text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="px-3 py-2 bg-red-600 text-white rounded">{{ num }}</span>
+                            {% else %}
+                                <a href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if discount_type %}&discount_type={{ discount_type }}{% endif %}" 
+                                   class="px-3 py-2 text-gray-500 hover:text-gray-700">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if discount_type %}&discount_type={{ discount_type }}{% endif %}" 
+                               class="px-3 py-2 text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <!-- No Deals Found -->
+            <div class="text-center py-16">
+                <i class="fas fa-fire text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">No Hot Deals Found</h3>
+                {% if search or discount_type %}
+                    <p class="text-gray-600 mb-4">No deals match your current filters.</p>
+                    <a href="{% url 'core:hot_deals_list' %}" class="text-red-600 hover:text-red-700 font-medium">
+                        <i class="fas fa-times mr-1"></i>Clear filters and see all deals
+                    </a>
+                {% else %}
+                    <p class="text-gray-600 mb-4">Check back soon for amazing deals on premium vehicles!</p>
+                    <a href="{% url 'core:car_list' %}" class="text-red-600 hover:text-red-700 font-medium">
+                        <i class="fas fa-car mr-1"></i>Browse all cars
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="bg-gray-900 text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl font-bold mb-4">Don't Miss Out!</h2>
+        <p class="text-xl text-gray-300 mb-8">Subscribe to get notified about new hot deals</p>
+        <div class="max-w-md mx-auto flex">
+            <input type="email" placeholder="Enter your email" 
+                   class="flex-1 px-4 py-3 rounded-l-lg text-gray-900 focus:outline-none">
+            <button class="bg-red-600 text-white px-6 py-3 rounded-r-lg hover:bg-red-700 transition-colors">
+                Subscribe
+            </button>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/hot-deals.js' %}"></script>
+{% endblock %}

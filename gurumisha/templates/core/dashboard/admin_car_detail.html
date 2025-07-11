@@ -1,0 +1,508 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block dashboard_title %}Car Details{% endblock %}
+{% block page_title %}{{ car.title }}{% endblock %}
+{% block page_description %}{{ car.brand.name }} {{ car.model.name }} • {{ car.year }}{% endblock %}
+
+{% block dashboard_content %}
+    {% csrf_token %}
+
+    <!-- Test Content -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h1 class="text-2xl font-bold text-harrier-dark mb-4">Car Details - {{ car.title }}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="font-semibold text-gray-700 mb-2">Basic Information</h3>
+                <p><strong>Brand:</strong> {{ car.brand.name }}</p>
+                <p><strong>Model:</strong> {{ car.model.name }}</p>
+                <p><strong>Year:</strong> {{ car.year }}</p>
+                <p><strong>Price:</strong> {{ car.price|currency_ksh_no_decimals }}</p>
+                <p><strong>Status:</strong>
+                    {% if car.is_approved %}
+                        <span class="text-green-600">Approved</span>
+                    {% else %}
+                        <span class="text-yellow-600">Pending</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-700 mb-2">Vendor Information</h3>
+                <p><strong>Company:</strong> {{ car.vendor.company_name }}</p>
+                <p><strong>Contact:</strong> {{ car.vendor.user.email }}</p>
+                <p><strong>Phone:</strong> {{ car.vendor.phone|default:"Not provided" }}</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex space-x-4">
+            <button onclick="editCar({{ car.id }})" class="bg-harrier-red text-white px-4 py-2 rounded-lg hover:bg-harrier-dark">
+                Edit Car
+            </button>
+            <a href="{% url 'core:admin_listings' %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                Back to Listings
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Car Details -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Car Images -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-images text-harrier-red mr-3"></i>Car Images
+                    </h2>
+                </div>
+                <div class="p-6">
+                    {% if car.main_image %}
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">Main Image</h3>
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" 
+                                 class="w-full h-64 object-cover rounded-lg shadow-md">
+                        </div>
+                    {% endif %}
+                    
+                    {% if car_images %}
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">Gallery Images</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {% for image in car_images %}
+                                    <img src="{{ image.image.url }}" alt="{{ image.caption|default:car.title }}" 
+                                         class="w-full h-32 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-image text-4xl mb-4"></i>
+                            <p>No additional images available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Car Specifications -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-cogs text-harrier-red mr-3"></i>Specifications
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Brand</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.brand.name }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Model</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.model.name }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Year</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.year }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Condition</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.get_condition_display }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Mileage</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.mileage|floatformat:0 }} km</span>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Fuel Type</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.get_fuel_type_display }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Transmission</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.get_transmission_display }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Engine Size</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.engine_size }}L</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Color</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.color }}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="font-medium text-gray-600">Listing Type</span>
+                                <span class="text-harrier-dark font-semibold">{{ car.get_listing_type_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if car.description %}
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-file-alt text-harrier-red mr-3"></i>Description
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-700 leading-relaxed">{{ car.description|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Features -->
+            {% if features_list %}
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-list-check text-harrier-red mr-3"></i>Features
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {% for feature in features_list %}
+                            <div class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-700">{{ feature }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column - Vendor Info & Actions -->
+        <div class="space-y-8">
+            <!-- Vendor Information -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-store text-harrier-red mr-3"></i>Vendor Information
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="text-center mb-6">
+                        {% if car.vendor.logo %}
+                            <img src="{{ car.vendor.logo.url }}" alt="{{ car.vendor.company_name }}" 
+                                 class="w-20 h-20 object-cover rounded-full mx-auto mb-4 border-4 border-gray-200">
+                        {% else %}
+                            <div class="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                <i class="fas fa-store text-gray-400 text-2xl"></i>
+                            </div>
+                        {% endif %}
+                        <h3 class="text-lg font-bold text-harrier-dark">{{ car.vendor.company_name }}</h3>
+                        <p class="text-gray-600">{{ car.vendor.user.get_full_name|default:car.vendor.user.username }}</p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope text-gray-400 mr-3"></i>
+                            <span class="text-gray-700">{{ car.vendor.user.email }}</span>
+                        </div>
+                        {% if car.vendor.phone %}
+                        <div class="flex items-center">
+                            <i class="fas fa-phone text-gray-400 mr-3"></i>
+                            <span class="text-gray-700">{{ car.vendor.phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if car.vendor.location %}
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt text-gray-400 mr-3"></i>
+                            <span class="text-gray-700">{{ car.vendor.location }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Car Statistics -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-chart-bar text-harrier-red mr-3"></i>Statistics
+                    </h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Views</span>
+                        <span class="text-2xl font-bold text-harrier-red">{{ car.views_count }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Listed Date</span>
+                        <span class="text-gray-700">{{ car.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    {% if car.approval_date %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Approved Date</span>
+                        <span class="text-gray-700">{{ car.approval_date|date:"M d, Y" }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Inquiries</span>
+                        <span class="text-2xl font-bold text-blue-600">{{ car_inquiries.count }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Actions -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-tools text-harrier-red mr-3"></i>Admin Actions
+                    </h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    {% if not car.is_approved %}
+                        <button onclick="approveCar({{ car.id }})" 
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-check mr-2"></i>Approve Listing
+                        </button>
+                        <button onclick="rejectCar({{ car.id }})" 
+                                class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-times mr-2"></i>Reject Listing
+                        </button>
+                    {% endif %}
+                    
+                    <button onclick="editCar({{ car.id }})" 
+                            class="w-full bg-harrier-red hover:bg-harrier-dark text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Edit Details
+                    </button>
+                    
+                    {% if not car.is_currently_featured %}
+                        <button onclick="featureCar({{ car.id }})"
+                                id="feature-btn-{{ car.id }}"
+                                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-star mr-2"></i>Mark as Featured
+                        </button>
+                    {% else %}
+                        <button onclick="unfeatureCar({{ car.id }})"
+                                id="feature-btn-{{ car.id }}"
+                                class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-star mr-2"></i>Remove Featured
+                        </button>
+                    {% endif %}
+                    
+                    <button onclick="deleteCar({{ car.id }})"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Delete Car Listing
+                    </button>
+
+                    <a href="{% url 'core:admin_listings' %}"
+                       class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-block text-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Listings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function editCar(carId) {
+    // Load edit modal via HTMX
+    fetch(`/dashboard/admin/car/${carId}/edit/`)
+        .then(response => response.text())
+        .then(html => {
+            // Create modal container
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = html;
+            document.body.appendChild(modalContainer);
+        })
+        .catch(error => {
+            console.error('Error loading edit modal:', error);
+            alert('An error occurred while loading the edit form.');
+        });
+}
+
+function featureCar(carId) {
+    const button = document.getElementById(`feature-btn-${carId}`);
+    if (confirm('Are you sure you want to mark this car as featured?')) {
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Featuring...';
+
+        fetch(`/dashboard/admin/car/${carId}/feature/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=feature'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update button to unfeature state
+                button.className = 'w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors';
+                button.innerHTML = '<i class="fas fa-star mr-2"></i>Remove Featured';
+                button.onclick = () => unfeatureCar(carId);
+                button.disabled = false;
+
+                // Show success notification
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'success', {
+                        duration: 5000
+                    });
+                }
+            } else {
+                // Reset button on error
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-star mr-2"></i>Mark as Featured';
+
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'error', {
+                        duration: 5000
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showError('An error occurred while featuring the car.');
+        });
+    }
+}
+
+function unfeatureCar(carId) {
+    const button = document.getElementById(`feature-btn-${carId}`);
+    if (confirm('Are you sure you want to remove the featured status from this car?')) {
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Removing...';
+
+        fetch(`/dashboard/admin/car/${carId}/feature/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=unfeature'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update button to feature state
+                button.className = 'w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors';
+                button.innerHTML = '<i class="fas fa-star mr-2"></i>Mark as Featured';
+                button.onclick = () => featureCar(carId);
+                button.disabled = false;
+
+                // Show success notification
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'success', {
+                        duration: 5000
+                    });
+                }
+            } else {
+                // Reset button on error
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-star mr-2"></i>Remove Featured';
+
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'error', {
+                        duration: 5000
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showError('An error occurred while unfeaturing the car.');
+        });
+    }
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+        'bg-blue-500'
+    }`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => toast.style.transform = 'translateX(0)', 10);
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 5000);
+}
+
+function deleteCar(carId) {
+    const carTitle = document.querySelector('h1').textContent.trim();
+
+    // Enhanced confirmation dialog
+    const confirmMessage = `Are you sure you want to permanently delete "${carTitle}"?\n\nThis action cannot be undone and will:\n• Remove the car from all listings\n• Delete all associated images\n• Remove from featured cars (if applicable)\n• Cancel any active inquiries\n\nType "DELETE" to confirm:`;
+
+    const userInput = prompt(confirmMessage);
+
+    if (userInput === 'DELETE') {
+        const button = document.querySelector(`button[onclick="deleteCar(${carId})"]`);
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Deleting...';
+
+        fetch(`/dashboard/admin/car/${carId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success notification
+                window.toastManager.show(
+                    `Car "${carTitle}" has been permanently deleted`,
+                    'success',
+                    {
+                        duration: 3000,
+                        action: {
+                            text: 'Go to Listings',
+                            handler: () => {
+                                window.location.href = '/dashboard/admin/listings/';
+                            }
+                        }
+                    }
+                );
+
+                // Redirect to listings after a short delay
+                setTimeout(() => {
+                    window.location.href = '/dashboard/admin/listings/';
+                }, 2000);
+
+            } else {
+                window.showError(data.message || 'Failed to delete car listing');
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-trash mr-2"></i>Delete Car Listing';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showError('An error occurred while deleting the car listing.');
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-trash mr-2"></i>Delete Car Listing';
+        });
+    }
+}
+</script>
+{% endblock %}

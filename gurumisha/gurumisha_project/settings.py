@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'tailwind',
     'django_htmx',
     'core',
@@ -156,12 +157,21 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'kamandembugua18@gmail.com'
 EMAIL_HOST_PASSWORD = 'wnyq jyuw mrqv phto'
-DEFAULT_FROM_EMAIL = 'Gurumisha Motors <kamandembugua18@gmail.com>'
+DEFAULT_FROM_EMAIL = 'Gurumisha <kamandembugua18@gmail.com>'
 SERVER_EMAIL = 'kamandembugua18@gmail.com'
 
 # Email Verification Settings
 EMAIL_VERIFICATION_TIMEOUT_HOURS = 24
 EMAIL_VERIFICATION_REQUIRED = True
+
+# Promotion Email Settings
+PROMOTION_EMAIL_ENABLED = True
+WEEKLY_DIGEST_DAY = 1  # Monday (0=Monday, 6=Sunday)
+HOT_DEAL_EMAIL_DELAY_HOURS = 2  # Hours to wait before sending hot deal emails
+VENDOR_SUMMARY_DAY = 1  # Day of month to send vendor summaries
+
+# Sites Framework
+SITE_ID = 1
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

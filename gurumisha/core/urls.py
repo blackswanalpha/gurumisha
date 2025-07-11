@@ -35,6 +35,8 @@ urlpatterns = [
     # Dashboard URLs
     path('dashboard/', views.user_dashboard, name='dashboard'),
     path('dashboard/profile/', dashboard_views.user_profile_view, name='profile'),
+    path('dashboard/vendor-profile/', dashboard_views.vendor_profile_view, name='vendor_profile'),
+    path('dashboard/change-password/', dashboard_views.change_password_view, name='change_password'),
     path('dashboard/orders/', dashboard_views.user_orders_view, name='user_orders'),
     path('dashboard/addresses/', dashboard_views.user_addresses_view, name='user_addresses'),
     path('dashboard/import-requests/', dashboard_views.user_import_requests_view, name='user_import_requests'),
@@ -42,6 +44,7 @@ urlpatterns = [
     path('dashboard/wishlist/', dashboard_views.user_wishlist_view, name='user_wishlist'),
     path('dashboard/listings/', dashboard_views.user_listings_view, name='user_listings'),
     path('dashboard/settings/', dashboard_views.user_settings_view, name='user_settings'),
+    path('dashboard/analytics/', dashboard_views.profile_analytics_view, name='profile_analytics'),
 
     # Vendor Dashboard URLs
     path('dashboard/vendor/listings/', dashboard_views.vendor_listings_view, name='vendor_listings'),
@@ -53,15 +56,24 @@ urlpatterns = [
 
     # Admin Dashboard URLs
     path('dashboard/admin/users/', dashboard_views.admin_users_view, name='admin_users'),
+    path('dashboard/admin/users/<int:user_id>/', dashboard_views.admin_user_detail_view, name='admin_user_detail'),
     path('dashboard/admin/vendors/', dashboard_views.admin_vendors_view, name='admin_vendors'),
+    path('dashboard/admin/vendors/user/<int:user_id>/', dashboard_views.admin_vendor_user_detail_view, name='admin_vendor_user_detail'),
     path('dashboard/admin/listings/', dashboard_views.admin_listings_view, name='admin_listings'),
+    path('dashboard/admin/car/<int:car_id>/', dashboard_views.admin_car_detail_view, name='admin_car_detail'),
+    path('dashboard/admin/car/<int:car_id>/edit/', dashboard_views.admin_car_edit_view, name='admin_car_edit'),
+    path('dashboard/admin/car/<int:car_id>/feature/', dashboard_views.admin_feature_car, name='admin_feature_car'),
+    path('dashboard/admin/car/<int:car_id>/delete/', dashboard_views.admin_car_delete_view, name='admin_car_delete'),
     path('dashboard/admin/analytics/', dashboard_views.admin_analytics_view, name='admin_analytics'),
+    path('dashboard/admin/analytics/api/', dashboard_views.promotion_analytics_api, name='promotion_analytics_api'),
     path('dashboard/admin/spare-parts/', dashboard_views.admin_spare_parts_overview, name='admin_spare_parts'),
 
     # Admin Actions
     path('dashboard/admin/approve-car/<int:car_id>/', dashboard_views.approve_car_listing, name='approve_car'),
     path('dashboard/admin/reject-car/<int:car_id>/', dashboard_views.reject_car_listing, name='reject_car'),
     path('dashboard/admin/approve-vendor/<int:vendor_id>/', dashboard_views.approve_vendor, name='approve_vendor'),
+    path('dashboard/admin/disapprove-vendor/<int:vendor_id>/', dashboard_views.disapprove_vendor, name='disapprove_vendor'),
+    path('dashboard/admin/suspend-vendor/<int:vendor_id>/', dashboard_views.suspend_vendor, name='suspend_vendor'),
 
     # Export Functionality
     path('dashboard/admin/export/users/', dashboard_views.export_users_csv, name='export_users'),
@@ -74,6 +86,7 @@ urlpatterns = [
     path('dashboard/notifications/mark-read/<int:notification_id>/', dashboard_views.mark_notification_read, name='mark_notification_read'),
     path('dashboard/notifications/mark-all-read/', dashboard_views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('dashboard/htmx/notifications-count/', dashboard_views.notifications_count_htmx, name='notifications_count_htmx'),
+    path('api/notification-badges/', dashboard_views.notification_badges_api, name='notification_badges_api'),
 
     # Add New Functionality
     path('dashboard/htmx/add-new-modal/', dashboard_views.add_new_modal, name='add_new_modal'),
@@ -105,6 +118,8 @@ urlpatterns = [
     # Tracking Management
     path('dashboard/admin/tracking-management/', dashboard_views.admin_tracking_management_view, name='admin_tracking_management'),
     path('dashboard/admin/tracking-management/table/', dashboard_views.admin_tracking_management_table_partial, name='admin_tracking_management_table_partial'),
+    path('dashboard/admin/tracking-management/export/csv/', dashboard_views.admin_tracking_management_export_csv, name='admin_tracking_management_export_csv'),
+    path('dashboard/admin/tracking-management/export/excel/', dashboard_views.admin_tracking_management_export_excel, name='admin_tracking_management_export_excel'),
     path('dashboard/admin/tracking/update-status/<int:order_id>/', dashboard_views.update_tracking_status, name='update_tracking_status'),
 
     # Import Order Management
@@ -132,6 +147,17 @@ urlpatterns = [
     path('cars/', views.CarListView.as_view(), name='car_list'),
     path('cars/<int:pk>/', views.CarDetailView.as_view(), name='car_detail'),
     path('sell-car/', views.sell_car, name='sell_car'),
+
+    # Hot Deals URLs
+    path('hot-deals/', views.hot_deals_list, name='hot_deals_list'),
+    path('hot-deals/<int:deal_id>/', views.hot_deal_detail, name='hot_deal_detail'),
+    path('hot-deals/create/', views.create_hot_deal, name='create_hot_deal'),
+
+    # Promotion Pages URLs
+    path('featured-cars/', views.featured_cars_by_tier, name='featured_cars_by_tier'),
+    path('featured-cars/<str:tier>/', views.featured_cars_by_tier, name='featured_cars_by_tier'),
+    path('top-rated/', views.top_rated_vehicles, name='top_rated_vehicles'),
+    path('recommendations/', views.smart_recommendations, name='smart_recommendations'),
 
     # Import/Export URLs
     path('import/', views.import_listings, name='import_listings'),
@@ -169,6 +195,17 @@ urlpatterns = [
     path('cart/remove/', views.remove_from_cart, name='remove_from_cart'),
     path('checkout/process/', views.process_checkout, name='process_checkout'),
     path('orders/<int:order_id>/cancel/', views.cancel_order, name='cancel_order'),
+
+    # Rating system endpoints
+    path('cars/rate/', views.submit_car_rating, name='submit_car_rating'),
+
+    # HTMX endpoints for dynamic interactions
+    path('htmx/featured-cars/filter/', views.htmx_featured_cars_filter, name='htmx_featured_cars_filter'),
+    path('htmx/hot-deals/refresh/', views.htmx_hot_deals_refresh, name='htmx_hot_deals_refresh'),
+    path('htmx/cars/<int:car_id>/rating/', views.htmx_car_rating_form, name='htmx_car_rating_form'),
+    path('htmx/analytics/widget/', views.htmx_promotion_analytics_widget, name='htmx_promotion_analytics_widget'),
+    path('htmx/countdown/<int:deal_id>/', views.htmx_countdown_timer_update, name='htmx_countdown_timer_update'),
+    path('htmx/cars/filter/', views.htmx_car_list_filter, name='htmx_car_list_filter'),
 
     # Import Order Tracking HTMX endpoints
     path('import/tracking/<str:order_number>/status/', views.import_order_status_update_htmx, name='import_order_status_htmx'),

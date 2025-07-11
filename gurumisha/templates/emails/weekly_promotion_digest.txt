@@ -1,0 +1,62 @@
+{% load math_filters %}
+📰 WEEKLY CAR DIGEST
+
+Your weekly dose of amazing car deals!
+
+THIS WEEK'S HIGHLIGHTS
+======================
+
+{% if active_deals %}
+🔥 HOT DEALS
+------------
+{% for deal in active_deals %}
+{{ deal.car.title }}
+{{ deal.car.brand.name }} {{ deal.car.model.name }}
+Now: KSh {{ deal.discounted_price|floatformat:0 }}
+Was: KSh {{ deal.original_price|floatformat:0 }}
+{% if deal.discount_type == 'percentage' %}{{ deal.discount_value|floatformat:0 }}% OFF{% else %}KSh {{ deal.discount_value|floatformat:0 }} OFF{% endif %}
+
+{% endfor %}
+View All Hot Deals: {{ site_url }}/hot-deals/
+
+{% endif %}
+{% if new_featured %}
+⭐ NEWLY FEATURED CARS
+---------------------
+{% for car in new_featured %}
+{{ car.title }}
+{{ car.brand.name }} {{ car.model.name }}
+Price: KSh {{ car.price|floatformat:0 }}
+{{ car.featured_tier|title }} Featured
+
+{% endfor %}
+View All Featured Cars: {{ site_url }}/featured-cars/
+
+{% endif %}
+{% if top_rated %}
+🌟 TOP RATED VEHICLES
+--------------------
+{% for car in top_rated %}
+{{ car.title }}
+{{ car.brand.name }} {{ car.model.name }}
+Price: KSh {{ car.price|floatformat:0 }}
+Rating: {{ car.calculated_rating }}/5.0 stars
+
+{% endfor %}
+View Top Rated Cars: {{ site_url }}/top-rated/
+
+{% endif %}
+DON'T MISS OUT!
+===============
+Discover your perfect car today with exclusive deals and premium featured vehicles.
+
+Browse All Cars: {{ site_url }}/cars/
+Get Recommendations: {{ site_url }}/recommendations/
+
+---
+Gurumisha Motors
+Your trusted partner for quality vehicles
+
+You're receiving this weekly digest because you subscribed to our promotional emails.
+Unsubscribe: {{ site_url }}/unsubscribe/
+Contact Us: {{ site_url }}/contact/

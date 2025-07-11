@@ -1,0 +1,938 @@
+/* Profile Forms Styling - Harrier Design System */
+
+/* Enhanced Form Input Base Styles - Harrier Design System */
+.form-input {
+    @apply w-full px-4 py-4 border-2 border-gray-200 rounded-2xl
+           focus:ring-4 focus:ring-harrier-red/20 focus:border-harrier-red
+           bg-white shadow-sm transition-all duration-300 font-raleway
+           placeholder-gray-400 text-gray-900 text-base;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    position: relative;
+}
+
+.form-input:hover {
+    @apply border-gray-300 shadow-lg;
+    background: linear-gradient(145deg, #ffffff, #f1f5f9);
+    transform: translateY(-1px);
+}
+
+.form-input:focus {
+    @apply outline-none ring-4 ring-harrier-red/20 border-harrier-red
+           shadow-xl;
+    background: linear-gradient(145deg, #ffffff, #fef2f2);
+    transform: translateY(-2px) scale(1.01);
+}
+
+.form-input:disabled {
+    @apply bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200;
+    background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+    transform: none;
+}
+
+.form-input::placeholder {
+    @apply text-gray-400 font-medium;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus::placeholder {
+    @apply text-gray-300;
+    transform: translateY(-2px);
+}
+
+/* Enhanced Textarea Styles */
+.form-input[type="textarea"],
+textarea.form-input {
+    @apply resize-none min-h-[120px];
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+textarea.form-input:focus {
+    background: linear-gradient(145deg, #ffffff, #fef2f2);
+}
+
+/* Enhanced Select Styles */
+select.form-input {
+    @apply cursor-pointer bg-white appearance-none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23DC2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 1rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+    padding-right: 3rem;
+    background-color: white;
+}
+
+select.form-input:hover {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23B91C1C' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+select.form-input:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23DC2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Enhanced Checkbox Styles */
+.form-checkbox {
+    @apply w-6 h-6 text-harrier-red bg-white border-2 border-gray-300
+           rounded-lg focus:ring-4 focus:ring-harrier-red/20
+           focus:border-harrier-red transition-all duration-300
+           cursor-pointer shadow-sm;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+.form-checkbox:hover {
+    @apply border-harrier-red/60 shadow-md;
+    background: linear-gradient(145deg, #ffffff, #fef2f2);
+    transform: scale(1.05);
+}
+
+.form-checkbox:checked {
+    @apply bg-harrier-red border-harrier-red shadow-lg;
+    background: linear-gradient(145deg, #DC2626, #B91C1C);
+    transform: scale(1.1);
+}
+
+.form-checkbox:checked:hover {
+    background: linear-gradient(145deg, #B91C1C, #991B1B);
+}
+
+.form-checkbox:focus {
+    @apply outline-none ring-4 ring-harrier-red/20;
+    transform: scale(1.05);
+}
+
+/* Enhanced Radio Button Styles */
+.form-radio {
+    @apply w-6 h-6 text-harrier-red bg-white border-2 border-gray-300
+           focus:ring-4 focus:ring-harrier-red/20 focus:border-harrier-red
+           transition-all duration-300 cursor-pointer shadow-sm;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+.form-radio:hover {
+    @apply border-harrier-red/60 shadow-md;
+    background: linear-gradient(145deg, #ffffff, #fef2f2);
+    transform: scale(1.05);
+}
+
+.form-radio:checked {
+    @apply bg-harrier-red border-harrier-red shadow-lg;
+    background: linear-gradient(145deg, #DC2626, #B91C1C);
+    transform: scale(1.1);
+}
+
+.form-radio:checked:hover {
+    background: linear-gradient(145deg, #B91C1C, #991B1B);
+}
+
+.form-radio:focus {
+    @apply outline-none ring-4 ring-harrier-red/20;
+    transform: scale(1.05);
+}
+
+/* Enhanced Form Label Styles */
+.form-label {
+    @apply block text-sm font-bold text-harrier-dark font-montserrat mb-3
+           transition-all duration-200;
+    position: relative;
+}
+
+.form-label:hover {
+    @apply text-harrier-red;
+}
+
+.form-label.required::after {
+    content: " *";
+    @apply text-harrier-red font-bold;
+    animation: pulse 2s infinite;
+}
+
+.form-label i {
+    @apply inline-block mr-2 w-4 h-4 text-center;
+    transition: all 0.3s ease;
+}
+
+.form-label:hover i {
+    transform: scale(1.1);
+}
+
+/* Enhanced Form Group Styles */
+.form-group {
+    @apply space-y-3 mb-8 relative;
+    transition: all 0.3s ease;
+}
+
+.form-group:hover {
+    transform: translateY(-1px);
+}
+
+.form-group-inline {
+    @apply flex items-center space-x-6 mb-6;
+}
+
+.form-group-inline .form-checkbox,
+.form-group-inline .form-radio {
+    @apply mr-3;
+}
+
+/* Floating Label Effect */
+.form-group.floating-label {
+    @apply relative;
+}
+
+.form-group.floating-label .form-input:focus + .form-label,
+.form-group.floating-label .form-input:not(:placeholder-shown) + .form-label {
+    @apply text-xs text-harrier-red;
+    transform: translateY(-2.5rem) translateX(0.5rem) scale(0.9);
+}
+
+.form-group.floating-label .form-label {
+    @apply absolute left-4 top-4 text-gray-500 pointer-events-none;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: left top;
+}
+
+/* Form Section Styles */
+.form-section {
+    @apply bg-white/60 rounded-xl p-6 border border-gray-100 mb-6;
+}
+
+.form-section-header {
+    @apply flex items-center mb-6;
+}
+
+.form-section-icon {
+    @apply w-8 h-8 rounded-lg flex items-center justify-center mr-3;
+}
+
+.form-section-title {
+    @apply text-lg font-bold text-harrier-dark font-montserrat;
+}
+
+.form-section-subtitle {
+    @apply text-sm text-gray-600 font-raleway;
+}
+
+/* Enhanced File Upload Styles */
+.file-upload-area {
+    @apply border-2 border-dashed border-gray-300 rounded-2xl p-8
+           text-center hover:border-harrier-red transition-all duration-300
+           cursor-pointer relative overflow-hidden;
+    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+    position: relative;
+}
+
+.file-upload-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.file-upload-area:hover::before {
+    left: 100%;
+}
+
+.file-upload-area:hover {
+    @apply border-harrier-red shadow-lg;
+    background: linear-gradient(145deg, #fef2f2, #fee2e2);
+    transform: translateY(-2px);
+}
+
+.file-upload-area.dragover {
+    @apply border-harrier-red shadow-xl;
+    background: linear-gradient(145deg, #fef2f2, #fecaca);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.file-upload-icon {
+    @apply w-16 h-16 mx-auto mb-4 transition-all duration-300;
+    color: #9ca3af;
+}
+
+.file-upload-area:hover .file-upload-icon {
+    color: #DC2626;
+    transform: scale(1.1) rotate(5deg);
+}
+
+.file-upload-text {
+    @apply text-sm text-gray-600 font-raleway transition-all duration-300;
+}
+
+.file-upload-area:hover .file-upload-text {
+    @apply text-harrier-red;
+    transform: translateY(-2px);
+}
+
+.file-upload-button {
+    @apply inline-flex items-center px-6 py-3 bg-gradient-to-r
+           from-harrier-red to-harrier-red-dark text-white rounded-xl text-sm
+           font-semibold hover:from-harrier-red-dark hover:to-harrier-red
+           transition-all duration-300 transform hover:scale-105 mt-4 shadow-lg
+           hover:shadow-xl font-montserrat;
+}
+
+/* Profile Picture Upload */
+.profile-picture-container {
+    @apply relative inline-block;
+}
+
+.profile-picture-overlay {
+    @apply absolute inset-0 bg-black/50 rounded-xl flex items-center 
+           justify-center opacity-0 hover:opacity-100 transition-opacity 
+           duration-200 cursor-pointer;
+}
+
+.profile-picture-edit-icon {
+    @apply text-white text-lg;
+}
+
+/* Enhanced Form Validation Styles */
+.form-error {
+    @apply text-red-600 text-sm font-semibold mt-2 flex items-center
+           bg-red-50 border border-red-200 rounded-xl px-3 py-2
+           transition-all duration-300 font-raleway;
+    animation: shake 0.5s ease-in-out;
+}
+
+.form-error-icon {
+    @apply w-4 h-4 mr-2 text-red-500;
+    animation: pulse 1s infinite;
+}
+
+.form-success {
+    @apply text-green-600 text-sm font-semibold mt-2 flex items-center
+           bg-green-50 border border-green-200 rounded-xl px-3 py-2
+           transition-all duration-300 font-raleway;
+    animation: slideInUp 0.3s ease-out;
+}
+
+.form-success-icon {
+    @apply w-4 h-4 mr-2 text-green-500;
+    animation: checkmark 0.5s ease-in-out;
+}
+
+/* Input Validation States */
+.form-input.error {
+    @apply border-red-400 bg-red-50 focus:ring-red-200 focus:border-red-500;
+    animation: shake 0.5s ease-in-out;
+}
+
+.form-input.success {
+    @apply border-green-400 bg-green-50 focus:ring-green-200 focus:border-green-500;
+}
+
+.form-input.warning {
+    @apply border-yellow-400 bg-yellow-50 focus:ring-yellow-200 focus:border-yellow-500;
+}
+
+/* Validation Animations */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes checkmark {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Enhanced Form Button Styles */
+.form-button-primary {
+    @apply inline-flex items-center px-8 py-4 bg-gradient-to-r
+           from-harrier-red to-harrier-red-dark text-white rounded-2xl
+           font-bold hover:from-harrier-red-dark hover:to-harrier-red
+           transform hover:scale-105 transition-all duration-300
+           shadow-lg hover:shadow-xl font-montserrat text-base
+           focus:ring-4 focus:ring-harrier-red/30 focus:outline-none
+           active:scale-95 relative overflow-hidden;
+    position: relative;
+}
+
+.form-button-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.form-button-primary:hover::before {
+    left: 100%;
+}
+
+.form-button-secondary {
+    @apply px-6 py-4 bg-white border-2 border-gray-300 text-gray-700
+           rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-400
+           transition-all duration-300 transform hover:scale-105 shadow-md
+           hover:shadow-lg font-montserrat text-base focus:ring-4
+           focus:ring-gray-200 focus:outline-none active:scale-95
+           relative overflow-hidden;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+.form-button-secondary:hover {
+    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.form-button-danger {
+    @apply px-6 py-4 bg-gradient-to-r from-red-500 to-red-600
+           text-white rounded-2xl font-semibold hover:from-red-600
+           hover:to-red-700 transition-all duration-300 transform
+           hover:scale-105 shadow-lg hover:shadow-xl font-montserrat
+           text-base focus:ring-4 focus:ring-red-300 focus:outline-none
+           active:scale-95 relative overflow-hidden;
+}
+
+.form-button-danger::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.form-button-danger:hover::before {
+    left: 100%;
+}
+
+/* Button Loading State */
+.form-button-loading {
+    @apply pointer-events-none opacity-75;
+}
+
+.form-button-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Character Counter */
+.character-counter {
+    @apply text-xs text-gray-500 mt-1 text-right;
+}
+
+.character-counter.warning {
+    @apply text-yellow-600;
+}
+
+.character-counter.error {
+    @apply text-red-600;
+}
+
+.character-counter.success {
+    @apply text-green-600;
+}
+
+/* Form Progress Indicator */
+.form-progress {
+    @apply w-full bg-gray-200 rounded-full h-2 mb-6;
+}
+
+.form-progress-bar {
+    @apply bg-gradient-to-r from-harrier-red to-harrier-red-dark 
+           h-2 rounded-full transition-all duration-300;
+}
+
+/* Mobile-First Responsive Design */
+@media (max-width: 640px) {
+    /* Mobile Form Inputs */
+    .form-input {
+        @apply px-3 py-3 text-base rounded-lg;
+        min-height: 44px; /* Touch-friendly minimum */
+    }
+
+    .form-section {
+        @apply p-4 mx-2 rounded-lg;
+    }
+
+    .form-section-header {
+        @apply flex-col items-start space-y-2;
+    }
+
+    .form-section-icon {
+        @apply w-6 h-6 mr-0 mb-2;
+    }
+
+    /* Mobile Buttons */
+    .form-button-primary,
+    .form-button-secondary,
+    .form-button-danger {
+        @apply w-full justify-center py-4 text-base;
+        min-height: 48px;
+    }
+
+    /* Mobile Profile Header */
+    .profile-picture-container img,
+    .profile-picture-container div {
+        @apply h-20 w-20;
+    }
+
+    /* Mobile Navigation Tabs */
+    .profile-tab {
+        @apply px-3 py-3 text-sm;
+        min-height: 44px;
+    }
+
+    /* Mobile File Upload */
+    .file-upload-area {
+        @apply p-4;
+    }
+
+    .file-upload-icon {
+        @apply w-8 h-8;
+    }
+
+    /* Mobile Form Groups */
+    .form-group-inline {
+        @apply flex-col items-start space-y-2 space-x-0;
+    }
+
+    .form-group-inline .form-checkbox {
+        @apply mb-2;
+    }
+
+    /* Mobile Grid Adjustments */
+    .grid.grid-cols-2 {
+        @apply grid-cols-1;
+    }
+
+    .grid.grid-cols-3 {
+        @apply grid-cols-1;
+    }
+
+    .grid.grid-cols-4 {
+        @apply grid-cols-2;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Tablet Adjustments */
+    .form-input {
+        @apply px-3 py-2 text-base;
+    }
+
+    .form-section {
+        @apply p-5;
+    }
+
+    .form-button-primary,
+    .form-button-secondary {
+        @apply w-full justify-center;
+    }
+
+    /* Profile Header Adjustments */
+    .profile-header-stats {
+        @apply grid-cols-2 gap-2;
+    }
+
+    /* Settings Page Mobile */
+    .settings-sidebar {
+        @apply order-last mt-8;
+    }
+}
+
+/* Touch-Friendly Interactions */
+@media (hover: none) and (pointer: coarse) {
+    /* Touch devices */
+    .form-input:focus {
+        @apply ring-4 ring-harrier-red/30;
+    }
+
+    .form-button-primary:active,
+    .form-button-secondary:active {
+        @apply scale-95;
+    }
+
+    .profile-tab:active {
+        @apply bg-gray-100;
+    }
+
+    /* Larger touch targets */
+    .profile-picture-overlay {
+        @apply inset-0;
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Touch-friendly checkboxes */
+    .form-checkbox {
+        @apply w-6 h-6;
+    }
+}
+
+/* Swipe Gesture Support */
+.swipe-container {
+    touch-action: pan-x;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.swipe-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile Tab Navigation */
+@media (max-width: 640px) {
+    .profile-tabs-container {
+        @apply overflow-x-auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .profile-tabs-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-tabs-nav {
+        @apply flex-nowrap min-w-max px-4;
+    }
+
+    .profile-tab {
+        @apply whitespace-nowrap flex-shrink-0;
+        min-width: 120px;
+    }
+}
+
+/* Mobile Modal Adjustments */
+@media (max-width: 640px) {
+    .modal-content {
+        @apply mx-2 my-4 max-h-screen overflow-y-auto;
+    }
+
+    .modal-header {
+        @apply sticky top-0 bg-white z-10 border-b;
+    }
+
+    .modal-body {
+        @apply px-4 py-6;
+    }
+
+    .modal-footer {
+        @apply sticky bottom-0 bg-white border-t p-4;
+    }
+}
+
+/* Mobile Analytics Charts */
+@media (max-width: 640px) {
+    .analytics-chart-container {
+        @apply h-64;
+    }
+
+    .analytics-stats-grid {
+        @apply grid-cols-1 gap-4;
+    }
+
+    .analytics-card {
+        @apply p-4;
+    }
+}
+
+/* Mobile Profile Completion */
+@media (max-width: 640px) {
+    .profile-completion-card {
+        @apply p-4;
+    }
+
+    .completion-progress {
+        @apply h-3;
+    }
+
+    .completion-items {
+        @apply space-y-3;
+    }
+}
+
+/* Mobile Business Hours */
+@media (max-width: 640px) {
+    .business-hours-day {
+        @apply flex-col space-y-3 space-x-0;
+    }
+
+    .business-hours-toggle {
+        @apply mb-3;
+    }
+
+    .business-hours-times {
+        @apply grid-cols-1 gap-3;
+    }
+}
+
+/* Mobile Vendor Profile */
+@media (max-width: 640px) {
+    .vendor-header-content {
+        @apply flex-col space-y-4 space-x-0;
+    }
+
+    .vendor-logo {
+        @apply h-16 w-16;
+    }
+
+    .vendor-stats {
+        @apply grid-cols-3 gap-2 text-center;
+    }
+
+    .vendor-actions {
+        @apply flex-col space-y-2 space-x-0 w-full;
+    }
+
+    .vendor-action-button {
+        @apply w-full justify-center;
+    }
+}
+
+/* Accessibility Improvements for Mobile */
+@media (max-width: 640px) {
+    /* Focus indicators */
+    .form-input:focus,
+    .form-button-primary:focus,
+    .form-button-secondary:focus {
+        @apply ring-4 ring-offset-2;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .form-input {
+            @apply border-2 border-black;
+        }
+
+        .form-button-primary {
+            @apply bg-black text-white border-2 border-black;
+        }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        .form-fade-in,
+        .form-slide-in,
+        .form-loading::after {
+            animation: none;
+        }
+
+        .form-input:focus {
+            transition: none;
+        }
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .form-input {
+        @apply bg-gray-800 border-gray-600 text-white placeholder-gray-400;
+    }
+    
+    .form-input:focus {
+        @apply border-harrier-red bg-gray-800;
+    }
+    
+    .form-section {
+        @apply bg-gray-800/60 border-gray-700;
+    }
+    
+    .form-label {
+        @apply text-gray-200;
+    }
+}
+
+/* Animation Classes */
+.form-fade-in {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-slide-in {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Loading States */
+.form-loading {
+    @apply relative overflow-hidden;
+}
+
+.form-loading::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent 
+           via-white/20 to-transparent;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* HTMX Specific Styles */
+.htmx-indicator {
+    @apply hidden;
+}
+
+.htmx-request .htmx-indicator {
+    @apply block;
+}
+
+.htmx-field-indicator {
+    @apply transition-all duration-200;
+}
+
+.htmx-field-indicator.show {
+    @apply block;
+}
+
+/* HTMX Loading States */
+.htmx-request .form-input {
+    @apply opacity-75 pointer-events-none;
+}
+
+.htmx-request .form-button-primary {
+    @apply opacity-75 pointer-events-none;
+}
+
+/* HTMX Success Animation */
+.htmx-success {
+    animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+/* HTMX Error Animation */
+.htmx-error {
+    animation: errorShake 0.6s ease-out;
+}
+
+@keyframes errorShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Auto-save Indicator */
+.auto-save-indicator {
+    @apply fixed top-4 right-4 bg-white border border-gray-200 rounded-lg
+           shadow-lg px-4 py-2 flex items-center space-x-2 z-50
+           transform translate-x-full transition-transform duration-300;
+}
+
+.auto-save-indicator.show {
+    @apply translate-x-0;
+}
+
+.auto-save-indicator.saving {
+    @apply border-blue-200 bg-blue-50;
+}
+
+.auto-save-indicator.saved {
+    @apply border-green-200 bg-green-50;
+}
+
+.auto-save-indicator.error {
+    @apply border-red-200 bg-red-50;
+}
+
+/* Real-time Validation */
+.field-validating {
+    @apply border-blue-300 bg-blue-50/50;
+}
+
+.field-valid {
+    @apply border-green-300 bg-green-50/50;
+}
+
+.field-invalid {
+    @apply border-red-300 bg-red-50/50;
+}
+
+/* HTMX Swapping Animation */
+.htmx-swapping {
+    @apply opacity-0 transform scale-95;
+}
+
+.htmx-settling {
+    @apply opacity-100 transform scale-100 transition-all duration-300;
+}
+
+/* Progressive Enhancement */
+.no-htmx .htmx-only {
+    @apply hidden;
+}
+
+.htmx .no-htmx-only {
+    @apply hidden;
+}

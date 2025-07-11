@@ -356,19 +356,24 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 1rem 2rem;
+        padding: 12px 20px;
         font-weight: 600;
-        font-size: 1rem;
-        border-radius: 1rem;
+        font-size: 14px;
+        line-height: 1.2;
+        border-radius: 10px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         transform: translateY(0);
         font-family: 'Montserrat', sans-serif;
-        min-width: 160px;
-        border: none;
+        min-width: 120px;
+        max-width: 180px;
+        height: 44px;
+        border: 2px solid transparent;
         cursor: pointer;
         user-select: none;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
+        white-space: nowrap;
+        box-sizing: border-box;
     }
 
     /* Simplified Cancel Button */

@@ -1,0 +1,237 @@
+{% load static %}
+
+<!-- Welcome Banner with Enhanced Design -->
+<div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+    <div class="relative z-10">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold mb-2 font-montserrat">Welcome back, {{ vendor.company_name }}!</h2>
+                <p class="text-blue-100 text-lg font-raleway">Manage your inventory and grow your business</p>
+                <div class="flex items-center mt-4 space-x-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-car mr-2"></i>
+                        <span class="text-sm">{{ vendor_cars|length }} Active Listings</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-eye mr-2"></i>
+                        <span class="text-sm">{{ total_views|default:0 }} Total Views</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>
+                        <span class="text-sm">{{ pending_inquiries|length }} Pending Inquiries</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-store text-4xl text-white"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Quick Actions with Modern Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+    <a href="{% url 'core:sell_car' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-harrier-red/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div class="absolute inset-0 bg-gradient-to-br from-harrier-red/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <i class="fas fa-plus text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-harrier-red transition-colors">Add New Car</h3>
+                    <p class="text-sm text-gray-600 font-raleway">List a new vehicle</p>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:vendor_listings' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-blue-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <i class="fas fa-car text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-blue-600 transition-colors">My Listings</h3>
+                    <p class="text-sm text-gray-600 font-raleway">{{ vendor_cars|length }} active cars</p>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:vendor_orders' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-green-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div class="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <i class="fas fa-shopping-cart text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-green-600 transition-colors">Orders</h3>
+                    <p class="text-sm text-gray-600 font-raleway">View sales & inquiries</p>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'core:vendor_analytics' %}" class="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 hover:border-purple-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-bold text-harrier-dark font-montserrat group-hover:text-purple-600 transition-colors">Analytics</h3>
+                    <p class="text-sm text-gray-600 font-raleway">Performance insights</p>
+                </div>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- Performance Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-fade-in-up" style="animation-delay: 0.2s;">
+    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-car text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Listings</p>
+                <p class="text-2xl font-bold text-harrier-dark">{{ vendor_cars|length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-eye text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Views</p>
+                <p class="text-2xl font-bold text-harrier-dark">{{ total_views|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-envelope text-yellow-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Inquiries</p>
+                <p class="text-2xl font-bold text-harrier-dark">{{ pending_inquiries|length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-star text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Rating</p>
+                <p class="text-2xl font-bold text-harrier-dark">{{ vendor_rating|default:"N/A" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity and Listings Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in-up" style="animation-delay: 0.3s;">
+    <!-- Recent Listings -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Listings</h3>
+                <a href="{% url 'core:vendor_listings' %}" class="text-sm text-harrier-red hover:text-harrier-dark font-medium transition-colors">View All</a>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {% for car in vendor_cars|slice:":5" %}
+                <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+                        {% if car.images.first %}
+                            <img src="{{ car.images.first.image.url }}" alt="{{ car.brand }} {{ car.model }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center">
+                                <i class="fas fa-car text-gray-400"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-harrier-dark truncate">{{ car.brand }} {{ car.model }}</p>
+                        <p class="text-sm text-gray-600">{{ car.year }} • ${{ car.price|floatformat:0 }}</p>
+                        <p class="text-xs text-gray-500">{{ car.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            {% if car.status == 'available' %}bg-green-100 text-green-800
+                            {% elif car.status == 'sold' %}bg-red-100 text-red-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ car.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <i class="fas fa-car text-gray-400 text-3xl mb-3"></i>
+                    <p class="text-gray-600">No listings yet</p>
+                    <a href="{% url 'core:sell_car' %}" class="text-harrier-red hover:text-harrier-dark font-medium">Add your first car</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Inquiries -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Inquiries</h3>
+                <a href="{% url 'core:vendor_inquiries' %}" class="text-sm text-harrier-red hover:text-harrier-dark font-medium transition-colors">View All</a>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {% for inquiry in recent_inquiries|slice:":5" %}
+                <div class="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex-shrink-0 w-10 h-10 bg-harrier-red text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        {{ inquiry.customer.first_name|first|default:inquiry.customer.username|first }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-harrier-dark">{{ inquiry.customer.get_full_name|default:inquiry.customer.username }}</p>
+                        <p class="text-sm text-gray-600 truncate">{{ inquiry.message|truncatechars:50 }}</p>
+                        <p class="text-xs text-gray-500">{{ inquiry.created_at|timesince }} ago</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            {% if inquiry.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif inquiry.status == 'responded' %}bg-green-100 text-green-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ inquiry.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <i class="fas fa-envelope text-gray-400 text-3xl mb-3"></i>
+                    <p class="text-gray-600">No inquiries yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

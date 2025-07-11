@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}Gurumisha Motors Admin Panel - Manage your automotive marketplace{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Gurumisha Admin Panel - Manage your automotive marketplace{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}admin, dashboard, management, automotive{% endblock %}">
 
-    <title>{% block title %}Admin Dashboard - Gurumisha Motors{% endblock %}</title>
+    <title>{% block title %}Admin Dashboard - Gurumisha{% endblock %}</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -169,11 +169,7 @@
                         </button>
 
                         <a href="{% url 'core:dashboard' %}" class="flex items-center">
-                            <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors" class="h-10 w-auto">
-                            <div class="ml-3">
-                                <h1 class="text-xl font-heading font-bold text-harrier-dark">GURUMISHA</h1>
-                                <p class="text-xs text-harrier-red uppercase tracking-wide font-semibold">ADMIN PANEL</p>
-                            </div>
+                            <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="h-8 sm:h-10 w-auto">
                         </a>
                     </div>
 

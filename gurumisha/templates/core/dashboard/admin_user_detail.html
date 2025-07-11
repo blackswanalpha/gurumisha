@@ -1,0 +1,2125 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block admin_title %}User Profile - {{ user_profile.username }}{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block page_description %}Comprehensive user profile management and analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile-forms.css' %}">
+<link rel="stylesheet" href="{% static 'css/enhanced-inputs.css' %}">
+<link rel="stylesheet" href="{% static 'css/global-animations.css' %}">
+<style>
+/* Enhanced User Detail Page Styles */
+.user-detail-container {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: 100vh;
+}
+
+.profile-hero-section {
+    background: linear-gradient(135deg, #DC2626 0%, #1e293b 50%, #1e40af 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+}
+
+.profile-avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 2rem;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.profile-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 4px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.online-pulse {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid white;
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.modern-tab-nav {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+}
+
+.modern-tab-button {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-tab-button.active {
+    background: linear-gradient(135deg, #DC2626, #B91C1C);
+    color: white;
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+    transform: translateY(-2px);
+}
+
+.modern-tab-button:hover:not(.active) {
+    background: #f3f4f6;
+    color: #374151;
+    transform: translateY(-1px);
+}
+
+.content-section {
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.content-section:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.section-header {
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #DC2626, #1e40af);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-card {
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.action-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.action-button.primary {
+    background: linear-gradient(135deg, #DC2626, #B91C1C);
+    color: white;
+}
+
+.action-button.secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.action-button.danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.glassmorphism {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .modern-tab-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <a href="{% url 'core:admin_users' %}" class="ml-1 text-sm font-medium text-gray-500 hover:text-harrier-red transition-colors md:ml-2">Users</a>
+        </div>
+    </li>
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ user_profile.username }}</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="user-detail-container">
+    <!-- Enhanced Profile Hero Section -->
+    <div class="profile-hero-section rounded-2xl p-8 mb-8 animate-fade-in-up">
+        <div class="relative z-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                <!-- Profile Information -->
+                <div class="flex flex-col md:flex-row md:items-center gap-6">
+                    <!-- Profile Picture Section -->
+                    <div class="profile-avatar-container">
+                        {% if user_profile.profile_picture %}
+                            <img src="{{ user_profile.profile_picture.url }}"
+                                 alt="{{ user_profile.get_full_name }}"
+                                 class="profile-avatar object-cover">
+                        {% else %}
+                            <div class="profile-avatar bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center text-white text-4xl font-bold font-montserrat">
+                                {{ user_profile.first_name|first|default:user_profile.username|first|upper }}{{ user_profile.last_name|first|upper }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Status Indicator -->
+                        <div class="status-indicator {% if user_profile.is_active %}bg-green-500{% else %}bg-red-500{% endif %}">
+                            <i class="fas fa-{% if user_profile.is_active %}check{% else %}times{% endif %} text-white text-sm"></i>
+                        </div>
+
+                        <!-- Online Pulse Animation -->
+                        {% if user_profile.is_active %}
+                        <div class="online-pulse bg-green-400"></div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Basic Information Section -->
+                    <div class="text-white space-y-4">
+                        <!-- Name and Role -->
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <h1 class="text-4xl font-bold font-montserrat bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                                    {{ user_profile.first_name|default:"" }} {{ user_profile.last_name|default:"" }}
+                                    {% if not user_profile.first_name and not user_profile.last_name %}
+                                        {{ user_profile.username }}
+                                    {% endif %}
+                                </h1>
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center px-4 py-2 rounded-2xl text-sm font-semibold glassmorphism
+                                        {% if user_profile.role == 'admin' %}text-purple-200
+                                        {% elif user_profile.role == 'vendor' %}text-orange-200
+                                        {% else %}text-blue-200{% endif %}">
+                                        <i class="fas fa-{% if user_profile.role == 'admin' %}crown{% elif user_profile.role == 'vendor' %}store{% else %}user{% endif %} mr-2"></i>
+                                        {{ user_profile.get_role_display }}
+                                    </span>
+                                    {% if user_profile.is_email_verified %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium glassmorphism text-green-200">
+                                        <i class="fas fa-shield-check mr-1"></i>Verified
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <p class="text-blue-100 text-lg font-raleway">@{{ user_profile.username }}</p>
+                            {% if vendor %}
+                            <div class="flex items-center gap-2">
+                                <span class="text-blue-100 text-sm">{{ vendor.company_name }}</span>
+                                {% if vendor.is_approved %}
+                                    <span class="inline-flex items-center px-2 py-1 glassmorphism rounded-full text-green-200 text-xs">
+                                        <i class="fas fa-shield-check mr-1"></i>Verified Business
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Contact Information Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                            {% if user_profile.email %}
+                            <div class="info-card">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-blue-500/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-envelope text-blue-200 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-blue-200 font-medium">Email</p>
+                                        <p class="text-white text-sm">{{ user_profile.email }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if user_profile.phone %}
+                            <div class="info-card">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-green-500/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-phone text-green-200 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-green-200 font-medium">Phone</p>
+                                        <p class="text-white text-sm">{{ user_profile.phone }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if user_profile.city %}
+                            <div class="info-card">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-purple-500/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-map-marker-alt text-purple-200 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-purple-200 font-medium">Location</p>
+                                        <p class="text-white text-sm">{{ user_profile.city }}, {{ user_profile.country }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Information Section -->
+                <div class="flex flex-col gap-4">
+                    <!-- Member Info Card -->
+                    <div class="glassmorphism rounded-2xl p-4">
+                        <div class="text-center text-white">
+                            <p class="text-xs text-blue-200 font-medium mb-1">Member Since</p>
+                            <p class="text-lg font-bold">{{ user_profile.date_joined|date:"M d, Y" }}</p>
+                            <p class="text-xs text-blue-200 mt-1">Last login: {{ user_profile.last_login|date:"M d"|default:"Never" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <form method="post" class="inline-block">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_status">
+                            <button type="submit" class="action-button secondary w-full sm:w-auto">
+                                <i class="fas fa-{% if user_profile.is_active %}user-slash{% else %}user-check{% endif %} mr-2"></i>
+                                {% if user_profile.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+
+                        <button type="button" class="action-button secondary w-full sm:w-auto" onclick="openPasswordResetModal()">
+                            <i class="fas fa-key mr-2"></i>Reset Password
+                        </button>
+                    </div>
+
+                    <a href="{% url 'core:admin_users' %}" class="action-button secondary w-full text-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="stats-grid animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 mb-1">Member Since</p>
+                    <p class="text-2xl font-bold text-harrier-dark font-montserrat">{{ user_profile.date_joined|date:"M Y" }}</p>
+                </div>
+                <div class="section-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                    <i class="fas fa-calendar text-white"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 mb-1">Last Login</p>
+                    <p class="text-2xl font-bold text-harrier-dark font-montserrat">{{ user_profile.last_login|date:"M d"|default:"Never" }}</p>
+                </div>
+                <div class="section-icon bg-gradient-to-br from-green-500 to-green-600">
+                    <i class="fas fa-sign-in-alt text-white"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 mb-1">Activities</p>
+                    <p class="text-2xl font-bold text-harrier-dark font-montserrat">{{ recent_activities.count|default:0 }}</p>
+                </div>
+                <div class="section-icon bg-gradient-to-br from-purple-500 to-purple-600">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 mb-1">Status</p>
+                    <p class="text-2xl font-bold font-montserrat {% if user_profile.is_active %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if user_profile.is_active %}Active{% else %}Inactive{% endif %}
+                    </p>
+                </div>
+                <div class="section-icon {% if user_profile.is_active %}bg-gradient-to-br from-green-500 to-green-600{% else %}bg-gradient-to-br from-red-500 to-red-600{% endif %}">
+                    <i class="fas fa-{% if user_profile.is_active %}check-circle{% else %}times-circle{% endif %} text-white"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Tab Navigation -->
+    <div class="mb-8 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <div class="modern-tab-nav">
+            <nav class="flex flex-wrap gap-2" aria-label="User Profile Tabs">
+                <button type="button" class="modern-tab-button active" data-tab="profile">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fas fa-user text-blue-600"></i>
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div class="font-semibold">Profile</div>
+                            <div class="text-xs opacity-70">Personal information</div>
+                        </div>
+                    </div>
+                </button>
+
+                <button type="button" class="modern-tab-button" data-tab="account">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fas fa-cog text-purple-600"></i>
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div class="font-semibold">Account</div>
+                            <div class="text-xs opacity-70">Settings & permissions</div>
+                        </div>
+                    </div>
+                </button>
+
+                <button type="button" class="modern-tab-button" data-tab="activity">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fas fa-history text-green-600"></i>
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div class="font-semibold">Activity</div>
+                            <div class="text-xs opacity-70">Recent actions</div>
+                        </div>
+                    </div>
+                </button>
+
+                {% if vendor %}
+                <button type="button" class="modern-tab-button" data-tab="business">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fas fa-building text-orange-600"></i>
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div class="font-semibold">Business</div>
+                            <div class="text-xs opacity-70">Company details</div>
+                        </div>
+                    </div>
+                </button>
+                {% endif %}
+
+                <button type="button" class="modern-tab-button" data-tab="analytics">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fas fa-chart-line text-indigo-600"></i>
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div class="font-semibold">Analytics</div>
+                            <div class="text-xs opacity-70">Performance data</div>
+                        </div>
+                    </div>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fade-in-up" style="animation-delay: 0.4s;">
+        <!-- Main Content Area -->
+        <div class="lg:col-span-3">
+            <!-- Profile Tab Content -->
+            <div class="tab-content active" id="profile-tab">
+                <form method="post" enctype="multipart/form-data" class="space-y-8">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+
+                    <!-- Profile Picture Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-harrier-red to-harrier-red-dark">
+                                    <i class="fas fa-camera text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Profile Picture</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">Update user's profile picture and avatar settings</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row md:items-center gap-6">
+                                <div class="relative">
+                                    {% if user_profile.profile_picture %}
+                                        <img class="h-24 w-24 object-cover rounded-2xl shadow-lg border-2 border-gray-200"
+                                             src="{{ user_profile.profile_picture.url }}" alt="Profile picture" id="profileImagePreview">
+                                    {% else %}
+                                        <div class="h-24 w-24 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg font-montserrat" id="profileImagePreview">
+                                            {{ user_profile.first_name|first|default:user_profile.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-camera text-white text-xs"></i>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1">
+                                    {{ user_form.profile_picture }}
+                                    <div class="file-upload-area" onclick="document.getElementById('id_profile_picture').click()">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon text-harrier-red"></i>
+                                        <div class="file-upload-text">
+                                            <p class="font-semibold text-harrier-dark">Click to upload new profile picture</p>
+                                            <p class="text-xs text-gray-500">PNG, JPG up to 2MB (Recommended: 400x400px)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Information Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Basic Information</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">User's core personal details and identity</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.first_name }}
+                                        <label for="{{ user_form.first_name.id_for_label }}" class="floating-label">
+                                            First Name
+                                        </label>
+                                        <i class="fas fa-user input-icon text-harrier-red"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.last_name }}
+                                        <label for="{{ user_form.last_name.id_for_label }}" class="floating-label">
+                                            Last Name
+                                        </label>
+                                        <i class="fas fa-user input-icon text-harrier-red"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.username }}
+                                        <label for="{{ user_form.username.id_for_label }}" class="floating-label">
+                                            Username
+                                        </label>
+                                        <i class="fas fa-at input-icon text-purple-500"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.email }}
+                                        <label for="{{ user_form.email.id_for_label }}" class="floating-label">
+                                            Email Address
+                                        </label>
+                                        <i class="fas fa-envelope input-icon text-blue-500"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.phone }}
+                                        <label for="{{ user_form.phone.id_for_label }}" class="floating-label">
+                                            Phone Number
+                                        </label>
+                                        <i class="fas fa-phone input-icon text-green-500"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.date_of_birth }}
+                                        <label for="{{ user_form.date_of_birth.id_for_label }}" class="floating-label">
+                                            Date of Birth
+                                        </label>
+                                        <i class="fas fa-birthday-cake input-icon text-yellow-500"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    {{ user_form.gender }}
+                                    <label for="{{ user_form.gender.id_for_label }}" class="form-label">
+                                        <i class="fas fa-venus-mars mr-2 text-pink-500"></i>Gender
+                                    </label>
+                                </div>
+
+                                <div class="form-group input-container">
+                                    <div class="input-with-icon">
+                                        {{ user_form.city }}
+                                        <label for="{{ user_form.city.id_for_label }}" class="floating-label">
+                                            City
+                                        </label>
+                                        <i class="fas fa-city input-icon text-teal-500"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group input-container md:col-span-2">
+                                    {{ user_form.country }}
+                                    <label for="{{ user_form.country.id_for_label }}" class="form-label">
+                                        <i class="fas fa-flag mr-2 text-red-500"></i>Country
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group input-container mt-6">
+                                {{ user_form.bio }}
+                                <label for="{{ user_form.bio.id_for_label }}" class="floating-label">
+                                    Bio
+                                </label>
+                                <div class="absolute left-4 top-4 text-indigo-500">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Contact Information Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-green-500 to-green-600">
+                                    <i class="fas fa-address-book text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Additional Contact Information</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">Secondary contact details and address information</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="{{ user_form.secondary_phone.id_for_label }}" class="form-label">
+                                        <i class="fas fa-phone-alt mr-2 text-green-500"></i>Secondary Phone
+                                    </label>
+                                    {{ user_form.secondary_phone }}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ user_form.whatsapp_number.id_for_label }}" class="form-label">
+                                        <i class="fab fa-whatsapp mr-2 text-green-500"></i>WhatsApp Number
+                                    </label>
+                                    {{ user_form.whatsapp_number }}
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-6">
+                                <label for="{{ user_form.address.id_for_label }}" class="form-label">
+                                    <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>Address
+                                </label>
+                                {{ user_form.address }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-end gap-4 mt-8">
+                        <button type="button" class="action-button secondary" onclick="resetForm()">
+                            <i class="fas fa-undo mr-2"></i>Reset Changes
+                        </button>
+                        <button type="submit" class="action-button primary">
+                            <i class="fas fa-save mr-2"></i>Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Account Tab -->
+            <div class="tab-content" id="account-tab">
+                <div class="space-y-8">
+                    <!-- Account Information Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-purple-500 to-purple-600">
+                                    <i class="fas fa-user-cog text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Account Information</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">User account details, permissions, and security settings</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Account Details Card -->
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-id-card text-white"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Account Details</h4>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">User ID</span>
+                                            <span class="text-sm font-bold text-harrier-dark">#{{ user_profile.id }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Username</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ user_profile.username }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Email</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ user_profile.email }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Role</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ user_profile.get_role_display }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Date Joined</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ user_profile.date_joined|date:"M d, Y" }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2">
+                                            <span class="text-sm text-gray-600 font-medium">Last Login</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ user_profile.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Permissions Card -->
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-shield-alt text-white"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Permissions</h4>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Active Status</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                                {% if user_profile.is_active %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+                                                <i class="fas fa-{% if user_profile.is_active %}check-circle{% else %}times-circle{% endif %} mr-1"></i>
+                                                {% if user_profile.is_active %}Active{% else %}Inactive{% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Staff Access</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                                {% if user_profile.is_staff %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                                <i class="fas fa-{% if user_profile.is_staff %}user-tie{% else %}user{% endif %} mr-1"></i>
+                                                {% if user_profile.is_staff %}Staff{% else %}Regular{% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Superuser</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                                {% if user_profile.is_superuser %}bg-purple-100 text-purple-800 border border-purple-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                                <i class="fas fa-{% if user_profile.is_superuser %}crown{% else %}user{% endif %} mr-1"></i>
+                                                {% if user_profile.is_superuser %}Yes{% else %}No{% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2">
+                                            <span class="text-sm text-gray-600 font-medium">Email Verified</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                                {% if user_profile.is_email_verified %}bg-green-100 text-green-800 border border-green-200{% else %}bg-yellow-100 text-yellow-800 border border-yellow-200{% endif %}">
+                                                <i class="fas fa-{% if user_profile.is_email_verified %}shield-check{% else %}exclamation-triangle{% endif %} mr-1"></i>
+                                                {% if user_profile.is_email_verified %}Verified{% else %}Pending{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Statistics Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-green-500 to-green-600">
+                                    <i class="fas fa-chart-bar text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">User Statistics</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">Activity metrics and engagement analytics</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-shopping-cart text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-blue-600 font-montserrat mb-1">{{ user_orders.count|default:0 }}</div>
+                                    <div class="text-sm font-medium text-blue-600">Total Orders</div>
+                                </div>
+
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center border border-green-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-envelope text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-green-600 font-montserrat mb-1">{{ user_inquiries.count|default:0 }}</div>
+                                    <div class="text-sm font-medium text-green-600">Inquiries Sent</div>
+                                </div>
+
+                                {% if vendor %}
+                                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center border border-purple-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-car text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-purple-600 font-montserrat mb-1">{{ user_listings.count|default:0 }}</div>
+                                    <div class="text-sm font-medium text-purple-600">Active Listings</div>
+                                </div>
+                                {% else %}
+                                <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 text-center border border-orange-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-eye text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-orange-600 font-montserrat mb-1">{{ analytics_data.profile_views_made|default:0 }}</div>
+                                    <div class="text-sm font-medium text-orange-600">Profile Views</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Tab -->
+            <div class="tab-content" id="activity-tab">
+                <div class="space-y-8">
+                    <!-- Recent Activity Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-indigo-500 to-indigo-600">
+                                    <i class="fas fa-history text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Recent Activity</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">User's recent actions, events, and system interactions</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                {% for activity in recent_activities %}
+                                <div class="flex items-start space-x-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 hover:shadow-md transition-all duration-300">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                                        <i class="fas fa-circle text-white text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-harrier-dark font-montserrat">{{ activity.get_action_display }}</div>
+                                        {% if activity.description %}
+                                            <div class="text-sm text-gray-600 mt-1 font-raleway">{{ activity.description }}</div>
+                                        {% endif %}
+                                        <div class="flex items-center justify-between mt-2">
+                                            <div class="text-xs text-gray-500 font-medium">{{ activity.timestamp|timesince }} ago</div>
+                                            {% if activity.ip_address %}
+                                                <div class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">{{ activity.ip_address }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-12">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-history text-gray-400 text-2xl"></i>
+                                    </div>
+                                    <h4 class="text-lg font-semibold text-gray-600 font-montserrat mb-2">No Recent Activity</h4>
+                                    <p class="text-gray-500 font-raleway">This user hasn't performed any recent actions.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Tab (Vendor Only) -->
+            {% if vendor %}
+            <div class="tab-content" id="business-tab">
+                <form method="post" enctype="multipart/form-data" class="space-y-8">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_vendor">
+
+                    <!-- Company Information Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-orange-500 to-orange-600">
+                                    <i class="fas fa-building text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Company Information</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">Business details, branding, and corporate identity</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="{{ vendor_form.company_name.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building mr-2 text-orange-500"></i>Company Name
+                                    </label>
+                                    {{ vendor_form.company_name }}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ vendor_form.business_license.id_for_label }}" class="form-label">
+                                        <i class="fas fa-certificate mr-2 text-blue-500"></i>Business License
+                                    </label>
+                                    {{ vendor_form.business_license }}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ vendor_form.business_type.id_for_label }}" class="form-label">
+                                        <i class="fas fa-industry mr-2 text-purple-500"></i>Business Type
+                                    </label>
+                                    {{ vendor_form.business_type }}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ vendor_form.year_established.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calendar mr-2 text-green-500"></i>Year Established
+                                    </label>
+                                    {{ vendor_form.year_established }}
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-6">
+                                <label for="{{ vendor_form.description.id_for_label }}" class="form-label">
+                                    <i class="fas fa-file-alt mr-2 text-indigo-500"></i>Business Description
+                                </label>
+                                {{ vendor_form.description }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                                    <i class="fas fa-address-book text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Contact Information</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">Business contact details and communication channels</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="{{ vendor_form.business_phone.id_for_label }}" class="form-label">
+                                        <i class="fas fa-phone mr-2 text-green-500"></i>Business Phone
+                                    </label>
+                                    {{ vendor_form.business_phone }}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ vendor_form.business_email.id_for_label }}" class="form-label">
+                                        <i class="fas fa-envelope mr-2 text-blue-500"></i>Business Email
+                                    </label>
+                                    {{ vendor_form.business_email }}
+                                </div>
+
+                                <div class="form-group md:col-span-2">
+                                    <label for="{{ vendor_form.website.id_for_label }}" class="form-label">
+                                        <i class="fas fa-globe mr-2 text-purple-500"></i>Website
+                                    </label>
+                                    {{ vendor_form.website }}
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-6">
+                                <label for="{{ vendor_form.physical_address.id_for_label }}" class="form-label">
+                                    <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>Physical Address
+                                </label>
+                                {{ vendor_form.physical_address }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Status Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-green-500 to-green-600">
+                                    <i class="fas fa-shield-check text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Business Status</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">Verification status, approval details, and business metrics</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Verification Status Card -->
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-shield-check text-white"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Verification Status</h4>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Approval Status</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                                {% if vendor.is_approved %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+                                                <i class="fas fa-{% if vendor.is_approved %}check-circle{% else %}times-circle{% endif %} mr-1"></i>
+                                                {% if vendor.is_approved %}Approved{% else %}Pending{% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Verification</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                                {% if vendor.verification_status == 'verified' %}bg-green-100 text-green-800 border border-green-200
+                                                {% elif vendor.verification_status == 'pending' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                                                {% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+                                                <i class="fas fa-{% if vendor.verification_status == 'verified' %}shield-check{% elif vendor.verification_status == 'pending' %}clock{% else %}exclamation-triangle{% endif %} mr-1"></i>
+                                                {{ vendor.get_verification_status_display }}
+                                            </span>
+                                        </div>
+                                        {% if vendor.approval_date %}
+                                        <div class="flex justify-between items-center py-2">
+                                            <span class="text-sm text-gray-600 font-medium">Approved Date</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ vendor.approval_date|date:"M d, Y" }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Business Metrics Card -->
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-chart-line text-white"></i>
+                                        </div>
+                                        <h4 class="font-bold text-harrier-dark font-montserrat">Business Metrics</h4>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Average Rating</span>
+                                            <span class="text-sm font-bold text-harrier-dark">
+                                                {% if vendor.average_rating %}
+                                                    ⭐ {{ vendor.average_rating|floatformat:1 }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span class="text-sm text-gray-600 font-medium">Total Sales</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ vendor.total_sales|default:0 }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center py-2">
+                                            <span class="text-sm text-gray-600 font-medium">Member Since</span>
+                                            <span class="text-sm font-bold text-harrier-dark">{{ vendor.created_at|date:"M Y" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-end gap-4 mt-8">
+                        <button type="button" class="action-button secondary" onclick="resetForm()">
+                            <i class="fas fa-undo mr-2"></i>Reset Changes
+                        </button>
+                        <button type="submit" class="action-button primary">
+                            <i class="fas fa-save mr-2"></i>Update Business Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Analytics Tab -->
+            <div class="tab-content" id="analytics-tab">
+                {% if analytics_data %}
+                <div class="space-y-8">
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div class="flex items-center">
+                                <div class="section-icon bg-gradient-to-br from-indigo-500 to-indigo-600">
+                                    <i class="fas fa-chart-line text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Analytics & Performance</h3>
+                                    <p class="text-sm text-gray-600 font-raleway">User engagement metrics and performance analytics</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            {% if user_profile.role == 'vendor' and analytics_data.analytics %}
+                            <!-- Vendor Analytics -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-eye text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-blue-600 font-montserrat mb-1">{{ analytics_data.analytics.total_profile_views }}</div>
+                                    <div class="text-sm font-medium text-blue-600">Total Profile Views</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center border border-green-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-envelope text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-green-600 font-montserrat mb-1">{{ analytics_data.analytics.total_inquiries }}</div>
+                                    <div class="text-sm font-medium text-green-600">Total Inquiries</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center border border-purple-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-chart-line text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-purple-600 font-montserrat mb-1">{{ analytics_data.analytics.overall_performance_score }}</div>
+                                    <div class="text-sm font-medium text-purple-600">Performance Score</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- Regular User Analytics -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-chart-bar text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-blue-600 font-montserrat mb-1">{{ analytics_data.total_activities|default:0 }}</div>
+                                    <div class="text-sm font-medium text-blue-600">Total Activities</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center border border-green-200 hover:shadow-lg transition-all duration-300">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                        <i class="fas fa-eye text-white text-xl"></i>
+                                    </div>
+                                    <div class="text-3xl font-bold text-green-600 font-montserrat mb-1">{{ analytics_data.profile_views_made|default:0 }}</div>
+                                    <div class="text-sm font-medium text-green-600">Profile Views Made</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="content-section">
+                    <div class="p-12 text-center">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-chart-line text-gray-400 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-gray-600 font-montserrat mb-2">No Analytics Data</h4>
+                        <p class="text-gray-500 font-raleway">Analytics data is not available for this user.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Enhanced Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Actions Card -->
+            <div class="sidebar-card">
+                <div class="bg-gradient-to-r from-harrier-red to-harrier-dark p-6">
+                    <h3 class="text-lg font-bold text-white flex items-center font-montserrat">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-bolt text-white"></i>
+                        </div>
+                        Quick Actions
+                    </h3>
+                </div>
+                <div class="p-6 space-y-6">
+                    <!-- Role Management Section -->
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-cog text-purple-600"></i>
+                            </div>
+                            <h4 class="font-bold text-harrier-dark font-montserrat">Role Management</h4>
+                        </div>
+                        <form method="post" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_role">
+                            <div class="relative">
+                                <select name="new_role" class="form-input appearance-none">
+                                    <option value="customer" {% if user_profile.role == 'customer' %}selected{% endif %}>👤 Customer</option>
+                                    <option value="vendor" {% if user_profile.role == 'vendor' %}selected{% endif %}>🏪 Vendor</option>
+                                    <option value="admin" {% if user_profile.role == 'admin' %}selected{% endif %}>👑 Admin</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
+                            <button type="submit" class="action-button primary w-full">
+                                <i class="fas fa-user-cog mr-2"></i>Update Role
+                            </button>
+                        </form>
+                    </div>
+
+                    {% if vendor %}
+                    <!-- Vendor Management Section -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-building text-orange-600"></i>
+                            </div>
+                            <h4 class="font-bold text-harrier-dark font-montserrat">Vendor Management</h4>
+                        </div>
+                        <div class="space-y-4">
+                            <form method="post" class="w-full">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle_vendor_approval">
+                                <button type="submit" class="action-button w-full {% if vendor.is_approved %}danger{% else %}primary{% endif %}">
+                                    <i class="fas fa-{% if vendor.is_approved %}ban{% else %}shield-check{% endif %} mr-2"></i>
+                                    {% if vendor.is_approved %}Revoke Approval{% else %}Approve Vendor{% endif %}
+                                </button>
+                            </form>
+
+                            <a href="{% url 'core:admin_vendors' %}" class="action-button secondary w-full text-center">
+                                <i class="fas fa-list mr-2"></i>View All Vendors
+                            </a>
+
+                            <!-- Vendor Stats Mini Card -->
+                            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-4 border border-orange-200">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-orange-600 font-montserrat mb-1">{{ vendor.total_sales|default:0 }}</div>
+                                    <div class="text-xs text-orange-600 font-medium mb-2">Total Sales</div>
+                                    <div class="flex items-center justify-center space-x-4 text-xs text-orange-500">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-star mr-1"></i>
+                                            {{ vendor.average_rating|floatformat:1|default:"N/A" }}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-calendar mr-1"></i>
+                                            {{ vendor.created_at|date:"M Y" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Account Status Section -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                            </div>
+                            <h4 class="font-bold text-harrier-dark font-montserrat">Account Status</h4>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600 font-medium">Active Status</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                    {% if user_profile.is_active %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+                                    <i class="fas fa-{% if user_profile.is_active %}check-circle{% else %}times-circle{% endif %} mr-1"></i>
+                                    {% if user_profile.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600 font-medium">Email Verified</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                    {% if user_profile.is_email_verified %}bg-green-100 text-green-800 border border-green-200{% else %}bg-yellow-100 text-yellow-800 border border-yellow-200{% endif %}">
+                                    <i class="fas fa-{% if user_profile.is_email_verified %}shield-check{% else %}exclamation-triangle{% endif %} mr-1"></i>
+                                    {% if user_profile.is_email_verified %}Verified{% else %}Pending{% endif %}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600 font-medium">Staff Access</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                    {% if user_profile.is_staff %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                    <i class="fas fa-{% if user_profile.is_staff %}user-tie{% else %}user{% endif %} mr-1"></i>
+                                    {% if user_profile.is_staff %}Staff{% else %}Regular{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Summary -->
+            <div class="sidebar-card">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
+                    <h3 class="text-lg font-bold text-white flex items-center font-montserrat">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                        Recent Activity
+                    </h3>
+                </div>
+                <div class="p-6">
+                    {% if recent_activities %}
+                        <div class="space-y-4">
+                            {% for activity in recent_activities|slice:":3" %}
+                            <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                <div class="w-8 h-8 bg-harrier-red rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-circle text-white text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-semibold text-harrier-dark truncate font-montserrat">{{ activity.get_action_display }}</div>
+                                    <div class="text-xs text-gray-500 font-raleway">{{ activity.timestamp|timesince }} ago</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if recent_activities.count > 3 %}
+                        <div class="mt-4 text-center">
+                            <button type="button" onclick="document.querySelector('[data-tab=\"activity\"]').click()"
+                                    class="action-button secondary text-sm">
+                                View All Activity
+                            </button>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-6">
+                            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-history text-gray-400"></i>
+                            </div>
+                            <p class="text-sm text-gray-500 font-raleway">No recent activity</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Password Reset Modal -->
+    <div id="passwordResetModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-harrier-dark">Reset Password</h3>
+                <button type="button" onclick="closePasswordResetModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-600">Are you sure you want to reset the password for <strong>{{ user_profile.username }}</strong>?</p>
+                <p class="text-sm text-yellow-600 mt-2">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    A new random password will be generated and displayed.
+                </p>
+            </div>
+            <div class="flex space-x-4">
+                <button type="button" onclick="closePasswordResetModal()" class="form-button-secondary flex-1">Cancel</button>
+                <form method="post" class="flex-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_password">
+                    <button type="submit" class="form-button-danger w-full">Reset Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* Tab Content Styles */
+.tab-content {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.tab-content.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Modern Tab Button Active States */
+.modern-tab-button.active .w-10 {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.modern-tab-button.active .opacity-70 {
+    opacity: 0.9 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Enhanced Hover Effects */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+}
+
+/* Loading States */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Ripple Effect for Buttons */
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    animation: ripple-animation 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .modern-tab-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .modern-tab-button .w-10 {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .section-icon {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in-up,
+    .tab-content,
+    .hover-lift,
+    .ripple {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .action-button {
+        border: 2px solid currentColor;
+    }
+
+    .modern-tab-button.active {
+        border: 2px solid white;
+    }
+}
+
+/* Enhanced Input Integration */
+.form-group .enhanced-input,
+.form-group .enhanced-select,
+.form-group .enhanced-textarea {
+    margin-bottom: 0;
+}
+
+.form-group .floating-label {
+    color: #6b7280;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.form-group .enhanced-input:focus + .floating-label,
+.form-group .enhanced-input:not(:placeholder-shown) + .floating-label {
+    color: #DC2626;
+}
+
+/* Django Form Widget Override */
+.form-group input,
+.form-group select,
+.form-group textarea {
+    border: 2px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    font-family: 'Raleway', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+    border-color: #d1d5db;
+    background: linear-gradient(145deg, #ffffff, #f1f5f9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #DC2626;
+    background: linear-gradient(145deg, #ffffff, #fef2f2);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 8px 16px rgba(220, 38, 38, 0.15), 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+.form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23DC2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 1rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+    padding-right: 3rem;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Input with Icon Adjustments */
+.input-with-icon input {
+    padding-left: 3rem;
+}
+
+.input-with-icon .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* File Input Styling */
+.form-group input[type="file"] {
+    display: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTabs();
+    initializeFileUploads();
+    initializeModernEffects();
+    initializeAnimations();
+    enhanceFormInputs();
+});
+
+function openPasswordResetModal() {
+    document.getElementById('passwordResetModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closePasswordResetModal() {
+    document.getElementById('passwordResetModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function resetForm() {
+    if (confirm('Are you sure you want to reset all changes?')) {
+        location.reload();
+    }
+}
+
+// Enhanced Tab functionality for modern tab buttons
+function initializeTabs() {
+    const tabs = document.querySelectorAll('.modern-tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            this.classList.add('active');
+            const targetContent = document.getElementById(targetTab + '-tab');
+            if (targetContent) {
+                // Add a small delay for smooth transition
+                setTimeout(() => {
+                    targetContent.classList.add('active');
+                }, 100);
+
+                // Add smooth scroll to content for better UX
+                targetContent.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+
+            // Add ripple effect
+            createRipple(this, event);
+        });
+    });
+}
+
+// Initialize modern effects and interactions
+function initializeModernEffects() {
+    // Add hover effects to cards
+    const cards = document.querySelectorAll('.content-section, .sidebar-card, .stat-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.12)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+
+    // Add click ripple effect to action buttons
+    const buttons = document.querySelectorAll('.action-button, .modern-tab-button');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            createRipple(this, e);
+        });
+    });
+
+    // Add loading states for forms
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            }
+        });
+    });
+}
+
+// Create ripple effect
+function createRipple(element, event) {
+    const ripple = document.createElement('span');
+    const rect = element.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = event.clientX - rect.left - size / 2;
+    const y = event.clientY - rect.top - size / 2;
+
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    ripple.classList.add('ripple');
+
+    element.style.position = 'relative';
+    element.appendChild(ripple);
+
+    setTimeout(() => {
+        ripple.remove();
+    }, 600);
+}
+
+// Initialize entrance animations
+function initializeAnimations() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    const animatedElements = document.querySelectorAll('.animate-fade-in-up');
+    animatedElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'all 0.6s ease-out';
+        observer.observe(el);
+    });
+}
+
+// Enhanced file upload functionality
+function initializeFileUploads() {
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Validate file size (2MB limit)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File size must be less than 2MB');
+                    this.value = '';
+                    return;
+                }
+
+                // Validate file type
+                if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+                    alert('Please select a valid image file (JPG, JPEG, or PNG)');
+                    this.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Update preview if it exists
+                    const preview = document.getElementById('profileImagePreview');
+                    if (preview && input.name === 'profile_picture') {
+                        if (preview.tagName === 'IMG') {
+                            preview.src = e.target.result;
+                            preview.style.opacity = '0';
+                            setTimeout(() => {
+                                preview.style.opacity = '1';
+                            }, 100);
+                        } else {
+                            // Replace div with img
+                            const img = document.createElement('img');
+                            img.className = preview.className.replace('bg-gradient-to-br from-harrier-red to-harrier-red-dark flex items-center justify-center text-white font-bold text-xl shadow-lg font-montserrat', 'object-cover');
+                            img.src = e.target.result;
+                            img.alt = 'Profile picture';
+                            img.id = 'profileImagePreview';
+                            img.style.opacity = '0';
+                            preview.parentNode.replaceChild(img, preview);
+                            setTimeout(() => {
+                                img.style.opacity = '1';
+                            }, 100);
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    // Add drag and drop functionality
+    const uploadAreas = document.querySelectorAll('.file-upload-area');
+    uploadAreas.forEach(area => {
+        area.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('border-harrier-red', 'bg-harrier-red/5');
+        });
+
+        area.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-harrier-red', 'bg-harrier-red/5');
+        });
+
+        area.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-harrier-red', 'bg-harrier-red/5');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('id_profile_picture');
+                if (fileInput) {
+                    fileInput.files = files;
+                    fileInput.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    });
+}
+
+// Add smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Enhanced form inputs functionality
+function enhanceFormInputs() {
+    // Apply enhanced classes to all form inputs
+    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="password"], input[type="date"], input[type="number"]');
+    const selects = document.querySelectorAll('select');
+    const textareas = document.querySelectorAll('textarea');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const radios = document.querySelectorAll('input[type="radio"]');
+
+    // Enhance text inputs
+    inputs.forEach(input => {
+        if (!input.classList.contains('enhanced-input')) {
+            input.classList.add('enhanced-input');
+
+            // Add floating label effect
+            const label = input.closest('.form-group')?.querySelector('.form-label');
+            if (label && !label.classList.contains('floating-label')) {
+                const labelText = label.textContent.trim();
+                input.setAttribute('placeholder', ' '); // Space for floating label detection
+                label.classList.add('floating-label');
+                label.style.position = 'absolute';
+                label.style.left = '1.25rem';
+                label.style.top = '1rem';
+                label.style.pointerEvents = 'none';
+                label.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                label.style.transformOrigin = 'left top';
+                label.style.fontFamily = 'Montserrat, sans-serif';
+
+                // Position the input container
+                input.closest('.form-group').style.position = 'relative';
+            }
+        }
+    });
+
+    // Enhance select elements
+    selects.forEach(select => {
+        if (!select.classList.contains('enhanced-select')) {
+            select.classList.add('enhanced-select');
+        }
+    });
+
+    // Enhance textareas
+    textareas.forEach(textarea => {
+        if (!textarea.classList.contains('enhanced-textarea')) {
+            textarea.classList.add('enhanced-textarea');
+        }
+    });
+
+    // Enhance checkboxes
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.closest('.enhanced-checkbox')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'enhanced-checkbox';
+
+            const checkmark = document.createElement('span');
+            checkmark.className = 'checkmark';
+
+            checkbox.parentNode.insertBefore(wrapper, checkbox);
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(checkmark);
+        }
+    });
+
+    // Enhance radio buttons
+    radios.forEach(radio => {
+        if (!radio.closest('.enhanced-radio')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'enhanced-radio';
+
+            const radiomark = document.createElement('span');
+            radiomark.className = 'radiomark';
+
+            radio.parentNode.insertBefore(wrapper, radio);
+            wrapper.appendChild(radio);
+            wrapper.appendChild(radiomark);
+        }
+    });
+
+    // Add real-time validation
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateInput(this);
+        });
+
+        input.addEventListener('input', function() {
+            clearValidation(this);
+        });
+    });
+}
+
+// Input validation function
+function validateInput(input) {
+    const value = input.value.trim();
+    const type = input.type;
+    const required = input.hasAttribute('required');
+
+    clearValidation(input);
+
+    if (required && !value) {
+        showInputError(input, 'This field is required');
+        return false;
+    }
+
+    if (value) {
+        switch (type) {
+            case 'email':
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) {
+                    showInputError(input, 'Please enter a valid email address');
+                    return false;
+                }
+                break;
+            case 'tel':
+                const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+                if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+                    showInputError(input, 'Please enter a valid phone number');
+                    return false;
+                }
+                break;
+        }
+    }
+
+    showInputSuccess(input);
+    return true;
+}
+
+// Show input error
+function showInputError(input, message) {
+    const container = input.closest('.form-group');
+    container.classList.add('input-error');
+
+    let errorElement = container.querySelector('.form-error');
+    if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.className = 'form-error';
+        container.appendChild(errorElement);
+    }
+
+    errorElement.innerHTML = `<i class="fas fa-exclamation-circle form-error-icon"></i>${message}`;
+}
+
+// Show input success
+function showInputSuccess(input) {
+    const container = input.closest('.form-group');
+    container.classList.add('input-success');
+    container.classList.remove('input-error');
+
+    // Remove error message
+    const errorElement = container.querySelector('.form-error');
+    if (errorElement) {
+        errorElement.remove();
+    }
+}
+
+// Clear validation
+function clearValidation(input) {
+    const container = input.closest('.form-group');
+    container.classList.remove('input-error', 'input-success', 'input-warning');
+
+    const errorElement = container.querySelector('.form-error');
+    if (errorElement) {
+        errorElement.remove();
+    }
+}
+
+// Add keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + S to save form
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) {
+            const form = activeTab.querySelector('form');
+            if (form) {
+                form.submit();
+            }
+        }
+    }
+
+    // Escape to close modal
+    if (e.key === 'Escape') {
+        closePasswordResetModal();
+    }
+});
+</script>
+{% endblock %}

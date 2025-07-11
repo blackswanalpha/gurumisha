@@ -96,8 +96,8 @@
             <div class="admin-stat-label">Total Orders</div>
         </div>
         <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-blue-600">{{ confirmed_orders|default:0 }}</div>
-            <div class="admin-stat-label">Confirmed</div>
+            <div class="admin-stat-value text-blue-600">{{ import_request_orders|default:0 }}</div>
+            <div class="admin-stat-label">Import Requests</div>
         </div>
         <div class="admin-stat-card text-center">
             <div class="admin-stat-value text-orange-600">{{ in_transit_orders|default:0 }}</div>
@@ -236,27 +236,121 @@
     <!-- Import Orders Tracking Table -->
     <div class="admin-card animate-fade-in-up" style="animation-delay: 0.4s;">
         <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-list-alt text-white"></i>
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-list-alt text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Import Orders Tracking</h3>
                     </div>
-                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Import Orders Tracking</h3>
+
+                    <!-- Pagination Info -->
+                    {% if is_paginated %}
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 bg-harrier-red bg-opacity-10 text-harrier-red rounded-full text-sm font-medium">
+                                {{ paginator.count }} total orders
+                            </span>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                Page {{ page_obj.number }} of {{ paginator.num_pages }}
+                            </span>
+                        </div>
+                    {% else %}
+                        <span class="px-3 py-1 bg-harrier-red bg-opacity-10 text-harrier-red rounded-full text-sm font-medium">
+                            {{ import_orders|length }} orders
+                        </span>
+                    {% endif %}
                 </div>
                 <div class="flex space-x-2">
+                    <!-- Export Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" type="button" class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50">
+                            <i class="fas fa-download mr-1"></i>Export
+                            <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                            <div class="py-1">
+                                <a href="{% url 'core:admin_tracking_management_export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                    <i class="fas fa-file-csv mr-2 text-green-600"></i>Export as CSV
+                                </a>
+                                <a href="{% url 'core:admin_tracking_management_export_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                    <i class="fas fa-file-excel mr-2 text-green-600"></i>Export as Excel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50"
-                            title="Export tracking data">
-                        <i class="fas fa-download mr-1"></i>Export
-                    </button>
-                    <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50"
-                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}{% if current_filter %}?status={{ current_filter }}{% endif %}"
+                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page={{ page_obj.number|default:1 }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
                             hx-target="#tracking-management-table"
-                            hx-swap="innerHTML"
+                            hx-swap="outerHTML"
                             hx-indicator="#refresh-indicator"
                             title="Refresh table data">
                         <i class="fas fa-sync mr-1" id="refresh-indicator"></i>Refresh
                     </button>
                 </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="flex flex-col lg:flex-row gap-4">
+                <!-- Search Bar -->
+                <div class="flex-1">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text"
+                               name="search"
+                               id="tracking-search"
+                               value="{{ current_search }}"
+                               placeholder="Search by order number, customer, brand, model, chassis number..."
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red sm:text-sm transition-colors duration-200"
+                               hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
+                               hx-target="#tracking-management-table"
+                               hx-swap="outerHTML"
+                               hx-trigger="keyup changed delay:500ms"
+                               hx-include="[name='status'], [name='date_from'], [name='date_to']"
+                               hx-indicator="#search-indicator">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-spinner fa-spin text-gray-400 hidden" id="search-indicator"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range Filters -->
+                <div class="flex gap-2">
+                    <input type="date"
+                           name="date_from"
+                           value="{{ current_date_from }}"
+                           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
+                           hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
+                           hx-target="#tracking-management-table"
+                           hx-swap="outerHTML"
+                           hx-trigger="change"
+                           hx-include="[name='search'], [name='status'], [name='date_to']"
+                           placeholder="From date">
+                    <input type="date"
+                           name="date_to"
+                           value="{{ current_date_to }}"
+                           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
+                           hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
+                           hx-target="#tracking-management-table"
+                           hx-swap="outerHTML"
+                           hx-trigger="change"
+                           hx-include="[name='search'], [name='status'], [name='date_from']"
+                           placeholder="To date">
+                </div>
+
+                <!-- Clear Filters -->
+                {% if current_search or current_date_from or current_date_to %}
+                <button type="button"
+                        class="px-4 py-2 text-sm text-gray-600 hover:text-harrier-red border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                        onclick="clearFilters()">
+                    <i class="fas fa-times mr-1"></i>Clear
+                </button>
+                {% endif %}
             </div>
         </div>
         
@@ -479,51 +573,89 @@ function closeStatusModal() {
     document.getElementById('status-form').reset();
 }
 
-// Handle status form submission
-document.getElementById('status-form').addEventListener('submit', function(e) {
-    e.preventDefault();
+// Handle status form submission - with null checks
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Alpine.js to be ready
+    if (window.Alpine) {
+        Alpine.start();
+    }
+    const statusForm = document.getElementById('status-form');
+    const statusModal = document.getElementById('status-modal');
 
-    if (!currentOrderId) return;
+    if (statusForm) {
+        statusForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-    const formData = new FormData(this);
+            if (!currentOrderId) return;
 
-    fetch(`/dashboard/admin/tracking/update-status/${currentOrderId}/`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            const formData = new FormData(this);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+
+            if (!csrfToken) {
+                console.error('CSRF token not found');
+                if (window.showError) {
+                    showError('Security token not found. Please refresh the page.');
+                } else {
+                    alert('Security token not found. Please refresh the page.');
+                }
+                return;
+            }
+
+            fetch(`/dashboard/admin/tracking/update-status/${currentOrderId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken.value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message using toast manager if available
+                    if (window.showSuccess) {
+                        showSuccess('Status updated successfully!');
+                    } else {
+                        alert('Status updated successfully!');
+                    }
+                    // Reload the page to show updated status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    if (window.showError) {
+                        showError('Error: ' + data.error);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (window.showError) {
+                    showError('An error occurred while updating the status.');
+                } else {
+                    alert('An error occurred while updating the status.');
+                }
+            });
+
+            closeStatusModal();
+        });
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeStatusModal();
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            alert('Status updated successfully!');
-            // Reload the page to show updated status
-            window.location.reload();
-        } else {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while updating the status.');
     });
 
-    closeStatusModal();
-});
-
-// Close modal on escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeStatusModal();
-    }
-});
-
-// Close modal on backdrop click
-document.getElementById('status-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeStatusModal();
+    // Close modal on backdrop click
+    if (statusModal) {
+        statusModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeStatusModal();
+            }
+        });
     }
 });
 
@@ -532,10 +664,14 @@ function filterByStage(stageKey, stageName) {
     // Update filter text
     document.getElementById('filter-text').textContent = stageName;
 
-    // Make HTMX request to filter table
-    htmx.ajax('GET', `/dashboard/admin/tracking-management/table/?status=${stageKey}`, {
+    // Make HTMX request to filter table, reset to page 1
+    const url = stageKey === 'all'
+        ? '/dashboard/admin/tracking-management/table/?page=1'
+        : `/dashboard/admin/tracking-management/table/?page=1&status=${stageKey}`;
+
+    htmx.ajax('GET', url, {
         target: '#tracking-management-table',
-        swap: 'innerHTML'
+        swap: 'outerHTML'
     });
 
     // Add visual feedback to clicked stage
@@ -543,7 +679,117 @@ function filterByStage(stageKey, stageName) {
         stage.classList.remove('active-stage');
     });
 
-    document.querySelector(`[data-stage="${stageKey}"]`).classList.add('active-stage');
+    if (stageKey !== 'all') {
+        document.querySelector(`[data-stage="${stageKey}"]`).classList.add('active-stage');
+    }
+}
+
+// Clear all filters function
+function clearFilters() {
+    // Clear search input
+    const searchInput = document.getElementById('tracking-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    // Clear date inputs
+    const dateFromInput = document.querySelector('[name="date_from"]');
+    const dateToInput = document.querySelector('[name="date_to"]');
+    if (dateFromInput) dateFromInput.value = '';
+    if (dateToInput) dateToInput.value = '';
+
+    // Reload table without filters, reset to page 1
+    htmx.ajax('GET', '/dashboard/admin/tracking-management/table/?page=1', {
+        target: '#tracking-management-table',
+        swap: 'outerHTML'
+    });
+
+    // Reload page to clear URL parameters
+    setTimeout(() => {
+        window.location.href = '/dashboard/admin/tracking-management/';
+    }, 500);
+}
+
+// Enhanced search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('tracking-search');
+    if (searchInput) {
+        // Add search icon animation
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.querySelector('.fa-search').classList.add('text-harrier-red');
+        });
+
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.querySelector('.fa-search').classList.remove('text-harrier-red');
+        });
+
+        // Show/hide search indicator
+        document.addEventListener('htmx:beforeRequest', function(event) {
+            if (event.target === searchInput) {
+                document.getElementById('search-indicator').classList.remove('hidden');
+            }
+        });
+
+        document.addEventListener('htmx:afterRequest', function(event) {
+            if (event.target === searchInput) {
+                document.getElementById('search-indicator').classList.add('hidden');
+            }
+        });
+    }
+
+    // Enhanced pagination experience
+    initializePaginationEnhancements();
+});
+
+// Initialize pagination enhancements
+function initializePaginationEnhancements() {
+    // Add loading states to pagination buttons
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        if (event.target.classList.contains('pagination-btn') ||
+            event.target.classList.contains('pagination-btn-mobile')) {
+            event.target.style.opacity = '0.6';
+            event.target.style.pointerEvents = 'none';
+        }
+    });
+
+    document.addEventListener('htmx:afterRequest', function(event) {
+        // Re-enable pagination buttons after request
+        document.querySelectorAll('.pagination-btn, .pagination-btn-mobile').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        });
+
+        // Scroll to top of table after pagination
+        if (event.target.id === 'tracking-management-table') {
+            const tableContainer = document.getElementById('tracking-management-table');
+            if (tableContainer) {
+                tableContainer.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+    });
+
+    // Keyboard navigation for pagination
+    document.addEventListener('keydown', function(event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return; // Don't interfere with form inputs
+        }
+
+        const currentPage = parseInt(document.querySelector('.pagination-btn-active')?.textContent || '1');
+        const totalPages = parseInt(document.querySelector('.pagination-btn:last-of-type')?.textContent || '1');
+
+        if (event.key === 'ArrowLeft' && currentPage > 1) {
+            event.preventDefault();
+            const prevBtn = document.querySelector('.pagination-btn-nav[title="Previous page"]');
+            if (prevBtn) prevBtn.click();
+        } else if (event.key === 'ArrowRight' && currentPage < totalPages) {
+            event.preventDefault();
+            const nextBtn = document.querySelector('.pagination-btn-nav[title="Next page"]');
+            if (nextBtn) nextBtn.click();
+        }
+    });
 }
 </script>
 {% endblock %}

@@ -1,0 +1,302 @@
+{% load static %}
+
+<!-- Enhanced Notification Badge Component -->
+<!-- Usage: {% include 'core/components/notification_badge.html' with count=badge_count badge_type='primary' position='top-right' %} -->
+
+{% if count and count > 0 %}
+<span class="notification-badge notification-badge-{{ badge_type|default:'primary' }} notification-badge-{{ position|default:'top-right' }}"
+      data-count="{{ count }}"
+      aria-label="{{ count }} {{ aria_label|default:'notifications' }}"
+      role="status">
+    {% if count > 99 %}
+        99+
+    {% else %}
+        {{ count }}
+    {% endif %}
+</span>
+{% endif %}
+
+<style>
+/* Enhanced Notification Badge Styles */
+.notification-badge {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    line-height: 1;
+    border-radius: 9px;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    animation: badge-appear 0.4s ease-out;
+}
+
+/* Badge Types - Harrier Design System Colors */
+.notification-badge-primary {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}
+
+.notification-badge-secondary {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(31, 41, 55, 0.4);
+}
+
+.notification-badge-blue {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.4);
+}
+
+.notification-badge-success {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+}
+
+.notification-badge-warning {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.4);
+}
+
+.notification-badge-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}
+
+.notification-badge-info {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+/* Badge Positions */
+.notification-badge-top-right {
+    top: -6px;
+    right: -6px;
+}
+
+.notification-badge-top-left {
+    top: -6px;
+    left: -6px;
+}
+
+.notification-badge-bottom-right {
+    bottom: -6px;
+    right: -6px;
+}
+
+.notification-badge-bottom-left {
+    bottom: -6px;
+    left: -6px;
+}
+
+.notification-badge-center-right {
+    top: 50%;
+    right: -6px;
+    transform: translateY(-50%);
+}
+
+.notification-badge-inline {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-left: 8px;
+}
+
+/* Hover Effects */
+.notification-badge:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.notification-badge-top-right:hover,
+.notification-badge-top-left:hover,
+.notification-badge-bottom-right:hover,
+.notification-badge-bottom-left:hover {
+    transform: scale(1.1);
+}
+
+.notification-badge-center-right:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Pulse Animation for High Priority */
+.notification-badge-pulse {
+    animation: badge-pulse 2s infinite;
+}
+
+.notification-badge-urgent {
+    animation: badge-urgent 1s infinite;
+}
+
+/* Size Variants */
+.notification-badge-small {
+    min-width: 14px;
+    height: 14px;
+    font-size: 9px;
+    padding: 0 4px;
+    border-radius: 7px;
+}
+
+.notification-badge-large {
+    min-width: 22px;
+    height: 22px;
+    font-size: 12px;
+    padding: 0 8px;
+    border-radius: 11px;
+}
+
+/* Animations */
+@keyframes badge-appear {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes badge-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes badge-urgent {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.1);
+        box-shadow: 0 4px 16px rgba(220, 38, 38, 0.6);
+    }
+}
+
+@keyframes badge-increase {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Count Change Animation */
+.notification-badge.count-increased {
+    animation: badge-increase 0.6s ease-out;
+}
+
+.notification-badge.count-decreased {
+    animation: badge-decrease 0.4s ease-out;
+}
+
+@keyframes badge-decrease {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.8);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Accessibility */
+.notification-badge:focus {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .notification-badge {
+        border-width: 3px;
+        font-weight: 900;
+    }
+    
+    .notification-badge-primary {
+        background: #dc2626;
+        color: white;
+    }
+    
+    .notification-badge-secondary {
+        background: #000000;
+        color: white;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .notification-badge {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .notification-badge:hover {
+        transform: none !important;
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .notification-badge {
+        min-width: 16px;
+        height: 16px;
+        font-size: 10px;
+        padding: 0 5px;
+    }
+    
+    .notification-badge-small {
+        min-width: 12px;
+        height: 12px;
+        font-size: 8px;
+        padding: 0 3px;
+    }
+    
+    .notification-badge-large {
+        min-width: 20px;
+        height: 20px;
+        font-size: 11px;
+        padding: 0 6px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .notification-badge {
+        border-color: #1f2937;
+    }
+}
+</style>

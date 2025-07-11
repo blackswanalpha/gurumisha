@@ -4,6 +4,12 @@
  * Handles all system messages, errors, and user feedback
  */
 
+// Prevent multiple script executions
+if (window.toastManagerLoaded) {
+    return;
+}
+window.toastManagerLoaded = true;
+
 class ToastManager {
     constructor() {
         this.toasts = new Map();
@@ -33,6 +39,11 @@ class ToastManager {
         window.showWarning = (message, options) => this.show(message, 'warning', options);
         window.showInfo = (message, options) => this.show(message, 'info', options);
         window.clearToasts = this.clearAll.bind(this);
+
+        // Featured car specific methods
+        window.showFeaturedSuccess = this.showFeaturedSuccess.bind(this);
+        window.showFeaturedError = this.showFeaturedError.bind(this);
+        window.showFeaturedLimitReached = this.showFeaturedLimitReached.bind(this);
     }
 
     createContainer() {
@@ -292,17 +303,45 @@ class ToastManager {
     handleGlobalErrors() {
         // Handle JavaScript errors
         window.addEventListener('error', (event) => {
-            console.error('Global error:', event.error);
-            this.show('An unexpected error occurred.', 'error', {
-                action: {
-                    text: 'Reload Page',
-                    handler: () => window.location.reload()
-                }
-            });
+            // Filter out common non-critical errors
+            const ignoredErrors = [
+                'isSubmitting is not defined',
+                'Script error.',
+                'ResizeObserver loop limit exceeded',
+                'Non-Error promise rejection captured',
+                'Loading chunk'
+            ];
+
+            // Check if error should be ignored
+            if (!event.error ||
+                event.error === null ||
+                event.filename.includes('cdn.min.js') ||
+                event.filename.includes('alpine') ||
+                ignoredErrors.some(ignored => event.message && event.message.includes(ignored))) {
+                return;
+            }
+
+            // Only log actual meaningful errors
+            if (event.error && event.error.stack && !event.error.stack.includes('isSubmitting')) {
+                console.error('Global error:', event.error);
+                this.show('An unexpected error occurred.', 'error', {
+                    action: {
+                        text: 'Reload Page',
+                        handler: () => window.location.reload()
+                    }
+                });
+            }
         });
 
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
+            // Filter out null rejections and common non-critical rejections
+            if (!event.reason ||
+                event.reason === null ||
+                (typeof event.reason === 'string' && event.reason.includes('isSubmitting'))) {
+                return;
+            }
+
             console.error('Unhandled promise rejection:', event.reason);
             this.show('An unexpected error occurred.', 'error');
         });
@@ -334,6 +373,94 @@ class ToastManager {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    // Featured car specific notification methods
+    showFeaturedSuccess(carTitle, tier, remainingSlots) {
+        const tierDisplay = tier.charAt(0).toUpperCase() + tier.slice(1);
+        return this.show(
+            `Car "${carTitle}" featured as ${tierDisplay}`,
+            'success',
+            {
+                action: {
+                    text: `${remainingSlots} slots remaining`,
+                    handler: () => {
+                        // Optional: Navigate to featured cars view
+                        window.location.href = '/dashboard/admin/listings/?status=featured';
+                    },
+                    dismissOnClick: false
+                },
+                duration: 6000
+            }
+        );
+    }
+
+    showFeaturedError(message, remainingSlots = null) {
+        const options = {
+            duration: 7000
+        };
+
+        if (remainingSlots !== null) {
+            options.action = {
+                text: `${remainingSlots} slots available`,
+                handler: () => {
+                    window.location.href = '/dashboard/admin/listings/?status=featured';
+                },
+                dismissOnClick: false
+            };
+        }
+
+        return this.show(message, 'error', options);
+    }
+
+    showFeaturedLimitReached() {
+        return this.show(
+            'Featured cars limit reached (9/9)',
+            'warning',
+            {
+                action: {
+                    text: 'View Featured Cars',
+                    handler: () => {
+                        window.location.href = '/dashboard/admin/listings/?status=featured';
+                    }
+                },
+                duration: 8000
+            }
+        );
+    }
+
+    showCarUnfeatured(carTitle, availableSlots) {
+        return this.show(
+            `Featured status removed from "${carTitle}"`,
+            'info',
+            {
+                action: {
+                    text: `${availableSlots} slots now available`,
+                    handler: () => {
+                        // Optional action
+                    },
+                    dismissOnClick: false
+                },
+                duration: 5000
+            }
+        );
+    }
+
+    showCarApproved(carTitle) {
+        return this.show(
+            `Car "${carTitle}" approved successfully`,
+            'success',
+            {
+                action: {
+                    text: 'Feature this car?',
+                    handler: () => {
+                        // This would need to be implemented based on context
+                        console.log('Feature car action triggered');
+                    }
+                },
+                duration: 6000
+            }
+        );
+    }
 }
 
 // CSS for animations
@@ -362,8 +489,10 @@ const styleSheet = document.createElement('style');
 styleSheet.textContent = toastStyles;
 document.head.appendChild(styleSheet);
 
-// Initialize toast manager
-const toastManager = new ToastManager();
+// Initialize toast manager only if not already initialized
+if (!window.toastManager) {
+    window.toastManager = new ToastManager();
+}
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {

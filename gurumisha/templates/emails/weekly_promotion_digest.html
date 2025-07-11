@@ -1,0 +1,191 @@
+{% load math_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📰 Weekly Car Deals & Featured Vehicles</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9fafb;
+        }
+        .car-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .car-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        .footer {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📰 Weekly Car Digest</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px;">Your weekly dose of amazing car deals!</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">This Week's Highlights</h2>
+            
+            <!-- Hot Deals Section -->
+            {% if active_deals %}
+            <div class="section">
+                <h3 style="color: #ef4444; margin-bottom: 15px;">🔥 Hot Deals</h3>
+                <div class="car-grid">
+                    {% for deal in active_deals %}
+                    <div class="car-card">
+                        <h4 style="margin: 0 0 10px 0; color: #1f2937;">{{ deal.car.title }}</h4>
+                        <p style="margin: 5px 0; color: #6b7280;">{{ deal.car.brand.name }} {{ deal.car.model.name }}</p>
+                        <div style="margin: 10px 0;">
+                            <span style="font-size: 18px; font-weight: bold; color: #ef4444;">
+                                KSh {{ deal.discounted_price|floatformat:0 }}
+                            </span>
+                            <span style="font-size: 14px; color: #6b7280; text-decoration: line-through; margin-left: 10px;">
+                                KSh {{ deal.original_price|floatformat:0 }}
+                            </span>
+                        </div>
+                        <div style="background: #fbbf24; color: #1f2937; padding: 4px 8px; border-radius: 4px; display: inline-block; font-size: 12px; font-weight: bold;">
+                            {% if deal.discount_type == 'percentage' %}
+                                {{ deal.discount_value|floatformat:0 }}% OFF
+                            {% else %}
+                                KSh {{ deal.discount_value|floatformat:0 }} OFF
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{{ site_url }}/hot-deals/" class="cta-button">View All Hot Deals</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Featured Cars Section -->
+            {% if new_featured %}
+            <div class="section">
+                <h3 style="color: #7c3aed; margin-bottom: 15px;">⭐ Newly Featured Cars</h3>
+                <div class="car-grid">
+                    {% for car in new_featured %}
+                    <div class="car-card">
+                        <h4 style="margin: 0 0 10px 0; color: #1f2937;">{{ car.title }}</h4>
+                        <p style="margin: 5px 0; color: #6b7280;">{{ car.brand.name }} {{ car.model.name }}</p>
+                        <div style="margin: 10px 0;">
+                            <span style="font-size: 18px; font-weight: bold; color: #1f2937;">
+                                KSh {{ car.price|floatformat:0 }}
+                            </span>
+                        </div>
+                        <div style="background: #7c3aed; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; font-size: 12px; font-weight: bold;">
+                            {{ car.featured_tier|title }} Featured
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{{ site_url }}/featured-cars/" class="cta-button">View All Featured Cars</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Top Rated Section -->
+            {% if top_rated %}
+            <div class="section">
+                <h3 style="color: #10b981; margin-bottom: 15px;">🌟 Top Rated Vehicles</h3>
+                <div class="car-grid">
+                    {% for car in top_rated %}
+                    <div class="car-card">
+                        <h4 style="margin: 0 0 10px 0; color: #1f2937;">{{ car.title }}</h4>
+                        <p style="margin: 5px 0; color: #6b7280;">{{ car.brand.name }} {{ car.model.name }}</p>
+                        <div style="margin: 10px 0;">
+                            <span style="font-size: 18px; font-weight: bold; color: #1f2937;">
+                                KSh {{ car.price|floatformat:0 }}
+                            </span>
+                        </div>
+                        <div style="color: #fbbf24; font-size: 14px;">
+                            ★★★★★ {{ car.calculated_rating }}/5.0
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{{ site_url }}/top-rated/" class="cta-button">View Top Rated Cars</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Call to Action -->
+            <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); border-radius: 8px;">
+                <h3 style="color: #1f2937; margin-bottom: 15px;">Don't Miss Out!</h3>
+                <p style="color: #6b7280; margin-bottom: 20px;">Discover your perfect car today with exclusive deals and premium featured vehicles.</p>
+                <a href="{{ site_url }}/cars/" class="cta-button">Browse All Cars</a>
+                <a href="{{ site_url }}/recommendations/" class="cta-button" style="background: linear-gradient(135deg, #7c3aed, #6d28d9);">Get Recommendations</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3 style="color: #ef4444; margin: 0 0 15px 0;">Gurumisha Motors</h3>
+            <p style="margin: 0 0 10px 0;">Your trusted partner for quality vehicles</p>
+            
+            <p style="margin: 15px 0 5px 0; font-size: 12px;">
+                You're receiving this weekly digest because you subscribed to our promotional emails.
+            </p>
+            <p style="margin: 0; font-size: 12px;">
+                <a href="{{ site_url }}/unsubscribe/" style="color: #ef4444;">Unsubscribe</a> | 
+                <a href="{{ site_url }}/contact/" style="color: #ef4444;">Contact Us</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

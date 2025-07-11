@@ -1,0 +1,91 @@
+<!-- Star Rating Breakdown Component -->
+{% load promotion_tags %}
+
+<div class="bg-white rounded-lg p-6 shadow-lg">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Customer Ratings</h3>
+        <div class="text-right">
+            {% star_rating_display average_rating %}
+            <p class="text-sm text-gray-500 mt-1">{{ total_ratings }} review{{ total_ratings|pluralize }}</p>
+        </div>
+    </div>
+    
+    {% if total_ratings > 0 %}
+        <div class="space-y-2">
+            {% for star in "54321" %}
+                {% with star_num=star|add:0 %}
+                    <div class="flex items-center">
+                        <div class="flex items-center w-16">
+                            <span class="text-sm font-medium text-gray-700">{{ star_num }}</span>
+                            <i class="fas fa-star text-yellow-400 ml-1"></i>
+                        </div>
+                        
+                        <div class="flex-1 mx-3">
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-yellow-400 h-2 rounded-full transition-all duration-300" 
+                                     style="width: {{ rating_percentages|get_item:star_num }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="w-12 text-right">
+                            <span class="text-sm text-gray-600">{{ rating_counts|get_item:star_num }}</span>
+                        </div>
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        
+        <!-- Recent Reviews -->
+        {% with recent_reviews=car.ratings.filter:is_approved=True|slice:":3" %}
+            {% if recent_reviews %}
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h4 class="text-md font-semibold text-gray-900 mb-3">Recent Reviews</h4>
+                    <div class="space-y-3">
+                        {% for review in recent_reviews %}
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <span class="font-medium text-gray-900">{{ review.customer.first_name|default:review.customer.username }}</span>
+                                        {% if review.is_verified %}
+                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Verified
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% star_rating_display review.rating show_number=False size="text-sm" %}
+                                </div>
+                                {% if review.review %}
+                                    <p class="text-sm text-gray-700">{{ review.review|truncatewords:20 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-500 mt-1">{{ review.created_at|date:"M d, Y" }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% else %}
+        <div class="text-center py-8">
+            <i class="fas fa-star text-gray-300 text-4xl mb-3"></i>
+            <p class="text-gray-500">No ratings yet</p>
+            <p class="text-sm text-gray-400">Be the first to rate this car!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Custom filter for dictionary access -->
+<script>
+// Add custom template filter for dictionary access in JavaScript if needed
+</script>
+
+<style>
+/* Custom styles for rating breakdown */
+.rating-breakdown .progress-bar {
+    transition: width 0.3s ease-in-out;
+}
+
+.rating-breakdown:hover .progress-bar {
+    opacity: 0.8;
+}
+</style>

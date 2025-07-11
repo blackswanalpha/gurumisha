@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load math_filters %}
 
-{% block title %}Gurumisha Motors - Premium Automotive Marketplace{% endblock %}
+{% block title %}Gurumisha - Premium Automotive Marketplace{% endblock %}
 
 {% block content %}
 <!-- Enhanced Hero Section with Video Background -->
@@ -277,8 +278,9 @@
             </a>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10" id="featured-cars">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="featured-cars">
             {% for car in featured_cars %}
+                {% load promotion_tags %}
                 <div class="bg-primary-white rounded-2xl shadow-modern overflow-hidden hover:shadow-modern-xl transition-all duration-500 group border border-gray-100">
                     <div class="relative overflow-hidden">
                         {% if car.main_image %}
@@ -288,6 +290,25 @@
                                 <i class="fas fa-car text-text-light text-5xl"></i>
                             </div>
                         {% endif %}
+
+                        <!-- Enhanced Promotion Badges -->
+                        {% promotion_badge car %}
+
+                        <!-- Hot Deal Countdown -->
+                        {% if car.is_hot_deal %}
+                            <div class="absolute top-4 right-4">
+                                {% if car.hot_deal_details %}
+                                    {% with hot_deal=car.hot_deal_details %}
+                                        {% hot_deal_countdown hot_deal %}
+                                    {% endwith %}
+                                {% else %}
+                                    <div class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                                        <i class="fas fa-fire mr-1"></i>HOT DEAL
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
                         <div class="absolute top-4 left-4">
                             <span class="bg-primary-red text-primary-white px-4 py-2 rounded-full text-sm font-bold shadow-modern">Featured</span>
                         </div>
@@ -305,15 +326,19 @@
                         <!-- Title -->
                         <h3 class="product-title-harrier">{{ car.title }}</h3>
 
-                        <!-- Rating (placeholder) -->
+                        <!-- Enhanced Star Rating -->
                         <div class="flex items-center mb-2">
-                            <div class="flex text-yellow-400">
-                                <i class="fas fa-star text-xs"></i>
-                                <i class="fas fa-star text-xs"></i>
-                                <i class="fas fa-star text-xs"></i>
-                                <i class="fas fa-star text-xs"></i>
-                                <i class="far fa-star text-xs"></i>
-                            </div>
+                            {% if car.calculated_rating > 0 %}
+                                {% star_rating_display car.calculated_rating show_number=False size="text-xs" %}
+                            {% else %}
+                                <div class="flex text-gray-300">
+                                    <i class="far fa-star text-xs"></i>
+                                    <i class="far fa-star text-xs"></i>
+                                    <i class="far fa-star text-xs"></i>
+                                    <i class="far fa-star text-xs"></i>
+                                    <i class="far fa-star text-xs"></i>
+                                </div>
+                            {% endif %}
                             <span class="text-xs text-harrier-muted ml-2">({{ car.views_count }} views)</span>
                         </div>
 
@@ -455,7 +480,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="hot-deals">
             {% for car in hot_deals %}
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group" data-deal-id="{% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% endif %}">
                     <div class="relative">
                         {% if car.main_image %}
                             <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
@@ -464,18 +489,70 @@
                                 <i class="fas fa-car text-gray-400 text-3xl"></i>
                             </div>
                         {% endif %}
+
+                        <!-- Enhanced Hot Deal Badge -->
                         <div class="absolute top-3 left-3">
-                            <span class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">Hot Deal</span>
+                            <span class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                                <i class="fas fa-fire mr-1"></i>HOT DEAL
+                            </span>
                         </div>
+
+                        <!-- Countdown Timer -->
+                        {% if car.hot_deal_details %}
+                            <div class="absolute top-3 right-3">
+                                <div class="countdown-timer"
+                                     data-countdown-end="{{ car.hot_deal_details.end_date|date:'c' }}"
+                                     data-deal-id="{{ car.hot_deal_details.id }}">
+                                    {% hot_deal_countdown car.hot_deal_details %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Discount Badge -->
+                        {% if car.hot_deal_details %}
+                            <div class="absolute bottom-3 left-3">
+                                <div class="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">
+                                    {% if car.hot_deal_details.discount_type == 'percentage' %}
+                                        {{ car.hot_deal_details.discount_value|floatformat:0 }}% OFF
+                                    {% else %}
+                                        KSh {{ car.hot_deal_details.discount_value|floatformat:0 }} OFF
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
 
                     <div class="p-4">
                         <h3 class="font-semibold text-midnight mb-1 truncate">{{ car.title }}</h3>
-                        <p class="text-sm text-gray-600 mb-3">{{ car.year }} • {{ car.mileage|floatformat:0 }} km</p>
+                        <p class="text-sm text-gray-600 mb-2">{{ car.year }} • {{ car.mileage|floatformat:0 }} km</p>
+
+                        <!-- Star Rating -->
+                        {% if car.calculated_rating > 0 %}
+                            <div class="mb-3">
+                                {% star_rating_display car.calculated_rating show_number=False size="text-xs" %}
+                            </div>
+                        {% endif %}
 
                         <div class="flex justify-between items-center">
-                            <span class="text-lg font-bold text-crimson">KSh {{ car.price|floatformat:0 }}</span>
-                            <a href="{% url 'core:car_detail' car.pk %}" class="text-sm bg-crimson text-white px-3 py-1 rounded hover:bg-electric-red transition-colors">View</a>
+                            <div>
+                                {% if car.hot_deal_details %}
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-lg font-bold text-crimson">KSh {{ car.hot_deal_details.discounted_price|floatformat:0 }}</span>
+                                        <span class="text-sm text-gray-500 line-through">KSh {{ car.hot_deal_details.original_price|floatformat:0 }}</span>
+                                    </div>
+                                    <p class="text-xs text-green-600 font-medium">
+                                        Save: KSh {{ car.hot_deal_details.original_price|sub:car.hot_deal_details.discounted_price|floatformat:0 }}
+                                    </p>
+                                {% else %}
+                                    <span class="text-lg font-bold text-crimson">KSh {{ car.price|floatformat:0 }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="flex space-x-2">
+                                {% if car.hot_deal_details %}
+                                    <a href="{% url 'core:hot_deal_detail' car.hot_deal_details.id %}" class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors">Deal</a>
+                                {% endif %}
+                                <a href="{% url 'core:car_detail' car.pk %}" class="text-xs bg-crimson text-white px-3 py-1 rounded hover:bg-electric-red transition-colors">View</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -874,6 +951,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     updateNavigation();
 });
+
+// Hot Deals and Promotion Features
+document.addEventListener('DOMContentLoaded', function() {
+    // Track featured car views
+    document.querySelectorAll('#featured-cars .group').forEach(function(card) {
+        card.addEventListener('click', function() {
+            const carId = this.querySelector('a[href*="/cars/"]')?.href.match(/\/cars\/(\d+)\//)?.[1];
+            if (carId) {
+                // Track analytics
+                fetch('/analytics/track/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                    },
+                    body: JSON.stringify({
+                        metric_type: 'featured_clicks',
+                        car_id: carId
+                    })
+                }).catch(console.error);
+            }
+        });
+    });
+
+    // Auto-update hot deals every 30 seconds
+    setInterval(function() {
+        // Refresh hot deals section via HTMX if available
+        if (typeof htmx !== 'undefined') {
+            htmx.trigger('#hot-deals', 'refresh');
+        }
+    }, 30000);
+});
 </script>
+
+<script src="{% static 'js/hot-deals.js' %}"></script>
 
 {% endblock %}

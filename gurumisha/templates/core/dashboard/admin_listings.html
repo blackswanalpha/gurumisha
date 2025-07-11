@@ -1,5 +1,6 @@
 {% extends 'base_admin_dashboard.html' %}
 {% load static %}
+{% load core_extras %}
 
 {% block dashboard_title %}Car Listings Management{% endblock %}
 {% block page_title %}Car Listings Management{% endblock %}
@@ -19,7 +20,7 @@
 {% block dashboard_content %}
     {% csrf_token %}
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="admin-stat-card text-center">
             <div class="admin-stat-value">{{ total_cars|default:0 }}</div>
             <div class="admin-stat-label">Total Listings</div>
@@ -32,6 +33,11 @@
             <div class="admin-stat-value text-orange-600">{{ pending_cars|default:0 }}</div>
             <div class="admin-stat-label">Pending Approval</div>
         </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-purple-600">{{ featured_cars|default:0 }}/9</div>
+            <div class="admin-stat-label">Featured Cars</div>
+            <div class="text-xs text-gray-500 mt-1">{{ featured_remaining|default:9 }} slots remaining</div>
+        </div>
     </div>
 
     <!-- Filters and Search -->
@@ -41,11 +47,13 @@
                 <!-- Status Filter -->
                 <div class="flex items-center space-x-2">
                     <label class="text-sm font-medium text-harrier-dark">Status:</label>
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm" 
+                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
                             onchange="window.location.href='?status=' + this.value">
                         <option value="">All Listings</option>
                         <option value="approved" {% if current_filter == 'approved' %}selected{% endif %}>Approved</option>
                         <option value="pending" {% if current_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="featured" {% if current_filter == 'featured' %}selected{% endif %}>Featured Cars</option>
+                        <option value="hot_deals" {% if current_filter == 'hot_deals' %}selected{% endif %}>Hot Deals</option>
                     </select>
                 </div>
             </div>
@@ -121,7 +129,7 @@
                                 <div class="text-sm text-gray-500">{{ car.vendor.user.get_full_name|default:car.vendor.user.username }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-harrier-dark">KSh {{ car.price|floatformat:0 }}</div>
+                                <div class="text-sm font-medium text-harrier-dark">{{ car.price|currency_ksh_no_decimals }}</div>
                                 {% if car.negotiable %}
                                     <div class="text-xs text-blue-600">Negotiable</div>
                                 {% endif %}
@@ -136,10 +144,30 @@
                                         <i class="fas fa-clock mr-1"></i>Pending
                                     </span>
                                 {% endif %}
-                                {% if car.status == 'featured' %}
+
+                                <!-- Featured Status -->
+                                {% if car.is_currently_featured %}
                                     <div class="mt-1">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                                             <i class="fas fa-star mr-1"></i>Featured
+                                        </span>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Certified Status -->
+                                {% if car.is_certified %}
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-certificate mr-1"></i>Certified
+                                        </span>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Hot Deal Status -->
+                                {% if car.is_hot_deal %}
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                            <i class="fas fa-fire mr-1"></i>Hot Deal
                                         </span>
                                     </div>
                                 {% endif %}
@@ -148,27 +176,55 @@
                                 {{ car.created_at|date:"M d, Y" }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-center space-x-2 flex-wrap">
                                     {% if not car.is_approved %}
-                                        <button onclick="approveCar({{ car.id }})" 
+                                        <button onclick="approveCar({{ car.id }})"
                                                 class="text-green-600 hover:text-green-900 transition-colors">
                                             <i class="fas fa-check mr-1"></i>Approve
                                         </button>
                                         <span class="text-gray-300">|</span>
-                                        <button onclick="rejectCar({{ car.id }})" 
+                                        <button onclick="rejectCar({{ car.id }})"
                                                 class="text-red-600 hover:text-red-900 transition-colors">
                                             <i class="fas fa-times mr-1"></i>Reject
                                         </button>
                                         <span class="text-gray-300">|</span>
                                     {% endif %}
-                                    <a href="{% url 'core:car_detail' car.id %}" target="_blank" 
+
+                                    <a href="{% url 'core:admin_car_detail' car.id %}"
                                        class="text-harrier-red hover:text-harrier-dark transition-colors">
                                         <i class="fas fa-eye mr-1"></i>View
                                     </a>
                                     <span class="text-gray-300">|</span>
-                                    <a href="#" class="text-harrier-red hover:text-harrier-dark transition-colors">
+
+                                    <button onclick="editCar({{ car.id }})" class="text-harrier-red hover:text-harrier-dark transition-colors">
                                         <i class="fas fa-edit mr-1"></i>Edit
-                                    </a>
+                                    </button>
+
+                                    {% if car.is_approved %}
+                                        <span class="text-gray-300">|</span>
+                                        {% if not car.is_currently_featured %}
+                                            <button onclick="featureCar({{ car.id }})"
+                                                    id="feature-btn-{{ car.id }}"
+                                                    class="text-purple-600 hover:text-purple-900 transition-colors"
+                                                    title="Mark as Featured">
+                                                <i class="fas fa-star mr-1"></i>Feature
+                                            </button>
+                                        {% else %}
+                                            <button onclick="unfeatureCar({{ car.id }})"
+                                                    id="feature-btn-{{ car.id }}"
+                                                    class="text-gray-600 hover:text-gray-900 transition-colors"
+                                                    title="Remove Featured Status">
+                                                <i class="fas fa-star mr-1"></i>Unfeature
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
+
+                                    <span class="text-gray-300">|</span>
+                                    <button onclick="deleteCar({{ car.id }})"
+                                            class="text-red-600 hover:text-red-900 transition-colors"
+                                            title="Delete Car Listing">
+                                        <i class="fas fa-trash mr-1"></i>Delete
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -186,6 +242,38 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        {% if cars.has_other_pages %}
+            <div class="mt-8 flex justify-center">
+                <nav class="flex items-center space-x-2">
+                    {% if cars.has_previous %}
+                        <a href="?page={{ cars.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                            <i class="fas fa-chevron-left mr-1"></i>Previous
+                        </a>
+                    {% endif %}
+
+                    {% for num in cars.paginator.page_range %}
+                        {% if cars.number == num %}
+                            <span class="px-3 py-2 text-sm font-medium text-white bg-harrier-red rounded-md">{{ num }}</span>
+                        {% elif num > cars.number|add:'-3' and num < cars.number|add:'3' %}
+                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if cars.has_next %}
+                        <a href="?page={{ cars.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           class="px-3 py-2 text-sm font-medium text-harrier-dark bg-white border border-gray-300 rounded-md hover:bg-harrier-gray transition-colors">
+                            Next<i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}
 
@@ -232,6 +320,324 @@ function rejectCar(carId) {
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while rejecting the car listing.');
+        });
+    }
+}
+
+function editCar(carId) {
+    // Load edit modal via HTMX
+    fetch(`/dashboard/admin/car/${carId}/edit/`)
+        .then(response => response.text())
+        .then(html => {
+            // Create modal container
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = html;
+            document.body.appendChild(modalContainer);
+        })
+        .catch(error => {
+            console.error('Error loading edit modal:', error);
+            alert('An error occurred while loading the edit form.');
+        });
+}
+
+function featureCar(carId) {
+    if (confirm('Are you sure you want to mark this car as featured?')) {
+        const button = document.querySelector(`button[onclick="featureCar(${carId})"]`);
+        const carRow = button.closest('tr');
+        const carTitle = carRow.querySelector('.text-harrier-dark').textContent.trim();
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Featuring...';
+
+        fetch(`/dashboard/admin/car/${carId}/feature/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=feature&tier=bronze'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success notification
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'success', {
+                        duration: 5000
+                    });
+                }
+
+                // Update UI immediately
+                updateCarRowStatus(carId, {
+                    is_featured: true,
+                    featured_count: data.featured_count,
+                    remaining_slots: data.remaining_slots
+                });
+
+                // Update stats card
+                updateFeaturedStatsCard(data.featured_count, data.remaining_slots);
+
+            } else {
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'error', {
+                        duration: 5000
+                    });
+                }
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-star mr-1"></i>Feature';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showError('An error occurred while featuring the car.');
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-star mr-1"></i>Feature';
+        });
+    }
+}
+
+function unfeatureCar(carId) {
+    if (confirm('Are you sure you want to remove the featured status from this car?')) {
+        const button = document.querySelector(`button[onclick="unfeatureCar(${carId})"]`);
+        const carRow = button.closest('tr');
+        const carTitle = carRow.querySelector('.text-harrier-dark').textContent.trim();
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Unfeaturing...';
+
+        fetch(`/dashboard/admin/car/${carId}/feature/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=unfeature'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success notification
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'success', {
+                        duration: 5000
+                    });
+                }
+
+                // Update UI immediately
+                updateCarRowStatus(carId, {
+                    is_featured: false,
+                    featured_count: data.featured_count,
+                    remaining_slots: data.remaining_slots
+                });
+
+                // Update stats card
+                updateFeaturedStatsCard(data.featured_count, data.remaining_slots);
+
+            } else {
+                if (window.toastManager) {
+                    window.toastManager.show(data.message, 'error', {
+                        duration: 5000
+                    });
+                }
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-star mr-1"></i>Unfeature';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.toastManager) {
+                window.toastManager.show('An error occurred while unfeaturing the car.', 'error', {
+                    duration: 5000
+                });
+            }
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-star mr-1"></i>Unfeature';
+        });
+    }
+}
+
+// Update car row status in the table
+function updateCarRowStatus(carId, statusData) {
+    const carRow = document.querySelector(`tr:has(button[onclick*="${carId}"])`);
+    if (!carRow) return;
+
+    const statusCell = carRow.querySelector('td:nth-child(4)'); // Status column
+    const actionsCell = carRow.querySelector('td:nth-child(6)'); // Actions column
+
+    if (statusCell && actionsCell) {
+        // Update featured status badges
+        const existingFeaturedBadge = statusCell.querySelector('.inline-flex:has(.fa-star)');
+        if (existingFeaturedBadge && existingFeaturedBadge.textContent.includes('Featured')) {
+            existingFeaturedBadge.parentElement.remove();
+        }
+
+        if (statusData.is_featured) {
+            // Add new featured badge
+            const badgeDiv = document.createElement('div');
+            badgeDiv.className = 'mt-1';
+            badgeDiv.innerHTML = `
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                    <i class="fas fa-star mr-1"></i>Featured
+                </span>
+            `;
+            statusCell.appendChild(badgeDiv);
+        }
+
+        // Update action buttons
+        updateActionButtons(carId, statusData, actionsCell);
+    }
+}
+
+// Removed getFeaturedBadgeHtml function as it's no longer needed with binary featured system
+
+function updateActionButtons(carId, statusData, actionsCell) {
+    // Find the feature/unfeature button
+    const featureButton = actionsCell.querySelector(`button[onclick*="featureCar(${carId})"], button[onclick*="unfeatureCar(${carId})"]`);
+
+    if (featureButton) {
+        if (statusData.is_featured) {
+            // Change to unfeature button
+            featureButton.onclick = () => unfeatureCar(carId);
+            featureButton.className = 'text-gray-600 hover:text-gray-900 transition-colors';
+            featureButton.title = 'Remove Featured Status';
+            featureButton.innerHTML = '<i class="fas fa-star mr-1"></i>Unfeature';
+            featureButton.disabled = false;
+        } else {
+            // Change to feature button
+            featureButton.onclick = () => featureCar(carId);
+            featureButton.className = 'text-purple-600 hover:text-purple-900 transition-colors';
+            featureButton.title = 'Mark as Featured';
+            featureButton.innerHTML = '<i class="fas fa-star mr-1"></i>Feature';
+            featureButton.disabled = false;
+        }
+    }
+}
+
+function updateFeaturedStatsCard(featuredCount, remainingSlots) {
+    const statsCard = document.querySelector('.admin-stat-card:has(.text-purple-600)');
+    if (statsCard) {
+        const valueElement = statsCard.querySelector('.admin-stat-value');
+        const remainingElement = statsCard.querySelector('.text-xs.text-gray-500');
+
+        if (valueElement) {
+            valueElement.textContent = `${featuredCount}/9`;
+        }
+        if (remainingElement) {
+            remainingElement.textContent = `${remainingSlots} slots remaining`;
+        }
+    }
+}
+
+// Simple toast notification function (fallback)
+function showToast(message, type = 'info') {
+    if (window.toastManager) {
+        window.toastManager.show(message, type);
+    } else {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white transition-all duration-300 ${
+            type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' :
+            'bg-blue-500'
+        }`;
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => toast.style.transform = 'translateX(0)', 10);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 5000);
+    }
+}
+
+function deleteCar(carId) {
+    const carRow = document.querySelector(`button[onclick="deleteCar(${carId})"]`).closest('tr');
+    const carTitle = carRow.querySelector('.text-harrier-dark').textContent.trim();
+
+    // Enhanced confirmation dialog
+    const confirmMessage = `Are you sure you want to permanently delete "${carTitle}"?\n\nThis action cannot be undone and will:\n• Remove the car from all listings\n• Delete all associated images\n• Remove from featured cars (if applicable)\n• Cancel any active inquiries\n\nType "DELETE" to confirm:`;
+
+    const userInput = prompt(confirmMessage);
+
+    if (userInput === 'DELETE') {
+        const button = document.querySelector(`button[onclick="deleteCar(${carId})"]`);
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Deleting...';
+
+        fetch(`/dashboard/admin/car/${carId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success notification
+                window.toastManager.show(
+                    `Car "${carTitle}" has been permanently deleted`,
+                    'success',
+                    {
+                        duration: 5000
+                    }
+                );
+
+                // Remove row from table with animation
+                carRow.style.transition = 'all 0.3s ease-out';
+                carRow.style.opacity = '0';
+                carRow.style.transform = 'translateX(-100%)';
+
+                setTimeout(() => {
+                    carRow.remove();
+
+                    // Update stats if needed
+                    if (data.featured_count !== undefined) {
+                        updateFeaturedStatsCard(data.featured_count, data.remaining_slots);
+                    }
+
+                    // Check if table is empty
+                    const tbody = document.querySelector('tbody');
+                    if (tbody.children.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <div class="text-gray-500">
+                                        <i class="fas fa-car text-4xl mb-4"></i>
+                                        <p class="text-lg">No car listings found</p>
+                                        <p class="text-sm">No car listings match your current filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }, 300);
+
+            } else {
+                window.showError(data.message || 'Failed to delete car listing');
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-trash mr-1"></i>Delete';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showError('An error occurred while deleting the car listing.');
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-trash mr-1"></i>Delete';
         });
     }
 }

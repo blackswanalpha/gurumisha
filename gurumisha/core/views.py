@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView
-from django.db.models import Q, Min, Max
+from django.db.models import Q, Min, Max, Avg
 from django.db import models
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -314,12 +314,26 @@ def user_dashboard(request):
 
 def homepage(request):
     """Homepage with all sections"""
+    from django.db.models import Case, When, IntegerField
+
+    # Get featured cars (max 9)
+    featured_cars = Car.objects.filter(
+        is_approved=True,
+        is_featured=True
+    ).order_by('-calculated_rating', '-views_count')[:9]
+
+    # Get active hot deals
+    hot_deals = Car.objects.filter(
+        is_approved=True,
+        is_hot_deal=True
+    ).order_by('-created_at')[:4]
+
     context = {
-        'featured_cars': Car.objects.filter(status='featured', is_approved=True)[:6],
+        'featured_cars': featured_cars,
         'car_brands': CarBrand.objects.filter(is_active=True)[:8],
         'testimonials': Testimonial.objects.filter(is_approved=True, is_featured=True)[:3],
         'blog_posts': BlogPost.objects.filter(is_published=True)[:3],
-        'hot_deals': Car.objects.filter(is_approved=True).order_by('-created_at')[:4],
+        'hot_deals': hot_deals,
         'vehicle_types': ['SUV', 'Sedan', 'Hatchback', 'Pickup', 'Coupe', 'Convertible'],
         'spare_part_categories': ['Engine Parts', 'Brake System', 'Electrical', 'Body Parts'],
     }
@@ -393,7 +407,28 @@ class CarListView(ListView):
         if listing_type:
             queryset = queryset.filter(listing_type=listing_type)
 
-        # Status filter - include featured cars
+        # Featured tier filter
+        featured_tier = self.request.GET.get('featured_tier')
+        if featured_tier:
+            queryset = queryset.filter(featured_tier=featured_tier)
+        elif self.request.GET.get('featured_only'):
+            queryset = queryset.exclude(featured_tier='none')
+
+        # Star rating filter
+        min_rating = self.request.GET.get('min_rating')
+        if min_rating:
+            try:
+                min_rating = float(min_rating)
+                queryset = queryset.filter(calculated_rating__gte=min_rating)
+            except ValueError:
+                pass
+
+        # Hot deals filter
+        hot_deals_only = self.request.GET.get('hot_deals')
+        if hot_deals_only:
+            queryset = queryset.filter(is_hot_deal=True)
+
+        # Status filter
         status = self.request.GET.get('status')
         if status:
             queryset = queryset.filter(status=status)
@@ -401,14 +436,41 @@ class CarListView(ListView):
             # Default: show available and featured cars
             queryset = queryset.filter(status__in=['available', 'featured'])
 
-        # Sorting - enhanced options
-        sort_by = self.request.GET.get('sort', '-created_at')
-        valid_sorts = [
-            'price', '-price', 'year', '-year', 'mileage', '-mileage',
-            '-created_at', 'created_at', 'title', '-title', 'views_count', '-views_count'
-        ]
-        if sort_by in valid_sorts:
-            queryset = queryset.order_by(sort_by)
+        # Sorting - enhanced options with star ratings and featured priority
+        sort_by = self.request.GET.get('sort', 'featured')
+
+        if sort_by == 'price_low':
+            queryset = queryset.order_by('price')
+        elif sort_by == 'price_high':
+            queryset = queryset.order_by('-price')
+        elif sort_by == 'year_new':
+            queryset = queryset.order_by('-year')
+        elif sort_by == 'year_old':
+            queryset = queryset.order_by('year')
+        elif sort_by == 'mileage_low':
+            queryset = queryset.order_by('mileage')
+        elif sort_by == 'mileage_high':
+            queryset = queryset.order_by('-mileage')
+        elif sort_by == 'popular':
+            queryset = queryset.order_by('-views_count')
+        elif sort_by == 'rating_high':
+            queryset = queryset.order_by('-calculated_rating', '-views_count')
+        elif sort_by == 'rating_low':
+            queryset = queryset.order_by('calculated_rating', '-views_count')
+        elif sort_by == 'newest':
+            queryset = queryset.order_by('-created_at')
+        else:  # featured (default) - prioritize featured cars with tier ordering
+            from django.db.models import Case, When, IntegerField
+            queryset = queryset.annotate(
+                tier_priority=Case(
+                    When(featured_tier='platinum', then=1),
+                    When(featured_tier='gold', then=2),
+                    When(featured_tier='silver', then=3),
+                    When(featured_tier='bronze', then=4),
+                    default=999,
+                    output_field=IntegerField()
+                )
+            ).order_by('tier_priority', '-calculated_rating', '-views_count')
 
         return queryset
 
@@ -420,6 +482,33 @@ class CarListView(ListView):
         context['fuel_types'] = Car.FUEL_TYPE_CHOICES
         context['transmission_types'] = Car.TRANSMISSION_CHOICES
         context['condition_types'] = Car.CONDITION_CHOICES
+
+        # Promotion system context
+        context['featured_tiers'] = [
+            ('platinum', 'Platinum Featured'),
+            ('gold', 'Gold Featured'),
+            ('silver', 'Silver Featured'),
+            ('bronze', 'Bronze Featured'),
+        ]
+        context['rating_options'] = [
+            (4.5, '4.5+ stars'),
+            (4.0, '4+ stars'),
+            (3.5, '3.5+ stars'),
+            (3.0, '3+ stars'),
+            (2.5, '2.5+ stars'),
+            (2.0, '2+ stars'),
+        ]
+        context['sort_options'] = [
+            ('featured', 'Featured First'),
+            ('rating_high', 'Highest Rated'),
+            ('rating_low', 'Lowest Rated'),
+            ('price_low', 'Price: Low to High'),
+            ('price_high', 'Price: High to Low'),
+            ('year_new', 'Year: Newest First'),
+            ('year_old', 'Year: Oldest First'),
+            ('popular', 'Most Popular'),
+            ('newest', 'Recently Added'),
+        ]
         context['current_filters'] = self.request.GET
 
         # Year range for filters
@@ -462,13 +551,727 @@ class CarDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        car = self.object
+
         # Related cars
         context['related_cars'] = Car.objects.filter(
-            brand=self.object.brand,
+            brand=car.brand,
             is_approved=True,
             status='available'
-        ).exclude(id=self.object.id)[:4]
+        ).exclude(id=car.id)[:4]
+
+        # Rating system context
+        if self.request.user.is_authenticated:
+            try:
+                from .models import CarRating
+                user_rating = CarRating.objects.get(car=car, customer=self.request.user)
+                context['user_rating'] = user_rating
+            except CarRating.DoesNotExist:
+                context['user_rating'] = None
+
+        # Hot deal information
+        if car.is_hot_deal:
+            try:
+                from .models import HotDeal
+                hot_deal = HotDeal.objects.get(car=car)
+                if hot_deal.is_currently_active():
+                    context['hot_deal'] = hot_deal
+            except HotDeal.DoesNotExist:
+                pass
+
         return context
+
+
+@login_required
+def submit_car_rating(request):
+    """Submit a car rating via HTMX"""
+    if request.method == 'POST':
+        from .models import CarRating
+
+        car_id = request.POST.get('car_id')
+        rating = request.POST.get('rating')
+        review = request.POST.get('review', '')
+
+        try:
+            car = get_object_or_404(Car, id=car_id, is_approved=True)
+            rating_value = float(rating)
+
+            # Validate rating value
+            if not (0.5 <= rating_value <= 5.0):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Rating must be between 0.5 and 5.0'
+                })
+
+            # Round to nearest 0.5
+            rating_value = round(rating_value * 2) / 2
+
+            # Create or update rating
+            car_rating, created = CarRating.objects.update_or_create(
+                car=car,
+                customer=request.user,
+                defaults={
+                    'rating': rating_value,
+                    'review': review,
+                    'is_approved': False  # Requires admin approval
+                }
+            )
+
+            # Update car's calculated rating
+            car.update_calculated_rating()
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Thank you for your rating! It will be reviewed before being published.',
+                'rating': rating_value,
+                'created': created
+            })
+
+        except Car.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Car not found'
+            })
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid rating value'
+            })
+        except Exception:
+            return JsonResponse({
+                'success': False,
+                'message': 'An error occurred while submitting your rating'
+            })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+def htmx_featured_cars_filter(request):
+    """HTMX endpoint for filtering featured cars"""
+    tier = request.GET.get('tier', '')
+    min_rating = request.GET.get('min_rating', '')
+
+    # Base queryset for featured cars
+    cars = Car.objects.filter(
+        is_approved=True,
+        featured_tier__in=['bronze', 'silver', 'gold', 'platinum']
+    ).select_related('brand', 'model', 'vendor')
+
+    # Apply filters
+    if tier:
+        cars = cars.filter(featured_tier=tier)
+
+    if min_rating:
+        try:
+            min_rating_value = float(min_rating)
+            cars = cars.filter(calculated_rating__gte=min_rating_value)
+        except ValueError:
+            pass
+
+    # Order by tier priority and rating
+    from django.db.models import Case, When, IntegerField
+    cars = cars.annotate(
+        tier_priority=Case(
+            When(featured_tier='platinum', then=1),
+            When(featured_tier='gold', then=2),
+            When(featured_tier='silver', then=3),
+            When(featured_tier='bronze', then=4),
+            default=999,
+            output_field=IntegerField()
+        )
+    ).order_by('tier_priority', '-calculated_rating', '-views_count')[:12]
+
+    context = {'cars': cars}
+    return render(request, 'components/featured_cars_grid.html', context)
+
+
+def htmx_hot_deals_refresh(request):
+    """HTMX endpoint for refreshing hot deals"""
+    from .models import HotDeal
+
+    # Get active hot deals
+    hot_deals = HotDeal.objects.filter(
+        is_active=True,
+        car__is_approved=True
+    ).select_related('car', 'car__brand', 'car__model').order_by('-created_at')[:8]
+
+    context = {'hot_deals': hot_deals}
+    return render(request, 'components/hot_deals_grid.html', context)
+
+
+def htmx_car_rating_form(request, car_id):
+    """HTMX endpoint for car rating form"""
+    car = get_object_or_404(Car, id=car_id, is_approved=True)
+
+    if request.method == 'POST' and request.user.is_authenticated:
+        from .models import CarRating
+
+        rating = request.POST.get('rating')
+        review = request.POST.get('review', '')
+
+        try:
+            rating_value = float(rating)
+            rating_value = round(rating_value * 2) / 2  # Round to nearest 0.5
+
+            # Create or update rating
+            car_rating, created = CarRating.objects.update_or_create(
+                car=car,
+                customer=request.user,
+                defaults={
+                    'rating': rating_value,
+                    'review': review,
+                    'is_approved': False
+                }
+            )
+
+            # Update car's calculated rating
+            car.update_calculated_rating()
+
+            context = {
+                'car': car,
+                'success': True,
+                'message': 'Thank you for your rating! It will be reviewed before being published.',
+                'user_rating': car_rating
+            }
+
+        except ValueError:
+            context = {
+                'car': car,
+                'error': True,
+                'message': 'Invalid rating value'
+            }
+    else:
+        # Get user's existing rating if any
+        user_rating = None
+        if request.user.is_authenticated:
+            try:
+                from .models import CarRating
+                user_rating = CarRating.objects.get(car=car, customer=request.user)
+            except CarRating.DoesNotExist:
+                pass
+
+        context = {
+            'car': car,
+            'user_rating': user_rating
+        }
+
+    return render(request, 'components/car_rating_form.html', context)
+
+
+def htmx_promotion_analytics_widget(request):
+    """HTMX endpoint for promotion analytics widget"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .analytics_utils import PromotionAnalyticsManager
+
+    analytics = PromotionAnalyticsManager()
+    days = int(request.GET.get('days', 7))
+
+    # Get recent metrics
+    daily_metrics = analytics.get_daily_metrics(days)
+    featured_performance = analytics.get_featured_cars_performance(days)
+
+    context = {
+        'daily_metrics': daily_metrics,
+        'featured_performance': featured_performance,
+        'days': days
+    }
+
+    return render(request, 'components/promotion_analytics_widget.html', context)
+
+
+def htmx_countdown_timer_update(request, deal_id):
+    """HTMX endpoint for updating countdown timer"""
+    from .models import HotDeal
+
+    try:
+        hot_deal = HotDeal.objects.get(id=deal_id, is_active=True)
+
+        if not hot_deal.is_currently_active():
+            # Deal expired
+            context = {
+                'deal': hot_deal,
+                'expired': True
+            }
+        else:
+            context = {
+                'deal': hot_deal,
+                'time_remaining': hot_deal.time_remaining_formatted()
+            }
+
+        return render(request, 'components/countdown_timer.html', context)
+
+    except HotDeal.DoesNotExist:
+        return render(request, 'components/countdown_timer.html', {'expired': True})
+
+
+def htmx_car_list_filter(request):
+    """HTMX endpoint for dynamic car list filtering"""
+    # Get filter parameters
+    brand = request.GET.get('brand')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    year_from = request.GET.get('year_from')
+    year_to = request.GET.get('year_to')
+    fuel_type = request.GET.get('fuel_type')
+    transmission = request.GET.get('transmission')
+    condition = request.GET.get('condition')
+    featured_tier = request.GET.get('featured_tier')
+    min_rating = request.GET.get('min_rating')
+    hot_deals_only = request.GET.get('hot_deals')
+    sort_by = request.GET.get('sort', 'featured')
+
+    # Base queryset
+    cars = Car.objects.filter(
+        is_approved=True,
+        status__in=['available', 'featured']
+    ).select_related('brand', 'model', 'vendor')
+
+    # Apply filters
+    if brand:
+        cars = cars.filter(brand_id=brand)
+
+    if min_price:
+        try:
+            cars = cars.filter(price__gte=float(min_price))
+        except ValueError:
+            pass
+
+    if max_price:
+        try:
+            cars = cars.filter(price__lte=float(max_price))
+        except ValueError:
+            pass
+
+    if year_from:
+        try:
+            cars = cars.filter(year__gte=int(year_from))
+        except ValueError:
+            pass
+
+    if year_to:
+        try:
+            cars = cars.filter(year__lte=int(year_to))
+        except ValueError:
+            pass
+
+    if fuel_type:
+        cars = cars.filter(fuel_type=fuel_type)
+
+    if transmission:
+        cars = cars.filter(transmission=transmission)
+
+    if condition:
+        cars = cars.filter(condition=condition)
+
+    if featured_tier:
+        cars = cars.filter(featured_tier=featured_tier)
+    elif request.GET.get('featured_only'):
+        cars = cars.exclude(featured_tier='none')
+
+    if min_rating:
+        try:
+            min_rating_value = float(min_rating)
+            cars = cars.filter(calculated_rating__gte=min_rating_value)
+        except ValueError:
+            pass
+
+    if hot_deals_only:
+        cars = cars.filter(is_hot_deal=True)
+
+    # Apply sorting
+    if sort_by == 'price_low':
+        cars = cars.order_by('price')
+    elif sort_by == 'price_high':
+        cars = cars.order_by('-price')
+    elif sort_by == 'year_new':
+        cars = cars.order_by('-year')
+    elif sort_by == 'year_old':
+        cars = cars.order_by('year')
+    elif sort_by == 'rating_high':
+        cars = cars.order_by('-calculated_rating', '-views_count')
+    elif sort_by == 'rating_low':
+        cars = cars.order_by('calculated_rating', '-views_count')
+    elif sort_by == 'popular':
+        cars = cars.order_by('-views_count')
+    elif sort_by == 'newest':
+        cars = cars.order_by('-created_at')
+    else:  # featured (default)
+        from django.db.models import Case, When, IntegerField
+        cars = cars.annotate(
+            tier_priority=Case(
+                When(featured_tier='platinum', then=1),
+                When(featured_tier='gold', then=2),
+                When(featured_tier='silver', then=3),
+                When(featured_tier='bronze', then=4),
+                default=999,
+                output_field=IntegerField()
+            )
+        ).order_by('tier_priority', '-calculated_rating', '-views_count')
+
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(cars, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'cars': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj
+    }
+
+    return render(request, 'components/car_list_grid.html', context)
+
+
+def featured_cars_by_tier(request, tier=None):
+    """Display featured cars by tier"""
+    valid_tiers = ['bronze', 'silver', 'gold', 'platinum']
+
+    if tier and tier not in valid_tiers:
+        messages.error(request, 'Invalid tier specified.')
+        return redirect('core:featured_cars_by_tier')
+
+    # Base queryset for featured cars
+    cars = Car.objects.filter(
+        is_approved=True,
+        featured_tier__in=valid_tiers
+    ).select_related('brand', 'model', 'vendor')
+
+    # Filter by specific tier if provided
+    if tier:
+        cars = cars.filter(featured_tier=tier)
+
+    # Order by tier priority and rating
+    from django.db.models import Case, When, IntegerField
+    cars = cars.annotate(
+        tier_priority=Case(
+            When(featured_tier='platinum', then=1),
+            When(featured_tier='gold', then=2),
+            When(featured_tier='silver', then=3),
+            When(featured_tier='bronze', then=4),
+            default=999,
+            output_field=IntegerField()
+        )
+    ).order_by('tier_priority', '-calculated_rating', '-views_count')
+
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(cars, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get tier statistics
+    tier_stats = {}
+    for tier_name in valid_tiers:
+        tier_cars = Car.objects.filter(
+            is_approved=True,
+            featured_tier=tier_name
+        )
+        tier_stats[tier_name] = {
+            'count': tier_cars.count(),
+            'avg_rating': tier_cars.aggregate(avg_rating=Avg('calculated_rating'))['avg_rating'] or 0,
+            'avg_price': tier_cars.aggregate(avg_price=Avg('price'))['avg_price'] or 0
+        }
+
+    context = {
+        'cars': page_obj,
+        'current_tier': tier,
+        'tier_stats': tier_stats,
+        'valid_tiers': valid_tiers,
+        'page_title': f'{tier.title()} Featured Cars' if tier else 'Featured Cars',
+        'meta_description': f'Browse our {tier} tier featured cars' if tier else 'Browse all featured cars with premium placement'
+    }
+
+    return render(request, 'core/featured_cars_by_tier.html', context)
+
+
+def top_rated_vehicles(request):
+    """Display top-rated vehicles"""
+    min_rating = float(request.GET.get('min_rating', 4.0))
+    category = request.GET.get('category', '')
+
+    # Base queryset for top-rated cars
+    cars = Car.objects.filter(
+        is_approved=True,
+        calculated_rating__gte=min_rating
+    ).select_related('brand', 'model', 'vendor')
+
+    # Filter by category if provided
+    if category:
+        cars = cars.filter(body_type=category)
+
+    # Order by rating and views
+    cars = cars.order_by('-calculated_rating', '-views_count')
+
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(cars, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get rating statistics
+    rating_stats = {
+        'total_rated_cars': Car.objects.filter(calculated_rating__gt=0).count(),
+        'avg_rating': Car.objects.filter(calculated_rating__gt=0).aggregate(
+            avg_rating=Avg('calculated_rating')
+        )['avg_rating'] or 0,
+        'five_star_count': Car.objects.filter(calculated_rating=5.0).count(),
+        'four_plus_count': Car.objects.filter(calculated_rating__gte=4.0).count(),
+    }
+
+    # Get available categories
+    categories = Car.objects.filter(
+        is_approved=True,
+        calculated_rating__gte=min_rating
+    ).values_list('body_type', flat=True).distinct()
+
+    context = {
+        'cars': page_obj,
+        'min_rating': min_rating,
+        'current_category': category,
+        'categories': categories,
+        'rating_stats': rating_stats,
+        'page_title': f'Top Rated {category} Vehicles' if category else 'Top Rated Vehicles',
+        'meta_description': f'Discover the highest rated {category.lower()} vehicles' if category else 'Browse our top-rated vehicles with excellent customer reviews'
+    }
+
+    return render(request, 'core/top_rated_vehicles.html', context)
+
+
+def smart_recommendations(request):
+    """Display smart car recommendations based on user behavior"""
+    recommendations = []
+
+    if request.user.is_authenticated:
+        # Get user's viewing history and preferences
+        from .models import CarRating
+
+        # Get cars user has rated highly
+        user_ratings = CarRating.objects.filter(
+            customer=request.user,
+            rating__gte=4.0
+        ).select_related('car')
+
+        # Get brands and models user likes
+        liked_brands = set()
+        liked_models = set()
+        price_range = []
+
+        for rating in user_ratings:
+            liked_brands.add(rating.car.brand_id)
+            liked_models.add(rating.car.model_id)
+            price_range.append(rating.car.price)
+
+        if price_range:
+            avg_price = sum(price_range) / len(price_range)
+            min_price = avg_price * 0.7
+            max_price = avg_price * 1.3
+        else:
+            min_price = max_price = None
+
+        # Build recommendation queryset
+        recommendation_query = Car.objects.filter(
+            is_approved=True,
+            status__in=['available', 'featured']
+        ).exclude(
+            id__in=user_ratings.values_list('car_id', flat=True)
+        ).select_related('brand', 'model', 'vendor')
+
+        # Apply preferences
+        if liked_brands:
+            brand_recommendations = recommendation_query.filter(
+                brand_id__in=liked_brands
+            )
+            recommendations.extend(list(brand_recommendations[:5]))
+
+        if liked_models:
+            model_recommendations = recommendation_query.filter(
+                model_id__in=liked_models
+            ).exclude(id__in=[car.id for car in recommendations])
+            recommendations.extend(list(model_recommendations[:3]))
+
+        if min_price and max_price:
+            price_recommendations = recommendation_query.filter(
+                price__gte=min_price,
+                price__lte=max_price
+            ).exclude(id__in=[car.id for car in recommendations])
+            recommendations.extend(list(price_recommendations[:4]))
+
+    # Fill with popular cars if not enough recommendations
+    if len(recommendations) < 12:
+        popular_cars = Car.objects.filter(
+            is_approved=True,
+            status__in=['available', 'featured']
+        ).exclude(
+            id__in=[car.id for car in recommendations]
+        ).order_by('-views_count', '-calculated_rating')[:12 - len(recommendations)]
+
+        recommendations.extend(list(popular_cars))
+
+    # Get trending cars (high recent activity)
+    from datetime import timedelta
+    recent_date = timezone.now() - timedelta(days=7)
+    trending_cars = Car.objects.filter(
+        is_approved=True,
+        created_at__gte=recent_date
+    ).order_by('-views_count')[:6]
+
+    context = {
+        'recommendations': recommendations[:12],
+        'trending_cars': trending_cars,
+        'user_authenticated': request.user.is_authenticated,
+        'page_title': 'Smart Recommendations',
+        'meta_description': 'Discover cars tailored to your preferences with our smart recommendation system'
+    }
+
+    return render(request, 'core/smart_recommendations.html', context)
+
+
+def hot_deals_list(request):
+    """Display all active hot deals"""
+    from .models import HotDeal
+
+    # Get active hot deals
+    hot_deals = HotDeal.objects.filter(
+        is_active=True,
+        car__is_approved=True
+    ).select_related('car', 'car__brand', 'car__model').order_by('-created_at')
+
+    # Filter by search
+    search = request.GET.get('search')
+    if search:
+        hot_deals = hot_deals.filter(
+            Q(title__icontains=search) |
+            Q(car__title__icontains=search) |
+            Q(car__brand__name__icontains=search)
+        )
+
+    # Filter by discount type
+    discount_type = request.GET.get('discount_type')
+    if discount_type:
+        hot_deals = hot_deals.filter(discount_type=discount_type)
+
+    context = {
+        'hot_deals': hot_deals,
+        'search': search,
+        'discount_type': discount_type,
+    }
+
+    return render(request, 'core/hot_deals.html', context)
+
+
+def hot_deal_detail(request, deal_id):
+    """Display hot deal detail"""
+    from .models import HotDeal
+
+    hot_deal = get_object_or_404(
+        HotDeal,
+        id=deal_id,
+        is_active=True,
+        car__is_approved=True
+    )
+
+    # Check if deal is still active
+    if not hot_deal.is_currently_active():
+        messages.warning(request, 'This hot deal has expired.')
+        return redirect('core:hot_deals_list')
+
+    # Increment views count
+    hot_deal.views_count += 1
+    hot_deal.save(update_fields=['views_count'])
+
+    # Related hot deals
+    related_deals = HotDeal.objects.filter(
+        is_active=True,
+        car__is_approved=True,
+        car__brand=hot_deal.car.brand
+    ).exclude(id=hot_deal.id)[:3]
+
+    context = {
+        'hot_deal': hot_deal,
+        'car': hot_deal.car,
+        'related_deals': related_deals,
+    }
+
+    return render(request, 'core/hot_deal_detail.html', context)
+
+
+@login_required
+def create_hot_deal(request):
+    """Create a new hot deal (vendor only)"""
+    if request.user.role != 'vendor':
+        messages.error(request, 'Only vendors can create hot deals.')
+        return redirect('core:homepage')
+
+    try:
+        vendor = request.user.vendor
+    except:
+        messages.error(request, 'Vendor profile not found.')
+        return redirect('core:homepage')
+
+    if request.method == 'POST':
+        from .models import HotDeal
+
+        car_id = request.POST.get('car_id')
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        discount_type = request.POST.get('discount_type')
+        discount_value = request.POST.get('discount_value')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+
+        try:
+            car = get_object_or_404(Car, id=car_id, vendor=vendor, is_approved=True)
+
+            # Check if car already has an active hot deal
+            if HotDeal.objects.filter(car=car, is_active=True).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'This car already has an active hot deal.'
+                })
+
+            # Create hot deal
+            hot_deal = HotDeal.objects.create(
+                car=car,
+                title=title,
+                description=description,
+                discount_type=discount_type,
+                discount_value=float(discount_value),
+                original_price=car.price,
+                start_date=start_date,
+                end_date=end_date,
+                is_active=False,  # Will be activated by management command
+                auto_activate=True
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Hot deal created successfully!',
+                'deal_id': hot_deal.id
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error creating hot deal: {str(e)}'
+            })
+
+    # Get vendor's cars for the form
+    vendor_cars = Car.objects.filter(
+        vendor=vendor,
+        is_approved=True,
+        status__in=['available', 'featured']
+    ).exclude(
+        id__in=HotDeal.objects.filter(is_active=True).values_list('car_id', flat=True)
+    )
+
+    context = {
+        'vendor_cars': vendor_cars,
+    }
+
+    return render(request, 'core/create_hot_deal.html', context)
 
 
 class SparePartListView(ListView):

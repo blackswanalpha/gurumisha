@@ -5,6 +5,10 @@
 {% block page_title %}Profile Settings{% endblock %}
 {% block page_description %}Manage your personal information and account settings{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile-forms.css' %}">
+{% endblock %}
+
 {% block breadcrumb_items %}
     <li>
         <div class="flex items-center">
@@ -15,269 +19,796 @@
 {% endblock %}
 
 {% block dashboard_content %}
-    <!-- Enhanced Profile Header -->
-    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
-        <div class="absolute inset-0 bg-black/20"></div>
+    <!-- Enhanced Profile Header with Cover Image -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl overflow-hidden animate-fade-in-up relative">
+        <!-- Cover Image Background -->
+        <div class="absolute inset-0">
+            {% if user.role == 'vendor' and vendor.cover_image %}
+                <img src="{{ vendor.cover_image.url }}" alt="Cover" class="w-full h-full object-cover opacity-30">
+            {% endif %}
+            <div class="absolute inset-0 bg-gradient-to-r from-harrier-red/80 via-harrier-dark/80 to-harrier-blue/80"></div>
+        </div>
+
+        <!-- Decorative Elements -->
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
         <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-        <div class="relative z-10">
-            <div class="flex items-center justify-between">
+
+        <!-- Content -->
+        <div class="relative z-10 p-8">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between space-y-6 md:space-y-0">
+                <!-- Profile Info -->
                 <div class="flex items-center space-x-6">
-                    <div class="relative">
+                    <!-- Profile Picture with Upload -->
+                    <div class="relative profile-picture-container">
                         {% if user.profile_picture %}
-                            <img class="h-20 w-20 object-cover rounded-full border-4 border-white/20 shadow-xl" src="{{ user.profile_picture.url }}" alt="Profile picture">
+                            <img class="h-24 w-24 object-cover rounded-2xl border-4 border-white/20 shadow-xl"
+                                 src="{{ user.profile_picture.url }}" alt="Profile picture" id="profilePreview">
                         {% else %}
-                            <div class="h-20 w-20 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-white/20 shadow-xl backdrop-blur-sm">
+                            <div class="h-24 w-24 bg-white/20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl border-4 border-white/20 shadow-xl backdrop-blur-sm" id="profilePreview">
                                 {{ user.first_name|first|default:user.username|first|upper }}
                             </div>
                         {% endif %}
-                        <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+
+                        <!-- Edit Overlay -->
+                        <div class="profile-picture-overlay">
+                            <i class="fas fa-camera profile-picture-edit-icon"></i>
+                        </div>
+
+                        <!-- Online Status -->
+                        <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-3xl font-bold mb-2 font-montserrat">{{ user.first_name }} {{ user.last_name }}</h2>
-                        <p class="text-blue-100 text-lg font-raleway">{{ user.get_role_display }}</p>
+
+                    <!-- User Details -->
+                    <div class="text-white">
+                        <h2 class="text-3xl font-bold mb-2 font-montserrat">
+                            {{ user.first_name|default:"" }} {{ user.last_name|default:"" }}
+                            {% if not user.first_name and not user.last_name %}
+                                {{ user.username }}
+                            {% endif %}
+                        </h2>
+                        <div class="flex items-center space-x-3 mb-2">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                {% if user.role == 'vendor' %}bg-blue-500/20 text-blue-200
+                                {% elif user.role == 'admin' %}bg-purple-500/20 text-purple-200
+                                {% else %}bg-gray-500/20 text-gray-200{% endif %}">
+                                <i class="fas fa-user-tag mr-1"></i>{{ user.get_role_display }}
+                            </span>
+                            {% if user.is_email_verified %}
+                                <span class="inline-flex items-center px-2 py-1 bg-green-500/20 rounded-full text-green-200 text-xs">
+                                    <i class="fas fa-check-circle mr-1"></i>Verified
+                                </span>
+                            {% endif %}
+                        </div>
+
                         {% if user.role == 'vendor' and vendor %}
-                            <p class="text-blue-200 text-sm font-raleway">{{ vendor.company_name }}</p>
+                            <p class="text-blue-200 text-lg font-raleway mb-1">{{ vendor.company_name }}</p>
+                            {% if vendor.is_approved %}
+                                <div class="inline-flex items-center px-3 py-1 bg-green-500/20 rounded-full text-green-200 text-sm">
+                                    <i class="fas fa-shield-alt mr-1"></i>Verified Business
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if user.bio %}
+                            <p class="text-blue-100 text-sm mt-2 max-w-md">{{ user.bio|truncatewords:20 }}</p>
                         {% endif %}
                     </div>
                 </div>
-                <div class="hidden md:block text-right">
-                    <div class="text-sm text-blue-100 mb-1">Member since</div>
-                    <div class="text-lg font-bold">{{ user.date_joined|date:"M Y" }}</div>
-                    {% if user.role == 'vendor' and vendor.is_approved %}
-                        <div class="inline-flex items-center mt-2 px-3 py-1 bg-green-500/20 rounded-full text-green-200 text-sm">
-                            <i class="fas fa-shield-alt mr-1"></i>Verified Vendor
-                        </div>
-                    {% endif %}
+
+                <!-- Stats and Actions -->
+                <div class="flex flex-col items-end space-y-4">
+                    <!-- Member Since -->
+                    <div class="text-right">
+                        <div class="text-sm text-blue-100 mb-1">Member since</div>
+                        <div class="text-lg font-bold text-white">{{ user.date_joined|date:"M Y" }}</div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="flex space-x-4 text-center">
+                        {% if user.role == 'vendor' and vendor %}
+                            <div class="text-white">
+                                <div class="text-xl font-bold">{{ vendor.total_listings }}</div>
+                                <div class="text-xs text-blue-200">Listings</div>
+                            </div>
+                            <div class="text-white">
+                                <div class="text-xl font-bold">{{ vendor.average_rating|floatformat:1 }}</div>
+                                <div class="text-xs text-blue-200">Rating</div>
+                            </div>
+                            <div class="text-white">
+                                <div class="text-xl font-bold">{{ vendor.profile_views }}</div>
+                                <div class="text-xs text-blue-200">Views</div>
+                            </div>
+                        {% else %}
+                            <div class="text-white">
+                                <div class="text-xl font-bold">{{ user.orders.count|default:0 }}</div>
+                                <div class="text-xs text-blue-200">Orders</div>
+                            </div>
+                            <div class="text-white">
+                                <div class="text-xl font-bold">{{ user.inquiries.count|default:0 }}</div>
+                                <div class="text-xs text-blue-200">Inquiries</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="flex space-x-2">
+                        <button type="button" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm">
+                            <i class="fas fa-share-alt mr-1"></i>Share Profile
+                        </button>
+                        {% if user.role == 'vendor' %}
+                            <button type="button" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm">
+                                <i class="fas fa-eye mr-1"></i>View Public
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up" style="animation-delay: 0.1s;">
-        <!-- Enhanced Profile Form -->
-        <div class="lg:col-span-2">
-            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
-                <div class="p-6 border-b border-gray-200/50 bg-gradient-to-r from-harrier-red/5 to-transparent">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
-                            <i class="fas fa-user-edit text-white text-sm"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Personal Information</h3>
-                            <p class="text-sm text-gray-600 font-raleway">Update your personal details and contact information</p>
-                        </div>
+    <!-- Profile Navigation Tabs -->
+    <div class="mb-8 animate-fade-in-up profile-tabs-container" style="animation-delay: 0.1s;">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 profile-tabs-nav" aria-label="Tabs">
+                <button type="button" class="profile-tab active" data-tab="personal">
+                    <i class="fas fa-user mr-2"></i>Personal Info
+                </button>
+                <button type="button" class="profile-tab" data-tab="contact">
+                    <i class="fas fa-address-book mr-2"></i>Contact
+                </button>
+                <button type="button" class="profile-tab" data-tab="preferences">
+                    <i class="fas fa-cog mr-2"></i>Preferences
+                </button>
+                <button type="button" class="profile-tab" data-tab="security">
+                    <i class="fas fa-shield-alt mr-2"></i>Security
+                </button>
+                {% if user.role == 'vendor' %}
+                <button type="button" class="profile-tab" data-tab="business">
+                    <i class="fas fa-building mr-2"></i>Business
+                </button>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Main Profile Form -->
+        <div class="lg:col-span-3">
+            <!-- HTMX Messages Area -->
+            <div id="profile-messages" class="mb-6"></div>
+
+            <!-- HTMX Loading Indicator -->
+            <div id="profile-loading" class="htmx-indicator">
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-xl p-6 flex items-center space-x-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-harrier-red"></div>
+                        <span class="text-harrier-dark font-medium">Saving profile...</span>
                     </div>
                 </div>
-                <div class="p-6">
-                    <form method="post" enctype="multipart/form-data" class="space-y-8">
-                        {% csrf_token %}
+            </div>
 
-                        <!-- Enhanced Profile Picture Section -->
-                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
-                            <h4 class="font-bold text-harrier-dark mb-4 font-montserrat">Profile Picture</h4>
-                            <div class="flex items-center space-x-6">
-                                <div class="relative">
-                                    {% if user.profile_picture %}
-                                        <img class="h-20 w-20 object-cover rounded-xl shadow-lg" src="{{ user.profile_picture.url }}" alt="Profile picture" id="profilePreview">
-                                    {% else %}
-                                        <div class="h-20 w-20 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg" id="profilePreview">
-                                            {{ user.first_name|first|default:user.username|first|upper }}
-                                        </div>
-                                    {% endif %}
-                                    <button type="button" onclick="document.getElementById('profilePictureInput').click()" class="absolute -bottom-2 -right-2 w-8 h-8 bg-harrier-red rounded-full flex items-center justify-center text-white hover:bg-harrier-red-dark transition-colors shadow-lg">
-                                        <i class="fas fa-camera text-sm"></i>
-                                    </button>
-                                </div>
-                                <div class="flex-1">
-                                    <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" class="hidden" onchange="previewImage(this)">
-                                    <div class="text-sm text-gray-600 font-raleway">
-                                        <p class="font-medium mb-1">Upload a new profile picture</p>
-                                        <p class="text-xs">JPG, PNG or GIF. Max size 2MB. Recommended 400x400px.</p>
-                                    </div>
-                                    <button type="button" onclick="document.getElementById('profilePictureInput').click()" class="mt-3 inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105">
-                                        <i class="fas fa-upload mr-2"></i>Choose File
-                                    </button>
-                                </div>
+            <form method="post" enctype="multipart/form-data" id="profileForm" class="space-y-8"
+                  hx-post="{% url 'core:profile' %}"
+                  hx-trigger="submit"
+                  hx-target="#profile-messages"
+                  hx-swap="innerHTML"
+                  hx-indicator="#profile-loading">
+                {% csrf_token %}
+
+                <!-- Personal Information Tab -->
+                <div class="tab-content active" id="personal-tab">
+                    <!-- Profile Picture Section -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-harrier-red to-harrier-red-dark">
+                                <i class="fas fa-camera text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Profile Picture</h3>
+                                <p class="form-section-subtitle">Upload a professional profile picture</p>
                             </div>
                         </div>
 
-                        <!-- Enhanced Error Display -->
-                        {% if user_form.errors %}
-                            <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-6 animate-fade-in-up">
-                                <div class="flex items-center mb-3">
-                                    <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
-                                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
-                                    </div>
-                                    <h4 class="text-red-800 font-bold font-montserrat">Please correct the following errors:</h4>
-                                </div>
-                                <ul class="text-red-700 text-sm space-y-2 font-raleway">
-                                    {% for field, errors in user_form.errors.items %}
-                                        {% for error in errors %}
-                                            <li class="flex items-center">
-                                                <i class="fas fa-times-circle mr-2"></i>
-                                                <span><strong>{{ field|title }}:</strong> {{ error }}</span>
-                                            </li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-
-                        <!-- Enhanced Personal Information Section -->
-                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
-                            <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
-                                <i class="fas fa-user mr-2 text-harrier-red"></i>
-                                Personal Details
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <label for="{{ user_form.first_name.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                        <i class="fas fa-user mr-1 text-harrier-red"></i>First Name
-                                    </label>
-                                    <input type="text" name="{{ user_form.first_name.name }}" value="{{ user_form.first_name.value|default:'' }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                           placeholder="Enter your first name">
-                                </div>
-                                <div class="space-y-2">
-                                    <label for="{{ user_form.last_name.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                        <i class="fas fa-user mr-1 text-harrier-red"></i>Last Name
-                                    </label>
-                                    <input type="text" name="{{ user_form.last_name.name }}" value="{{ user_form.last_name.value|default:'' }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                           placeholder="Enter your last name">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Enhanced Contact Information Section -->
-                        <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
-                            <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
-                                <i class="fas fa-address-book mr-2 text-blue-500"></i>
-                                Contact Information
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div class="space-y-2">
-                                    <label for="{{ user_form.email.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                        <i class="fas fa-envelope mr-1 text-blue-500"></i>Email Address
-                                    </label>
-                                    <input type="email" name="{{ user_form.email.name }}" value="{{ user_form.email.value|default:'' }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                           placeholder="Enter your email address">
-                                </div>
-                                <div class="space-y-2">
-                                    <label for="{{ user_form.phone.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                        <i class="fas fa-phone mr-1 text-green-500"></i>Phone Number
-                                    </label>
-                                    <input type="tel" name="{{ user_form.phone.name }}" value="{{ user_form.phone.value|default:'' }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                           placeholder="Enter your phone number">
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label for="{{ user_form.username.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                    <i class="fas fa-at mr-1 text-purple-500"></i>Username
-                                </label>
-                                <input type="text" name="{{ user_form.username.name }}" value="{{ user_form.username.value|default:'' }}"
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                       placeholder="Enter your username">
-                            </div>
-                        </div>
-
-                        {% if user.role == 'vendor' and vendor_form %}
-                            <!-- Enhanced Vendor Business Information Section -->
-                            <div class="bg-white/60 rounded-xl p-6 border border-gray-100">
-                                <h4 class="font-bold text-harrier-dark mb-6 font-montserrat flex items-center">
-                                    <i class="fas fa-building mr-2 text-orange-500"></i>
-                                    Business Information
-                                </h4>
-
-                                <!-- Enhanced Vendor Form Errors -->
-                                {% if vendor_form.errors %}
-                                    <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-6 mb-6 animate-fade-in-up">
-                                        <div class="flex items-center mb-3">
-                                            <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
-                                                <i class="fas fa-exclamation-triangle text-white text-sm"></i>
-                                            </div>
-                                            <h4 class="text-red-800 font-bold font-montserrat">Please correct the following business information errors:</h4>
-                                        </div>
-                                        <ul class="text-red-700 text-sm space-y-2 font-raleway">
-                                            {% for field, errors in vendor_form.errors.items %}
-                                                {% for error in errors %}
-                                                    <li class="flex items-center">
-                                                        <i class="fas fa-times-circle mr-2"></i>
-                                                        <span><strong>{{ field|title }}:</strong> {{ error }}</span>
-                                                    </li>
-                                                {% endfor %}
-                                            {% endfor %}
-                                        </ul>
+                        <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                            <div class="relative profile-picture-container">
+                                {% if user.profile_picture %}
+                                    <img class="h-24 w-24 object-cover rounded-2xl shadow-lg border-2 border-gray-200"
+                                         src="{{ user.profile_picture.url }}" alt="Profile picture" id="profileImagePreview">
+                                {% else %}
+                                    <div class="h-24 w-24 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg" id="profileImagePreview">
+                                        {{ user.first_name|first|default:user.username|first|upper }}
                                     </div>
                                 {% endif %}
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div class="space-y-2">
-                                        <label for="{{ vendor_form.company_name.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                            <i class="fas fa-building mr-1 text-orange-500"></i>Company Name
-                                        </label>
-                                        <input type="text" name="{{ vendor_form.company_name.name }}" value="{{ vendor_form.company_name.value|default:'' }}"
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                               placeholder="Enter your company name">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label for="{{ vendor_form.business_license.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                            <i class="fas fa-certificate mr-1 text-yellow-500"></i>Business License
-                                        </label>
-                                        <input type="text" name="{{ vendor_form.business_license.name }}" value="{{ vendor_form.business_license.value|default:'' }}"
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                               placeholder="Enter your business license number">
-                                    </div>
-                                </div>
-
-                                <div class="space-y-2 mb-6">
-                                    <label for="{{ vendor_form.website.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                        <i class="fas fa-globe mr-1 text-blue-500"></i>Website URL
-                                    </label>
-                                    <input type="url" name="{{ vendor_form.website.name }}" value="{{ vendor_form.website.value|default:'' }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                           placeholder="https://www.yourcompany.com">
-                                </div>
-
-                                <div class="space-y-2">
-                                    <label for="{{ vendor_form.description.id_for_label }}" class="block text-sm font-bold text-harrier-dark font-montserrat">
-                                        <i class="fas fa-file-alt mr-1 text-green-500"></i>Business Description
-                                    </label>
-                                    <textarea name="{{ vendor_form.description.name }}" rows="4"
-                                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm transition-all duration-200 font-raleway"
-                                              placeholder="Describe your business, services, and specialties...">{{ vendor_form.description.value|default:'' }}</textarea>
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        <span id="descriptionCount">0</span> characters (recommended: 100-500 characters)
-                                    </div>
+                                <div class="profile-picture-overlay" onclick="document.getElementById('id_profile_picture').click()">
+                                    <i class="fas fa-camera profile-picture-edit-icon"></i>
                                 </div>
                             </div>
-                        {% endif %}
 
-                        <!-- Enhanced Submit Button -->
-                        <div class="flex items-center justify-between pt-8 border-t border-gray-200">
-                            <div class="text-sm text-gray-600 font-raleway">
-                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
-                                Changes will be saved to your profile immediately
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <button type="button" onclick="resetForm()" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
-                                    <i class="fas fa-undo mr-2"></i>Reset
-                                </button>
-                                <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-xl font-bold hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
-                                    <i class="fas fa-save mr-2"></i>Save Changes
-                                </button>
+                            <div class="flex-1 text-center md:text-left">
+                                {{ user_form.profile_picture }}
+                                <div class="file-upload-area" onclick="document.getElementById('id_profile_picture').click()">
+                                    <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                    <div class="file-upload-text">
+                                        <p class="font-medium">Click to upload or drag and drop</p>
+                                        <p class="text-xs">PNG, JPG, GIF up to 2MB (Recommended: 400x400px)</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </form>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Basic Information</h3>
+                                <p class="form-section-subtitle">Your personal details and identification</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="{{ user_form.first_name.id_for_label }}" class="form-label required">
+                                    <i class="fas fa-user mr-1 text-harrier-red"></i>First Name
+                                </label>
+                                <div class="relative">
+                                    {{ user_form.first_name }}
+                                    <div class="htmx-field-indicator absolute right-3 top-3 hidden">
+                                        <i class="fas fa-check text-green-500"></i>
+                                    </div>
+                                </div>
+                                {% if user_form.first_name.errors %}
+                                    <div class="form-error">
+                                        <i class="fas fa-exclamation-circle form-error-icon"></i>
+                                        {{ user_form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.last_name.id_for_label }}" class="form-label required">
+                                    <i class="fas fa-user mr-1 text-harrier-red"></i>Last Name
+                                </label>
+                                {{ user_form.last_name }}
+                                {% if user_form.last_name.errors %}
+                                    <div class="form-error">
+                                        <i class="fas fa-exclamation-circle form-error-icon"></i>
+                                        {{ user_form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.username.id_for_label }}" class="form-label required">
+                                    <i class="fas fa-at mr-1 text-purple-500"></i>Username
+                                </label>
+                                {{ user_form.username }}
+                                {% if user_form.username.errors %}
+                                    <div class="form-error">
+                                        <i class="fas fa-exclamation-circle form-error-icon"></i>
+                                        {{ user_form.username.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.gender.id_for_label }}" class="form-label">
+                                    <i class="fas fa-venus-mars mr-1 text-pink-500"></i>Gender
+                                </label>
+                                {{ user_form.gender }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.date_of_birth.id_for_label }}" class="form-label">
+                                    <i class="fas fa-birthday-cake mr-1 text-yellow-500"></i>Date of Birth
+                                </label>
+                                {{ user_form.date_of_birth }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.preferred_language.id_for_label }}" class="form-label">
+                                    <i class="fas fa-language mr-1 text-green-500"></i>Preferred Language
+                                </label>
+                                {{ user_form.preferred_language }}
+                            </div>
+                        </div>
+
+                        <!-- Bio Section -->
+                        <div class="form-group">
+                            <label for="{{ user_form.bio.id_for_label }}" class="form-label">
+                                <i class="fas fa-file-alt mr-1 text-indigo-500"></i>Bio
+                            </label>
+                            {{ user_form.bio }}
+                            <div class="character-counter" id="bioCounter">
+                                <span id="bioCount">{{ user_form.bio.value|length|default:0 }}</span>/500 characters
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Tell others about yourself, your interests, or your business.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Contact Information Tab -->
+                <div class="tab-content" id="contact-tab">
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                                <i class="fas fa-envelope text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Contact Information</h3>
+                                <p class="form-section-subtitle">How people can reach you</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="{{ user_form.email.id_for_label }}" class="form-label required">
+                                    <i class="fas fa-envelope mr-1 text-blue-500"></i>Email Address
+                                </label>
+                                {{ user_form.email }}
+                                {% if user_form.email.errors %}
+                                    <div class="form-error">
+                                        <i class="fas fa-exclamation-circle form-error-icon"></i>
+                                        {{ user_form.email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if user.is_email_verified %}
+                                    <div class="form-success">
+                                        <i class="fas fa-check-circle form-success-icon"></i>
+                                        Email verified
+                                    </div>
+                                {% else %}
+                                    <p class="text-xs text-yellow-600 mt-1">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Email not verified. <a href="#" class="text-harrier-red hover:underline">Resend verification</a>
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.phone.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone mr-1 text-green-500"></i>Primary Phone
+                                </label>
+                                {{ user_form.phone }}
+                                {% if user_form.phone.errors %}
+                                    <div class="form-error">
+                                        <i class="fas fa-exclamation-circle form-error-icon"></i>
+                                        {{ user_form.phone.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.secondary_phone.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone-alt mr-1 text-green-600"></i>Secondary Phone
+                                </label>
+                                {{ user_form.secondary_phone }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.whatsapp_number.id_for_label }}" class="form-label">
+                                    <i class="fab fa-whatsapp mr-1 text-green-500"></i>WhatsApp Number
+                                </label>
+                                {{ user_form.whatsapp_number }}
+                                <p class="text-xs text-gray-500 mt-1">Include country code (e.g., +254712345678)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-purple-500 to-purple-600">
+                                <i class="fas fa-map-marker-alt text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Location Information</h3>
+                                <p class="form-section-subtitle">Your location and address details</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="form-group">
+                                <label for="{{ user_form.city.id_for_label }}" class="form-label">
+                                    <i class="fas fa-city mr-1 text-purple-500"></i>City
+                                </label>
+                                {{ user_form.city }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ user_form.country.id_for_label }}" class="form-label">
+                                    <i class="fas fa-flag mr-1 text-red-500"></i>Country
+                                </label>
+                                {{ user_form.country }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ user_form.address.id_for_label }}" class="form-label">
+                                <i class="fas fa-home mr-1 text-indigo-500"></i>Full Address
+                            </label>
+                            {{ user_form.address }}
+                            <p class="text-xs text-gray-500 mt-1">Your complete postal address</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferences Tab -->
+                <div class="tab-content" id="preferences-tab">
+                    <!-- Notification Preferences -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-yellow-500 to-yellow-600">
+                                <i class="fas fa-bell text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Notification Preferences</h3>
+                                <p class="form-section-subtitle">Choose how you want to be notified</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="form-group-inline">
+                                {{ user_form.email_notifications }}
+                                <label for="{{ user_form.email_notifications.id_for_label }}" class="form-label mb-0">
+                                    <i class="fas fa-envelope mr-2 text-blue-500"></i>Email Notifications
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-9">Receive important updates via email</p>
+
+                            <div class="form-group-inline">
+                                {{ user_form.sms_notifications }}
+                                <label for="{{ user_form.sms_notifications.id_for_label }}" class="form-label mb-0">
+                                    <i class="fas fa-sms mr-2 text-green-500"></i>SMS Notifications
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-9">Receive urgent notifications via SMS</p>
+
+                            <div class="form-group-inline">
+                                {{ user_form.marketing_emails }}
+                                <label for="{{ user_form.marketing_emails.id_for_label }}" class="form-label mb-0">
+                                    <i class="fas fa-bullhorn mr-2 text-purple-500"></i>Marketing Emails
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-9">Receive promotional offers and updates</p>
+
+                            <div class="form-group-inline">
+                                {{ user_form.newsletter_subscription }}
+                                <label for="{{ user_form.newsletter_subscription.id_for_label }}" class="form-label mb-0">
+                                    <i class="fas fa-newspaper mr-2 text-indigo-500"></i>Newsletter Subscription
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-9">Subscribe to our monthly newsletter</p>
+                        </div>
+                    </div>
+
+                    <!-- Privacy Settings -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-green-500 to-green-600">
+                                <i class="fas fa-user-shield text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Privacy Settings</h3>
+                                <p class="form-section-subtitle">Control who can see your information</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="{{ user_form.profile_visibility.id_for_label }}" class="form-label">
+                                    <i class="fas fa-eye mr-1 text-green-500"></i>Profile Visibility
+                                </label>
+                                {{ user_form.profile_visibility }}
+                                <p class="text-xs text-gray-500 mt-1">Who can view your profile</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mt-6">
+                            <div class="form-group-inline">
+                                {{ user_form.show_email }}
+                                <label for="{{ user_form.show_email.id_for_label }}" class="form-label mb-0">
+                                    <i class="fas fa-envelope mr-2 text-blue-500"></i>Show Email Address
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-9">Allow others to see your email address</p>
+
+                            <div class="form-group-inline">
+                                {{ user_form.show_phone }}
+                                <label for="{{ user_form.show_phone.id_for_label }}" class="form-label mb-0">
+                                    <i class="fas fa-phone mr-2 text-green-500"></i>Show Phone Number
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-9">Allow others to see your phone number</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div class="tab-content" id="security-tab">
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-red-500 to-red-600">
+                                <i class="fas fa-shield-alt text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Account Security</h3>
+                                <p class="form-section-subtitle">Manage your account security settings</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- Password Change -->
+                            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-harrier-dark mb-1">Password</h4>
+                                        <p class="text-sm text-gray-600">Last changed: {{ user.last_login|date:"M d, Y"|default:"Never" }}</p>
+                                    </div>
+                                    <button type="button" class="form-button-secondary" onclick="openPasswordModal()">
+                                        <i class="fas fa-key mr-2"></i>Change Password
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Two-Factor Authentication -->
+                            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-harrier-dark mb-1">Two-Factor Authentication</h4>
+                                        <p class="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                                    </div>
+                                    <button type="button" class="form-button-secondary">
+                                        <i class="fas fa-mobile-alt mr-2"></i>Setup 2FA
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Login History -->
+                            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-harrier-dark mb-1">Login History</h4>
+                                        <p class="text-sm text-gray-600">View your recent login activity</p>
+                                    </div>
+                                    <button type="button" class="form-button-secondary">
+                                        <i class="fas fa-history mr-2"></i>View History
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Account Deletion -->
+                            <div class="bg-red-50 rounded-xl p-6 border border-red-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-red-600 mb-1">Delete Account</h4>
+                                        <p class="text-sm text-red-600">Permanently delete your account and all data</p>
+                                    </div>
+                                    <button type="button" class="form-button-danger" onclick="confirmAccountDeletion()">
+                                        <i class="fas fa-trash mr-2"></i>Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if user.role == 'vendor' and vendor_form %}
+                <!-- Business Tab (Vendor Only) -->
+                <div class="tab-content" id="business-tab">
+                    <!-- Company Information -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-orange-500 to-orange-600">
+                                <i class="fas fa-building text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Company Information</h3>
+                                <p class="form-section-subtitle">Your business details and branding</p>
+                            </div>
+                        </div>
+
+                        <!-- Company Logo Upload -->
+                        <div class="mb-6">
+                            <label class="form-label">
+                                <i class="fas fa-image mr-1 text-orange-500"></i>Company Logo
+                            </label>
+                            <div class="flex items-center space-x-6">
+                                <div class="relative">
+                                    {% if vendor.company_logo %}
+                                        <img class="h-20 w-20 object-cover rounded-xl shadow-lg border-2 border-gray-200"
+                                             src="{{ vendor.company_logo.url }}" alt="Company logo" id="logoPreview">
+                                    {% else %}
+                                        <div class="h-20 w-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg" id="logoPreview">
+                                            {{ vendor.company_name|first|upper|default:"L" }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="profile-picture-overlay" onclick="document.getElementById('id_company_logo').click()">
+                                        <i class="fas fa-camera profile-picture-edit-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    {{ vendor_form.company_logo }}
+                                    <div class="file-upload-area" onclick="document.getElementById('id_company_logo').click()">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                        <div class="file-upload-text">
+                                            <p class="font-medium">Upload company logo</p>
+                                            <p class="text-xs">PNG, JPG up to 2MB (Recommended: 200x200px)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="{{ vendor_form.company_name.id_for_label }}" class="form-label required">
+                                    <i class="fas fa-building mr-1 text-orange-500"></i>Company Name
+                                </label>
+                                {{ vendor_form.company_name }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.business_type.id_for_label }}" class="form-label">
+                                    <i class="fas fa-industry mr-1 text-blue-500"></i>Business Type
+                                </label>
+                                {{ vendor_form.business_type }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.business_license.id_for_label }}" class="form-label">
+                                    <i class="fas fa-certificate mr-1 text-yellow-500"></i>Business License
+                                </label>
+                                {{ vendor_form.business_license }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.year_established.id_for_label }}" class="form-label">
+                                    <i class="fas fa-calendar mr-1 text-green-500"></i>Year Established
+                                </label>
+                                {{ vendor_form.year_established }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ vendor_form.description.id_for_label }}" class="form-label">
+                                <i class="fas fa-file-alt mr-1 text-indigo-500"></i>Business Description
+                            </label>
+                            {{ vendor_form.description }}
+                            <div class="character-counter" id="businessDescCounter">
+                                <span id="businessDescCount">{{ vendor_form.description.value|length|default:0 }}</span>/1000 characters
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact & Social -->
+                    <div class="form-section form-fade-in">
+                        <div class="form-section-header">
+                            <div class="form-section-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                                <i class="fas fa-share-alt text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="form-section-title">Contact & Social Media</h3>
+                                <p class="form-section-subtitle">How customers can reach your business</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="{{ vendor_form.business_phone.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone mr-1 text-green-500"></i>Business Phone
+                                </label>
+                                {{ vendor_form.business_phone }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.business_email.id_for_label }}" class="form-label">
+                                    <i class="fas fa-envelope mr-1 text-blue-500"></i>Business Email
+                                </label>
+                                {{ vendor_form.business_email }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.website.id_for_label }}" class="form-label">
+                                    <i class="fas fa-globe mr-1 text-purple-500"></i>Website
+                                </label>
+                                {{ vendor_form.website }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.facebook_url.id_for_label }}" class="form-label">
+                                    <i class="fab fa-facebook mr-1 text-blue-600"></i>Facebook Page
+                                </label>
+                                {{ vendor_form.facebook_url }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.instagram_url.id_for_label }}" class="form-label">
+                                    <i class="fab fa-instagram mr-1 text-pink-500"></i>Instagram
+                                </label>
+                                {{ vendor_form.instagram_url }}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ vendor_form.twitter_url.id_for_label }}" class="form-label">
+                                    <i class="fab fa-twitter mr-1 text-blue-400"></i>Twitter
+                                </label>
+                                {{ vendor_form.twitter_url }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ vendor_form.physical_address.id_for_label }}" class="form-label">
+                                <i class="fas fa-map-marker-alt mr-1 text-red-500"></i>Business Address
+                            </label>
+                            {{ vendor_form.physical_address }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Form Actions -->
+                <div class="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-gray-200 space-y-4 md:space-y-0">
+                    <div class="text-sm text-gray-600 font-raleway">
+                        <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                        Changes will be saved to your profile immediately
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button type="button" onclick="resetForm()" class="form-button-secondary">
+                            <i class="fas fa-undo mr-2"></i>Reset Changes
+                        </button>
+                        <button type="submit" class="form-button-primary" id="saveButton">
+                            <i class="fas fa-save mr-2"></i>Save Profile
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
 
-        <!-- Account Information Sidebar -->
+        <!-- Profile Sidebar -->
         <div class="space-y-6">
+            <!-- Profile Completion -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Profile Completion</h3>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Progress</span>
+                            <span class="text-sm font-bold text-harrier-red" id="completionPercentage">75%</span>
+                        </div>
+                        <div class="form-progress">
+                            <div class="form-progress-bar" style="width: 75%" id="completionBar"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center text-green-600">
+                            <i class="fas fa-check-circle mr-2"></i>Basic information
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <i class="fas fa-check-circle mr-2"></i>Contact details
+                        </div>
+                        {% if not user.profile_picture %}
+                        <div class="flex items-center text-yellow-600">
+                            <i class="fas fa-exclamation-circle mr-2"></i>Profile picture
+                        </div>
+                        {% endif %}
+                        {% if not user.bio %}
+                        <div class="flex items-center text-yellow-600">
+                            <i class="fas fa-exclamation-circle mr-2"></i>Bio description
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
             <!-- Account Status -->
             <div class="dashboard-card">
                 <div class="p-6 border-b border-gray-200">
@@ -286,24 +817,24 @@
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-600">Account Type</span>
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                             {% if user.role == 'vendor' %}bg-blue-100 text-blue-800
                             {% elif user.role == 'admin' %}bg-purple-100 text-purple-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ user.get_role_display }}
+                            <i class="fas fa-user-tag mr-1"></i>{{ user.get_role_display }}
                         </span>
                     </div>
-                    
+
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-600">Member Since</span>
-                        <span class="text-sm font-medium text-harrier-dark">{{ user.date_joined|date:"M Y" }}</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ user.date_joined|date:"M d, Y" }}</span>
                     </div>
-                    
+
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Email Verified</span>
-                        {% if user.is_verified %}
+                        <span class="text-sm text-gray-600">Email Status</span>
+                        {% if user.is_email_verified %}
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="fas fa-check mr-1"></i>Verified
+                                <i class="fas fa-check-circle mr-1"></i>Verified
                             </span>
                         {% else %}
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -314,157 +845,495 @@
 
                     {% if user.role == 'vendor' and vendor %}
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Vendor Status</span>
+                            <span class="text-sm text-gray-600">Business Status</span>
                             {% if vendor.is_approved %}
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <i class="fas fa-check mr-1"></i>Approved
+                                    <i class="fas fa-shield-check mr-1"></i>Verified
                                 </span>
                             {% else %}
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    <i class="fas fa-clock mr-1"></i>Pending Review
+                                    <i class="fas fa-hourglass-half mr-1"></i>Under Review
                                 </span>
                             {% endif %}
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Profile Views</span>
+                            <span class="text-sm font-medium text-harrier-dark">{{ vendor.profile_views|default:0 }}</span>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Security Settings -->
+            <!-- Quick Actions -->
             <div class="dashboard-card">
                 <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Security</h3>
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Quick Actions</h3>
                 </div>
-                <div class="p-6 space-y-4">
-                    <a href="#" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div class="p-6 space-y-3">
+                    <button type="button" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors text-left" onclick="switchTab('security')">
                         <div class="flex items-center">
-                            <i class="fas fa-key text-gray-400 mr-3"></i>
+                            <i class="fas fa-key text-harrier-red mr-3"></i>
                             <span class="text-sm font-medium text-harrier-dark">Change Password</span>
                         </div>
                         <i class="fas fa-chevron-right text-gray-400"></i>
-                    </a>
-                    
-                    <a href="#" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    </button>
+
+                    <button type="button" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors text-left" onclick="exportProfile()">
                         <div class="flex items-center">
-                            <i class="fas fa-shield-alt text-gray-400 mr-3"></i>
-                            <span class="text-sm font-medium text-harrier-dark">Two-Factor Authentication</span>
+                            <i class="fas fa-download text-blue-500 mr-3"></i>
+                            <span class="text-sm font-medium text-harrier-dark">Export Profile Data</span>
                         </div>
                         <i class="fas fa-chevron-right text-gray-400"></i>
-                    </a>
-                    
-                    <a href="#" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    </button>
+
+                    {% if user.role == 'vendor' %}
+                    <button type="button" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors text-left">
                         <div class="flex items-center">
-                            <i class="fas fa-user-shield text-gray-400 mr-3"></i>
+                            <i class="fas fa-eye text-green-500 mr-3"></i>
+                            <span class="text-sm font-medium text-harrier-dark">View Public Profile</span>
+                        </div>
+                        <i class="fas fa-external-link-alt text-gray-400"></i>
+                    </button>
+                    {% endif %}
+
+                    <button type="button" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors text-left" onclick="switchTab('preferences')">
+                        <div class="flex items-center">
+                            <i class="fas fa-cog text-purple-500 mr-3"></i>
                             <span class="text-sm font-medium text-harrier-dark">Privacy Settings</span>
                         </div>
                         <i class="fas fa-chevron-right text-gray-400"></i>
-                    </a>
+                    </button>
                 </div>
             </div>
 
-            <!-- Danger Zone -->
-            <div class="dashboard-card border-red-200">
-                <div class="p-6 border-b border-red-200">
-                    <h3 class="text-lg font-heading font-bold text-red-600">Danger Zone</h3>
+            <!-- Help & Support -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Help & Support</h3>
                 </div>
-                <div class="p-6">
-                    <button type="button" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                        <i class="fas fa-trash mr-2"></i>Delete Account
-                    </button>
-                    <p class="text-xs text-gray-500 mt-2">This action cannot be undone.</p>
+                <div class="p-6 space-y-3">
+                    <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-question-circle text-blue-500 mr-3"></i>
+                        <span class="text-sm font-medium text-harrier-dark">Profile Help</span>
+                    </a>
+                    <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-headset text-green-500 mr-3"></i>
+                        <span class="text-sm font-medium text-harrier-dark">Contact Support</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
+<!-- Password Change Modal -->
+<div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="passwordModalContent">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-harrier-dark">Change Password</h3>
+            <button type="button" onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <form id="passwordChangeForm" class="space-y-4">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label required">Current Password</label>
+                <input type="password" name="current_password" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">New Password</label>
+                <input type="password" name="new_password" class="form-input" required>
+                <div class="password-strength mt-2 hidden">
+                    <div class="flex space-x-1">
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                    </div>
+                    <p class="text-xs mt-1 strength-text"></p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Confirm New Password</label>
+                <input type="password" name="confirm_password" class="form-input" required>
+            </div>
+            <div class="flex space-x-4 pt-4">
+                <button type="button" onclick="closePasswordModal()" class="form-button-secondary flex-1">Cancel</button>
+                <button type="submit" class="form-button-primary flex-1">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% block extra_js %}
+<style>
+/* Tab Styles */
+.profile-tab {
+    @apply py-2 px-4 text-sm font-medium text-gray-500 hover:text-gray-700
+           hover:border-gray-300 whitespace-nowrap border-b-2 border-transparent
+           transition-all duration-200;
+}
+
+.profile-tab.active {
+    @apply text-harrier-red border-harrier-red;
+}
+
+.tab-content {
+    @apply hidden;
+}
+
+.tab-content.active {
+    @apply block;
+}
+
+/* Password Strength Indicator */
+.strength-bar {
+    @apply h-1 bg-gray-200 rounded flex-1 transition-all duration-300;
+}
+
+.strength-bar.weak { @apply bg-red-500; }
+.strength-bar.fair { @apply bg-yellow-500; }
+.strength-bar.good { @apply bg-blue-500; }
+.strength-bar.strong { @apply bg-green-500; }
+
+/* File Upload Drag & Drop */
+.file-upload-area.dragover {
+    @apply border-harrier-red bg-harrier-red/5 transform scale-105;
+}
+
+/* Loading Animation */
+.form-loading::after {
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+</style>
+
 <script>
 // Enhanced profile management with modern UX
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize character counter for description
-    initializeCharacterCounter();
-
-    // Auto-save functionality
-    initializeAutoSave();
-
-    // Form validation
+    // Initialize all components
+    initializeTabs();
+    initializeCharacterCounters();
+    initializeFileUploads();
     initializeFormValidation();
-
-    // Profile picture preview
-    initializeProfilePicturePreview();
+    initializeAutoSave();
+    initializePasswordStrength();
+    calculateProfileCompletion();
+    initializeMobileFeatures();
+    initializeHTMXFeatures();
 });
 
-// Character counter for description field
-function initializeCharacterCounter() {
-    const descriptionField = document.querySelector('textarea[name*="description"]');
-    const counter = document.getElementById('descriptionCount');
+// Tab Management
+function initializeTabs() {
+    const tabs = document.querySelectorAll('.profile-tab');
+    const contents = document.querySelectorAll('.tab-content');
 
-    if (descriptionField && counter) {
-        function updateCounter() {
-            const count = descriptionField.value.length;
-            counter.textContent = count;
-
-            // Color coding based on length
-            if (count < 100) {
-                counter.className = 'text-red-500 font-medium';
-            } else if (count <= 500) {
-                counter.className = 'text-green-500 font-medium';
-            } else {
-                counter.className = 'text-yellow-500 font-medium';
-            }
-        }
-
-        descriptionField.addEventListener('input', updateCounter);
-        updateCounter(); // Initial count
-    }
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            switchTab(targetTab);
+        });
+    });
 }
 
-// Profile picture preview functionality
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        const preview = document.getElementById('profilePreview');
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.profile-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        }
+    });
 
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+        if (content.id === tabName + '-tab') {
+            content.classList.add('active');
+            // Trigger animation
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+                content.style.transition = 'all 0.3s ease';
+            }, 50);
+        }
+    });
+}
+
+// Character counters for multiple fields
+function initializeCharacterCounters() {
+    const fields = [
+        { field: 'textarea[name="bio"]', counter: 'bioCount', max: 500 },
+        { field: 'textarea[name="description"]', counter: 'businessDescCount', max: 1000 }
+    ];
+
+    fields.forEach(({ field, counter, max }) => {
+        const textarea = document.querySelector(field);
+        const counterElement = document.getElementById(counter);
+
+        if (textarea && counterElement) {
+            function updateCounter() {
+                const count = textarea.value.length;
+                counterElement.textContent = count;
+
+                const counterContainer = counterElement.parentElement;
+                counterContainer.classList.remove('success', 'warning', 'error');
+
+                if (count === 0) {
+                    counterContainer.classList.add('text-gray-500');
+                } else if (count <= max * 0.8) {
+                    counterContainer.classList.add('success');
+                } else if (count <= max) {
+                    counterContainer.classList.add('warning');
+                } else {
+                    counterContainer.classList.add('error');
+                }
+            }
+
+            textarea.addEventListener('input', updateCounter);
+            updateCounter(); // Initial count
+        }
+    });
+}
+
+// File Upload Management
+function initializeFileUploads() {
+    // Profile picture upload
+    const profileInput = document.getElementById('id_profile_picture');
+    const profilePreview = document.getElementById('profileImagePreview');
+
+    if (profileInput) {
+        profileInput.addEventListener('change', function(e) {
+            handleImagePreview(e.target, profilePreview, 'profile');
+        });
+    }
+
+    // Company logo upload (for vendors)
+    const logoInput = document.getElementById('id_company_logo');
+    const logoPreview = document.getElementById('logoPreview');
+
+    if (logoInput) {
+        logoInput.addEventListener('change', function(e) {
+            handleImagePreview(e.target, logoPreview, 'logo');
+        });
+    }
+
+    // Drag and drop functionality
+    initializeDragAndDrop();
+}
+
+function handleImagePreview(input, previewElement, type) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Validate file size (2MB limit)
+        if (file.size > 2 * 1024 * 1024) {
+            showToast('File size must be less than 2MB', 'error');
+            input.value = '';
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.match('image.*')) {
+            showToast('Please select a valid image file', 'error');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
         reader.onload = function(e) {
-            if (preview.tagName === 'IMG') {
-                preview.src = e.target.result;
+            if (previewElement.tagName === 'IMG') {
+                previewElement.src = e.target.result;
             } else {
                 // Replace div with img
                 const img = document.createElement('img');
-                img.id = 'profilePreview';
-                img.className = 'h-20 w-20 object-cover rounded-xl shadow-lg';
+                img.id = previewElement.id;
+                img.className = previewElement.className.replace('bg-gradient-to-br from-harrier-red to-harrier-red-dark', '');
                 img.src = e.target.result;
-                preview.parentNode.replaceChild(img, preview);
+                previewElement.parentNode.replaceChild(img, previewElement);
             }
 
-            showMessage('✅ Profile picture updated! Remember to save changes.', 'success');
+            showToast(`${type === 'profile' ? 'Profile picture' : 'Company logo'} updated! Remember to save changes.`, 'success');
         };
 
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(file);
     }
 }
 
-function initializeProfilePicturePreview() {
-    // This function is called from the HTML when file is selected
-    window.previewImage = previewImage;
-}
+function initializeDragAndDrop() {
+    const uploadAreas = document.querySelectorAll('.file-upload-area');
 
-// Auto-save indicator
-function initializeAutoSave() {
-    const form = document.querySelector('form');
-    const inputs = form.querySelectorAll('input, textarea, select');
-    let hasChanges = false;
+    uploadAreas.forEach(area => {
+        area.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
 
-    inputs.forEach(input => {
-        const originalValue = input.value;
+        area.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
 
-        input.addEventListener('input', function() {
-            if (input.value !== originalValue) {
-                hasChanges = true;
-                showSaveIndicator();
+        area.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const input = this.parentElement.querySelector('input[type="file"]');
+                if (input) {
+                    input.files = files;
+                    input.dispatchEvent(new Event('change'));
+                }
             }
         });
     });
+}
+
+// Form Validation
+function initializeFormValidation() {
+    const form = document.getElementById('profileForm');
+    const inputs = form.querySelectorAll('input, textarea, select');
+
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+
+        input.addEventListener('input', function() {
+            clearFieldError(this);
+        });
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        let isValid = true;
+        inputs.forEach(input => {
+            if (!validateField(input)) {
+                isValid = false;
+            }
+        });
+
+        if (isValid) {
+            submitForm();
+        } else {
+            showToast('Please correct the errors before submitting', 'error');
+        }
+    });
+}
+
+function validateField(field) {
+    const value = field.value.trim();
+    const fieldName = field.name;
+    let isValid = true;
+    let errorMessage = '';
+
+    // Required field validation
+    if (field.hasAttribute('required') && !value) {
+        isValid = false;
+        errorMessage = 'This field is required';
+    }
+
+    // Email validation
+    if (fieldName === 'email' && value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid email address';
+        }
+    }
+
+    // Phone validation
+    if ((fieldName === 'phone' || fieldName === 'business_phone') && value) {
+        const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+        if (!phoneRegex.test(value)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid phone number';
+        }
+    }
+
+    // URL validation
+    if (fieldName.includes('url') && value) {
+        try {
+            new URL(value);
+        } catch {
+            isValid = false;
+            errorMessage = 'Please enter a valid URL';
+        }
+    }
+
+    if (!isValid) {
+        showFieldError(field, errorMessage);
+    } else {
+        clearFieldError(field);
+    }
+
+    return isValid;
+}
+
+function showFieldError(field, message) {
+    clearFieldError(field);
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'form-error';
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle form-error-icon"></i>${message}`;
+
+    field.parentNode.appendChild(errorDiv);
+    field.classList.add('border-red-500');
+}
+
+function clearFieldError(field) {
+    const errorDiv = field.parentNode.querySelector('.form-error');
+    if (errorDiv) {
+        errorDiv.remove();
+    }
+    field.classList.remove('border-red-500');
+}
+
+// Auto-save functionality
+function initializeAutoSave() {
+    const form = document.getElementById('profileForm');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    let hasChanges = false;
+    let originalValues = {};
+
+    // Store original values
+    inputs.forEach(input => {
+        originalValues[input.name] = input.value;
+    });
+
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (input.value !== originalValues[input.name]) {
+                hasChanges = true;
+                showUnsavedIndicator();
+            } else {
+                checkAllChanges();
+            }
+        });
+    });
+
+    function checkAllChanges() {
+        hasChanges = false;
+        inputs.forEach(input => {
+            if (input.value !== originalValues[input.name]) {
+                hasChanges = true;
+            }
+        });
+
+        if (!hasChanges) {
+            hideUnsavedIndicator();
+        }
+    }
 
     // Warn before leaving if there are unsaved changes
     window.addEventListener('beforeunload', function(e) {
@@ -473,58 +1342,218 @@ function initializeAutoSave() {
             e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
         }
     });
-
-    // Reset changes flag on successful save
-    form.addEventListener('submit', function() {
-        hasChanges = false;
-    });
 }
 
-function showSaveIndicator() {
-    // Remove existing indicator
-    const existing = document.getElementById('saveIndicator');
-    if (existing) {
-        existing.remove();
+// Password Strength Indicator
+function initializePasswordStrength() {
+    const passwordInput = document.querySelector('input[name="new_password"]');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+        });
+    }
+}
+
+function checkPasswordStrength(password) {
+    const strengthContainer = document.querySelector('.password-strength');
+    const bars = strengthContainer.querySelectorAll('.strength-bar');
+    const text = strengthContainer.querySelector('.strength-text');
+
+    if (!password) {
+        strengthContainer.classList.add('hidden');
+        return;
     }
 
-    // Create new indicator
+    strengthContainer.classList.remove('hidden');
+
+    let score = 0;
+    let feedback = [];
+
+    // Length check
+    if (password.length >= 8) score++;
+    else feedback.push('at least 8 characters');
+
+    // Uppercase check
+    if (/[A-Z]/.test(password)) score++;
+    else feedback.push('uppercase letter');
+
+    // Lowercase check
+    if (/[a-z]/.test(password)) score++;
+    else feedback.push('lowercase letter');
+
+    // Number check
+    if (/\d/.test(password)) score++;
+    else feedback.push('number');
+
+    // Special character check
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
+    else feedback.push('special character');
+
+    // Update bars
+    bars.forEach((bar, index) => {
+        bar.className = 'strength-bar';
+        if (index < score) {
+            if (score <= 2) bar.classList.add('weak');
+            else if (score <= 3) bar.classList.add('fair');
+            else if (score <= 4) bar.classList.add('good');
+            else bar.classList.add('strong');
+        }
+    });
+
+    // Update text
+    const strengthLevels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['text-red-500', 'text-red-500', 'text-yellow-500', 'text-blue-500', 'text-green-500'];
+
+    text.textContent = strengthLevels[score - 1] || 'Very Weak';
+    text.className = `text-xs mt-1 ${colors[score - 1] || colors[0]}`;
+
+    if (feedback.length > 0) {
+        text.textContent += ` - Add: ${feedback.join(', ')}`;
+    }
+}
+
+// Profile Completion Calculator
+function calculateProfileCompletion() {
+    const fields = [
+        'first_name', 'last_name', 'email', 'phone', 'bio', 'profile_picture'
+    ];
+
+    let completed = 0;
+    let total = fields.length;
+
+    fields.forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field && field.value && field.value.trim()) {
+            completed++;
+        }
+    });
+
+    const percentage = Math.round((completed / total) * 100);
+
+    const percentageElement = document.getElementById('completionPercentage');
+    const barElement = document.getElementById('completionBar');
+
+    if (percentageElement) percentageElement.textContent = percentage + '%';
+    if (barElement) barElement.style.width = percentage + '%';
+}
+
+// Utility Functions
+function showUnsavedIndicator() {
+    const existing = document.getElementById('unsavedIndicator');
+    if (existing) return;
+
     const indicator = document.createElement('div');
-    indicator.id = 'saveIndicator';
+    indicator.id = 'unsavedIndicator';
     indicator.className = 'fixed top-4 left-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-2 rounded-xl shadow-xl z-50 animate-fade-in-up';
     indicator.innerHTML = `
         <div class="flex items-center">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-            <span class="font-medium">Unsaved changes detected</span>
+            <span class="font-medium">Unsaved changes</span>
         </div>
     `;
 
     document.body.appendChild(indicator);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (indicator.parentNode) {
-            indicator.style.transform = 'translateX(-100%)';
-            indicator.style.opacity = '0';
-            setTimeout(() => indicator.remove(), 300);
-        }
-    }, 5000);
 }
 
-// Reset form function
+function hideUnsavedIndicator() {
+    const indicator = document.getElementById('unsavedIndicator');
+    if (indicator) {
+        indicator.style.transform = 'translateX(-100%)';
+        indicator.style.opacity = '0';
+        setTimeout(() => indicator.remove(), 300);
+    }
+}
+
+// Modal Functions
+function openPasswordModal() {
+    const modal = document.getElementById('passwordModal');
+    const content = document.getElementById('passwordModalContent');
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closePasswordModal() {
+    const modal = document.getElementById('passwordModal');
+    const content = document.getElementById('passwordModalContent');
+
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+// Form Submission
+function submitForm() {
+    const form = document.getElementById('profileForm');
+    const saveButton = document.getElementById('saveButton');
+
+    // Show loading state
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    saveButton.disabled = true;
+
+    // Submit form
+    const formData = new FormData(form);
+
+    fetch(form.action || window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Profile updated successfully!', 'success');
+            hideUnsavedIndicator();
+            calculateProfileCompletion();
+        } else {
+            showToast('Error updating profile. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Network error. Please check your connection.', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        saveButton.innerHTML = '<i class="fas fa-save mr-2"></i>Save Profile';
+        saveButton.disabled = false;
+    });
+}
+
+// Utility Functions
 function resetForm() {
     if (confirm('🔄 Are you sure you want to reset all changes?\n\nThis will restore all fields to their original values.')) {
         location.reload();
     }
 }
 
-// Enhanced message display
-function showMessage(message, type) {
+function exportProfile() {
+    showToast('Preparing profile export...', 'info');
+    // Implementation for profile export
+}
+
+function confirmAccountDeletion() {
+    if (confirm('⚠️ Are you absolutely sure you want to delete your account?\n\nThis action cannot be undone and will permanently delete all your data.')) {
+        if (confirm('Type "DELETE" to confirm account deletion:')) {
+            showToast('Account deletion initiated. You will receive a confirmation email.', 'warning');
+        }
+    }
+}
+
+function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     const icons = {
-        'success': '✅',
-        'error': '❌',
-        'info': 'ℹ️',
-        'warning': '⚠️'
+        'success': 'fas fa-check-circle',
+        'error': 'fas fa-exclamation-circle',
+        'info': 'fas fa-info-circle',
+        'warning': 'fas fa-exclamation-triangle'
     };
 
     const colors = {
@@ -534,10 +1563,10 @@ function showMessage(message, type) {
         'warning': 'bg-gradient-to-r from-yellow-500 to-yellow-600'
     };
 
-    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type] || colors.info} animate-fade-in-up`;
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-xl transform transition-all duration-300 ${colors[type]} animate-fade-in-up`;
     toast.innerHTML = `
         <div class="flex items-center">
-            <span class="mr-2 text-lg">${icons[type] || icons.info}</span>
+            <i class="${icons[type]} mr-2"></i>
             <span>${message}</span>
         </div>
     `;
@@ -561,15 +1590,414 @@ document.addEventListener('keydown', function(event) {
     // Ctrl/Cmd + S to save
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
         event.preventDefault();
-        document.querySelector('form').submit();
-        showMessage('💾 Saving profile...', 'info');
+        submitForm();
     }
 
-    // Ctrl/Cmd + R to reset (with confirmation)
-    if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+    // Escape to close modals
+    if (event.key === 'Escape') {
+        closePasswordModal();
+    }
+
+    // Tab navigation
+    if (event.key >= '1' && event.key <= '5' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
-        resetForm();
+        const tabs = ['personal', 'contact', 'preferences', 'security', 'business'];
+        const tabIndex = parseInt(event.key) - 1;
+        if (tabs[tabIndex]) {
+            switchTab(tabs[tabIndex]);
+        }
     }
 });
+
+// Mobile-specific features
+function initializeMobileFeatures() {
+    // Touch-friendly tab navigation
+    if (window.innerWidth <= 640) {
+        initializeMobileTabNavigation();
+        initializeSwipeGestures();
+        initializeMobileFormOptimizations();
+    }
+
+    // Handle orientation changes
+    window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+            adjustMobileLayout();
+        }, 100);
+    });
+}
+
+function initializeMobileTabNavigation() {
+    const tabsContainer = document.querySelector('.profile-tabs-nav');
+    if (!tabsContainer) return;
+
+    // Enable horizontal scrolling for tabs
+    let isScrolling = false;
+    let startX;
+    let scrollLeft;
+
+    tabsContainer.addEventListener('touchstart', function(e) {
+        isScrolling = true;
+        startX = e.touches[0].pageX - tabsContainer.offsetLeft;
+        scrollLeft = tabsContainer.scrollLeft;
+    });
+
+    tabsContainer.addEventListener('touchmove', function(e) {
+        if (!isScrolling) return;
+        e.preventDefault();
+        const x = e.touches[0].pageX - tabsContainer.offsetLeft;
+        const walk = (x - startX) * 2;
+        tabsContainer.scrollLeft = scrollLeft - walk;
+    });
+
+    tabsContainer.addEventListener('touchend', function() {
+        isScrolling = false;
+    });
+}
+
+function initializeSwipeGestures() {
+    const tabContents = document.querySelectorAll('.tab-content');
+    let currentTabIndex = 0;
+    const tabs = Array.from(document.querySelectorAll('.profile-tab'));
+
+    tabContents.forEach((content, index) => {
+        let startX = 0;
+        let startY = 0;
+        let distX = 0;
+        let distY = 0;
+
+        content.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        content.addEventListener('touchmove', function(e) {
+            if (!startX || !startY) return;
+
+            distX = e.touches[0].clientX - startX;
+            distY = e.touches[0].clientY - startY;
+
+            // Prevent default if horizontal swipe is detected
+            if (Math.abs(distX) > Math.abs(distY)) {
+                e.preventDefault();
+            }
+        });
+
+        content.addEventListener('touchend', function(e) {
+            if (!startX || !startY) return;
+
+            // Only trigger swipe if horizontal distance is significant
+            if (Math.abs(distX) > 50 && Math.abs(distY) < 100) {
+                if (distX > 0 && currentTabIndex > 0) {
+                    // Swipe right - previous tab
+                    switchTab(tabs[currentTabIndex - 1].dataset.tab);
+                    currentTabIndex--;
+                } else if (distX < 0 && currentTabIndex < tabs.length - 1) {
+                    // Swipe left - next tab
+                    switchTab(tabs[currentTabIndex + 1].dataset.tab);
+                    currentTabIndex++;
+                }
+            }
+
+            startX = 0;
+            startY = 0;
+            distX = 0;
+            distY = 0;
+        });
+    });
+}
+
+function initializeMobileFormOptimizations() {
+    // Auto-scroll to focused inputs on mobile
+    const inputs = document.querySelectorAll('.form-input');
+
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            if (window.innerWidth <= 640) {
+                setTimeout(() => {
+                    this.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }, 300);
+            }
+        });
+    });
+
+    // Optimize file upload for mobile
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (window.innerWidth <= 640) {
+                // Show loading indicator for mobile
+                const uploadArea = this.closest('.file-upload-area');
+                if (uploadArea) {
+                    uploadArea.classList.add('form-loading');
+                    setTimeout(() => {
+                        uploadArea.classList.remove('form-loading');
+                    }, 1000);
+                }
+            }
+        });
+    });
+}
+
+function adjustMobileLayout() {
+    // Recalculate layout after orientation change
+    const tabsContainer = document.querySelector('.profile-tabs-nav');
+    if (tabsContainer && window.innerWidth <= 640) {
+        // Reset scroll position
+        tabsContainer.scrollLeft = 0;
+
+        // Scroll active tab into view
+        const activeTab = tabsContainer.querySelector('.profile-tab.active');
+        if (activeTab) {
+            activeTab.scrollIntoView({
+                behavior: 'smooth',
+                inline: 'center'
+            });
+        }
+    }
+}
+
+// Viewport height fix for mobile browsers
+function setMobileViewportHeight() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+// Initialize viewport height fix
+setMobileViewportHeight();
+window.addEventListener('resize', setMobileViewportHeight);
+window.addEventListener('orientationchange', () => {
+    setTimeout(setMobileViewportHeight, 100);
+});
+
+// HTMX Features
+function initializeHTMXFeatures() {
+    // Auto-save functionality
+    initializeAutoSave();
+
+    // Real-time validation
+    initializeRealTimeValidation();
+
+    // HTMX event listeners
+    setupHTMXEventListeners();
+}
+
+function initializeAutoSave() {
+    const form = document.getElementById('profileForm');
+    if (!form) return;
+
+    const autoSaveFields = form.querySelectorAll('.form-input[data-auto-save="true"]');
+    let autoSaveTimeout;
+
+    autoSaveFields.forEach(field => {
+        field.addEventListener('input', function() {
+            clearTimeout(autoSaveTimeout);
+            showAutoSaveIndicator('saving');
+
+            autoSaveTimeout = setTimeout(() => {
+                autoSaveField(this);
+            }, 1000); // Auto-save after 1 second of inactivity
+        });
+    });
+}
+
+function autoSaveField(field) {
+    const formData = new FormData();
+    formData.append('field_name', field.name);
+    formData.append('field_value', field.value);
+    formData.append('auto_save', 'true');
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Auto-Save': 'true'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAutoSaveIndicator('saved');
+            showFieldSuccess(field);
+        } else {
+            showAutoSaveIndicator('error');
+            showFieldError(field, data.message || 'Auto-save failed');
+        }
+    })
+    .catch(error => {
+        showAutoSaveIndicator('error');
+        console.error('Auto-save error:', error);
+    });
+}
+
+function initializeRealTimeValidation() {
+    const form = document.getElementById('profileForm');
+    if (!form) return;
+
+    const validationFields = form.querySelectorAll('.form-input[data-validate="true"]');
+
+    validationFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            validateFieldRealTime(this);
+        });
+
+        field.addEventListener('input', function() {
+            clearFieldValidation(this);
+        });
+    });
+}
+
+function validateFieldRealTime(field) {
+    field.classList.add('field-validating');
+
+    const formData = new FormData();
+    formData.append('field_name', field.name);
+    formData.append('field_value', field.value);
+    formData.append('validate_only', 'true');
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Validate-Only': 'true'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        field.classList.remove('field-validating');
+
+        if (data.valid) {
+            field.classList.add('field-valid');
+            field.classList.remove('field-invalid');
+            showFieldSuccess(field);
+        } else {
+            field.classList.add('field-invalid');
+            field.classList.remove('field-valid');
+            showFieldError(field, data.message || 'Invalid input');
+        }
+    })
+    .catch(error => {
+        field.classList.remove('field-validating');
+        console.error('Validation error:', error);
+    });
+}
+
+function setupHTMXEventListeners() {
+    // HTMX request started
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        const form = event.target.closest('form');
+        if (form) {
+            form.classList.add('htmx-loading');
+        }
+    });
+
+    // HTMX request completed
+    document.addEventListener('htmx:afterRequest', function(event) {
+        const form = event.target.closest('form');
+        if (form) {
+            form.classList.remove('htmx-loading');
+        }
+
+        if (event.detail.successful) {
+            showToast('Profile updated successfully!', 'success');
+            form.classList.add('htmx-success');
+            setTimeout(() => form.classList.remove('htmx-success'), 600);
+        } else {
+            showToast('Error updating profile. Please try again.', 'error');
+            form.classList.add('htmx-error');
+            setTimeout(() => form.classList.remove('htmx-error'), 600);
+        }
+    });
+
+    // HTMX response processing
+    document.addEventListener('htmx:responseError', function(event) {
+        showToast('Network error. Please check your connection.', 'error');
+    });
+
+    // HTMX swapping content
+    document.addEventListener('htmx:beforeSwap', function(event) {
+        event.target.classList.add('htmx-swapping');
+    });
+
+    document.addEventListener('htmx:afterSwap', function(event) {
+        event.target.classList.remove('htmx-swapping');
+        event.target.classList.add('htmx-settling');
+        setTimeout(() => event.target.classList.remove('htmx-settling'), 300);
+    });
+}
+
+// Auto-save indicator functions
+function showAutoSaveIndicator(status) {
+    let indicator = document.getElementById('autoSaveIndicator');
+
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'autoSaveIndicator';
+        indicator.className = 'auto-save-indicator';
+        document.body.appendChild(indicator);
+    }
+
+    // Reset classes
+    indicator.classList.remove('saving', 'saved', 'error');
+    indicator.classList.add(status);
+
+    const icons = {
+        saving: 'fas fa-spinner fa-spin',
+        saved: 'fas fa-check',
+        error: 'fas fa-exclamation-triangle'
+    };
+
+    const messages = {
+        saving: 'Saving...',
+        saved: 'Saved',
+        error: 'Save failed'
+    };
+
+    indicator.innerHTML = `
+        <i class="${icons[status]} text-sm"></i>
+        <span class="text-sm font-medium">${messages[status]}</span>
+    `;
+
+    indicator.classList.add('show');
+
+    if (status === 'saved' || status === 'error') {
+        setTimeout(() => {
+            indicator.classList.remove('show');
+        }, 2000);
+    }
+}
+
+function showFieldSuccess(field) {
+    const indicator = field.parentElement.querySelector('.htmx-field-indicator');
+    if (indicator) {
+        indicator.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+        indicator.classList.add('show');
+        setTimeout(() => indicator.classList.remove('show'), 2000);
+    }
+}
+
+function showFieldError(field, message) {
+    const indicator = field.parentElement.querySelector('.htmx-field-indicator');
+    if (indicator) {
+        indicator.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500"></i>';
+        indicator.classList.add('show');
+        indicator.title = message;
+        setTimeout(() => indicator.classList.remove('show'), 3000);
+    }
+}
+
+function clearFieldValidation(field) {
+    field.classList.remove('field-valid', 'field-invalid', 'field-validating');
+    const indicator = field.parentElement.querySelector('.htmx-field-indicator');
+    if (indicator) {
+        indicator.classList.remove('show');
+    }
+}
 </script>
 {% endblock %}

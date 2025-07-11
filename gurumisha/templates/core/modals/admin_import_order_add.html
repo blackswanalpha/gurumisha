@@ -173,7 +173,7 @@
                                     Initial Status <span class="text-red-500">*</span>
                                 </label>
                                 <select name="initial_status" id="initial_status" required class="form-input">
-                                    <option value="confirmed">Confirmed</option>
+                                    <option value="import_request">Import Request</option>
                                     <option value="auction_won">Auction Won</option>
                                     <option value="shipped">Shipped</option>
                                 </select>
@@ -279,19 +279,24 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 1rem 2rem;
+        padding: 12px 20px;
         font-weight: 600;
-        font-size: 1rem;
-        border-radius: 1rem;
+        font-size: 14px;
+        line-height: 1.2;
+        border-radius: 10px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         transform: translateY(0);
         font-family: 'Montserrat', sans-serif;
-        min-width: 160px;
-        border: none;
+        min-width: 120px;
+        max-width: 180px;
+        height: 44px;
+        border: 2px solid transparent;
         cursor: pointer;
         user-select: none;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
+        white-space: nowrap;
+        box-sizing: border-box;
     }
 
     .enhanced-btn:hover {

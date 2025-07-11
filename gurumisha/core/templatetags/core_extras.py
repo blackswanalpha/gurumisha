@@ -86,3 +86,35 @@ def to_toast_type(django_message_level):
         messages.ERROR: 'error',
     }
     return level_mapping.get(django_message_level, 'info')
+
+@register.filter
+def currency_ksh(value):
+    """Format currency in KSH with comma separators"""
+    try:
+        # Convert to float if it's a string
+        if isinstance(value, str):
+            value = float(value)
+
+        # Format with commas and 2 decimal places
+        formatted = "{:,.2f}".format(float(value))
+        return f"KSH {formatted}"
+    except (ValueError, TypeError):
+        return f"KSH 0.00"
+
+@register.filter
+def currency_ksh_no_decimals(value):
+    """Format currency in KSH with comma separators, no decimals for whole numbers"""
+    try:
+        # Convert to float if it's a string
+        if isinstance(value, str):
+            value = float(value)
+
+        # Check if it's a whole number
+        if value == int(value):
+            formatted = "{:,}".format(int(value))
+        else:
+            formatted = "{:,.2f}".format(float(value))
+
+        return f"KSH {formatted}"
+    except (ValueError, TypeError):
+        return f"KSH 0"

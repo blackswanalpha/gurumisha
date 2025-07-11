@@ -1,0 +1,113 @@
+{% load static %}
+{% load promotion_tags %}
+{% load math_filters %}
+
+<!-- Hot Deals Grid Component -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="hot-deals-grid">
+    {% for deal in hot_deals %}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group" 
+             data-deal-id="{{ deal.id }}">
+            <div class="relative">
+                {% if deal.car.main_image %}
+                    <img src="{{ deal.car.main_image.url }}" alt="{{ deal.car.title }}" 
+                         class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
+                {% else %}
+                    <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-car text-gray-400 text-3xl"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- Hot Deal Badge -->
+                <div class="absolute top-3 left-3">
+                    <span class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                        <i class="fas fa-fire mr-1"></i>HOT DEAL
+                    </span>
+                </div>
+                
+                <!-- Countdown Timer -->
+                <div class="absolute top-3 right-3">
+                    <div class="countdown-timer" 
+                         data-countdown-end="{{ deal.end_date|date:'c' }}"
+                         data-deal-id="{{ deal.id }}"
+                         hx-get="{% url 'core:htmx_countdown_timer_update' deal.id %}"
+                         hx-trigger="every 30s"
+                         hx-swap="outerHTML">
+                        {% hot_deal_countdown deal %}
+                    </div>
+                </div>
+                
+                <!-- Discount Badge -->
+                <div class="absolute bottom-3 left-3">
+                    <div class="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">
+                        {% if deal.discount_type == 'percentage' %}
+                            {{ deal.discount_value|floatformat:0 }}% OFF
+                        {% else %}
+                            KSh {{ deal.discount_value|floatformat:0 }} OFF
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-1 truncate">{{ deal.title }}</h3>
+                <p class="text-sm text-gray-600 mb-2">{{ deal.car.year }} • {{ deal.car.mileage|floatformat:0 }} km</p>
+                
+                <!-- Star Rating -->
+                {% if deal.car.calculated_rating > 0 %}
+                    <div class="mb-3">
+                        {% star_rating_display deal.car.calculated_rating show_number=False size="text-xs" %}
+                    </div>
+                {% endif %}
+
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg font-bold text-red-600">KSh {{ deal.discounted_price|floatformat:0 }}</span>
+                            <span class="text-sm text-gray-500 line-through">KSh {{ deal.original_price|floatformat:0 }}</span>
+                        </div>
+                        <p class="text-xs text-green-600 font-medium">
+                            Save: KSh {{ deal.original_price|sub:deal.discounted_price|floatformat:0 }}
+                        </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{% url 'core:hot_deal_detail' deal.id %}" 
+                           onclick="trackHotDealClick({{ deal.id }})"
+                           class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors">
+                            Deal
+                        </a>
+                        <a href="{% url 'core:car_detail' deal.car.pk %}" 
+                           class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors">
+                            View
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-full text-center py-16">
+            <i class="fas fa-fire text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">No Hot Deals Available</h3>
+            <p class="text-gray-600 mb-4">Check back soon for amazing deals!</p>
+            <a href="{% url 'core:car_list' %}" class="text-red-600 hover:text-red-700 font-medium">
+                <i class="fas fa-car mr-1"></i>Browse all cars
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+function trackHotDealClick(dealId) {
+    // Track analytics
+    fetch('/analytics/track/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+        },
+        body: JSON.stringify({
+            metric_type: 'hot_deal_clicks',
+            deal_id: dealId
+        })
+    }).catch(console.error);
+}
+</script>

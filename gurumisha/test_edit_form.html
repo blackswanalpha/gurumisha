@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Car Edit Form</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; }
+        .btn { padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #005a87; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test Car Edit Form</h1>
+    
+    <div id="response-area"></div>
+    
+    <form hx-post="/dashboard/admin/car/1/edit/" 
+          hx-target="#response-area"
+          hx-on::after-request="handleResponse(event)">
+        
+        <input type="hidden" name="csrfmiddlewaretoken" value="test-token">
+        
+        <div>
+            <label>Title:</label>
+            <input type="text" name="title" class="form-input" value="Test Car" required>
+        </div>
+        
+        <div>
+            <label>Price:</label>
+            <input type="number" name="price" class="form-input" value="1000000" required>
+        </div>
+        
+        <div>
+            <label>Year:</label>
+            <input type="number" name="year" class="form-input" value="2020" required>
+        </div>
+        
+        <div>
+            <label>Mileage:</label>
+            <input type="number" name="mileage" class="form-input" value="50000" required>
+        </div>
+        
+        <div>
+            <label>Color:</label>
+            <input type="text" name="color" class="form-input" value="Black" required>
+        </div>
+        
+        <div>
+            <label>Description:</label>
+            <textarea name="description" class="form-input" required>Test car description</textarea>
+        </div>
+        
+        <div>
+            <label>Features:</label>
+            <textarea name="features" class="form-input">Air conditioning, Power steering</textarea>
+        </div>
+        
+        <div>
+            <label>
+                <input type="checkbox" name="is_approved" value="true"> Approved
+            </label>
+        </div>
+        
+        <div>
+            <label>
+                <input type="checkbox" name="negotiable" value="true"> Negotiable
+            </label>
+        </div>
+        
+        <div>
+            <label>
+                <input type="checkbox" name="is_hot_deal" value="true"> Hot Deal
+            </label>
+        </div>
+        
+        <div>
+            <label>
+                <input type="checkbox" name="is_featured" value="true"> Featured
+            </label>
+        </div>
+        
+        <div>
+            <label>
+                <input type="checkbox" name="is_certified" value="true"> Certified
+            </label>
+        </div>
+        
+        <div>
+            <label>Star Rating:</label>
+            <input type="number" name="star_rating" class="form-input" value="4.0" min="0" max="5" step="0.1">
+        </div>
+        
+        <button type="submit" class="btn">Save Changes</button>
+    </form>
+    
+    <script>
+        function handleResponse(event) {
+            const xhr = event.detail.xhr;
+            const responseArea = document.getElementById('response-area');
+            
+            console.log('Response received:', {
+                status: xhr.status,
+                responseText: xhr.responseText.substring(0, 200)
+            });
+            
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        responseArea.innerHTML = `<div class="success">✅ ${response.message}</div>`;
+                    } else {
+                        responseArea.innerHTML = `<div class="error">❌ ${response.message}</div>`;
+                    }
+                } catch (e) {
+                    responseArea.innerHTML = `<div class="error">❌ Form validation errors (check console)</div>`;
+                    console.log('Form response:', xhr.responseText);
+                }
+            } else {
+                responseArea.innerHTML = `<div class="error">❌ HTTP Error: ${xhr.status}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

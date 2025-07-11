@@ -1,0 +1,140 @@
+{% load static %}
+{% load promotion_tags %}
+
+<!-- Countdown Timer Component -->
+{% if expired %}
+    <div class="bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+        <i class="fas fa-clock mr-1"></i>
+        EXPIRED
+    </div>
+{% elif deal and deal.is_currently_active %}
+    {% with time_left=deal.time_remaining %}
+        {% if time_left %}
+            {% with total_seconds=time_left.total_seconds %}
+                <div class="countdown-display {% if total_seconds < 3600 %}countdown-urgent{% endif %}" 
+                     data-end-time="{{ deal.end_date|date:'c' }}"
+                     data-deal-id="{{ deal.id }}">
+                    {% if total_seconds < 3600 %}
+                        <div class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                            <i class="fas fa-fire mr-1"></i>
+                            <span class="countdown-text">{{ time_remaining|default:"Ending soon" }}</span>
+                        </div>
+                    {% else %}
+                        <div class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                            <i class="fas fa-fire mr-1"></i>
+                            <span class="countdown-text">{{ time_remaining }}</span> left
+                        </div>
+                    {% endif %}
+                </div>
+            {% endwith %}
+        {% else %}
+            <div class="bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                <i class="fas fa-clock mr-1"></i>
+                EXPIRED
+            </div>
+        {% endif %}
+    {% endwith %}
+{% else %}
+    <div class="bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+        <i class="fas fa-clock mr-1"></i>
+        EXPIRED
+    </div>
+{% endif %}
+
+<script>
+// Real-time countdown update
+document.addEventListener('DOMContentLoaded', function() {
+    const countdownDisplay = document.querySelector('.countdown-display');
+    if (!countdownDisplay) return;
+    
+    const endTime = new Date(countdownDisplay.dataset.endTime);
+    const dealId = countdownDisplay.dataset.dealId;
+    
+    function updateCountdown() {
+        const now = new Date();
+        const timeLeft = endTime - now;
+        
+        if (timeLeft <= 0) {
+            // Deal expired - trigger HTMX update
+            if (typeof htmx !== 'undefined') {
+                htmx.trigger(countdownDisplay, 'expired');
+            }
+            return;
+        }
+        
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        let timeString = '';
+        if (days > 0) {
+            timeString = `${days}d ${hours}h ${minutes}m`;
+        } else if (hours > 0) {
+            timeString = `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+            timeString = `${minutes}m ${seconds}s`;
+        } else {
+            timeString = `${seconds}s`;
+        }
+        
+        const countdownText = countdownDisplay.querySelector('.countdown-text');
+        if (countdownText) {
+            countdownText.textContent = timeString;
+        }
+        
+        // Add urgency styling for last hour
+        if (timeLeft < 3600000) { // Less than 1 hour
+            countdownDisplay.classList.add('countdown-urgent');
+            const container = countdownDisplay.querySelector('div');
+            if (container) {
+                container.className = 'bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse';
+            }
+        }
+    }
+    
+    // Update every second
+    const interval = setInterval(updateCountdown, 1000);
+    
+    // Initial update
+    updateCountdown();
+    
+    // Clean up interval when element is removed
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.removedNodes.forEach(function(node) {
+                if (node === countdownDisplay || (node.contains && node.contains(countdownDisplay))) {
+                    clearInterval(interval);
+                    observer.disconnect();
+                }
+            });
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
+</script>
+
+<style>
+.countdown-urgent {
+    animation: urgentPulse 1s infinite;
+}
+
+@keyframes urgentPulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+.countdown-display {
+    transition: all 0.3s ease;
+}
+</style>

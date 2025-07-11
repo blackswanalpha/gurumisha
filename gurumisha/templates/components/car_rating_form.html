@@ -1,0 +1,180 @@
+{% load static %}
+{% load promotion_tags %}
+
+<!-- Car Rating Form Component -->
+<div class="bg-white rounded-lg shadow-lg p-6" id="car-rating-form">
+    {% if success %}
+        <div class="text-center py-8">
+            <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Thank You!</h3>
+            <p class="text-gray-600 mb-4">{{ message }}</p>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center justify-center">
+                    <span class="text-green-800 font-medium">Your Rating: </span>
+                    <div class="ml-2">
+                        {% star_rating_display user_rating.rating show_number=True size="text-lg" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% elif error %}
+        <div class="text-center py-8">
+            <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Error</h3>
+            <p class="text-red-600">{{ message }}</p>
+        </div>
+    {% else %}
+        <div class="text-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Rate This Car</h3>
+            <p class="text-gray-600">Share your experience with {{ car.title }}</p>
+        </div>
+
+        {% if user.is_authenticated %}
+            <form hx-post="{% url 'core:htmx_car_rating_form' car.id %}"
+                  hx-target="#car-rating-form"
+                  hx-swap="outerHTML"
+                  class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Star Rating Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Overall Rating</label>
+                    <div class="flex items-center justify-center space-x-1 mb-4">
+                        {% for i in "12345" %}
+                            {% with star_value=i|add:0 %}
+                                <div class="star-rating-group">
+                                    <!-- Half star -->
+                                    <input type="radio" 
+                                           name="rating" 
+                                           value="{{ star_value|add:-0.5 }}" 
+                                           id="star-{{ star_value }}-half"
+                                           class="sr-only star-input"
+                                           {% if user_rating and user_rating.rating == star_value|add:-0.5 %}checked{% endif %}>
+                                    <label for="star-{{ star_value }}-half" 
+                                           class="star-half cursor-pointer text-2xl text-gray-300 hover:text-yellow-400 transition-colors">
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </label>
+                                    
+                                    <!-- Full star -->
+                                    <input type="radio" 
+                                           name="rating" 
+                                           value="{{ star_value }}" 
+                                           id="star-{{ star_value }}"
+                                           class="sr-only star-input"
+                                           {% if user_rating and user_rating.rating == star_value %}checked{% endif %}>
+                                    <label for="star-{{ star_value }}" 
+                                           class="star-full cursor-pointer text-2xl text-gray-300 hover:text-yellow-400 transition-colors">
+                                        <i class="fas fa-star"></i>
+                                    </label>
+                                </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    <div class="text-center">
+                        <span id="rating-display" class="text-sm text-gray-600">
+                            {% if user_rating %}{{ user_rating.rating }} out of 5 stars{% else %}Click to rate{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Review Text -->
+                <div>
+                    <label for="review" class="block text-sm font-medium text-gray-700 mb-2">
+                        Review (Optional)
+                    </label>
+                    <textarea name="review" 
+                              id="review" 
+                              rows="4" 
+                              placeholder="Share your thoughts about this car..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">{% if user_rating %}{{ user_rating.review }}{% endif %}</textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" 
+                            class="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                        {% if user_rating %}Update Rating{% else %}Submit Rating{% endif %}
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-user-lock text-gray-400 text-5xl mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Login Required</h3>
+                <p class="text-gray-600 mb-4">Please log in to rate this car</p>
+                <a href="{% url 'core:login' %}?next={{ request.path }}" 
+                   class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                    Login to Rate
+                </a>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<style>
+.star-rating-group {
+    position: relative;
+    display: inline-block;
+}
+
+.star-half {
+    position: absolute;
+    left: 0;
+    width: 50%;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.star-full {
+    position: relative;
+    z-index: 1;
+}
+
+.star-input:checked + .star-half,
+.star-input:checked + .star-full {
+    color: #fbbf24;
+}
+
+.star-input:checked ~ .star-input + .star-half,
+.star-input:checked ~ .star-input + .star-full {
+    color: #fbbf24;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const starInputs = document.querySelectorAll('.star-input');
+    const ratingDisplay = document.getElementById('rating-display');
+    
+    starInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const rating = parseFloat(this.value);
+            ratingDisplay.textContent = `${rating} out of 5 stars`;
+            
+            // Update visual state
+            updateStarDisplay(rating);
+        });
+    });
+    
+    function updateStarDisplay(rating) {
+        starInputs.forEach(input => {
+            const inputRating = parseFloat(input.value);
+            const label = input.nextElementSibling;
+            
+            if (inputRating <= rating) {
+                label.classList.add('text-yellow-400');
+                label.classList.remove('text-gray-300');
+            } else {
+                label.classList.add('text-gray-300');
+                label.classList.remove('text-yellow-400');
+            }
+        });
+    }
+    
+    // Initialize display
+    const checkedInput = document.querySelector('.star-input:checked');
+    if (checkedInput) {
+        updateStarDisplay(parseFloat(checkedInput.value));
+    }
+});
+</script>

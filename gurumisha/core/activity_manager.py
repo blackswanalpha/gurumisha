@@ -89,36 +89,36 @@ class ActivityManager:
     @staticmethod
     def log_car_action(user, action, car, request=None):
         """Log car-related activities"""
+        car_brand = car.brand.name if car.brand else 'Unknown'
+        car_model = car.model.name if car.model else 'Unknown'
+
         action_descriptions = {
-            'car_create': f"Created car listing: {car.make} {car.model}",
-            'car_update': f"Updated car listing: {car.make} {car.model}",
-            'car_delete': f"Deleted car listing: {car.make} {car.model}",
-            'car_view': f"Viewed car listing: {car.make} {car.model}",
-            'car_approve': f"Approved car listing: {car.make} {car.model}",
-            'car_reject': f"Rejected car listing: {car.make} {car.model}",
+            'car_create': f"Created car listing: {car_brand} {car_model}",
+            'car_update': f"Updated car listing: {car_brand} {car_model}",
+            'car_delete': f"Deleted car listing: {car_brand} {car_model}",
+            'car_view': f"Viewed car listing: {car_brand} {car_model}",
+            'car_approve': f"Approved car listing: {car_brand} {car_model}",
+            'car_reject': f"Rejected car listing: {car_brand} {car_model}",
         }
-        
+
         return ActivityManager.log_activity(
             user=user,
             action=action,
             description=action_descriptions.get(action, f"Car action: {action}"),
             content_object=car,
-            extra_data={'car_id': car.id, 'car_make': car.make, 'car_model': car.model},
+            extra_data={'car_id': car.id, 'car_brand': car_brand, 'car_model': car_model},
             request=request
         )
     
     @staticmethod
     def log_import_action(user, action, import_obj, request=None):
         """Log import-related activities"""
-        # Create vehicle details string from individual fields
-        vehicle_details = f"{import_obj.year} {import_obj.brand} {import_obj.model}"
-
         action_descriptions = {
-            'import_request_create': f"Created import request: {vehicle_details}",
-            'import_request_update': f"Updated import request: {vehicle_details}",
+            'import_request_create': f"Created import request: {import_obj.vehicle_details}",
+            'import_request_update': f"Updated import request: {import_obj.vehicle_details}",
             'import_status_change': f"Changed import status to: {import_obj.status}",
         }
-        
+
         extra_data = {
             'import_id': import_obj.id,
             'vehicle_details': import_obj.vehicle_details,

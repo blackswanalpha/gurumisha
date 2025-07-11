@@ -7,8 +7,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Q, Count, Sum
+from django.db.models import Q, Count, Sum, Avg, F, Case, When, IntegerField
+from django.db import models
 from django.utils import timezone
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import datetime, timedelta
 import csv
 import json
@@ -19,12 +21,20 @@ from .models import (
     Inquiry, Testimonial, BlogPost, Vendor, User,
     Supplier, PurchaseOrder, StockMovement, InventoryAlert,
     Order, OrderItem, Payment, SparePartCategory, Notification, SystemSetting,
-    ActivityLog, AuditLog, NotificationPreference, NotificationQueue
+    ActivityLog, AuditLog, NotificationPreference, NotificationQueue,
+    HotDeal, CarRating, PromotionAnalytics, VendorSubscription, FeaturedCarTier,
+    ProfileView, VendorAnalytics, UserActivityLog
 )
 from .dashboard_forms import (
     UserProfileForm, VendorProfileForm, PasswordChangeForm,
     InquiryResponseForm, CarApprovalForm, VendorApprovalForm,
-    UserSearchForm, CarSearchForm, VendorSearchForm
+    UserSearchForm, CarSearchForm, VendorSearchForm, AdminCarEditForm,
+    UserPreferencesForm, VendorPreferencesForm, BusinessHoursForm
+)
+from .utils.image_utils import default_image_handler
+from .utils.analytics_utils import (
+    track_profile_view, log_user_activity, get_analytics_dashboard_data,
+    get_vendor_analytics_summary, get_user_analytics_summary
 )
 
 
@@ -83,7 +93,7 @@ def apply_import_request_filters(request, queryset):
 
 @login_required
 def user_profile_view(request):
-    """User profile management view with form handling"""
+    """Enhanced user profile management view with comprehensive form handling"""
     user = request.user
     vendor = None
 
@@ -91,33 +101,858 @@ def user_profile_view(request):
         try:
             vendor = user.vendor
         except Vendor.DoesNotExist:
-            messages.warning(request, 'Please complete your vendor profile.')
-            return redirect('core:vendor_profile_create')
+            # Create vendor profile if it doesn't exist
+            vendor = Vendor.objects.create(
+                user=user,
+                company_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+                is_approved=False
+            )
 
     if request.method == 'POST':
-        user_form = UserProfileForm(request.POST, instance=user)
-        vendor_form = VendorProfileForm(request.POST, instance=vendor) if vendor else None
+        # Handle HTMX auto-save requests
+        if request.headers.get('X-Auto-Save') == 'true':
+            field_name = request.POST.get('field_name')
+            field_value = request.POST.get('field_value')
+
+            try:
+                # Update specific field
+                if hasattr(user, field_name):
+                    setattr(user, field_name, field_value)
+                    user.save(update_fields=[field_name])
+
+                    # Log the activity
+                    log_user_activity(user, 'profile_update', f'Auto-saved {field_name}', request)
+
+                    return JsonResponse({'success': True, 'message': f'{field_name.title()} saved'})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Invalid field'})
+
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+
+        # Handle HTMX validation requests
+        if request.headers.get('X-Validate-Only') == 'true':
+            field_name = request.POST.get('field_name')
+            field_value = request.POST.get('field_value')
+
+            # Create a temporary form instance for validation
+            form_data = {field_name: field_value}
+            temp_form = UserProfileForm(form_data, instance=user)
+
+            if temp_form.is_valid():
+                return JsonResponse({'valid': True})
+            else:
+                errors = temp_form.errors.get(field_name, [])
+                error_message = errors[0] if errors else 'Invalid input'
+                return JsonResponse({'valid': False, 'message': error_message})
+
+        # Handle regular form submission
+        user_form = UserProfileForm(request.POST, request.FILES, instance=user)
+        vendor_form = VendorProfileForm(request.POST, request.FILES, instance=vendor) if vendor else None
 
         if user_form.is_valid() and (vendor_form is None or vendor_form.is_valid()):
-            user_form.save()
-            if vendor_form:
-                vendor_form.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('core:profile')
+            try:
+                # Handle profile picture processing
+                if 'profile_picture' in request.FILES:
+                    profile_picture = request.FILES['profile_picture']
+                    try:
+                        # Process the image
+                        processed_file, filename, thumbnail_file, thumbnail_filename = default_image_handler.process(
+                            profile_picture, 'profile'
+                        )
+
+                        # Delete old profile picture if exists
+                        if user.profile_picture:
+                            default_image_handler.cleanup(user.profile_picture.path)
+
+                        # Save the processed image
+                        user.profile_picture.save(filename, processed_file, save=False)
+
+                    except ValueError as e:
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return JsonResponse({'success': False, 'message': str(e)})
+                        messages.error(request, str(e))
+                        return render(request, 'core/dashboard/profile.html', {
+                            'user': user, 'vendor': vendor, 'user_form': user_form, 'vendor_form': vendor_form
+                        })
+
+                user_form.save()
+
+                # Handle vendor form if exists
+                if vendor_form:
+                    vendor = vendor_form.save(commit=False)
+
+                    # Handle company logo processing
+                    if 'company_logo' in request.FILES:
+                        company_logo = request.FILES['company_logo']
+                        try:
+                            processed_file, filename, thumbnail_file, thumbnail_filename = default_image_handler.process(
+                                company_logo, 'logo'
+                            )
+
+                            # Delete old logo if exists
+                            if vendor.company_logo:
+                                default_image_handler.cleanup(vendor.company_logo.path)
+
+                            vendor.company_logo.save(filename, processed_file, save=False)
+
+                        except ValueError as e:
+                            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                                return JsonResponse({'success': False, 'message': str(e)})
+                            messages.error(request, str(e))
+                            return render(request, 'core/dashboard/profile.html', {
+                                'user': user, 'vendor': vendor, 'user_form': user_form, 'vendor_form': vendor_form
+                            })
+
+                    # Handle cover image processing
+                    if 'cover_image' in request.FILES:
+                        cover_image = request.FILES['cover_image']
+                        try:
+                            processed_file, filename, thumbnail_file, thumbnail_filename = default_image_handler.process(
+                                cover_image, 'cover'
+                            )
+
+                            # Delete old cover image if exists
+                            if vendor.cover_image:
+                                default_image_handler.cleanup(vendor.cover_image.path)
+
+                            vendor.cover_image.save(filename, processed_file, save=False)
+
+                        except ValueError as e:
+                            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                                return JsonResponse({'success': False, 'message': str(e)})
+                            messages.error(request, str(e))
+                            return render(request, 'core/dashboard/profile.html', {
+                                'user': user, 'vendor': vendor, 'user_form': user_form, 'vendor_form': vendor_form
+                            })
+
+                    vendor.save()
+
+                # Handle AJAX requests
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True, 'message': 'Profile updated successfully!'})
+
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('core:profile')
+            except Exception as e:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Error updating profile. Please try again.'})
+                messages.error(request, 'Error updating profile. Please try again.')
         else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                errors = {}
+                if user_form.errors:
+                    errors.update(user_form.errors)
+                if vendor_form and vendor_form.errors:
+                    errors.update(vendor_form.errors)
+                return JsonResponse({'success': False, 'errors': errors})
             messages.error(request, 'Please correct the errors below.')
     else:
         user_form = UserProfileForm(instance=user)
         vendor_form = VendorProfileForm(instance=vendor) if vendor else None
+
+    # Track profile view
+    track_profile_view(request, user)
+
+    # Log profile view activity
+    log_user_activity(request.user, 'profile_view', f'Viewed profile page', request)
+
+    # Get analytics data
+    analytics_data = get_analytics_dashboard_data(user)
 
     context = {
         'user': user,
         'vendor': vendor,
         'user_form': user_form,
         'vendor_form': vendor_form,
+        'analytics_data': analytics_data,
     }
 
     return render(request, 'core/dashboard/profile.html', context)
+
+
+@login_required
+def vendor_profile_view(request):
+    """Dedicated vendor profile management view"""
+    if request.user.role != 'vendor':
+        messages.error(request, 'Access denied. Vendor account required.')
+        return redirect('core:dashboard')
+
+    try:
+        vendor = request.user.vendor
+    except Vendor.DoesNotExist:
+        # Create vendor profile if it doesn't exist
+        vendor = Vendor.objects.create(
+            user=request.user,
+            company_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+            is_approved=False
+        )
+
+    if request.method == 'POST':
+        vendor_form = VendorProfileForm(request.POST, request.FILES, instance=vendor)
+
+        if vendor_form.is_valid():
+            try:
+                vendor_form.save()
+
+                # Handle AJAX requests
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True, 'message': 'Business profile updated successfully!'})
+
+                messages.success(request, 'Business profile updated successfully!')
+                return redirect('core:vendor_profile')
+            except Exception as e:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Error updating business profile. Please try again.'})
+                messages.error(request, 'Error updating business profile. Please try again.')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': vendor_form.errors})
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        vendor_form = VendorProfileForm(instance=vendor)
+
+    context = {
+        'vendor': vendor,
+        'vendor_form': vendor_form,
+        'user': request.user,
+    }
+
+    return render(request, 'core/dashboard/vendor_profile.html', context)
+
+
+@login_required
+def change_password_view(request):
+    """Handle password change requests"""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+
+        if form.is_valid():
+            try:
+                form.save()
+
+                # Handle AJAX requests
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Password changed successfully! Please log in again.'
+                    })
+
+                messages.success(request, 'Password changed successfully! Please log in again.')
+                from django.contrib.auth import logout
+                logout(request)
+                return redirect('core:login')
+
+            except Exception as e:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Error changing password. Please try again.'
+                    })
+                messages.error(request, 'Error changing password. Please try again.')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors,
+                    'message': 'Please correct the errors below.'
+                })
+            messages.error(request, 'Please correct the errors below.')
+
+    # For GET requests or form errors, return to profile page
+    return redirect('core:profile')
+
+
+@login_required
+def user_settings_view(request):
+    """Enhanced user settings and preferences management"""
+    user = request.user
+    vendor = None
+
+    if user.role == 'vendor':
+        try:
+            vendor = user.vendor
+        except Vendor.DoesNotExist:
+            vendor = Vendor.objects.create(
+                user=user,
+                company_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+                is_approved=False
+            )
+
+    if request.method == 'POST':
+        # Handle different form types based on the submitted data
+        form_type = request.POST.get('form_type', 'preferences')
+
+        if form_type == 'preferences':
+            user_prefs_form = UserPreferencesForm(request.POST, instance=user)
+            vendor_prefs_form = VendorPreferencesForm(request.POST, instance=vendor) if vendor else None
+
+            if user_prefs_form.is_valid() and (vendor_prefs_form is None or vendor_prefs_form.is_valid()):
+                try:
+                    user_prefs_form.save()
+                    if vendor_prefs_form:
+                        vendor_prefs_form.save()
+
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': True, 'message': 'Preferences updated successfully!'})
+
+                    messages.success(request, 'Preferences updated successfully!')
+                    return redirect('core:user_settings')
+
+                except Exception as e:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': False, 'message': 'Error updating preferences.'})
+                    messages.error(request, 'Error updating preferences.')
+            else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    errors = {}
+                    if user_prefs_form.errors:
+                        errors.update(user_prefs_form.errors)
+                    if vendor_prefs_form and vendor_prefs_form.errors:
+                        errors.update(vendor_prefs_form.errors)
+                    return JsonResponse({'success': False, 'errors': errors})
+                messages.error(request, 'Please correct the errors below.')
+
+        elif form_type == 'business_hours' and vendor:
+            business_hours_form = BusinessHoursForm(request.POST, vendor=vendor)
+
+            if business_hours_form.is_valid():
+                try:
+                    # Update vendor operating days
+                    for day_code, day_name in BusinessHoursForm.DAYS_OF_WEEK:
+                        operates_field = f'operates_{day_code}'
+                        operates = business_hours_form.cleaned_data.get(f'operates_{day_code}', False)
+                        setattr(vendor, operates_field, operates)
+
+                    # Save business hours as JSON
+                    business_hours = {}
+                    for day_code, day_name in BusinessHoursForm.DAYS_OF_WEEK:
+                        if business_hours_form.cleaned_data.get(f'operates_{day_code}'):
+                            open_time = business_hours_form.cleaned_data.get(f'{day_code}_open')
+                            close_time = business_hours_form.cleaned_data.get(f'{day_code}_close')
+                            if open_time and close_time:
+                                business_hours[day_code] = {
+                                    'open': open_time.strftime('%H:%M'),
+                                    'close': close_time.strftime('%H:%M')
+                                }
+
+                    import json
+                    vendor.business_hours = json.dumps(business_hours)
+                    vendor.save()
+
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': True, 'message': 'Business hours updated successfully!'})
+
+                    messages.success(request, 'Business hours updated successfully!')
+                    return redirect('core:user_settings')
+
+                except Exception as e:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': False, 'message': 'Error updating business hours.'})
+                    messages.error(request, 'Error updating business hours.')
+            else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'errors': business_hours_form.errors})
+                messages.error(request, 'Please correct the errors below.')
+
+    # For GET requests, initialize forms
+    user_prefs_form = UserPreferencesForm(instance=user)
+    vendor_prefs_form = VendorPreferencesForm(instance=vendor) if vendor else None
+    business_hours_form = BusinessHoursForm(vendor=vendor) if vendor else None
+
+    context = {
+        'user': user,
+        'vendor': vendor,
+        'user_prefs_form': user_prefs_form,
+        'vendor_prefs_form': vendor_prefs_form,
+        'business_hours_form': business_hours_form,
+    }
+
+    return render(request, 'core/dashboard/settings.html', context)
+
+
+@login_required
+def profile_analytics_view(request):
+    """Profile analytics dashboard"""
+    user = request.user
+
+    # Get comprehensive analytics data
+    analytics_data = get_analytics_dashboard_data(user)
+
+    if not analytics_data:
+        messages.error(request, 'Unable to load analytics data.')
+        return redirect('core:profile')
+
+    # Handle AJAX requests for chart data
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        chart_type = request.GET.get('chart_type')
+
+        if chart_type == 'profile_views' and user.role == 'vendor':
+            # Return profile views chart data
+            daily_views = analytics_data.get('daily_views', [])
+            chart_data = {
+                'labels': [item['day'] for item in daily_views],
+                'data': [item['views'] for item in daily_views],
+                'title': 'Profile Views (Last 30 Days)'
+            }
+            return JsonResponse(chart_data)
+
+        elif chart_type == 'activity_breakdown':
+            # Return activity breakdown chart data
+            activity_breakdown = analytics_data.get('activity_breakdown', [])
+            chart_data = {
+                'labels': [item['action'].replace('_', ' ').title() for item in activity_breakdown],
+                'data': [item['count'] for item in activity_breakdown],
+                'title': 'Activity Breakdown'
+            }
+            return JsonResponse(chart_data)
+
+    context = {
+        'user': user,
+        'analytics_data': analytics_data,
+    }
+
+    return render(request, 'core/dashboard/analytics.html', context)
+
+
+@login_required
+def admin_user_detail_view(request, user_id):
+    """Admin user detail and management view"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('core:dashboard')
+
+    # Get the user
+    user = get_object_or_404(User, id=user_id)
+    vendor = None
+
+    # Get vendor profile if user is a vendor
+    if user.role == 'vendor':
+        try:
+            vendor = user.vendor
+        except Vendor.DoesNotExist:
+            vendor = None
+
+    # Handle form submissions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_profile':
+            # Handle profile update
+            user_form = UserProfileForm(request.POST, request.FILES, instance=user)
+            vendor_form = VendorProfileForm(request.POST, request.FILES, instance=vendor) if vendor else None
+
+            if user_form.is_valid() and (vendor_form is None or vendor_form.is_valid()):
+                try:
+                    # Handle profile picture processing
+                    if 'profile_picture' in request.FILES:
+                        profile_picture = request.FILES['profile_picture']
+                        try:
+                            processed_file, filename, thumbnail_file, thumbnail_filename = default_image_handler.process(
+                                profile_picture, 'profile'
+                            )
+
+                            if user.profile_picture:
+                                default_image_handler.cleanup(user.profile_picture.path)
+
+                            user.profile_picture.save(filename, processed_file, save=False)
+
+                        except ValueError as e:
+                            messages.error(request, f'Image processing error: {str(e)}')
+                            return redirect('core:admin_user_detail', user_id=user_id)
+
+                    user_form.save()
+
+                    # Handle vendor form if exists
+                    if vendor_form:
+                        vendor = vendor_form.save(commit=False)
+
+                        # Handle company logo processing
+                        if 'company_logo' in request.FILES:
+                            company_logo = request.FILES['company_logo']
+                            try:
+                                processed_file, filename, thumbnail_file, thumbnail_filename = default_image_handler.process(
+                                    company_logo, 'logo'
+                                )
+
+                                if vendor.company_logo:
+                                    default_image_handler.cleanup(vendor.company_logo.path)
+
+                                vendor.company_logo.save(filename, processed_file, save=False)
+
+                            except ValueError as e:
+                                messages.error(request, f'Logo processing error: {str(e)}')
+                                return redirect('core:admin_user_detail', user_id=user_id)
+
+                        vendor.save()
+
+                    # Log the activity
+                    log_user_activity(
+                        request.user,
+                        'profile_update',
+                        f'Admin updated profile for user {user.username}',
+                        request,
+                        {'target_user_id': user.id}
+                    )
+
+                    messages.success(request, f'Profile updated successfully for {user.username}!')
+                    return redirect('core:admin_user_detail', user_id=user_id)
+
+                except Exception as e:
+                    messages.error(request, f'Error updating profile: {str(e)}')
+            else:
+                messages.error(request, 'Please correct the errors below.')
+
+        elif action == 'change_role':
+            # Handle role change
+            new_role = request.POST.get('new_role')
+            if new_role in ['customer', 'vendor', 'admin']:
+                old_role = user.role
+                user.role = new_role
+                user.save()
+
+                # Create vendor profile if changing to vendor
+                if new_role == 'vendor' and not hasattr(user, 'vendor'):
+                    Vendor.objects.create(
+                        user=user,
+                        company_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+                        is_approved=False
+                    )
+
+                # Log the activity
+                log_user_activity(
+                    request.user,
+                    'role_change',
+                    f'Admin changed role for {user.username} from {old_role} to {new_role}',
+                    request,
+                    {'target_user_id': user.id, 'old_role': old_role, 'new_role': new_role}
+                )
+
+                messages.success(request, f'Role changed from {old_role} to {new_role} for {user.username}!')
+                return redirect('core:admin_user_detail', user_id=user_id)
+            else:
+                messages.error(request, 'Invalid role selected.')
+
+        elif action == 'toggle_status':
+            # Handle account activation/deactivation
+            user.is_active = not user.is_active
+            user.save()
+
+            status = 'activated' if user.is_active else 'deactivated'
+            log_user_activity(
+                request.user,
+                'account_status_change',
+                f'Admin {status} account for {user.username}',
+                request,
+                {'target_user_id': user.id, 'new_status': user.is_active}
+            )
+
+            messages.success(request, f'Account {status} for {user.username}!')
+            return redirect('core:admin_user_detail', user_id=user_id)
+
+        elif action == 'toggle_vendor_approval':
+            # Handle vendor approval/disapproval
+            if vendor:
+                vendor.is_approved = not vendor.is_approved
+                if vendor.is_approved:
+                    vendor.approval_date = timezone.now()
+                    vendor.verification_status = 'verified'
+                else:
+                    vendor.approval_date = None
+                    vendor.verification_status = 'pending'
+                vendor.save()
+
+                status = 'approved' if vendor.is_approved else 'disapproved'
+                log_user_activity(
+                    request.user,
+                    'vendor_status_change',
+                    f'Admin {status} vendor {vendor.company_name}',
+                    request,
+                    {'vendor_id': vendor.id, 'new_status': vendor.is_approved}
+                )
+
+                messages.success(request, f'Vendor {status} successfully!')
+                return redirect('core:admin_user_detail', user_id=user_id)
+            else:
+                messages.error(request, 'User is not a vendor.')
+
+        elif action == 'update_vendor':
+            # Handle vendor profile update
+            if vendor and vendor_form.is_valid():
+                try:
+                    vendor_form.save()
+                    log_user_activity(
+                        request.user,
+                        'vendor_profile_update',
+                        f'Admin updated vendor profile for {vendor.company_name}',
+                        request,
+                        {'vendor_id': vendor.id}
+                    )
+                    messages.success(request, 'Vendor profile updated successfully!')
+                    return redirect('core:admin_user_detail', user_id=user_id)
+                except Exception as e:
+                    messages.error(request, f'Error updating vendor profile: {str(e)}')
+            else:
+                messages.error(request, 'Please correct the errors in the vendor form.')
+
+        elif action == 'reset_password':
+            # Handle password reset
+            new_password = User.objects.make_random_password(length=12)
+            user.set_password(new_password)
+            user.save()
+
+            # Log the activity
+            log_user_activity(
+                request.user,
+                'password_reset',
+                f'Admin reset password for {user.username}',
+                request,
+                {'target_user_id': user.id}
+            )
+
+            messages.success(request, f'Password reset for {user.username}! New password: {new_password}')
+            return redirect('core:admin_user_detail', user_id=user_id)
+
+    # For GET requests, initialize forms
+    user_form = UserProfileForm(instance=user)
+    vendor_form = VendorProfileForm(instance=vendor) if vendor else None
+
+    # Get user analytics and activity
+    analytics_data = get_analytics_dashboard_data(user)
+
+    # Get recent activity logs
+    recent_activities = UserActivityLog.objects.filter(
+        user=user
+    ).order_by('-timestamp')[:20]
+
+    # Get profile views if vendor
+    profile_views = []
+    if vendor:
+        profile_views = ProfileView.objects.filter(
+            profile_user=user
+        ).order_by('-viewed_at')[:10]
+
+    # Get user's orders, listings, etc.
+    user_orders = []
+    user_listings = []
+    user_inquiries = []
+
+    if hasattr(user, 'orders'):
+        user_orders = user.orders.all().order_by('-created_at')[:5]
+
+    if user.role == 'vendor' and vendor:
+        user_listings = Car.objects.filter(vendor=vendor).order_by('-created_at')[:5]
+
+    if hasattr(user, 'inquiries_sent'):
+        user_inquiries = user.inquiries_sent.all().order_by('-created_at')[:5]
+
+    context = {
+        'user_profile': user,  # Renamed to avoid conflict with request.user
+        'vendor': vendor,
+        'user_form': user_form,
+        'vendor_form': vendor_form,
+        'analytics_data': analytics_data,
+        'recent_activities': recent_activities,
+        'profile_views': profile_views,
+        'user_orders': user_orders,
+        'user_listings': user_listings,
+        'user_inquiries': user_inquiries,
+    }
+
+    return render(request, 'core/dashboard/admin_user_detail.html', context)
+
+
+@login_required
+def admin_vendor_user_detail_view(request, user_id):
+    """Enhanced admin vendor user detail and management view"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('core:dashboard')
+
+    # Get the user and ensure they are a vendor
+    user = get_object_or_404(User, id=user_id)
+
+    if user.role != 'vendor':
+        messages.error(request, 'This user is not a vendor.')
+        return redirect('core:admin_users')
+
+    # Get vendor profile
+    try:
+        vendor = user.vendor
+    except Vendor.DoesNotExist:
+        messages.error(request, 'Vendor profile not found.')
+        return redirect('core:admin_users')
+
+    # Handle form submissions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_profile':
+            # Handle profile update
+            user_form = UserProfileForm(request.POST, request.FILES, instance=user)
+            vendor_form = VendorProfileForm(request.POST, request.FILES, instance=vendor)
+
+            if user_form.is_valid() and vendor_form.is_valid():
+                try:
+                    # Handle profile picture processing
+                    if 'profile_picture' in request.FILES:
+                        profile_picture = request.FILES['profile_picture']
+                        try:
+                            processed_file, filename, thumbnail_file, thumbnail_filename = default_image_handler.process(
+                                profile_picture, 'profile'
+                            )
+
+                            if user.profile_picture:
+                                default_image_handler.cleanup(user.profile_picture.path)
+
+                            user.profile_picture.save(filename, processed_file, save=False)
+
+                        except ValueError as e:
+                            messages.error(request, f'Image processing error: {str(e)}')
+                            return redirect('core:admin_vendor_user_detail', user_id=user_id)
+
+                    user_form.save()
+                    vendor_form.save()
+
+                    log_user_activity(
+                        request.user,
+                        'vendor_profile_update',
+                        f'Admin updated vendor profile for {vendor.company_name}',
+                        request,
+                        {'vendor_id': vendor.id, 'user_id': user.id}
+                    )
+
+                    messages.success(request, 'Vendor profile updated successfully!')
+                    return redirect('core:admin_vendor_user_detail', user_id=user_id)
+
+                except Exception as e:
+                    messages.error(request, f'Error updating profile: {str(e)}')
+            else:
+                messages.error(request, 'Please correct the errors in the form.')
+
+        elif action == 'approve_vendor':
+            # Approve vendor
+            vendor.is_approved = True
+            vendor.approval_date = timezone.now()
+            vendor.save()
+
+            log_user_activity(
+                request.user,
+                'vendor_approval',
+                f'Admin approved vendor {vendor.company_name}',
+                request,
+                {'vendor_id': vendor.id, 'user_id': user.id}
+            )
+
+            messages.success(request, f'Vendor {vendor.company_name} has been approved successfully.')
+            return redirect('core:admin_vendor_user_detail', user_id=user_id)
+
+        elif action == 'suspend_vendor':
+            # Suspend vendor
+            vendor.is_approved = False
+            vendor.approval_date = None
+            vendor.save()
+
+            log_user_activity(
+                request.user,
+                'vendor_suspension',
+                f'Admin suspended vendor {vendor.company_name}',
+                request,
+                {'vendor_id': vendor.id, 'user_id': user.id}
+            )
+
+            messages.warning(request, f'Vendor {vendor.company_name} has been suspended.')
+            return redirect('core:admin_vendor_user_detail', user_id=user_id)
+
+        elif action == 'toggle_status':
+            # Handle account activation/deactivation
+            user.is_active = not user.is_active
+            user.save()
+
+            status = 'activated' if user.is_active else 'deactivated'
+            log_user_activity(
+                request.user,
+                'account_status_change',
+                f'Admin {status} vendor account for {user.username}',
+                request,
+                {'target_user_id': user.id, 'new_status': user.is_active}
+            )
+
+            messages.success(request, f'Vendor account {status} for {user.username}!')
+            return redirect('core:admin_vendor_user_detail', user_id=user_id)
+
+        elif action == 'reset_password':
+            # Handle password reset
+            new_password = User.objects.make_random_password(length=12)
+            user.set_password(new_password)
+            user.save()
+
+            log_user_activity(
+                request.user,
+                'password_reset',
+                f'Admin reset password for vendor {user.username}',
+                request,
+                {'target_user_id': user.id}
+            )
+
+            messages.success(request, f'Password reset for {user.username}! New password: {new_password}')
+            return redirect('core:admin_vendor_user_detail', user_id=user_id)
+
+    # For GET requests, initialize forms
+    user_form = UserProfileForm(instance=user)
+    vendor_form = VendorProfileForm(instance=vendor)
+
+    # Get vendor analytics and activity
+    analytics_data = get_analytics_dashboard_data(user)
+
+    # Get recent activity logs
+    recent_activities = UserActivityLog.objects.filter(
+        user=user
+    ).order_by('-timestamp')[:20]
+
+    # Get profile views
+    profile_views = ProfileView.objects.filter(
+        profile_user=user
+    ).order_by('-viewed_at')[:10]
+
+    # Get vendor's listings
+    vendor_listings = Car.objects.filter(vendor=vendor).order_by('-created_at')[:10]
+
+    # Get vendor's inquiries received
+    vendor_inquiries = Inquiry.objects.filter(
+        car__vendor=vendor
+    ).select_related('user', 'car').order_by('-created_at')[:10]
+
+    # Get vendor's orders/sales
+    vendor_orders = []
+    if hasattr(vendor, 'orders'):
+        vendor_orders = vendor.orders.all().order_by('-created_at')[:10]
+
+    # Get subscription info
+    subscription = None
+    try:
+        subscription = vendor.subscription
+    except VendorSubscription.DoesNotExist:
+        pass
+
+    context = {
+        'user_profile': user,
+        'vendor': vendor,
+        'user_form': user_form,
+        'vendor_form': vendor_form,
+        'analytics_data': analytics_data,
+        'recent_activities': recent_activities,
+        'profile_views': profile_views,
+        'vendor_listings': vendor_listings,
+        'vendor_inquiries': vendor_inquiries,
+        'vendor_orders': vendor_orders,
+        'subscription': subscription,
+        'is_vendor_detail': True,  # Flag to indicate this is vendor-specific view
+    }
+
+    return render(request, 'core/dashboard/admin_vendor_user_detail.html', context)
 
 
 @login_required
@@ -419,17 +1254,63 @@ def vendor_listings_view(request):
     try:
         vendor = request.user.vendor
 
-        # Simple context to avoid recursion - gradually add complexity
+        # Get vendor's cars with filtering and sorting
+        cars = Car.objects.filter(vendor=vendor).select_related('brand', 'model')
+
+        # Apply status filter
+        status_filter = request.GET.get('status_filter', '')
+        if status_filter == 'approved':
+            cars = cars.filter(is_approved=True)
+        elif status_filter == 'pending':
+            cars = cars.filter(is_approved=False)
+        elif status_filter == 'featured':
+            cars = cars.filter(status='featured')
+        elif status_filter == 'sold':
+            cars = cars.filter(status='sold')
+
+        # Apply search filter
+        search = request.GET.get('search', '')
+        if search:
+            cars = cars.filter(
+                Q(title__icontains=search) |
+                Q(brand__name__icontains=search) |
+                Q(model__name__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        # Apply sorting
+        sort_by = request.GET.get('sort_by', '-created_at')
+        cars = cars.order_by(sort_by)
+
+        # Pagination - 20 cars per page
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        paginator = Paginator(cars, 20)
+        page = request.GET.get('page')
+
+        try:
+            cars = paginator.page(page)
+        except PageNotAnInteger:
+            cars = paginator.page(1)
+        except EmptyPage:
+            cars = paginator.page(paginator.num_pages)
+
+        # Calculate statistics
+        vendor_cars_all = Car.objects.filter(vendor=vendor)
+        total_cars = vendor_cars_all.count()
+        approved_cars = vendor_cars_all.filter(is_approved=True).count()
+        pending_cars = vendor_cars_all.filter(is_approved=False).count()
+        total_views = vendor_cars_all.aggregate(total=models.Sum('views_count'))['total'] or 0
+
         context = {
             'vendor': vendor,
-            'cars': [],  # Empty for now to avoid recursion
-            'total_cars': 0,
-            'approved_cars': 0,
-            'pending_cars': 0,
-            'total_views': 0,
-            'status_filter': request.GET.get('status_filter', ''),
-            'sort_by': request.GET.get('sort_by', '-created_at'),
-            'search': request.GET.get('search', ''),
+            'cars': cars,
+            'total_cars': total_cars,
+            'approved_cars': approved_cars,
+            'pending_cars': pending_cars,
+            'total_views': total_views,
+            'status_filter': status_filter,
+            'sort_by': sort_by,
+            'search': search,
         }
 
         # Return partial template for HTMX requests
@@ -598,100 +1479,524 @@ def admin_users_view(request):
 @login_required
 def admin_vendors_view(request):
     """Admin vendor management view"""
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied.')
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('core:dashboard')
-    
-    vendors = Vendor.objects.all().order_by('-created_at')
-    
+
+    vendors = Vendor.objects.select_related('user').order_by('-created_at')
+
     # Filter by approval status
     status_filter = request.GET.get('status')
     if status_filter == 'approved':
         vendors = vendors.filter(is_approved=True)
     elif status_filter == 'pending':
         vendors = vendors.filter(is_approved=False)
-    
+    elif status_filter == 'suspended':
+        vendors = vendors.filter(user__is_active=False)
+
+    # Filter by business type
+    business_type_filter = request.GET.get('business_type')
+    if business_type_filter:
+        vendors = vendors.filter(business_type=business_type_filter)
+
+    # Search functionality
+    search = request.GET.get('search', '')
+    if search:
+        vendors = vendors.filter(
+            Q(company_name__icontains=search) |
+            Q(user__first_name__icontains=search) |
+            Q(user__last_name__icontains=search) |
+            Q(user__email__icontains=search) |
+            Q(business_license__icontains=search)
+        )
+
+    # Pagination - 20 vendors per page
+    paginator = Paginator(vendors, 20)
+    page = request.GET.get('page')
+    try:
+        vendors = paginator.page(page)
+    except PageNotAnInteger:
+        vendors = paginator.page(1)
+    except EmptyPage:
+        vendors = paginator.page(paginator.num_pages)
+
     context = {
         'vendors': vendors,
         'total_vendors': Vendor.objects.count(),
         'approved_vendors': Vendor.objects.filter(is_approved=True).count(),
         'pending_vendors': Vendor.objects.filter(is_approved=False).count(),
+        'suspended_vendors': Vendor.objects.filter(user__is_active=False).count(),
         'current_filter': status_filter,
+        'business_type_filter': business_type_filter,
+        'search_query': search,
     }
-    
+
     return render(request, 'core/dashboard/admin_vendors.html', context)
 
 
 @login_required
 def admin_listings_view(request):
-    """Admin car listings management view"""
+    """Admin car listings management view with pagination"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
-    
-    cars = Car.objects.all().order_by('-created_at')
-    
+
+    cars = Car.objects.select_related('brand', 'model', 'vendor', 'vendor__user').order_by('-created_at')
+
     # Filter by approval status
     status_filter = request.GET.get('status')
     if status_filter == 'approved':
         cars = cars.filter(is_approved=True)
     elif status_filter == 'pending':
         cars = cars.filter(is_approved=False)
-    
+    elif status_filter == 'featured':
+        cars = cars.filter(is_featured=True)
+    elif status_filter == 'hot_deals':
+        cars = cars.filter(is_hot_deal=True)
+    elif status_filter == 'sold':
+        cars = cars.filter(status='sold')
+
+    # Search functionality
+    search = request.GET.get('search', '')
+    if search:
+        cars = cars.filter(
+            Q(title__icontains=search) |
+            Q(brand__name__icontains=search) |
+            Q(model__name__icontains=search) |
+            Q(vendor__company_name__icontains=search) |
+            Q(vendor__user__first_name__icontains=search) |
+            Q(vendor__user__last_name__icontains=search)
+        )
+
+    # Pagination - 20 cars per page
+    paginator = Paginator(cars, 20)
+    page = request.GET.get('page')
+
+    try:
+        cars = paginator.page(page)
+    except PageNotAnInteger:
+        cars = paginator.page(1)
+    except EmptyPage:
+        cars = paginator.page(paginator.num_pages)
+
     context = {
         'cars': cars,
         'total_cars': Car.objects.count(),
         'approved_cars': Car.objects.filter(is_approved=True).count(),
         'pending_cars': Car.objects.filter(is_approved=False).count(),
+        'featured_cars': Car.get_featured_cars_count(),
+        'featured_remaining': Car.get_featured_cars_remaining(),
         'current_filter': status_filter,
+        'search': search,
     }
-    
+
     return render(request, 'core/dashboard/admin_listings.html', context)
 
 
 @login_required
-def admin_analytics_view(request):
-    """Admin analytics and reporting view"""
+def admin_car_detail_view(request, car_id):
+    """Admin car detail view"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
-    
+
+    car = get_object_or_404(Car.objects.select_related('brand', 'model', 'vendor', 'vendor__user'), id=car_id)
+
+    # Get car images
+    car_images = car.images.all().order_by('order')
+
+    # Get car inquiries
+    car_inquiries = Inquiry.objects.filter(car=car).select_related('user').order_by('-created_at')[:5]
+
+    context = {
+        'car': car,
+        'car_images': car_images,
+        'car_inquiries': car_inquiries,
+        'features_list': car.get_features_list(),
+    }
+
+    return render(request, 'core/dashboard/admin_car_detail.html', context)
+
+
+@login_required
+def admin_car_edit_view(request, car_id):
+    """Enhanced admin car edit modal view with proper HTMX handling"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    car = get_object_or_404(Car, id=car_id)
+    original_approval_status = car.is_approved
+
+    if request.method == 'POST':
+        form = AdminCarEditForm(request.POST, instance=car)
+        if form.is_valid():
+            updated_car = form.save()
+
+            # Handle hot deals creation/update
+            try:
+                if updated_car.is_hot_deal:
+                    hot_deal_discount = request.POST.get('hot_deal_discount', '10')
+                    hot_deal_days = request.POST.get('hot_deal_days', '7')
+
+                    # Validate and convert values
+                    try:
+                        discount_value = float(hot_deal_discount)
+                        days_value = int(hot_deal_days)
+
+                        # Ensure reasonable values
+                        discount_value = max(5, min(50, discount_value))  # Between 5% and 50%
+                        days_value = max(1, min(30, days_value))  # Between 1 and 30 days
+
+                        from datetime import timedelta
+
+                        # Get or create hot deal
+                        hot_deal, created = HotDeal.objects.get_or_create(
+                            car=updated_car,
+                            defaults={
+                                'title': f'Hot Deal: {updated_car.title}',
+                                'discount_type': 'percentage',
+                                'discount_value': discount_value,
+                                'original_price': updated_car.price,
+                                'start_date': timezone.now(),
+                                'end_date': timezone.now() + timedelta(days=days_value),
+                                'is_active': True
+                            }
+                        )
+
+                        if not created:
+                            # Update existing hot deal
+                            hot_deal.discount_value = discount_value
+                            hot_deal.original_price = updated_car.price
+                            hot_deal.end_date = timezone.now() + timedelta(days=days_value)
+                            hot_deal.is_active = True
+                            hot_deal.save()
+
+                    except (ValueError, TypeError) as e:
+                        # If hot deal values are invalid, just mark as hot deal without creating HotDeal object
+                        pass
+                else:
+                    # Remove hot deal if unchecked
+                    HotDeal.objects.filter(car=updated_car).update(is_active=False)
+            except Exception as e:
+                # Log the error but don't fail the entire form submission
+                print(f"Hot deal processing error: {e}")
+                pass
+
+            # If approval status changed, update approval date
+            if updated_car.is_approved and not original_approval_status:
+                updated_car.approval_date = timezone.now()
+                updated_car.save()
+
+            # Create success message
+            success_message = f'Car listing "{updated_car.title}" has been updated successfully.'
+
+            # Add approval status change notification
+            if updated_car.is_approved and not original_approval_status:
+                success_message += ' Car is now approved and visible to customers.'
+            elif not updated_car.is_approved and original_approval_status:
+                success_message += ' Car approval has been revoked.'
+
+            # Return JSON response for HTMX with success data
+            if request.headers.get('HX-Request'):
+                return JsonResponse({
+                    'status': 'success',
+                    'message': success_message,
+                    'car_id': updated_car.id,
+                    'car_title': updated_car.title,
+                    'is_approved': updated_car.is_approved,
+                    'is_featured': updated_car.is_featured,
+                    'is_certified': updated_car.is_certified,
+                    'is_hot_deal': updated_car.is_hot_deal,
+                    'reload_required': True
+                })
+
+            messages.success(request, success_message)
+            return redirect('core:admin_car_detail', car_id=car.id)
+        else:
+            # Return form with errors for HTMX
+            if request.headers.get('HX-Request'):
+                return render(request, 'core/modals/admin_car_edit.html', {
+                    'form': form,
+                    'car': car,
+                    'errors': form.errors
+                })
+    else:
+        form = AdminCarEditForm(instance=car)
+
+    return render(request, 'core/modals/admin_car_edit.html', {'form': form, 'car': car})
+
+
+@login_required
+def admin_feature_car(request, car_id):
+    """Enhanced admin feature/unfeature car action with tier support and limits"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    car = get_object_or_404(Car, id=car_id)
+    action = request.POST.get('action', 'feature')
+
+    try:
+        if action == 'feature':
+            success, message = car.feature_car()
+            if success:
+                # Update calculated rating for better visibility
+                if car.calculated_rating < 4.0:
+                    car.calculated_rating = 4.0
+                    car.save(update_fields=['calculated_rating'])
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': message,
+                    'is_featured': car.is_featured,
+                    'featured_count': Car.get_featured_cars_count(),
+                    'remaining_slots': Car.get_featured_cars_remaining()
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': message,
+                    'featured_count': Car.get_featured_cars_count(),
+                    'remaining_slots': Car.get_featured_cars_remaining()
+                }, status=400)
+
+        elif action == 'unfeature':
+            success, message = car.unfeature_car()
+            if success:
+                return JsonResponse({
+                    'status': 'success',
+                    'message': message,
+                    'is_featured': car.is_featured,
+                    'featured_count': Car.get_featured_cars_count(),
+                    'remaining_slots': Car.get_featured_cars_remaining()
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': message
+                }, status=400)
+
+        elif action == 'hot_deal':
+            car.is_hot_deal = True
+            car.save(update_fields=['is_hot_deal'])
+            message = f'Car "{car.title}" has been marked as a hot deal.'
+            return JsonResponse({
+                'status': 'success',
+                'message': message,
+                'is_hot_deal': car.is_hot_deal
+            })
+
+        elif action == 'remove_hot_deal':
+            car.is_hot_deal = False
+            car.save(update_fields=['is_hot_deal'])
+            message = f'Hot deal status removed from "{car.title}".'
+            return JsonResponse({
+                'status': 'success',
+                'message': message,
+                'is_hot_deal': car.is_hot_deal
+            })
+        else:
+            return JsonResponse({'error': 'Invalid action'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def admin_car_delete_view(request, car_id):
+    """Admin car deletion view with proper cleanup"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        car = get_object_or_404(Car, id=car_id)
+        car_title = car.title
+        was_featured = car.is_featured()
+
+        # Store information before deletion
+        vendor = car.vendor
+
+        # Delete associated images first
+        car_images = car.images.all()
+        for image in car_images:
+            if image.image and hasattr(image.image, 'path'):
+                try:
+                    import os
+                    if os.path.exists(image.image.path):
+                        os.remove(image.image.path)
+                except Exception as e:
+                    print(f"Error deleting image file: {e}")
+
+        # Delete main image if exists
+        if car.main_image and hasattr(car.main_image, 'path'):
+            try:
+                import os
+                if os.path.exists(car.main_image.path):
+                    os.remove(car.main_image.path)
+            except Exception as e:
+                print(f"Error deleting main image file: {e}")
+
+        # Delete the car (this will cascade delete related objects)
+        car.delete()
+
+        # Get updated featured car stats
+        featured_count = Car.get_featured_cars_count()
+        remaining_slots = Car.get_featured_cars_remaining()
+
+        # Log the deletion
+        print(f"Admin {request.user.username} deleted car: {car_title} (ID: {car_id})")
+
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Car "{car_title}" has been permanently deleted',
+            'car_id': car_id,
+            'car_title': car_title,
+            'was_featured': was_featured,
+            'featured_count': featured_count,
+            'remaining_slots': remaining_slots,
+            'vendor_id': vendor.id if vendor else None
+        })
+
+    except Car.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Car not found'
+        }, status=404)
+    except Exception as e:
+        print(f"Error deleting car {car_id}: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'An error occurred while deleting the car: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def admin_analytics_view(request):
+    """Enhanced admin analytics and reporting view with promotion metrics"""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    from .analytics_utils import PromotionAnalyticsManager
+
+    # Get date range from request
+    days = int(request.GET.get('days', 30))
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=days)
+
+    # Initialize analytics manager
+    analytics = PromotionAnalyticsManager()
+
     # Calculate system-wide analytics
     total_users = User.objects.count()
     total_cars = Car.objects.count()
     total_vendors = Vendor.objects.count()
     total_inquiries = Inquiry.objects.count()
-    
+
+    # Promotion metrics
+    featured_cars_count = Car.objects.exclude(featured_tier='none').count()
+    active_hot_deals = HotDeal.objects.filter(is_active=True).count()
+    avg_rating = CarRating.objects.filter(
+        created_at__date__gte=start_date,
+        is_approved=True
+    ).aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
+
+    # Get promotion analytics
+    featured_performance = analytics.get_featured_cars_performance(days)
+    hot_deals_performance = analytics.get_hot_deals_performance(days)
+    rating_distribution = analytics.get_rating_distribution(days)
+    tier_comparison = analytics.get_tier_comparison()
+    daily_metrics = analytics.get_daily_metrics(days)
+    conversion_funnel = analytics.get_conversion_funnel(days)
+
     # Monthly growth data
     monthly_data = []
     for i in range(6):
         month_start = timezone.now().replace(day=1) - timedelta(days=30*i)
         month_end = month_start + timedelta(days=30)
-        
+
         month_users = User.objects.filter(date_joined__range=[month_start, month_end])
         month_cars = Car.objects.filter(created_at__range=[month_start, month_end])
         month_inquiries = Inquiry.objects.filter(created_at__range=[month_start, month_end])
-        
+
         monthly_data.append({
             'month': month_start.strftime('%B'),
             'users': month_users.count(),
             'cars': month_cars.count(),
             'inquiries': month_inquiries.count(),
         })
-    
+
+    # Top performing vendors with promotion metrics
+    vendor_performance = Vendor.objects.filter(
+        is_approved=True
+    ).annotate(
+        car_count=Count('cars', filter=Q(cars__is_approved=True)),
+        featured_count=Count('cars', filter=Q(cars__featured_tier__in=['bronze', 'silver', 'gold', 'platinum'])),
+        avg_rating=Avg('cars__calculated_rating', filter=Q(cars__is_approved=True))
+    ).order_by('-featured_count', '-car_count')[:10]
+
     context = {
         'total_users': total_users,
         'total_cars': total_cars,
         'total_vendors': total_vendors,
         'total_inquiries': total_inquiries,
+        'featured_cars_count': featured_cars_count,
+        'active_hot_deals': active_hot_deals,
+        'avg_rating': avg_rating,
+        'featured_performance': featured_performance,
+        'hot_deals_performance': hot_deals_performance,
+        'rating_distribution': rating_distribution,
+        'tier_comparison': tier_comparison,
+        'daily_metrics': daily_metrics,
+        'conversion_funnel': conversion_funnel,
         'monthly_data': monthly_data,
+        'vendor_performance': vendor_performance,
         'top_brands': CarBrand.objects.annotate(
             car_count=Count('car')
         ).order_by('-car_count')[:5],
-        'recent_activity': [],  # This would include recent system activities
+        'days': days,
+        'start_date': start_date,
+        'end_date': end_date,
     }
-    
+
     return render(request, 'core/dashboard/admin_analytics.html', context)
+
+
+@login_required
+def promotion_analytics_api(request):
+    """API endpoint for promotion analytics data"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .analytics_utils import PromotionAnalyticsManager
+
+    analytics = PromotionAnalyticsManager()
+    metric_type = request.GET.get('metric', 'daily')
+    days = int(request.GET.get('days', 30))
+
+    if metric_type == 'daily':
+        data = analytics.get_daily_metrics(days)
+    elif metric_type == 'featured':
+        data = analytics.get_featured_cars_performance(days)
+    elif metric_type == 'hot_deals':
+        data = analytics.get_hot_deals_performance(days)
+    elif metric_type == 'ratings':
+        data = analytics.get_rating_distribution(days)
+    elif metric_type == 'funnel':
+        data = analytics.get_conversion_funnel(days)
+    else:
+        data = {}
+
+    return JsonResponse(data, safe=False)
 
 
 # Lazy Loading Views for HTMX
@@ -967,18 +2272,84 @@ def reject_car_listing(request, car_id):
 @login_required
 def approve_vendor(request, vendor_id):
     """Approve a vendor (Admin only)"""
-    if request.user.role != 'admin':
+    if not request.user.is_staff and request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     vendor = get_object_or_404(Vendor, id=vendor_id)
     vendor.is_approved = True
     vendor.approval_date = timezone.now()
+    vendor.verification_status = 'verified'
     vendor.save()
+
+    # Log the activity
+    log_user_activity(
+        request.user,
+        'vendor_approval',
+        f'Admin approved vendor {vendor.company_name}',
+        request,
+        {'vendor_id': vendor.id}
+    )
 
     messages.success(request, f'Vendor "{vendor.company_name}" has been approved.')
 
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'status': 'approved'})
+
+    return redirect('core:admin_vendors')
+
+
+@login_required
+def disapprove_vendor(request, vendor_id):
+    """Disapprove/revoke vendor approval"""
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    vendor = get_object_or_404(Vendor, id=vendor_id)
+    vendor.is_approved = False
+    vendor.approval_date = None
+    vendor.verification_status = 'pending'
+    vendor.save()
+
+    # Log the activity
+    log_user_activity(
+        request.user,
+        'vendor_disapproval',
+        f'Admin revoked approval for vendor {vendor.company_name}',
+        request,
+        {'vendor_id': vendor.id}
+    )
+
+    messages.success(request, f'Approval revoked for vendor "{vendor.company_name}".')
+
+    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'disapproved'})
+
+    return redirect('core:admin_vendors')
+
+
+@login_required
+def suspend_vendor(request, vendor_id):
+    """Suspend a vendor account"""
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    vendor = get_object_or_404(Vendor, id=vendor_id)
+    vendor.user.is_active = False
+    vendor.user.save()
+
+    # Log the activity
+    log_user_activity(
+        request.user,
+        'vendor_suspension',
+        f'Admin suspended vendor {vendor.company_name}',
+        request,
+        {'vendor_id': vendor.id, 'user_id': vendor.user.id}
+    )
+
+    messages.success(request, f'Vendor "{vendor.company_name}" has been suspended.')
+
+    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'suspended'})
 
     return redirect('core:admin_vendors')
 
@@ -1258,6 +2629,54 @@ def notifications_count_htmx(request):
 
     context = {'unread_count': unread_count}
     return render(request, 'core/dashboard/partials/notification_count.html', context)
+
+
+@login_required
+def notification_badges_api(request):
+    """API endpoint for real-time notification badge updates"""
+    from .context_processors import notification_badges
+
+    # Get badge data from context processor
+    badge_data = notification_badges(request)
+    badges = badge_data.get('notification_badges', {})
+
+    # Format for JavaScript consumption
+    badge_updates = []
+
+    # Map badge types to their identifiers
+    badge_mappings = {
+        'unread_notifications': {'selector': '[data-badge="notifications"]', 'type': 'primary'},
+        'pending_import_requests': {'selector': '[data-badge="import-requests"]', 'type': 'warning'},
+        'active_import_orders': {'selector': '[data-badge="import-orders"]', 'type': 'blue'},
+        'new_inquiries': {'selector': '[data-badge="inquiries"]', 'type': 'warning'},
+        'pending_approvals': {'selector': '[data-badge="approvals"]', 'type': 'danger'},
+        'system_alerts': {'selector': '[data-badge="alerts"]', 'type': 'danger'},
+        'vendor_orders': {'selector': '[data-badge="vendor-orders"]', 'type': 'blue'},
+        'vendor_inquiries': {'selector': '[data-badge="vendor-inquiries"]', 'type': 'warning'},
+        'order_updates': {'selector': '[data-badge="order-updates"]', 'type': 'primary'},
+        'import_updates': {'selector': '[data-badge="import-updates"]', 'type': 'blue'},
+        'inquiry_responses': {'selector': '[data-badge="inquiry-responses"]', 'type': 'warning'},
+    }
+
+    for badge_key, count in badges.items():
+        if badge_key in badge_mappings and count > 0:
+            mapping = badge_mappings[badge_key]
+            badge_updates.append({
+                'badgeId': badge_key,
+                'selector': mapping['selector'],
+                'count': count,
+                'type': mapping['type'],
+                'options': {
+                    'pulse': count > 5,  # Pulse for high counts
+                    'urgent': badge_key in ['system_alerts', 'pending_approvals']
+                }
+            })
+
+    return JsonResponse({
+        'badges': badge_updates,
+        'timestamp': timezone.now().isoformat(),
+        'total_count': badges.get('total_badge_count', 0)
+    })
 
 
 def create_notification(recipient, title, message, notification_type='info', action_url='', action_text=''):
@@ -1631,25 +3050,239 @@ def admin_import_requests_refresh(request):
     return admin_import_requests_table_partial(request)
 
 
+def apply_tracking_filters(request, queryset):
+    """Apply filters to tracking management queryset"""
+    # Status filter
+    status_filter = request.GET.get('status')
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+
+    # Search filter
+    search = request.GET.get('search')
+    if search:
+        queryset = queryset.filter(
+            Q(order_number__icontains=search) |
+            Q(customer__username__icontains=search) |
+            Q(customer__email__icontains=search) |
+            Q(customer__first_name__icontains=search) |
+            Q(customer__last_name__icontains=search) |
+            Q(brand__icontains=search) |
+            Q(model__icontains=search) |
+            Q(chassis_number__icontains=search) |
+            Q(bill_of_lading__icontains=search) |
+            Q(vessel_name__icontains=search)
+        )
+
+    # Date range filter
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            queryset = queryset.filter(created_at__date__gte=from_date)
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
+            queryset = queryset.filter(created_at__date__lte=to_date)
+        except ValueError:
+            pass
+
+    return queryset
+
+
 @login_required
 def admin_tracking_management_table_partial(request):
-    """Return just the tracking management table for HTMX updates"""
+    """Return just the tracking management table for HTMX updates with pagination"""
     if request.user.role != 'admin':
         return HttpResponse('Access denied', status=403)
 
     # Get import orders with tracking information
     import_orders = ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')
 
-    # Filter by status
-    status_filter = request.GET.get('status')
-    if status_filter:
-        import_orders = import_orders.filter(status=status_filter)
+    # Apply filters
+    import_orders = apply_tracking_filters(request, import_orders)
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(import_orders, 20)  # 20 items per page
+
+    try:
+        import_orders_page = paginator.page(page)
+    except PageNotAnInteger:
+        import_orders_page = paginator.page(1)
+    except EmptyPage:
+        import_orders_page = paginator.page(paginator.num_pages)
 
     context = {
-        'import_orders': import_orders[:20],  # Limit to 20 for performance
+        'import_orders': import_orders_page,
+        'paginator': paginator,
+        'page_obj': import_orders_page,
+        'is_paginated': paginator.num_pages > 1,
+        'current_filter': request.GET.get('status', ''),
+        'current_search': request.GET.get('search', ''),
+        'current_date_from': request.GET.get('date_from', ''),
+        'current_date_to': request.GET.get('date_to', ''),
     }
 
     return render(request, 'core/dashboard/partials/admin_tracking_management_table.html', context)
+
+
+@login_required
+def admin_tracking_management_export_csv(request):
+    """Export tracking management data to CSV with current filters applied"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    # Get filtered queryset
+    import_orders = ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')
+    import_orders = apply_tracking_filters(request, import_orders)
+
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="import_orders_tracking.csv"'
+
+    writer = csv.writer(response)
+
+    # Write header
+    writer.writerow([
+        'Order Number', 'Customer Name', 'Customer Email', 'Brand', 'Model', 'Year',
+        'Color', 'Engine Size', 'Fuel Type', 'Origin Country', 'Status', 'Payment Status',
+        'Total Cost', 'Paid Amount', 'Balance Due', 'Chassis Number', 'Bill of Lading',
+        'Vessel Name', 'Departure Port', 'Arrival Port', 'Estimated Arrival', 'Actual Arrival',
+        'Progress %', 'Created Date', 'Updated Date'
+    ])
+
+    # Write data rows
+    for order in import_orders:
+        writer.writerow([
+            order.order_number,
+            order.customer.get_full_name() or order.customer.username,
+            order.customer.email,
+            order.brand,
+            order.model,
+            order.year,
+            order.color,
+            order.engine_size,
+            order.fuel_type,
+            order.origin_country,
+            order.get_status_display(),
+            order.get_payment_status_display(),
+            order.total_cost or 0,
+            order.paid_amount or 0,
+            order.balance_due or 0,
+            order.chassis_number or '',
+            order.bill_of_lading or '',
+            order.vessel_name or '',
+            order.departure_port or '',
+            order.arrival_port or '',
+            order.estimated_arrival_date.strftime('%Y-%m-%d') if order.estimated_arrival_date else '',
+            order.actual_arrival_date.strftime('%Y-%m-%d') if order.actual_arrival_date else '',
+            f"{order.get_progress_percentage()}%",
+            order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            order.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+
+    return response
+
+
+@login_required
+def admin_tracking_management_export_excel(request):
+    """Export tracking management data to Excel with current filters applied"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        # Fallback to CSV if openpyxl is not available
+        return admin_tracking_management_export_csv(request)
+
+    # Get filtered queryset
+    import_orders = ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')
+    import_orders = apply_tracking_filters(request, import_orders)
+
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Import Orders Tracking"
+
+    # Define styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    # Write headers
+    headers = [
+        'Order Number', 'Customer Name', 'Customer Email', 'Brand', 'Model', 'Year',
+        'Color', 'Engine Size', 'Fuel Type', 'Origin Country', 'Status', 'Payment Status',
+        'Total Cost', 'Paid Amount', 'Balance Due', 'Chassis Number', 'Bill of Lading',
+        'Vessel Name', 'Departure Port', 'Arrival Port', 'Estimated Arrival', 'Actual Arrival',
+        'Progress %', 'Created Date', 'Updated Date'
+    ]
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+
+    # Write data rows
+    for row, order in enumerate(import_orders, 2):
+        data = [
+            order.order_number,
+            order.customer.get_full_name() or order.customer.username,
+            order.customer.email,
+            order.brand,
+            order.model,
+            order.year,
+            order.color,
+            order.engine_size,
+            order.fuel_type,
+            order.origin_country,
+            order.get_status_display(),
+            order.get_payment_status_display(),
+            order.total_cost or 0,
+            order.paid_amount or 0,
+            order.balance_due or 0,
+            order.chassis_number or '',
+            order.bill_of_lading or '',
+            order.vessel_name or '',
+            order.departure_port or '',
+            order.arrival_port or '',
+            order.estimated_arrival_date.strftime('%Y-%m-%d') if order.estimated_arrival_date else '',
+            order.actual_arrival_date.strftime('%Y-%m-%d') if order.actual_arrival_date else '',
+            f"{order.get_progress_percentage()}%",
+            order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            order.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+        ]
+
+        for col, value in enumerate(data, 1):
+            ws.cell(row=row, column=col, value=value)
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="import_orders_tracking.xlsx"'
+
+    wb.save(response)
+    return response
 
 
 # ===== IMPORT ORDER MANAGEMENT VIEWS =====
@@ -2071,7 +3704,7 @@ def admin_spare_shop_view(request):
 
 @login_required
 def admin_tracking_management_view(request):
-    """Admin tracking management view for 7-stage import workflow"""
+    """Admin tracking management view for 7-stage import workflow with pagination"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
@@ -2079,14 +3712,23 @@ def admin_tracking_management_view(request):
     # Get import orders with tracking information
     import_orders = ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')
 
-    # Filter by status
-    status_filter = request.GET.get('status')
-    if status_filter:
-        import_orders = import_orders.filter(status=status_filter)
+    # Apply filters
+    import_orders = apply_tracking_filters(request, import_orders)
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(import_orders, 20)  # 20 items per page
+
+    try:
+        import_orders_page = paginator.page(page)
+    except PageNotAnInteger:
+        import_orders_page = paginator.page(1)
+    except EmptyPage:
+        import_orders_page = paginator.page(paginator.num_pages)
 
     # Define workflow stages for the UI
     workflow_stages = [
-        {'key': 'confirmed', 'name': 'Confirmed', 'icon': 'fas fa-check-circle', 'color': 'blue'},
+        {'key': 'import_request', 'name': 'Import Request', 'icon': 'fas fa-file-import', 'color': 'blue'},
         {'key': 'auction_won', 'name': 'Auction Won', 'icon': 'fas fa-gavel', 'color': 'green'},
         {'key': 'shipped', 'name': 'Shipped', 'icon': 'fas fa-ship', 'color': 'indigo'},
         {'key': 'in_transit', 'name': 'In Transit', 'icon': 'fas fa-route', 'color': 'yellow'},
@@ -2099,20 +3741,26 @@ def admin_tracking_management_view(request):
 
     # Calculate tracking stats
     total_orders = ImportOrder.objects.count()
-    confirmed_orders = ImportOrder.objects.filter(status='confirmed').count()
+    import_request_orders = ImportOrder.objects.filter(status='import_request').count()
     in_transit_orders = ImportOrder.objects.filter(status__in=['shipped', 'in_transit']).count()
     arrived_orders = ImportOrder.objects.filter(status='arrived_docked').count()
     completed_orders = ImportOrder.objects.filter(status='delivered').count()
 
     context = {
-        'import_orders': import_orders[:20],
+        'import_orders': import_orders_page,
+        'paginator': paginator,
+        'page_obj': import_orders_page,
+        'is_paginated': paginator.num_pages > 1,
         'total_orders': total_orders,
-        'confirmed_orders': confirmed_orders,
+        'import_request_orders': import_request_orders,
         'in_transit_orders': in_transit_orders,
         'arrived_orders': arrived_orders,
         'completed_orders': completed_orders,
         'workflow_stages': workflow_stages,
-        'current_filter': status_filter,
+        'current_filter': request.GET.get('status', ''),
+        'current_search': request.GET.get('search', ''),
+        'current_date_from': request.GET.get('date_from', ''),
+        'current_date_to': request.GET.get('date_to', ''),
     }
 
     return render(request, 'core/dashboard/admin_tracking_management.html', context)

@@ -1,0 +1,219 @@
+{% load static %}
+
+<div class="space-y-8">
+    <!-- Welcome Section with Entrance Animation -->
+    <div class="welcome-section animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="bg-gradient-to-r from-harrier-red to-harrier-dark rounded-xl p-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold font-montserrat mb-2">Welcome back, {{ user.get_full_name|default:user.username }}!</h2>
+                    <p class="text-gray-200 font-raleway">Here's what's happening with your automotive marketplace today.</p>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-tachometer-alt text-white text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Overview Stats with Lazy Loading -->
+    <div class="lazy-content-container animate-fade-in-up"
+         style="animation-delay: 0.2s;"
+         hx-get="{% url 'core:admin_quick_actions' %}"
+         hx-trigger="revealed"
+         hx-swap="outerHTML">
+        <!-- Loading Skeleton for Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {% for i in "1234" %}
+            <div class="admin-stat-card text-center animate-pulse">
+                <div class="h-8 bg-gray-200 rounded mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Quick Actions Grid -->
+    <div class="animate-fade-in-up" style="animation-delay: 0.3s;">
+        <h3 class="text-xl font-bold text-harrier-dark mb-6 font-montserrat">Quick Actions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <a href="{% url 'core:admin_users' %}" class="quick-action-card group">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-semibold text-harrier-dark font-raleway">Manage Users</h4>
+                        <p class="text-sm text-gray-600">View and manage user accounts</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:admin_import_requests' %}" class="quick-action-card group">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-ship text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-semibold text-harrier-dark font-raleway">Import Requests</h4>
+                        <p class="text-sm text-gray-600">Manage car import orders</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:admin_tracking' %}" class="quick-action-card group">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-map-marker-alt text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-semibold text-harrier-dark font-raleway">Track Orders</h4>
+                        <p class="text-sm text-gray-600">Monitor import progress</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:admin_spare_shop' %}" class="quick-action-card group">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-cogs text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-semibold text-harrier-dark font-raleway">Spare Shop</h4>
+                        <p class="text-sm text-gray-600">Manage spare parts inventory</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Recent User Registrations -->
+        <div class="admin-card animate-fade-in-up" style="animation-delay: 0.4s;">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent User Registrations</h3>
+                    </div>
+                    <a href="{% url 'core:admin_users' %}" class="text-sm text-harrier-red hover:text-harrier-dark font-medium transition-colors">View All</a>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    {% for user in recent_users|slice:":5" %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-harrier-red text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {{ user.first_name|first|default:user.username|first }}
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-medium text-harrier-dark">{{ user.get_full_name|default:user.username }}</p>
+                                <p class="text-sm text-gray-600">{{ user.role|title }} • {{ user.date_joined|date:"M d" }}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            {% if user.role == 'admin' %}bg-red-100 text-red-800
+                            {% elif user.role == 'vendor' %}bg-blue-100 text-blue-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ user.role|title }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-users text-gray-400 text-3xl mb-3"></i>
+                        <p class="text-gray-600">No recent user registrations</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Import Requests -->
+        <div class="admin-card animate-fade-in-up" style="animation-delay: 0.5s;">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-ship text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Import Requests</h3>
+                    </div>
+                    <a href="{% url 'core:admin_import_requests' %}" class="text-sm text-harrier-red hover:text-harrier-dark font-medium transition-colors">View All</a>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    {% for request in recent_import_requests|slice:":5" %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-harrier-dark text-white rounded-lg flex items-center justify-center">
+                                <i class="fas fa-car text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-medium text-harrier-dark">{{ request.brand }} {{ request.model }}</p>
+                                <p class="text-sm text-gray-600">{{ request.customer.get_full_name|default:request.customer.username }} • {{ request.created_at|date:"M d" }}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            {% if request.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif request.status == 'on_quotation' %}bg-blue-100 text-blue-800
+                            {% elif request.status == 'processing' %}bg-purple-100 text-purple-800
+                            {% elif request.status == 'fee_paid' %}bg-indigo-100 text-indigo-800
+                            {% elif request.status == 'completed' %}bg-green-100 text-green-800
+                            {% elif request.status == 'cancelled' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ request.get_status_display }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-ship text-gray-400 text-3xl mb-3"></i>
+                        <p class="text-gray-600">No recent import requests</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Activity Feed -->
+    <div class="admin-card animate-fade-in-up" style="animation-delay: 0.6s;">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-activity text-white"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">System Activity</h3>
+                </div>
+                <button class="text-sm text-harrier-red hover:text-harrier-dark font-medium transition-colors">View All</button>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {% for activity in recent_activities|slice:":8" %}
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-circle text-harrier-red text-xs"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-harrier-dark">{{ activity.description }}</p>
+                        <p class="text-xs text-gray-600 mt-1">{{ activity.timestamp|timesince }} ago</p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <i class="fas fa-activity text-gray-400 text-3xl mb-3"></i>
+                    <p class="text-gray-600">No recent system activity</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

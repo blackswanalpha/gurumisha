@@ -1,0 +1,390 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_description %}View your profile and performance analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile-forms.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Analytics</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Analytics Header -->
+    <div class="mb-8 bg-gradient-to-r from-harrier-red via-harrier-dark to-harrier-blue rounded-2xl p-8 text-white relative overflow-hidden animate-fade-in-up">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div class="relative z-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 font-montserrat">Analytics Dashboard</h2>
+                    <p class="text-blue-100 text-lg font-raleway">Track your performance and engagement</p>
+                </div>
+                <div class="hidden md:block">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.role == 'vendor' and analytics_data.analytics %}
+    <!-- Vendor Analytics -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <!-- Key Metrics Cards -->
+        <div class="lg:col-span-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Profile Views -->
+                <div class="dashboard-card">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Profile Views</p>
+                                <p class="text-3xl font-bold text-harrier-dark">{{ analytics_data.analytics.total_profile_views }}</p>
+                                <div class="flex items-center mt-2">
+                                    {% if analytics_data.view_growth_rate > 0 %}
+                                        <i class="fas fa-arrow-up text-green-500 mr-1"></i>
+                                        <span class="text-sm text-green-600">+{{ analytics_data.view_growth_rate }}%</span>
+                                    {% elif analytics_data.view_growth_rate < 0 %}
+                                        <i class="fas fa-arrow-down text-red-500 mr-1"></i>
+                                        <span class="text-sm text-red-600">{{ analytics_data.view_growth_rate }}%</span>
+                                    {% else %}
+                                        <i class="fas fa-minus text-gray-500 mr-1"></i>
+                                        <span class="text-sm text-gray-600">No change</span>
+                                    {% endif %}
+                                    <span class="text-xs text-gray-500 ml-1">vs last month</span>
+                                </div>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-eye text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inquiries -->
+                <div class="dashboard-card">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Inquiries</p>
+                                <p class="text-3xl font-bold text-harrier-dark">{{ analytics_data.analytics.total_inquiries }}</p>
+                                <p class="text-sm text-gray-600 mt-2">{{ analytics_data.analytics.inquiries_this_month }} this month</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-envelope text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Average Rating -->
+                <div class="dashboard-card">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Average Rating</p>
+                                <p class="text-3xl font-bold text-harrier-dark">{{ analytics_data.analytics.average_rating|floatformat:1 }}</p>
+                                <div class="flex items-center mt-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= analytics_data.analytics.average_rating %}
+                                            <i class="fas fa-star text-yellow-400"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-gray-300"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-xs text-gray-500 ml-2">({{ analytics_data.analytics.total_ratings }} reviews)</span>
+                                </div>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-star text-yellow-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Score -->
+                <div class="dashboard-card">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Performance Score</p>
+                                <p class="text-3xl font-bold text-harrier-dark">{{ analytics_data.analytics.overall_performance_score }}</p>
+                                <div class="flex items-center mt-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        {% if analytics_data.performance_level.color == 'green' %}bg-green-100 text-green-800
+                                        {% elif analytics_data.performance_level.color == 'blue' %}bg-blue-100 text-blue-800
+                                        {% elif analytics_data.performance_level.color == 'yellow' %}bg-yellow-100 text-yellow-800
+                                        {% elif analytics_data.performance_level.color == 'orange' %}bg-orange-100 text-orange-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        <i class="fas fa-{{ analytics_data.performance_level.icon }} mr-1"></i>
+                                        {{ analytics_data.performance_level.level }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="lg:col-span-3">
+            <!-- Profile Views Chart -->
+            <div class="dashboard-card mb-8">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Profile Views Trend</h3>
+                    <p class="text-sm text-gray-600">Daily profile views over the last 30 days</p>
+                </div>
+                <div class="p-6">
+                    <canvas id="profileViewsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance Breakdown -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Performance Breakdown</h3>
+                    <p class="text-sm text-gray-600">Detailed performance metrics</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <!-- Profile Completion -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Profile Completion</span>
+                                <span class="text-sm font-bold text-harrier-red">{{ analytics_data.analytics.profile_completion_score }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-harrier-red to-harrier-red-dark h-2 rounded-full" style="width: {{ analytics_data.analytics.profile_completion_score }}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Satisfaction -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Customer Satisfaction</span>
+                                <span class="text-sm font-bold text-green-600">{{ analytics_data.analytics.customer_satisfaction_score }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style="width: {{ analytics_data.analytics.customer_satisfaction_score }}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Response Time -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Response Time Score</span>
+                                <span class="text-sm font-bold text-blue-600">{{ analytics_data.analytics.response_time_score }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: {{ analytics_data.analytics.response_time_score }}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Average response time: {{ analytics_data.analytics.average_response_time_hours }} hours</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Stats -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Quick Stats</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Active Listings</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ analytics_data.analytics.active_listings }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Featured Listings</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ analytics_data.analytics.featured_listings }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Sold Listings</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ analytics_data.analytics.sold_listings }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Unique Visitors</span>
+                        <span class="text-sm font-medium text-harrier-dark">{{ analytics_data.analytics.unique_profile_views }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Recent Activity</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                        {% for activity in analytics_data.recent_activities|slice:":5" %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-circle text-harrier-red text-xs"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-harrier-dark">{{ activity.get_action_display }}</p>
+                                <p class="text-xs text-gray-500">{{ activity.timestamp|timesince }} ago</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500">No recent activity</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Regular User Analytics -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="lg:col-span-2">
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Your Activity</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-harrier-dark">{{ analytics_data.total_activities }}</div>
+                            <div class="text-sm text-gray-600">Total Activities</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-harrier-dark">{{ analytics_data.profile_views_made }}</div>
+                            <div class="text-sm text-gray-600">Profiles Viewed</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity Breakdown Chart -->
+                    <canvas id="activityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <!-- Recent Activity -->
+            <div class="dashboard-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-heading font-bold text-harrier-dark">Recent Activity</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                        {% for activity in analytics_data.recent_activities|slice:":8" %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-circle text-harrier-red text-xs"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-harrier-dark">{{ activity.get_action_display }}</p>
+                                <p class="text-xs text-gray-500">{{ activity.timestamp|timesince }} ago</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500">No recent activity</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if user.role == 'vendor' and analytics_data.analytics %}
+    // Profile Views Chart
+    const profileViewsCtx = document.getElementById('profileViewsChart').getContext('2d');
+    
+    fetch('?chart_type=profile_views', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        new Chart(profileViewsCtx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Profile Views',
+                    data: data.data,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+    {% else %}
+    // Activity Breakdown Chart for regular users
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    
+    fetch('?chart_type=activity_breakdown', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        new Chart(activityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.data,
+                    backgroundColor: [
+                        '#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

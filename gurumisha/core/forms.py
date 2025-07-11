@@ -163,7 +163,7 @@ class SellCarForm(forms.ModelForm):
         fields = [
             'brand', 'model', 'year', 'condition', 'engine_size', 'fuel_type',
             'transmission', 'mileage', 'color', 'price', 'title', 'description',
-            'features', 'main_image'
+            'features', 'main_image', 'listing_type', 'negotiable'
         ]
         widgets = {
             'brand': forms.Select(attrs={
@@ -219,6 +219,12 @@ class SellCarForm(forms.ModelForm):
             'main_image': forms.FileInput(attrs={
                 'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
                 'accept': 'image/*'
+            }),
+            'listing_type': forms.Select(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
+            }),
+            'negotiable': forms.CheckboxInput(attrs={
+                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
             })
         }
 

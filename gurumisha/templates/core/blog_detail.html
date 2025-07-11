@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ post.title }} - Gurumisha Motors Resources{% endblock %}
+{% block title %}{{ post.title }} - Gurumisha Resources{% endblock %}
 
 {% block meta_description %}{{ post.meta_description|default:post.excerpt|default:post.content|truncatewords:25 }}{% endblock %}
 

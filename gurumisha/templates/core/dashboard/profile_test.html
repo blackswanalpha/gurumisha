@@ -1,0 +1,15 @@
+{% extends 'base_dashboard_simple.html' %}
+{% load static %}
+
+{% block dashboard_title %}Profile Settings{% endblock %}
+{% block page_title %}Profile Settings{% endblock %}
+{% block page_description %}Manage your personal information and account settings{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <h1>Test Profile Page</h1>
+    <p>This is a minimal test profile page to check for recursion issues.</p>
+    <p>User: {{ user.username }}</p>
+    <p>Email: {{ user.email }}</p>
+</div>
+{% endblock %}
