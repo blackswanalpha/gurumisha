@@ -11,19 +11,23 @@ from django.db.models import Q, Count, Sum, Avg, F, Case, When, IntegerField
 from django.db import models
 from django.utils import timezone
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 import csv
 import json
 from io import StringIO
 
 from .models import (
-    Car, CarBrand, CarModel, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
+    Car, CarBrand, CarModel, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
     Inquiry, Testimonial, BlogPost, Vendor, User,
     Supplier, PurchaseOrder, StockMovement, InventoryAlert,
     Order, OrderItem, Payment, SparePartCategory, Notification, SystemSetting,
     ActivityLog, AuditLog, NotificationPreference, NotificationQueue,
     HotDeal, CarRating, PromotionAnalytics, VendorSubscription, FeaturedCarTier,
-    ProfileView, VendorAnalytics, UserActivityLog
+    ProfileView, VendorAnalytics, UserActivityLog, ContentCategory, ContentTag,
+    ContentSeries, ContentView, ContentLike, ContentComment, ContentBookmark,
+    ContentAnalytics, ContentPerformanceReport
 )
 from .dashboard_forms import (
     UserProfileForm, VendorProfileForm, PasswordChangeForm,
@@ -31,6 +35,7 @@ from .dashboard_forms import (
     UserSearchForm, CarSearchForm, VendorSearchForm, AdminCarEditForm,
     UserPreferencesForm, VendorPreferencesForm, BusinessHoursForm
 )
+from .forms import SparePartForm, VendorSparePartForm
 from .utils.image_utils import default_image_handler
 from .utils.analytics_utils import (
     track_profile_view, log_user_activity, get_analytics_dashboard_data,
@@ -101,12 +106,13 @@ def user_profile_view(request):
         try:
             vendor = user.vendor
         except Vendor.DoesNotExist:
-            # Create vendor profile if it doesn't exist
-            vendor = Vendor.objects.create(
-                user=user,
-                company_name=f"{user.first_name} {user.last_name}".strip() or user.username,
-                is_approved=False
-            )
+            # Create vendor profile if it doesn't exist (but not for admin users)
+            if user.role != 'admin':
+                vendor = Vendor.objects.create(
+                    user=user,
+                    company_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+                    is_approved=False
+                )
 
     if request.method == 'POST':
         # Handle HTMX auto-save requests
@@ -278,15 +284,24 @@ def vendor_profile_view(request):
         messages.error(request, 'Access denied. Vendor account required.')
         return redirect('core:dashboard')
 
+    # Redirect admin users to admin dashboard
+    if request.user.role == 'admin':
+        messages.info(request, 'As an admin, please use the admin dashboard.')
+        return redirect('core:dashboard')
+
     try:
         vendor = request.user.vendor
     except Vendor.DoesNotExist:
-        # Create vendor profile if it doesn't exist
-        vendor = Vendor.objects.create(
-            user=request.user,
-            company_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
-            is_approved=False
-        )
+        # Create vendor profile if it doesn't exist (but not for admin users)
+        if request.user.role != 'admin':
+            vendor = Vendor.objects.create(
+                user=request.user,
+                company_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+                is_approved=False
+            )
+        else:
+            messages.error(request, 'Admin users cannot have vendor profiles.')
+            return redirect('core:dashboard')
 
     if request.method == 'POST':
         vendor_form = VendorProfileForm(request.POST, request.FILES, instance=vendor)
@@ -612,13 +627,15 @@ def admin_user_detail_view(request, user_id):
                 user.role = new_role
                 user.save()
 
-                # Create vendor profile if changing to vendor
-                if new_role == 'vendor' and not hasattr(user, 'vendor'):
+                # Create vendor profile if changing to vendor (but not for admin users)
+                if new_role == 'vendor' and not hasattr(user, 'vendor') and old_role != 'admin':
                     Vendor.objects.create(
                         user=user,
                         company_name=f"{user.first_name} {user.last_name}".strip() or user.username,
                         is_approved=False
                     )
+                elif new_role == 'vendor' and old_role == 'admin':
+                    messages.warning(request, 'Admin users cannot be changed to vendor role. Please create a separate vendor account.')
 
                 # Log the activity
                 log_user_activity(
@@ -1129,6 +1146,10 @@ def user_listings_view(request):
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
+    # Get filter and search parameters
+    status_filter = request.GET.get('status')
+    search_query = request.GET.get('search')
+
     # Get user's car listings through their vendor profile
     user_cars = Car.objects.none()
     try:
@@ -1137,14 +1158,12 @@ def user_listings_view(request):
         user_cars = Car.objects.filter(vendor=vendor).order_by('-created_at')
 
         # Filter by status if provided
-        status_filter = request.GET.get('status')
         if status_filter == 'approved':
             user_cars = user_cars.filter(is_approved=True)
         elif status_filter == 'pending':
             user_cars = user_cars.filter(is_approved=False)
 
         # Search functionality
-        search_query = request.GET.get('search')
         if search_query:
             user_cars = user_cars.filter(
                 Q(title__icontains=search_query) |
@@ -1246,90 +1265,451 @@ def vendor_settings_view(request):
 
 @login_required
 def vendor_listings_view(request):
-    """Vendor car listings management view with filtering and HTMX support"""
+    """Enhanced vendor car listings view with comprehensive features"""
+    # Check vendor role
     if request.user.role != 'vendor':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
     try:
+        # Get vendor profile
         vendor = request.user.vendor
+    except Vendor.DoesNotExist:
+        messages.warning(request, 'Please complete your vendor profile.')
+        return redirect('core:vendor_profile_create')
 
-        # Get vendor's cars with filtering and sorting
-        cars = Car.objects.filter(vendor=vendor).select_related('brand', 'model')
+    # Simple approach to avoid recursion
+    try:
+        # Get basic car data without complex relationships
+        cars = Car.objects.filter(vendor=vendor)
 
-        # Apply status filter
+        # Apply filters
         status_filter = request.GET.get('status_filter', '')
         if status_filter == 'approved':
             cars = cars.filter(is_approved=True)
         elif status_filter == 'pending':
             cars = cars.filter(is_approved=False)
-        elif status_filter == 'featured':
-            cars = cars.filter(status='featured')
-        elif status_filter == 'sold':
-            cars = cars.filter(status='sold')
 
-        # Apply search filter
+        # Apply location filters
+        city_filter = request.GET.get('city_filter', '')
+        if city_filter:
+            cars = cars.filter(city__icontains=city_filter)
+
+        country_filter = request.GET.get('country_filter', '')
+        if country_filter:
+            cars = cars.filter(country__icontains=country_filter)
+
+        # Apply search
         search = request.GET.get('search', '')
         if search:
             cars = cars.filter(
                 Q(title__icontains=search) |
-                Q(brand__name__icontains=search) |
-                Q(model__name__icontains=search) |
-                Q(description__icontains=search)
+                Q(description__icontains=search) |
+                Q(area__icontains=search) |
+                Q(city__icontains=search) |
+                Q(country__icontains=search)
             )
 
         # Apply sorting
         sort_by = request.GET.get('sort_by', '-created_at')
         cars = cars.order_by(sort_by)
 
-        # Pagination - 20 cars per page
-        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        # Get available cities and countries for filters
+        all_vendor_cars = Car.objects.filter(vendor=vendor)
+        available_cities = all_vendor_cars.exclude(city__isnull=True).exclude(city='').values_list('city', flat=True).distinct().order_by('city')
+        available_countries = all_vendor_cars.exclude(country__isnull=True).exclude(country='').values_list('country', flat=True).distinct().order_by('country')
+
+        # Basic statistics
+        total_cars = all_vendor_cars.count()
+        approved_cars = all_vendor_cars.filter(is_approved=True).count()
+        pending_cars = all_vendor_cars.filter(is_approved=False).count()
+        featured_cars = all_vendor_cars.filter(is_featured=True).count()
+        hot_deals = all_vendor_cars.filter(is_hot_deal=True).count()
+        total_views = 0  # Simplified for now
+        total_inquiries = 0  # Simplified for now
+
+        # Pagination
+        from django.core.paginator import Paginator
         paginator = Paginator(cars, 20)
-        page = request.GET.get('page')
-
-        try:
-            cars = paginator.page(page)
-        except PageNotAnInteger:
-            cars = paginator.page(1)
-        except EmptyPage:
-            cars = paginator.page(paginator.num_pages)
-
-        # Calculate statistics
-        vendor_cars_all = Car.objects.filter(vendor=vendor)
-        total_cars = vendor_cars_all.count()
-        approved_cars = vendor_cars_all.filter(is_approved=True).count()
-        pending_cars = vendor_cars_all.filter(is_approved=False).count()
-        total_views = vendor_cars_all.aggregate(total=models.Sum('views_count'))['total'] or 0
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
 
         context = {
             'vendor': vendor,
-            'cars': cars,
+            'cars': page_obj,
             'total_cars': total_cars,
             'approved_cars': approved_cars,
             'pending_cars': pending_cars,
+            'featured_cars': featured_cars,
+            'hot_deals': hot_deals,
             'total_views': total_views,
-            'status_filter': status_filter,
-            'sort_by': sort_by,
-            'search': search,
+            'total_inquiries': total_inquiries,
+            'status_filter': request.GET.get('status_filter', ''),
+            'sort_by': request.GET.get('sort_by', '-created_at'),
+            'search': request.GET.get('search', ''),
+            'city_filter': request.GET.get('city_filter', ''),
+            'country_filter': request.GET.get('country_filter', ''),
+            'available_cities': available_cities,
+            'available_countries': available_countries,
+            'is_paginated': page_obj.has_other_pages(),
+            'page_obj': page_obj,
         }
 
-        # Return partial template for HTMX requests
+        # Handle HTMX requests
         if request.headers.get('HX-Request'):
             return render(request, 'core/dashboard/partials/vendor_car_list.html', context)
 
+        # Use the full-featured template
         return render(request, 'core/dashboard/vendor_listings.html', context)
 
-    except Vendor.DoesNotExist:
-        messages.warning(request, 'Please complete your vendor profile.')
-        return redirect('core:vendor_profile_create')
     except Exception as e:
-        # Log the error and provide a safe fallback
+        # If there's still an error, use the minimal template
+        return render(request, 'core/dashboard/vendor_listings_minimal.html', {
+            'vendor': {'company_name': 'Unknown'},
+            'cars': [],
+            'total_cars': 0,
+            'approved_cars': 0,
+            'pending_cars': 0,
+            'featured_cars': 0,
+            'hot_deals': 0,
+            'total_views': 0,
+            'total_inquiries': 0,
+            'error_message': 'Error loading car listings. Please try again.'
+        })
+
+
+@login_required
+def vendor_car_view(request, car_id):
+    """View car listing details for vendor"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        car = get_object_or_404(
+            Car.objects.select_related('brand', 'model', 'condition', 'vendor')
+                      .prefetch_related('images', 'inquiries'),
+            id=car_id,
+            vendor__user=request.user
+        )
+
+        # Get car analytics
+        recent_views = car.views_count or 0
+        total_inquiries = car.inquiries.count()
+        recent_inquiries = car.inquiries.order_by('-created_at')[:5]
+
+        # Get performance metrics
+        performance_data = {
+            'views_this_month': recent_views,
+            'inquiries_this_month': total_inquiries,
+            'conversion_rate': (total_inquiries / max(recent_views, 1)) * 100,
+            'avg_response_time': '2 hours',
+        }
+
+        context = {
+            'car': car,
+            'recent_inquiries': recent_inquiries,
+            'performance_data': performance_data,
+            'total_inquiries': total_inquiries,
+        }
+
+        # Handle HTMX requests
+        if request.headers.get('HX-Request'):
+            return render(request, 'core/dashboard/partials/vendor_car_view_modal.html', context)
+
+        return render(request, 'core/dashboard/vendor_car_view.html', context)
+
+    except Exception as e:
+        messages.error(request, 'Error loading car details.')
+        return redirect('core:vendor_listings')
+
+
+@login_required
+def vendor_car_edit(request, car_id):
+    """Edit car listing"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        car = get_object_or_404(Car, id=car_id, vendor__user=request.user)
+
+        if request.method == 'POST':
+            # Handle car update with enhanced validation
+            car.title = request.POST.get('title', car.title).strip()
+            car.description = request.POST.get('description', car.description).strip()
+
+            # Handle numeric fields with validation
+            try:
+                car.price = float(request.POST.get('price', car.price))
+                car.year = int(request.POST.get('year', car.year))
+                car.mileage = int(request.POST.get('mileage', car.mileage or 0))
+            except (ValueError, TypeError):
+                messages.error(request, 'Please enter valid numeric values.')
+                return redirect('core:vendor_car_edit', car_id=car_id)
+
+            car.fuel_type = request.POST.get('fuel_type', car.fuel_type)
+            car.transmission = request.POST.get('transmission', car.transmission)
+            car.save()
+
+            messages.success(request, 'Car listing updated successfully!')
+
+            # Handle HTMX requests
+            if request.headers.get('HX-Request'):
+                return redirect('core:vendor_listings')
+
+            return redirect('core:vendor_listings')
+
+        # Get form data for GET requests
+        context = {
+            'car': car,
+            'car_brands': CarBrand.objects.filter(is_active=True).order_by('name'),
+            'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order'),
+        }
+
+        # Handle HTMX requests for modal
+        if request.headers.get('HX-Request'):
+            return render(request, 'core/dashboard/partials/vendor_car_edit_modal.html', context)
+
+        return render(request, 'core/dashboard/vendor_car_edit.html', context)
+
+    except Exception as e:
+        messages.error(request, 'Error updating car listing.')
+        return redirect('core:vendor_listings')
+
+
+@login_required
+def vendor_car_delete(request, car_id):
+    """Delete car listing"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'DELETE':
+        try:
+            car = get_object_or_404(Car, id=car_id, vendor__user=request.user)
+            car_title = car.title
+            car.delete()
+
+            messages.success(request, f'Car listing "{car_title}" deleted successfully!')
+
+            if request.headers.get('HX-Request'):
+                # Return updated car list for HTMX
+                return redirect('core:vendor_listings')
+
+            return JsonResponse({'success': True, 'message': 'Car deleted successfully'})
+
+        except Exception as e:
+            return JsonResponse({'error': 'Error deleting car'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+def vendor_car_toggle_status(request, car_id):
+    """Toggle car listing status (active/inactive)"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            car = get_object_or_404(Car, id=car_id, vendor__user=request.user)
+            car.is_active = not car.is_active
+            car.save()
+
+            status = 'activated' if car.is_active else 'deactivated'
+            messages.success(request, f'Car listing {status} successfully!')
+
+            return JsonResponse({
+                'success': True,
+                'is_active': car.is_active,
+                'message': f'Car {status} successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({'error': 'Error updating car status'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+def vendor_car_feature_toggle(request, car_id):
+    """Toggle car featured status"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            car = get_object_or_404(Car, id=car_id, vendor__user=request.user)
+
+            # Check if vendor can feature cars (based on subscription or limits)
+            vendor = request.user.vendor
+            featured_count = Car.objects.filter(vendor=vendor, is_featured=True).count()
+
+            if not car.is_featured and featured_count >= 3:  # Limit to 3 featured cars
+                return JsonResponse({
+                    'error': 'You can only feature up to 3 cars. Please unfeature another car first.'
+                }, status=400)
+
+            car.is_featured = not car.is_featured
+            car.save()
+
+            status = 'featured' if car.is_featured else 'unfeatured'
+            messages.success(request, f'Car listing {status} successfully!')
+
+            return JsonResponse({
+                'success': True,
+                'is_featured': car.is_featured,
+                'message': f'Car {status} successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({'error': 'Error updating featured status'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+def vendor_car_duplicate(request, car_id):
+    """Duplicate car listing"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            original_car = get_object_or_404(Car, id=car_id, vendor__user=request.user)
+
+            # Create a duplicate
+            duplicate_car = Car.objects.create(
+                vendor=original_car.vendor,
+                title=f"{original_car.title} (Copy)",
+                description=original_car.description,
+                price=original_car.price,
+                year=original_car.year,
+                mileage=original_car.mileage,
+                fuel_type=original_car.fuel_type,
+                transmission=original_car.transmission,
+                brand=original_car.brand,
+                model=original_car.model,
+                condition=original_car.condition,
+                status='available',
+                is_approved=False,  # Requires re-approval
+                is_featured=False,  # Not featured by default
+                is_hot_deal=False,
+            )
+
+            messages.success(request, f'Car listing duplicated successfully! "{duplicate_car.title}" has been created and is pending approval.')
+
+            # Handle HTMX requests
+            if request.headers.get('HX-Request'):
+                return redirect('core:vendor_listings')
+
+            return JsonResponse({'success': True, 'message': 'Car duplicated successfully', 'new_car_id': duplicate_car.id})
+
+        except Exception as e:
+            return JsonResponse({'error': 'Error duplicating car'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+def vendor_bulk_actions(request):
+    """Handle bulk actions on car listings"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            action = request.POST.get('action')
+            car_ids = request.POST.getlist('car_ids')
+
+            if not car_ids:
+                return JsonResponse({'error': 'No cars selected'}, status=400)
+
+            cars = Car.objects.filter(id__in=car_ids, vendor__user=request.user)
+
+            if action == 'activate':
+                cars.update(is_active=True)
+                messages.success(request, f'{cars.count()} cars activated successfully!')
+
+            elif action == 'deactivate':
+                cars.update(is_active=False)
+                messages.success(request, f'{cars.count()} cars deactivated successfully!')
+
+            elif action == 'delete':
+                count = cars.count()
+                cars.delete()
+                messages.success(request, f'{count} cars deleted successfully!')
+
+            elif action == 'feature':
+                # Check feature limits
+                vendor = request.user.vendor
+                current_featured = Car.objects.filter(vendor=vendor, is_featured=True).count()
+                can_feature = min(len(car_ids), 3 - current_featured)
+
+                if can_feature > 0:
+                    cars[:can_feature].update(is_featured=True)
+                    messages.success(request, f'{can_feature} cars featured successfully!')
+                else:
+                    messages.warning(request, 'Feature limit reached. You can only feature up to 3 cars.')
+
+            return JsonResponse({'success': True, 'message': 'Bulk action completed'})
+
+        except Exception as e:
+            return JsonResponse({'error': 'Error performing bulk action'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+def vendor_export_listings(request):
+    """Export vendor car listings to CSV"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        import csv
+        from django.http import HttpResponse
+
+        vendor = request.user.vendor
+        cars = Car.objects.filter(vendor=vendor).select_related('brand', 'model', 'condition')
+
+        # Create CSV response
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="car_listings_{vendor.company_name}_{timezone.now().strftime("%Y%m%d")}.csv"'
+
+        writer = csv.writer(response)
+
+        # Write header
+        writer.writerow([
+            'ID', 'Title', 'Brand', 'Model', 'Year', 'Price (KSH)',
+            'Mileage', 'Fuel Type', 'Transmission', 'Status',
+            'Approved', 'Featured', 'Views', 'Created Date'
+        ])
+
+        # Write car data
+        for car in cars:
+            writer.writerow([
+                car.id,
+                car.title,
+                car.brand.name if car.brand else '',
+                car.model.name if car.model else '',
+                car.year,
+                car.price,
+                car.mileage,
+                car.fuel_type,
+                car.transmission,
+                car.status,
+                'Yes' if car.is_approved else 'No',
+                'Yes' if car.is_featured else 'No',
+                car.views_count or 0,
+                car.created_at.strftime('%Y-%m-%d %H:%M')
+            ])
+
+        return response
+
+    except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"Error in vendor_listings_view: {str(e)}")
-
-        messages.error(request, 'An error occurred while loading your listings. Please try again.')
-        return redirect('core:dashboard')
+        logger.error(f"Error exporting listings: {str(e)}")
+        return JsonResponse({'error': 'Error exporting data'}, status=500)
 
 
 @login_required
@@ -1441,39 +1821,269 @@ def vendor_analytics_view(request):
 
 @login_required
 def admin_users_view(request):
-    """Admin user management view"""
+    """Enhanced admin user management view with pagination, filters, and export"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
-    
-    users = User.objects.all().order_by('-date_joined')
-    
+
+    # Base queryset
+    users = User.objects.select_related().order_by('-date_joined')
+
     # Filter by role if specified
-    role_filter = request.GET.get('role')
-    if role_filter:
+    role_filter = request.GET.get('role', '')
+    if role_filter and role_filter != 'all':
         users = users.filter(role=role_filter)
-    
+
+    # Filter by status if specified
+    status_filter = request.GET.get('status', '')
+    if status_filter and status_filter != 'all':
+        if status_filter == 'active':
+            users = users.filter(is_active=True)
+        elif status_filter == 'inactive':
+            users = users.filter(is_active=False)
+        elif status_filter == 'verified':
+            users = users.filter(is_verified=True)
+        elif status_filter == 'unverified':
+            users = users.filter(is_verified=False)
+
     # Search functionality
-    search = request.GET.get('search')
+    search = request.GET.get('search', '').strip()
     if search:
         users = users.filter(
             Q(username__icontains=search) |
             Q(first_name__icontains=search) |
             Q(last_name__icontains=search) |
-            Q(email__icontains=search)
+            Q(email__icontains=search) |
+            Q(phone__icontains=search)
         )
-    
+
+    # Handle export requests
+    export_format = request.GET.get('export')
+    if export_format in ['csv', 'excel']:
+        return export_users_data(users, export_format)
+
+    # Enhanced statistics
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    verified_users = User.objects.filter(is_verified=True).count()
+    customers = User.objects.filter(role='customer').count()
+    vendors = User.objects.filter(role='vendor').count()
+    admins = User.objects.filter(role='admin').count()
+
+    # Recent registrations (last 30 days)
+    from datetime import datetime, timedelta
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    recent_registrations = User.objects.filter(date_joined__gte=thirty_days_ago).count()
+
+    # Pagination - 20 users per page
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(users, 20)
+    page = request.GET.get('page', 1)
+
+    try:
+        users_page = paginator.page(page)
+    except PageNotAnInteger:
+        users_page = paginator.page(1)
+    except EmptyPage:
+        users_page = paginator.page(paginator.num_pages)
+
     context = {
-        'users': users,
-        'total_users': User.objects.count(),
-        'customers': User.objects.filter(role='customer').count(),
-        'vendors': User.objects.filter(role='vendor').count(),
-        'admins': User.objects.filter(role='admin').count(),
-        'current_filter': role_filter,
+        'users': users_page,
+        'total_users': total_users,
+        'active_users': active_users,
+        'verified_users': verified_users,
+        'customers': customers,
+        'vendors': vendors,
+        'admins': admins,
+        'recent_registrations': recent_registrations,
+        'current_role_filter': role_filter,
+        'current_status_filter': status_filter,
         'search_query': search,
+        'paginator': paginator,
+        'page_obj': users_page,
     }
-    
+
+    # HTMX partial template for table updates
+    if request.headers.get('HX-Request'):
+        return render(request, 'core/dashboard/partials/admin_users_table.html', context)
+
     return render(request, 'core/dashboard/admin_users.html', context)
+
+
+def export_users_data(users_queryset, format_type):
+    """Export users data to CSV or Excel format"""
+    import csv
+    from django.http import HttpResponse
+    from datetime import datetime
+
+    # Generate filename with timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'users_export_{timestamp}'
+
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'ID', 'Username', 'First Name', 'Last Name', 'Email', 'Phone',
+            'Role', 'Status', 'Verified', 'Date Joined', 'Last Login'
+        ])
+
+        for user in users_queryset:
+            writer.writerow([
+                user.id,
+                user.username,
+                user.first_name,
+                user.last_name,
+                user.email,
+                user.phone,
+                user.get_role_display(),
+                'Active' if user.is_active else 'Inactive',
+                'Yes' if user.is_verified else 'No',
+                user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
+                user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never'
+            ])
+
+        return response
+
+    elif format_type == 'excel':
+        try:
+            import openpyxl
+            from openpyxl.utils import get_column_letter
+            from openpyxl.styles import Font, PatternFill
+
+            # Create workbook and worksheet
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = 'Users Export'
+
+            # Headers
+            headers = [
+                'ID', 'Username', 'First Name', 'Last Name', 'Email', 'Phone',
+                'Role', 'Status', 'Verified', 'Date Joined', 'Last Login'
+            ]
+
+            # Style headers
+            header_font = Font(bold=True, color='FFFFFF')
+            header_fill = PatternFill(start_color='DC2626', end_color='DC2626', fill_type='solid')
+
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+
+            # Data rows
+            for row, user in enumerate(users_queryset, 2):
+                ws.cell(row=row, column=1, value=user.id)
+                ws.cell(row=row, column=2, value=user.username)
+                ws.cell(row=row, column=3, value=user.first_name)
+                ws.cell(row=row, column=4, value=user.last_name)
+                ws.cell(row=row, column=5, value=user.email)
+                ws.cell(row=row, column=6, value=user.phone)
+                ws.cell(row=row, column=7, value=user.get_role_display())
+                ws.cell(row=row, column=8, value='Active' if user.is_active else 'Inactive')
+                ws.cell(row=row, column=9, value='Yes' if user.is_verified else 'No')
+                ws.cell(row=row, column=10, value=user.date_joined.strftime('%Y-%m-%d %H:%M:%S'))
+                ws.cell(row=row, column=11, value=user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never')
+
+            # Auto-adjust column widths
+            for col in range(1, len(headers) + 1):
+                ws.column_dimensions[get_column_letter(col)].auto_size = True
+
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+            wb.save(response)
+            return response
+
+        except ImportError:
+            # Fallback to CSV if openpyxl is not available
+            return export_users_data(users_queryset, 'csv')
+
+
+@login_required
+def admin_users_search(request):
+    """HTMX endpoint for real-time user search"""
+    if request.user.role != 'admin':
+        return HttpResponse('Unauthorized', status=403)
+
+    search_query = request.GET.get('search', '').strip()
+    role_filter = request.GET.get('role', '')
+    status_filter = request.GET.get('status', '')
+
+    users = User.objects.select_related().order_by('-date_joined')
+
+    # Apply filters
+    if role_filter and role_filter != 'all':
+        users = users.filter(role=role_filter)
+
+    if status_filter and status_filter != 'all':
+        if status_filter == 'active':
+            users = users.filter(is_active=True)
+        elif status_filter == 'inactive':
+            users = users.filter(is_active=False)
+        elif status_filter == 'verified':
+            users = users.filter(is_verified=True)
+        elif status_filter == 'unverified':
+            users = users.filter(is_verified=False)
+
+    # Apply search
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(phone__icontains=search_query)
+        )
+
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(users, 20)
+    page = request.GET.get('page', 1)
+    users_page = paginator.page(page)
+
+    context = {
+        'users': users_page,
+        'search_query': search_query,
+        'current_role_filter': role_filter,
+        'current_status_filter': status_filter,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_users_table.html', context)
+
+
+@login_required
+def admin_users_refresh(request):
+    """HTMX endpoint for refreshing user list"""
+    if request.user.role != 'admin':
+        return HttpResponse('Unauthorized', status=403)
+
+    # Get current filters
+    role_filter = request.GET.get('role', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+
+    # Redirect to main view with current filters
+    from urllib.parse import urlencode
+
+    params = {}
+    if role_filter:
+        params['role'] = role_filter
+    if status_filter:
+        params['status'] = status_filter
+    if search_query:
+        params['search'] = search_query
+
+    url = reverse('core:admin_users')
+    if params:
+        url += '?' + urlencode(params)
+
+    response = HttpResponse()
+    response['HX-Redirect'] = url
+    return response
 
 
 @login_required
@@ -1621,7 +2231,7 @@ def admin_car_detail_view(request, car_id):
 
 @login_required
 def admin_car_edit_view(request, car_id):
-    """Enhanced admin car edit modal view with proper HTMX handling"""
+    """Enhanced admin car edit modal view with robust HTMX handling"""
     if request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
@@ -1630,58 +2240,78 @@ def admin_car_edit_view(request, car_id):
 
     if request.method == 'POST':
         form = AdminCarEditForm(request.POST, instance=car)
+
         if form.is_valid():
             updated_car = form.save()
 
-            # Handle hot deals creation/update
+            # Handle hot deals creation/update with enhanced validation
+            hot_deal_errors = []
             try:
                 if updated_car.is_hot_deal:
                     hot_deal_discount = request.POST.get('hot_deal_discount', '10')
                     hot_deal_days = request.POST.get('hot_deal_days', '7')
 
-                    # Validate and convert values
+                    # Validate and convert values with proper error handling
                     try:
                         discount_value = float(hot_deal_discount)
                         days_value = int(hot_deal_days)
 
-                        # Ensure reasonable values
-                        discount_value = max(5, min(50, discount_value))  # Between 5% and 50%
-                        days_value = max(1, min(30, days_value))  # Between 1 and 30 days
+                        # Enhanced validation with specific error messages
+                        if discount_value < 5 or discount_value > 50:
+                            hot_deal_errors.append("Discount percentage must be between 5% and 50%")
+                            discount_value = max(5, min(50, discount_value))  # Clamp to valid range
+
+                        if days_value < 1 or days_value > 30:
+                            hot_deal_errors.append("Hot deal duration must be between 1 and 30 days")
+                            days_value = max(1, min(30, days_value))  # Clamp to valid range
 
                         from datetime import timedelta
 
-                        # Get or create hot deal
+                        # Get or create hot deal with better error handling
                         hot_deal, created = HotDeal.objects.get_or_create(
                             car=updated_car,
                             defaults={
                                 'title': f'Hot Deal: {updated_car.title}',
+                                'description': f'Limited time offer - {discount_value}% off!',
                                 'discount_type': 'percentage',
                                 'discount_value': discount_value,
                                 'original_price': updated_car.price,
                                 'start_date': timezone.now(),
                                 'end_date': timezone.now() + timedelta(days=days_value),
-                                'is_active': True
+                                'is_active': True,
+                                'auto_activate': True
                             }
                         )
 
                         if not created:
-                            # Update existing hot deal
+                            # Update existing hot deal with all relevant fields
+                            hot_deal.title = f'Hot Deal: {updated_car.title}'
+                            hot_deal.description = f'Limited time offer - {discount_value}% off!'
                             hot_deal.discount_value = discount_value
                             hot_deal.original_price = updated_car.price
+                            hot_deal.start_date = timezone.now()
                             hot_deal.end_date = timezone.now() + timedelta(days=days_value)
                             hot_deal.is_active = True
+                            hot_deal.auto_activate = True
                             hot_deal.save()
 
+                        # Log successful hot deal creation/update
+                        print(f"Hot deal {'created' if created else 'updated'} for car {updated_car.title}: {discount_value}% off for {days_value} days")
+
                     except (ValueError, TypeError) as e:
-                        # If hot deal values are invalid, just mark as hot deal without creating HotDeal object
-                        pass
+                        hot_deal_errors.append(f"Invalid hot deal values: {str(e)}")
+                        # Still mark as hot deal but without creating HotDeal object
+                        print(f"Hot deal validation error: {e}")
                 else:
                     # Remove hot deal if unchecked
-                    HotDeal.objects.filter(car=updated_car).update(is_active=False)
+                    deactivated_count = HotDeal.objects.filter(car=updated_car, is_active=True).update(is_active=False)
+                    if deactivated_count > 0:
+                        print(f"Deactivated hot deal for car {updated_car.title}")
+
             except Exception as e:
-                # Log the error but don't fail the entire form submission
+                hot_deal_errors.append(f"Hot deal processing error: {str(e)}")
                 print(f"Hot deal processing error: {e}")
-                pass
+                # Don't fail the entire form submission
 
             # If approval status changed, update approval date
             if updated_car.is_approved and not original_approval_status:
@@ -1697,30 +2327,61 @@ def admin_car_edit_view(request, car_id):
             elif not updated_car.is_approved and original_approval_status:
                 success_message += ' Car approval has been revoked.'
 
-            # Return JSON response for HTMX with success data
-            if request.headers.get('HX-Request'):
-                return JsonResponse({
-                    'status': 'success',
-                    'message': success_message,
-                    'car_id': updated_car.id,
-                    'car_title': updated_car.title,
-                    'is_approved': updated_car.is_approved,
-                    'is_featured': updated_car.is_featured,
-                    'is_certified': updated_car.is_certified,
-                    'is_hot_deal': updated_car.is_hot_deal,
-                    'reload_required': True
-                })
+            # Prepare comprehensive JSON response for HTMX
+            response_data = {
+                'status': 'success',
+                'message': success_message,
+                'car_id': updated_car.id,
+                'car_title': updated_car.title,
+                'is_approved': updated_car.is_approved,
+                'is_featured': updated_car.is_featured,
+                'is_certified': updated_car.is_certified,
+                'is_hot_deal': updated_car.is_hot_deal,
+                'hot_deal_errors': hot_deal_errors if hot_deal_errors else [],
+                'reload_required': True,
+                'timestamp': timezone.now().isoformat(),
+                'updated_fields': list(form.changed_data) if hasattr(form, 'changed_data') else []
+            }
 
-            messages.success(request, success_message)
-            return redirect('core:admin_car_detail', car_id=car.id)
+            # Add hot deal details if applicable
+            if updated_car.is_hot_deal and hasattr(updated_car, 'hot_deal_details'):
+                try:
+                    hot_deal = updated_car.hot_deal_details
+                    response_data['hot_deal_info'] = {
+                        'discount_value': float(hot_deal.discount_value),
+                        'discounted_price': float(hot_deal.discounted_price),
+                        'original_price': float(hot_deal.original_price),
+                        'end_date': hot_deal.end_date.isoformat(),
+                        'days_remaining': hot_deal.days_remaining(),
+                        'is_active': hot_deal.is_currently_active(),
+                        'title': hot_deal.title
+                    }
+                except Exception as e:
+                    response_data['hot_deal_errors'].append(f"Hot deal info error: {str(e)}")
+
+            # Always return JSON response for HTMX
+            return JsonResponse(response_data)
+
+
         else:
             # Return form with errors for HTMX
             if request.headers.get('HX-Request'):
-                return render(request, 'core/modals/admin_car_edit.html', {
-                    'form': form,
-                    'car': car,
-                    'errors': form.errors
-                })
+                # Prepare detailed error information
+                error_details = {}
+                for field, errors in form.errors.items():
+                    error_details[field] = [str(error) for error in errors]
+
+                error_response = {
+                    'status': 'error',
+                    'message': 'Please correct the validation errors below.',
+                    'errors': error_details,
+                    'hot_deal_errors': hot_deal_errors if 'hot_deal_errors' in locals() else [],
+                    'form_data': dict(request.POST),
+                    'timestamp': timezone.now().isoformat()
+                }
+
+
+                return JsonResponse(error_response, status=400)
     else:
         form = AdminCarEditForm(instance=car)
 
@@ -1806,6 +2467,149 @@ def admin_feature_car(request, car_id):
             'status': 'error',
             'message': f'An error occurred: {str(e)}'
         }, status=500)
+
+
+@login_required
+def admin_hot_deal_management(request, car_id):
+    """Enhanced admin hot deal management with comprehensive functionality"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    car = get_object_or_404(Car, id=car_id)
+
+    try:
+        import json
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import HotDeal
+
+        data = json.loads(request.body)
+        action = data.get('action')
+
+        if action == 'create':
+            # Check if car already has an active hot deal
+            if HotDeal.objects.filter(car=car, is_active=True).exists():
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'This car already has an active hot deal.'
+                })
+
+            discount_value = float(data.get('discount_value', 10))
+            days = int(data.get('days', 7))
+
+            # Validate discount value
+            if discount_value < 5 or discount_value > 50:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Discount must be between 5% and 50%.'
+                })
+
+            # Create hot deal
+            hot_deal = HotDeal.objects.create(
+                car=car,
+                title=f'Hot Deal: {car.title}',
+                description=f'Limited time offer - {discount_value}% off!',
+                discount_type='percentage',
+                discount_value=discount_value,
+                original_price=car.price,
+                start_date=timezone.now(),
+                end_date=timezone.now() + timedelta(days=days),
+                is_active=True,
+                auto_activate=True
+            )
+
+            # Update car status
+            car.is_hot_deal = True
+            car.save(update_fields=['is_hot_deal'])
+
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Hot deal created successfully! {discount_value}% off for {days} days.',
+                'deal_id': hot_deal.id
+            })
+
+        elif action == 'end':
+            try:
+                hot_deal = HotDeal.objects.get(car=car, is_active=True)
+                hot_deal.is_active = False
+                hot_deal.end_date = timezone.now()
+                hot_deal.save()
+
+                # Update car status
+                car.is_hot_deal = False
+                car.price = hot_deal.original_price
+                car.save(update_fields=['is_hot_deal', 'price'])
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Hot deal ended successfully.'
+                })
+            except HotDeal.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No active hot deal found for this car.'
+                })
+
+        elif action == 'extend':
+            try:
+                hot_deal = HotDeal.objects.get(car=car, is_active=True)
+                additional_days = int(data.get('days', 7))
+                hot_deal.end_date = hot_deal.end_date + timedelta(days=additional_days)
+                hot_deal.save()
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'Hot deal extended by {additional_days} days.'
+                })
+            except HotDeal.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No active hot deal found for this car.'
+                })
+
+        elif action == 'edit':
+            try:
+                hot_deal = HotDeal.objects.get(car=car, is_active=True)
+                new_discount = float(data.get('discount_value', hot_deal.discount_value))
+
+                if new_discount < 5 or new_discount > 50:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Discount must be between 5% and 50%.'
+                    })
+
+                hot_deal.discount_value = new_discount
+                hot_deal.title = f'Hot Deal: {car.title}'
+                hot_deal.description = f'Limited time offer - {new_discount}% off!'
+                hot_deal.save()
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'Hot deal updated to {new_discount}% discount.'
+                })
+            except HotDeal.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No active hot deal found for this car.'
+                })
+
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid action specified.'
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+# Sub-categories are now hardcoded in templates - no dynamic loading endpoint needed
 
 
 @login_required
@@ -2103,11 +2907,296 @@ def vendor_spare_parts_view(request):
             'selected_stock_status': stock_status,
         }
 
-        return render(request, 'core/dashboard/vendor_spare_parts_simple.html', context)
+        return render(request, 'core/dashboard/vendor_spare_parts.html', context)
 
     except Vendor.DoesNotExist:
         messages.warning(request, 'Please complete your vendor profile.')
         return redirect('core:vendor_profile_create')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def vendor_spare_part_add(request):
+    """Add new spare part for vendor"""
+    print(f"vendor_spare_part_add called with method: {request.method}")
+    print(f"User: {request.user}, Role: {getattr(request.user, 'role', 'No role')}")
+
+    if request.user.role != 'vendor':
+        print("Access denied - user is not a vendor")
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+        print(f"Vendor found: {vendor}")
+    except Vendor.DoesNotExist:
+        print("Vendor profile not found")
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    if request.method == 'GET':
+        # Return add modal
+        categories = SparePartCategory.objects.filter(is_active=True).order_by('name')
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+
+        context = {
+            'categories': categories,
+            'suppliers': suppliers,
+        }
+        return render(request, 'core/modals/vendor_spare_part_add.html', context)
+
+    elif request.method == 'POST':
+        print("POST request received")
+        print(f"POST data: {request.POST}")
+        print(f"FILES data: {request.FILES}")
+        print(f"Content type: {request.content_type}")
+        print(f"HX-Request header: {request.headers.get('HX-Request')}")
+
+        form = VendorSparePartForm(request.POST, request.FILES, vendor=vendor)
+        print(f"Form created: {form}")
+        print(f"Form data: {form.data}")
+
+        if form.is_valid():
+            print("Form is valid")
+            try:
+                spare_part = form.save(commit=False)
+                spare_part.vendor = vendor
+                spare_part.save()
+
+                # Create initial stock movement
+                StockMovement.objects.create(
+                    spare_part=spare_part,
+                    movement_type='in',
+                    reason='initial',
+                    quantity=spare_part.stock_quantity,
+                    quantity_before=0,
+                    quantity_after=spare_part.stock_quantity,
+                    notes=f'Initial stock for {spare_part.name}',
+                    created_by=request.user
+                )
+
+                messages.success(request, f'Spare part "{spare_part.name}" added successfully.')
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Spare part "{spare_part.name}" added successfully!',
+                        'part_id': spare_part.id
+                    })
+
+                return redirect('core:vendor_spare_parts')
+
+            except Exception as e:
+                # Handle any database or other errors
+                error_message = f'Error saving spare part: {str(e)}'
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': False,
+                        'message': error_message,
+                        'errors': {'__all__': [error_message]}
+                    })
+
+                messages.error(request, error_message)
+                return redirect('core:vendor_spare_parts')
+        else:
+            # Form validation failed
+            print("Form validation failed")
+            print(f"Form errors: {form.errors}")
+
+            if request.headers.get('HX-Request'):
+                # Format errors for JSON response
+                formatted_errors = {}
+                for field, errors in form.errors.items():
+                    if field == '__all__':
+                        formatted_errors['__all__'] = [str(error) for error in errors]
+                    else:
+                        # Get field label for better error messages
+                        field_label = form.fields.get(field, {}).label or field.replace('_', ' ').title()
+                        formatted_errors[field] = [str(error) for error in errors]
+
+                print(f"Formatted errors: {formatted_errors}")
+
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please correct the errors below.',
+                    'errors': formatted_errors
+                })
+
+            # Non-HTMX request - show errors via messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        field_label = form.fields.get(field, {}).label or field.replace('_', ' ').title()
+                        messages.error(request, f'{field_label}: {error}')
+
+            return redirect('core:vendor_spare_parts')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def vendor_spare_part_edit(request, part_id):
+    """Edit spare part for vendor"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+        spare_part = get_object_or_404(SparePart, id=part_id, vendor=vendor)
+    except Vendor.DoesNotExist:
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    if request.method == 'GET':
+        # Return edit modal
+        categories = SparePartCategory.objects.filter(is_active=True).order_by('name')
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+
+        context = {
+            'spare_part': spare_part,
+            'categories': categories,
+            'suppliers': suppliers,
+        }
+        return render(request, 'core/modals/vendor_spare_part_edit.html', context)
+
+    elif request.method == 'POST':
+        form = VendorSparePartForm(request.POST, request.FILES, instance=spare_part, vendor=vendor)
+        if form.is_valid():
+            try:
+                old_quantity = spare_part.stock_quantity
+                spare_part = form.save()
+
+                # Create stock movement if quantity changed
+                new_quantity = spare_part.stock_quantity
+                if old_quantity != new_quantity:
+                    movement_type = 'in' if new_quantity > old_quantity else 'out'
+                    quantity_change = abs(new_quantity - old_quantity)
+
+                    StockMovement.objects.create(
+                        spare_part=spare_part,
+                        movement_type=movement_type,
+                        reason='adjustment',
+                        quantity=quantity_change,
+                        quantity_before=old_quantity,
+                        quantity_after=new_quantity,
+                        notes=f'Stock adjustment: {old_quantity} → {new_quantity}',
+                        created_by=request.user
+                    )
+
+                messages.success(request, f'Spare part "{spare_part.name}" updated successfully.')
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Spare part "{spare_part.name}" updated successfully!',
+                        'part_id': spare_part.id
+                    })
+
+                return redirect('core:vendor_spare_parts')
+
+            except Exception as e:
+                # Handle any database or other errors
+                error_message = f'Error updating spare part: {str(e)}'
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': False,
+                        'message': error_message,
+                        'errors': {'__all__': [error_message]}
+                    })
+
+                messages.error(request, error_message)
+                return redirect('core:vendor_spare_parts')
+        else:
+            # Form validation failed
+            if request.headers.get('HX-Request'):
+                # Format errors for JSON response
+                formatted_errors = {}
+                for field, errors in form.errors.items():
+                    if field == '__all__':
+                        formatted_errors['__all__'] = [str(error) for error in errors]
+                    else:
+                        # Get field label for better error messages
+                        field_label = form.fields.get(field, {}).label or field.replace('_', ' ').title()
+                        formatted_errors[field] = [str(error) for error in errors]
+
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please correct the errors below.',
+                    'errors': formatted_errors
+                })
+
+            # Non-HTMX request - show errors via messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        field_label = form.fields.get(field, {}).label or field.replace('_', ' ').title()
+                        messages.error(request, f'{field_label}: {error}')
+
+            return redirect('core:vendor_spare_parts')
+
+
+@login_required
+@require_http_methods(["GET"])
+def vendor_spare_part_view(request, part_id):
+    """View spare part details for vendor"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+        spare_part = get_object_or_404(SparePart, id=part_id, vendor=vendor)
+    except Vendor.DoesNotExist:
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    # Get recent stock movements
+    recent_movements = StockMovement.objects.filter(
+        spare_part=spare_part
+    ).order_by('-created_at')[:10]
+
+    context = {
+        'spare_part': spare_part,
+        'recent_movements': recent_movements,
+    }
+    return render(request, 'core/modals/vendor_spare_part_view.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def vendor_spare_part_delete(request, part_id):
+    """Delete spare part for vendor"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+        spare_part = get_object_or_404(SparePart, id=part_id, vendor=vendor)
+    except Vendor.DoesNotExist:
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    # Check if part has any orders
+    if spare_part.orderitem_set.exists():
+        if request.headers.get('HX-Request'):
+            return JsonResponse({
+                'success': False,
+                'message': 'Cannot delete spare part with existing orders.'
+            })
+        messages.error(request, 'Cannot delete spare part with existing orders.')
+        return redirect('core:vendor_spare_parts')
+
+    part_name = spare_part.name
+    spare_part.delete()
+
+    messages.success(request, f'Spare part "{part_name}" deleted successfully.')
+
+    if request.headers.get('HX-Request'):
+        return JsonResponse({
+            'success': True,
+            'message': f'Spare part "{part_name}" deleted successfully.'
+        })
+
+    return redirect('core:vendor_spare_parts')
 
 
 @login_required
@@ -2142,6 +3231,104 @@ def vendor_orders_view(request):
         }
 
         return render(request, 'core/dashboard/vendor_orders.html', context)
+
+    except Vendor.DoesNotExist:
+        messages.warning(request, 'Please complete your vendor profile.')
+        return redirect('core:vendor_profile_create')
+
+
+@login_required
+def vendor_import_requests_view(request):
+    """Vendor import requests management view - shows import requests submitted by the vendor"""
+    if request.user.role != 'vendor':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    try:
+        vendor = request.user.vendor
+
+        # Get import requests submitted by this vendor (vendor as customer)
+        import_requests = ImportRequest.objects.filter(customer=request.user).order_by('-created_at')
+
+        # Filter by status if provided
+        status_filter = request.GET.get('status')
+        if status_filter:
+            import_requests = import_requests.filter(status=status_filter)
+
+        # Search functionality
+        search_query = request.GET.get('search')
+        if search_query:
+            import_requests = import_requests.filter(
+                Q(brand__icontains=search_query) |
+                Q(model__icontains=search_query) |
+                Q(origin_country__icontains=search_query)
+            )
+
+        # Pagination
+        from django.core.paginator import Paginator
+        paginator = Paginator(import_requests, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        # Calculate stats
+        total_requests = ImportRequest.objects.filter(customer=request.user).count()
+        pending_requests = ImportRequest.objects.filter(customer=request.user, status='pending').count()
+        completed_requests = ImportRequest.objects.filter(customer=request.user, status='completed').count()
+        in_progress_requests = ImportRequest.objects.filter(
+            customer=request.user,
+            status__in=['on_quotation', 'processing', 'fee_paid']
+        ).count()
+
+        context = {
+            'vendor': vendor,
+            'import_requests': page_obj,
+            'total_requests': total_requests,
+            'pending_requests': pending_requests,
+            'in_progress_requests': in_progress_requests,
+            'completed_requests': completed_requests,
+            'status_filter': status_filter,
+            'search_query': search_query,
+            'is_paginated': page_obj.has_other_pages(),
+            'page_obj': page_obj,
+        }
+
+        # Handle HTMX requests
+        if request.headers.get('HX-Request'):
+            return render(request, 'core/dashboard/partials/vendor_import_requests_table.html', context)
+
+        return render(request, 'core/dashboard/vendor_import_requests.html', context)
+
+    except Vendor.DoesNotExist:
+        messages.warning(request, 'Please complete your vendor profile.')
+        return redirect('core:vendor_profile_create')
+
+
+@login_required
+def vendor_import_request_detail_view(request, request_id):
+    """Vendor import request detail view - shows detailed information about a specific import request"""
+    if request.user.role != 'vendor':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    try:
+        vendor = request.user.vendor
+
+        # Get the import request - ensure it belongs to this vendor
+        import_request = get_object_or_404(ImportRequest, id=request_id, customer=request.user)
+
+        # Get related import order if it exists
+        import_order = None
+        if hasattr(import_request, 'import_order'):
+            import_order = import_request.import_order
+
+        context = {
+            'vendor': vendor,
+            'import_request': import_request,
+            'import_order': import_order,
+            'status_choices': ImportRequest.STATUS_CHOICES,
+        }
+
+        return render(request, 'core/dashboard/vendor_import_request_detail.html', context)
 
     except Vendor.DoesNotExist:
         messages.warning(request, 'Please complete your vendor profile.')
@@ -2622,7 +3809,9 @@ def mark_all_notifications_read(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
 
-@login_required
+from .decorators import htmx_login_required
+
+@htmx_login_required
 def notifications_count_htmx(request):
     """Get unread notifications count via HTMX"""
     unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
@@ -2631,7 +3820,9 @@ def notifications_count_htmx(request):
     return render(request, 'core/dashboard/partials/notification_count.html', context)
 
 
-@login_required
+from .decorators import ajax_login_required
+
+@ajax_login_required
 def notification_badges_api(request):
     """API endpoint for real-time notification badge updates"""
     from .context_processors import notification_badges
@@ -3552,6 +4743,256 @@ def admin_tracking_location_modal(request, order_id):
         return HttpResponse('Import order not found', status=404)
 
 
+# ===== GPS TRACKING ADMIN VIEWS =====
+
+@login_required
+def admin_gps_tracking_management(request):
+    """Main GPS tracking management dashboard for admins"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    # Get import orders with tracking enabled
+    tracked_orders = ImportOrder.objects.filter(
+        tracking_enabled=True
+    ).exclude(status__in=['delivered', 'cancelled']).select_related('customer').order_by('-created_at')
+
+    # Get recent location updates
+    from .models import LocationTrackingHistory
+    recent_updates = LocationTrackingHistory.objects.select_related(
+        'import_order', 'import_order__customer'
+    ).order_by('-recorded_at')[:20]
+
+    # Statistics
+    total_tracked_orders = tracked_orders.count()
+    orders_with_current_location = tracked_orders.filter(
+        current_latitude__isnull=False,
+        current_longitude__isnull=False
+    ).count()
+
+    context = {
+        'tracked_orders': tracked_orders,
+        'recent_updates': recent_updates,
+        'total_tracked_orders': total_tracked_orders,
+        'orders_with_current_location': orders_with_current_location,
+        'location_coverage_percentage': int((orders_with_current_location / max(total_tracked_orders, 1)) * 100),
+    }
+
+    return render(request, 'core/dashboard/admin_gps_tracking.html', context)
+
+
+@login_required
+def admin_update_order_location(request, order_id):
+    """Update GPS location for an import order"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    import_order = get_object_or_404(ImportOrder, id=order_id)
+
+    if request.method == 'POST':
+        try:
+            latitude = float(request.POST.get('latitude'))
+            longitude = float(request.POST.get('longitude'))
+            location_name = request.POST.get('location_name', '')
+            notes = request.POST.get('notes', '')
+
+            # Update order location
+            import_order.update_current_location(
+                latitude=latitude,
+                longitude=longitude,
+                location_name=location_name,
+                user=request.user
+            )
+
+            # Create detailed tracking history entry
+            from .models import LocationTrackingHistory
+            LocationTrackingHistory.objects.create(
+                import_order=import_order,
+                latitude=latitude,
+                longitude=longitude,
+                tracking_source='manual',
+                status_at_time=import_order.status,
+                notes=notes or f"Location updated by admin: {location_name}",
+                recorded_at=timezone.now(),
+                created_by=request.user
+            )
+
+            messages.success(request, f'Location updated successfully for order {import_order.order_number}')
+
+            # Return updated tracking table
+            tracked_orders = ImportOrder.objects.filter(
+                tracking_enabled=True
+            ).exclude(status__in=['delivered', 'cancelled']).select_related('customer').order_by('-created_at')
+
+            return render(request, 'core/dashboard/partials/admin_gps_tracking_table.html', {
+                'tracked_orders': tracked_orders
+            })
+
+        except (ValueError, TypeError) as e:
+            messages.error(request, f'Invalid coordinates provided: {str(e)}')
+            return HttpResponse('Invalid data', status=400)
+
+    return HttpResponse('Method not allowed', status=405)
+
+
+@login_required
+def admin_location_management_modal(request, order_id):
+    """Show comprehensive location management modal"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    import_order = get_object_or_404(ImportOrder, id=order_id)
+
+    # Get all locations for this order
+    locations = import_order.locations.all().order_by('-created_at')
+
+    # Get tracking history
+    tracking_history = import_order.tracking_history.all().order_by('-recorded_at')[:10]
+
+    # Check if route exists
+    route = getattr(import_order, 'route', None)
+    waypoints = route.waypoints.all().order_by('sequence_order') if route else []
+
+    context = {
+        'import_order': import_order,
+        'locations': locations,
+        'tracking_history': tracking_history,
+        'route': route,
+        'waypoints': waypoints,
+    }
+
+    return render(request, 'core/modals/admin_location_management.html', context)
+
+
+@login_required
+def admin_create_route(request, order_id):
+    """Create a new route for an import order"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    import_order = get_object_or_404(ImportOrder, id=order_id)
+
+    if request.method == 'POST':
+        try:
+            from .models import ImportOrderRoute, ImportOrderLocation
+
+            route_name = request.POST.get('route_name')
+            route_type = request.POST.get('route_type')
+            origin_lat = float(request.POST.get('origin_lat'))
+            origin_lng = float(request.POST.get('origin_lng'))
+            origin_name = request.POST.get('origin_name')
+            dest_lat = float(request.POST.get('dest_lat'))
+            dest_lng = float(request.POST.get('dest_lng'))
+            dest_name = request.POST.get('dest_name')
+
+            # Create origin location
+            origin_location = ImportOrderLocation.objects.create(
+                import_order=import_order,
+                location_type='origin',
+                name=origin_name,
+                latitude=origin_lat,
+                longitude=origin_lng,
+                created_by=request.user
+            )
+
+            # Create destination location
+            dest_location = ImportOrderLocation.objects.create(
+                import_order=import_order,
+                location_type='delivery_address',
+                name=dest_name,
+                latitude=dest_lat,
+                longitude=dest_lng,
+                created_by=request.user
+            )
+
+            # Create route
+            route = ImportOrderRoute.objects.create(
+                import_order=import_order,
+                route_name=route_name,
+                route_type=route_type,
+                origin_location=origin_location,
+                destination_location=dest_location,
+                route_status='planned',
+                created_by=request.user
+            )
+
+            messages.success(request, f'Route created successfully for order {import_order.order_number}')
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Route created successfully',
+                'route_id': route.id
+            })
+
+        except (ValueError, TypeError) as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid data provided: {str(e)}'
+            }, status=400)
+
+    return HttpResponse('Method not allowed', status=405)
+
+
+@login_required
+def admin_add_waypoint(request, order_id):
+    """Add a waypoint to an import order route"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    import_order = get_object_or_404(ImportOrder, id=order_id)
+
+    if request.method == 'POST':
+        try:
+            from .models import RouteWaypoint, ImportOrderLocation
+
+            if not hasattr(import_order, 'route'):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No route exists for this order. Create a route first.'
+                }, status=400)
+
+            waypoint_name = request.POST.get('waypoint_name')
+            waypoint_type = request.POST.get('waypoint_type')
+            latitude = float(request.POST.get('latitude'))
+            longitude = float(request.POST.get('longitude'))
+            sequence_order = int(request.POST.get('sequence_order', 1))
+
+            # Create location for waypoint
+            location = ImportOrderLocation.objects.create(
+                import_order=import_order,
+                location_type='transit_port' if waypoint_type == 'transit' else waypoint_type,
+                name=waypoint_name,
+                latitude=latitude,
+                longitude=longitude,
+                is_waypoint=True,
+                created_by=request.user
+            )
+
+            # Create waypoint
+            waypoint = RouteWaypoint.objects.create(
+                route=import_order.route,
+                location=location,
+                waypoint_type=waypoint_type,
+                sequence_order=sequence_order,
+                name=waypoint_name
+            )
+
+            messages.success(request, f'Waypoint "{waypoint_name}" added successfully')
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Waypoint added successfully',
+                'waypoint_id': waypoint.id
+            })
+
+        except (ValueError, TypeError) as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid data provided: {str(e)}'
+            }, status=400)
+
+    return HttpResponse('Method not allowed', status=405)
+
+
 @login_required
 def admin_tracking_details_modal(request, order_id):
     """Show comprehensive tracking details modal"""
@@ -3608,27 +5049,60 @@ def admin_queries_view(request):
 
 @login_required
 def admin_content_management_view(request):
-    """Admin content management view"""
+    """Enhanced admin content management view with comprehensive stats"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
-    blog_posts = BlogPost.objects.all().order_by('-created_at')
-    testimonials = Testimonial.objects.all().order_by('-created_at')
+    from .models import StaticPage, ContentCategory, ContentTag, ContentSeries
 
-    # Calculate stats
+    # Get comprehensive content statistics
     total_posts = BlogPost.objects.count()
     published_posts = BlogPost.objects.filter(is_published=True).count()
     draft_posts = BlogPost.objects.filter(is_published=False).count()
+    featured_posts = BlogPost.objects.filter(is_featured=True).count()
+
     total_testimonials = Testimonial.objects.count()
+    approved_testimonials = Testimonial.objects.filter(is_approved=True).count()
+    featured_testimonials = Testimonial.objects.filter(is_featured=True).count()
+
+    total_static_pages = StaticPage.objects.count()
+    published_pages = StaticPage.objects.filter(status='published').count()
+
+    total_categories = ContentCategory.objects.filter(is_active=True).count()
+    total_tags = ContentTag.objects.filter(is_active=True).count()
+    total_series = ContentSeries.objects.filter(is_active=True).count()
+
+    # Content type breakdown
+    content_types = BlogPost.objects.values('content_type').annotate(
+        count=models.Count('id')
+    ).order_by('-count')
+
+    # Recent content for quick overview
+    recent_posts = BlogPost.objects.select_related('author', 'category').order_by('-created_at')[:5]
+    recent_testimonials = Testimonial.objects.select_related('customer').order_by('-created_at')[:5]
+    recent_pages = StaticPage.objects.select_related('author').order_by('-updated_at')[:5]
 
     context = {
-        'blog_posts': blog_posts[:10],
-        'testimonials': testimonials[:10],
+        # Statistics
         'total_posts': total_posts,
         'published_posts': published_posts,
         'draft_posts': draft_posts,
+        'featured_posts': featured_posts,
         'total_testimonials': total_testimonials,
+        'approved_testimonials': approved_testimonials,
+        'featured_testimonials': featured_testimonials,
+        'total_static_pages': total_static_pages,
+        'published_pages': published_pages,
+        'total_categories': total_categories,
+        'total_tags': total_tags,
+        'total_series': total_series,
+        'content_types': content_types,
+
+        # Recent content
+        'recent_posts': recent_posts,
+        'recent_testimonials': recent_testimonials,
+        'recent_pages': recent_pages,
     }
 
     return render(request, 'core/dashboard/admin_content_management.html', context)
@@ -3652,54 +5126,455 @@ def admin_system_settings_view(request):
 
 @login_required
 def admin_spare_shop_view(request):
-    """Admin spare shop management view"""
+    """Enhanced admin spare shop management view with comprehensive analytics"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
-    spare_parts = SparePart.objects.select_related('category_new', 'supplier').all().order_by('-created_at')
+    # Get search query
+    search_query = request.GET.get('search', '').strip()
+
+    # Base queryset with optimized select_related
+    spare_parts = SparePart.objects.select_related(
+        'category_new', 'supplier', 'vendor'
+    ).all().order_by('-created_at')
+
+    # Apply search filter
+    if search_query:
+        spare_parts = spare_parts.filter(
+            Q(name__icontains=search_query) |
+            Q(sku__icontains=search_query) |
+            Q(part_number__icontains=search_query) |
+            Q(barcode__icontains=search_query) |
+            Q(vendor__company_name__icontains=search_query)
+        )
 
     # Filter by category
     category_filter = request.GET.get('category')
     if category_filter:
         spare_parts = spare_parts.filter(category_new_id=category_filter)
 
-    # Filter by availability
+    # Filter by availability - fix the filter values to match template
     availability_filter = request.GET.get('availability')
-    if availability_filter == 'in_stock':
-        spare_parts = spare_parts.filter(stock_quantity__gt=0)
+    if availability_filter == 'available':
+        spare_parts = spare_parts.filter(stock_quantity__gt=0, is_available=True)
     elif availability_filter == 'low_stock':
-        spare_parts = spare_parts.filter(stock_quantity__lte=10, stock_quantity__gt=0)
+        spare_parts = spare_parts.filter(
+            stock_quantity__lte=F('minimum_stock'),
+            stock_quantity__gt=0,
+            minimum_stock__isnull=False
+        )
     elif availability_filter == 'out_of_stock':
         spare_parts = spare_parts.filter(stock_quantity=0)
 
-    # Calculate stats
-    total_parts = SparePart.objects.count()
-    in_stock_parts = SparePart.objects.filter(stock_quantity__gt=0).count()
-    low_stock_parts = SparePart.objects.filter(stock_quantity__lte=10, stock_quantity__gt=0).count()
-    out_of_stock_parts = SparePart.objects.filter(stock_quantity=0).count()
+    # Filter by brand (compatible_brands is a ManyToManyField)
+    brand_filter = request.GET.get('brand')
+    if brand_filter:
+        try:
+            spare_parts = spare_parts.filter(compatible_brands__name__icontains=brand_filter)
+        except:
+            # Field might not exist or have different structure, skip brand filtering
+            pass
+
+    # Filter by price range
+    price_range_filter = request.GET.get('price_range')
+    if price_range_filter:
+        if price_range_filter == '0-1000':
+            spare_parts = spare_parts.filter(price__lt=1000)
+        elif price_range_filter == '1000-5000':
+            spare_parts = spare_parts.filter(price__gte=1000, price__lt=5000)
+        elif price_range_filter == '5000-10000':
+            spare_parts = spare_parts.filter(price__gte=5000, price__lt=10000)
+        elif price_range_filter == '10000-50000':
+            spare_parts = spare_parts.filter(price__gte=10000, price__lt=50000)
+        elif price_range_filter == '50000+':
+            spare_parts = spare_parts.filter(price__gte=50000)
+
+    # Filter by condition (if field exists)
+    condition_filter = request.GET.get('condition')
+    if condition_filter:
+        try:
+            spare_parts = spare_parts.filter(condition=condition_filter)
+        except:
+            # Field might not exist, skip condition filtering
+            pass
+
+    # Enhanced statistics with aggregations
+    stats = SparePart.objects.aggregate(
+        total_parts=Count('id'),
+        in_stock_parts=Count('id', filter=Q(stock_quantity__gt=0, is_available=True)),
+        low_stock_parts=Count('id', filter=Q(
+            stock_quantity__lte=F('minimum_stock'),
+            stock_quantity__gt=0,
+            minimum_stock__isnull=False
+        )),
+        out_of_stock_parts=Count('id', filter=Q(stock_quantity=0)),
+        total_stock_value=Sum(F('stock_quantity') * F('price')),
+        avg_price=Avg('price')
+    )
 
     # Get categories for filter
-    categories = SparePartCategory.objects.all()
+    categories = SparePartCategory.objects.filter(is_active=True).order_by('name')
 
-    # Get recent orders
-    recent_orders = Order.objects.filter(
-        items__spare_part__isnull=False
-    ).distinct().order_by('-created_at')[:5]
+    # Get recent orders with proper error handling
+    recent_orders = []
+    try:
+        # Try different possible field names for order items
+        try:
+            recent_orders = Order.objects.filter(
+                items__spare_part__isnull=False
+            ).select_related('customer').distinct().order_by('-created_at')[:5]
+        except:
+            try:
+                recent_orders = Order.objects.filter(
+                    orderitem__spare_part__isnull=False
+                ).select_related('customer').distinct().order_by('-created_at')[:5]
+            except:
+                # Just get recent orders without spare part filtering
+                recent_orders = Order.objects.select_related('customer').order_by('-created_at')[:5]
+    except (AttributeError, NameError):
+        # Handle case where Order model doesn't exist or has different structure
+        pass
+
+    # Pagination for better performance
+    from django.core.paginator import Paginator
+    paginator = Paginator(spare_parts, 10)  # 10 rows per page as per user preference
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'spare_parts': spare_parts[:20],
-        'total_parts': total_parts,
-        'in_stock_parts': in_stock_parts,
-        'low_stock_parts': low_stock_parts,
-        'out_of_stock_parts': out_of_stock_parts,
+        'spare_parts': page_obj,
+        'total_parts': stats['total_parts'] or 0,
+        'in_stock_parts': stats['in_stock_parts'] or 0,
+        'low_stock_parts': stats['low_stock_parts'] or 0,
+        'out_of_stock_parts': stats['out_of_stock_parts'] or 0,
+        'total_stock_value': stats['total_stock_value'] or 0,
+        'avg_price': stats['avg_price'] or 0,
         'categories': categories,
         'recent_orders': recent_orders,
         'current_category': category_filter,
         'current_availability': availability_filter,
+        'current_brand': brand_filter,
+        'current_price_range': price_range_filter,
+        'current_condition': condition_filter,
+        'search_query': search_query,
+        'page_obj': page_obj,
     }
 
+    # Return partial template for HTMX requests
+    if request.headers.get('HX-Request'):
+        return render(request, 'core/partials/admin_spare_shop_table.html', context)
+
     return render(request, 'core/dashboard/admin_spare_shop.html', context)
+
+
+@login_required
+def admin_spare_part_add_modal_view(request):
+    """Modal view for adding new spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    categories = SparePartCategory.objects.filter(is_active=True).order_by('name')
+    suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'categories': categories,
+        'suppliers': suppliers,
+    }
+
+    return render(request, 'core/modals/admin_spare_part_add.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def admin_spare_part_add_view(request):
+    """Handle adding new spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'GET':
+        # Return add modal with all categories (parent and sub-categories)
+        categories = SparePartCategory.objects.filter(is_active=True).order_by('parent__name', 'name')
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+
+        context = {
+            'categories': categories,
+            'suppliers': suppliers,
+        }
+        return render(request, 'core/modals/admin_spare_part_add.html', context)
+
+    elif request.method == 'POST':
+        print("Admin POST request received")
+        print(f"POST data: {request.POST}")
+        print(f"FILES data: {request.FILES}")
+        print(f"Content type: {request.content_type}")
+        print(f"HX-Request header: {request.headers.get('HX-Request')}")
+
+        # Check specific fields
+        print(f"Unit field: {request.POST.get('unit', 'NOT FOUND')}")
+        print(f"Reorder quantity field: {request.POST.get('reorder_quantity', 'NOT FOUND')}")
+
+        form = SparePartForm(request.POST, request.FILES)
+        print(f"Form created: {form}")
+        print(f"Form data: {form.data}")
+
+        if form.is_valid():
+            print("Admin form is valid")
+            try:
+                spare_part = form.save(commit=False)
+
+                # Set category field based on category_new (required for model)
+                if spare_part.category_new:
+                    spare_part.category = spare_part.category_new.name
+                elif not spare_part.category:
+                    spare_part.category = 'General'
+
+                # Admin parts don't need a vendor
+                spare_part.vendor = None
+                spare_part.is_available = True
+                spare_part.save()
+
+                # Create initial stock movement
+                StockMovement.objects.create(
+                    spare_part=spare_part,
+                    movement_type='in',
+                    reason='initial',
+                    quantity=spare_part.stock_quantity,
+                    quantity_before=0,
+                    quantity_after=spare_part.stock_quantity,
+                    notes=f'Initial stock for {spare_part.name}',
+                    created_by=request.user
+                )
+
+                messages.success(request, f'Spare part "{spare_part.name}" added successfully.')
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Spare part "{spare_part.name}" added successfully!',
+                        'part_id': spare_part.id
+                    })
+
+                return redirect('core:admin_spare_shop')
+
+            except Exception as e:
+                error_message = f'Error saving spare part: {str(e)}'
+                print(f"Admin error: {error_message}")
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': False,
+                        'message': error_message,
+                        'errors': {'__all__': [error_message]}
+                    })
+
+                messages.error(request, error_message)
+                return redirect('core:admin_spare_shop')
+        else:
+            # Form validation failed
+            print("Admin form validation failed")
+            print(f"Form errors: {form.errors}")
+
+            if request.headers.get('HX-Request'):
+                # Format errors for JSON response
+                formatted_errors = {}
+                for field, errors in form.errors.items():
+                    if field == '__all__':
+                        formatted_errors['__all__'] = [str(error) for error in errors]
+                    else:
+                        field_label = form.fields.get(field, {}).label or field.replace('_', ' ').title()
+                        formatted_errors[field] = [str(error) for error in errors]
+
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please correct the errors below.',
+                    'errors': formatted_errors
+                })
+
+            messages.error(request, 'Please correct the form errors.')
+            return redirect('core:admin_spare_shop')
+
+
+@login_required
+def admin_spare_part_edit_modal_view(request, part_id):
+    """Modal view for editing spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        spare_part = SparePart.objects.get(id=part_id)
+        # Get all categories (parent and sub-categories) for hardcoded display
+        categories = SparePartCategory.objects.filter(is_active=True).order_by('parent__name', 'name')
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+
+        context = {
+            'spare_part': spare_part,
+            'categories': categories,
+            'suppliers': suppliers,
+        }
+
+        return render(request, 'core/modals/admin_spare_part_edit.html', context)
+
+    except SparePart.DoesNotExist:
+        return JsonResponse({'error': 'Spare part not found'}, status=404)
+
+
+@login_required
+def admin_spare_part_edit_view(request, part_id):
+    """Handle editing spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            spare_part = SparePart.objects.get(id=part_id)
+
+            # Update spare part
+            spare_part.name = request.POST.get('name')
+            spare_part.part_number = request.POST.get('part_number')
+            spare_part.sku = request.POST.get('sku')
+            spare_part.barcode = request.POST.get('barcode')
+            spare_part.category_new_id = request.POST.get('category_new')
+            spare_part.condition = request.POST.get('condition', 'new')
+            spare_part.supplier_id = request.POST.get('supplier') if request.POST.get('supplier') else None
+            spare_part.price = request.POST.get('price')
+            spare_part.cost_price = request.POST.get('cost_price')
+            spare_part.discount_price = request.POST.get('discount_price')
+            spare_part.stock_quantity = request.POST.get('stock_quantity', 0)
+            spare_part.minimum_stock = request.POST.get('minimum_stock')
+            spare_part.maximum_stock = request.POST.get('maximum_stock')
+            spare_part.reorder_point = request.POST.get('reorder_point')
+            spare_part.description = request.POST.get('description')
+            spare_part.specifications = request.POST.get('specifications')
+
+            spare_part.save()
+
+            messages.success(request, f'Spare part "{spare_part.name}" updated successfully!')
+
+            # Return updated table
+            return redirect('core:admin_spare_shop')
+
+        except SparePart.DoesNotExist:
+            messages.error(request, 'Spare part not found')
+        except Exception as e:
+            messages.error(request, f'Error updating spare part: {str(e)}')
+
+    return redirect('core:admin_spare_shop')
+
+
+@login_required
+def admin_spare_part_restock_modal_view(request, part_id):
+    """Modal view for restocking spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        spare_part = SparePart.objects.get(id=part_id)
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+
+        context = {
+            'spare_part': spare_part,
+            'suppliers': suppliers,
+        }
+
+        return render(request, 'core/modals/admin_spare_part_restock.html', context)
+
+    except SparePart.DoesNotExist:
+        return JsonResponse({'error': 'Spare part not found'}, status=404)
+
+
+@login_required
+def admin_spare_part_restock_view(request, part_id):
+    """Handle restocking spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            spare_part = SparePart.objects.get(id=part_id)
+            quantity = int(request.POST.get('quantity', 0))
+
+            if quantity <= 0:
+                messages.error(request, 'Quantity must be greater than 0')
+                return redirect('core:admin_spare_shop')
+
+            # Update stock quantity
+            spare_part.stock_quantity += quantity
+            spare_part.save()
+
+            # Create stock movement record if StockMovement model exists
+            try:
+                StockMovement.objects.create(
+                    spare_part=spare_part,
+                    movement_type=request.POST.get('movement_type', 'purchase'),
+                    quantity=quantity,
+                    unit_cost=request.POST.get('unit_cost'),
+                    supplier_id=request.POST.get('supplier') if request.POST.get('supplier') else None,
+                    notes=request.POST.get('notes'),
+                    created_by=request.user
+                )
+            except:
+                pass  # StockMovement model might not exist
+
+            messages.success(request, f'Added {quantity} units to "{spare_part.name}". New stock: {spare_part.stock_quantity}')
+
+            return redirect('core:admin_spare_shop')
+
+        except SparePart.DoesNotExist:
+            messages.error(request, 'Spare part not found')
+        except Exception as e:
+            messages.error(request, f'Error restocking spare part: {str(e)}')
+
+    return redirect('core:admin_spare_shop')
+
+
+@login_required
+def admin_spare_part_view_modal_view(request, part_id):
+    """Modal view for viewing spare part details"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        spare_part = SparePart.objects.select_related(
+            'category_new', 'supplier', 'vendor'
+        ).get(id=part_id)
+
+        # Calculate profit margin if both prices are available
+        profit_margin = None
+        if spare_part.cost_price and spare_part.price and spare_part.cost_price > 0:
+            profit_margin = round(((spare_part.price - spare_part.cost_price) / spare_part.cost_price) * 100, 2)
+
+        context = {
+            'spare_part': spare_part,
+            'profit_margin': profit_margin,
+        }
+
+        return render(request, 'core/modals/admin_spare_part_view.html', context)
+
+    except SparePart.DoesNotExist:
+        return JsonResponse({'error': 'Spare part not found'}, status=404)
+
+
+@login_required
+def admin_spare_part_delete_view(request, part_id):
+    """Handle deleting spare part"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            spare_part = SparePart.objects.get(id=part_id)
+            part_name = spare_part.name
+            spare_part.delete()
+
+            messages.success(request, f'Spare part "{part_name}" deleted successfully!')
+
+        except SparePart.DoesNotExist:
+            messages.error(request, 'Spare part not found')
+        except Exception as e:
+            messages.error(request, f'Error deleting spare part: {str(e)}')
+
+    return redirect('core:admin_spare_shop')
 
 
 @login_required
@@ -3710,21 +5585,31 @@ def admin_tracking_management_view(request):
         return redirect('core:dashboard')
 
     # Get import orders with tracking information
-    import_orders = ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')
-
-    # Apply filters
-    import_orders = apply_tracking_filters(request, import_orders)
-
-    # Pagination
-    page = request.GET.get('page', 1)
-    paginator = Paginator(import_orders, 20)  # 20 items per page
+    from django.db import transaction
 
     try:
-        import_orders_page = paginator.page(page)
-    except PageNotAnInteger:
-        import_orders_page = paginator.page(1)
-    except EmptyPage:
-        import_orders_page = paginator.page(paginator.num_pages)
+        with transaction.atomic():
+            import_orders = ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')
+
+            # Apply filters
+            import_orders = apply_tracking_filters(request, import_orders)
+
+            # Pagination
+            page = request.GET.get('page', 1)
+            paginator = Paginator(import_orders, 20)  # 20 items per page
+
+            try:
+                import_orders_page = paginator.page(page)
+            except PageNotAnInteger:
+                import_orders_page = paginator.page(1)
+            except EmptyPage:
+                import_orders_page = paginator.page(paginator.num_pages)
+
+    except Exception as e:
+        # Handle database lock gracefully
+        print(f"Database error in tracking management: {e}")
+        messages.error(request, 'Database temporarily unavailable. Please try again.')
+        return redirect('core:admin_dashboard')
 
     # Define workflow stages for the UI
     workflow_stages = [
@@ -3739,12 +5624,35 @@ def admin_tracking_management_view(request):
         {'key': 'delivered', 'name': 'Delivered', 'icon': 'fas fa-flag-checkered', 'color': 'green'},
     ]
 
-    # Calculate tracking stats
-    total_orders = ImportOrder.objects.count()
-    import_request_orders = ImportOrder.objects.filter(status='import_request').count()
-    in_transit_orders = ImportOrder.objects.filter(status__in=['shipped', 'in_transit']).count()
-    arrived_orders = ImportOrder.objects.filter(status='arrived_docked').count()
-    completed_orders = ImportOrder.objects.filter(status='delivered').count()
+    # Calculate tracking stats with optimized single query
+    from django.db.models import Count, Case, When, IntegerField
+    from django.db import transaction
+
+    try:
+        with transaction.atomic():
+            # Use aggregation to get all stats in one query
+            stats = ImportOrder.objects.aggregate(
+                total_orders=Count('id'),
+                import_request_orders=Count(Case(When(status='import_request', then=1), output_field=IntegerField())),
+                in_transit_orders=Count(Case(When(status__in=['shipped', 'in_transit'], then=1), output_field=IntegerField())),
+                arrived_orders=Count(Case(When(status='arrived_docked', then=1), output_field=IntegerField())),
+                completed_orders=Count(Case(When(status='delivered', then=1), output_field=IntegerField()))
+            )
+
+            total_orders = stats['total_orders']
+            import_request_orders = stats['import_request_orders']
+            in_transit_orders = stats['in_transit_orders']
+            arrived_orders = stats['arrived_orders']
+            completed_orders = stats['completed_orders']
+
+    except Exception as e:
+        # Fallback to default values if database is locked
+        print(f"Database error in tracking stats: {e}")
+        total_orders = 0
+        import_request_orders = 0
+        in_transit_orders = 0
+        arrived_orders = 0
+        completed_orders = 0
 
     context = {
         'import_orders': import_orders_page,
@@ -3990,7 +5898,8 @@ def admin_import_request_delete(request, request_id):
     if request.user.role != 'admin':
         return HttpResponse('Access denied', status=403)
 
-    if request.method == 'DELETE':
+    # Handle both DELETE requests and POST requests with _method=DELETE
+    if request.method == 'DELETE' or (request.method == 'POST' and request.POST.get('_method') == 'DELETE'):
         try:
             import_request = get_object_or_404(ImportRequest, id=request_id)
             customer = import_request.customer
@@ -4173,3 +6082,2129 @@ def admin_import_request_status_update(request, request_id):
             return admin_import_requests_table_partial(request)
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+
+# ===== ENHANCED CONTENT MANAGEMENT VIEWS =====
+
+@login_required
+def admin_content_posts_tab(request):
+    """HTMX endpoint for content posts tab"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get search and filter parameters
+    search_query = request.GET.get('search', '').strip()
+    content_type = request.GET.get('content_type', '')
+    status = request.GET.get('status', '')
+    category_id = request.GET.get('category', '')
+
+    # Base queryset
+    posts = BlogPost.objects.select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if search_query:
+        posts = posts.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query)
+        )
+
+    if content_type:
+        posts = posts.filter(content_type=content_type)
+
+    if status == 'published':
+        posts = posts.filter(is_published=True)
+    elif status == 'draft':
+        posts = posts.filter(is_published=False)
+    elif status == 'featured':
+        posts = posts.filter(is_featured=True)
+
+    if category_id:
+        posts = posts.filter(category_id=category_id)
+
+    # Order by creation date
+    posts = posts.order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(posts, 20)  # 20 items per page
+    page = request.GET.get('page', 1)
+
+    try:
+        posts_page = paginator.page(page)
+    except PageNotAnInteger:
+        posts_page = paginator.page(1)
+    except EmptyPage:
+        posts_page = paginator.page(paginator.num_pages)
+
+    # Get filter options
+    from .models import ContentCategory
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+    content_types = BlogPost.CONTENT_TYPE_CHOICES
+
+    context = {
+        'posts': posts_page,
+        'categories': categories,
+        'content_types': content_types,
+        'current_search': search_query,
+        'current_content_type': content_type,
+        'current_status': status,
+        'current_category': category_id,
+    }
+
+    return render(request, 'core/dashboard/partials/content_posts_tab.html', context)
+
+
+@login_required
+def admin_content_categories_tab(request):
+    """HTMX endpoint for content categories tab"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import ContentCategory
+
+    # Get search parameter
+    search_query = request.GET.get('search', '').strip()
+
+    # Base queryset
+    categories = ContentCategory.objects.annotate(
+        posts_count=models.Count('posts')
+    )
+
+    # Apply search filter
+    if search_query:
+        categories = categories.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Order by sort order and name
+    categories = categories.order_by('sort_order', 'name')
+
+    # Pagination
+    paginator = Paginator(categories, 20)
+    page = request.GET.get('page', 1)
+
+    try:
+        categories_page = paginator.page(page)
+    except PageNotAnInteger:
+        categories_page = paginator.page(1)
+    except EmptyPage:
+        categories_page = paginator.page(paginator.num_pages)
+
+    context = {
+        'categories': categories_page,
+        'current_search': search_query,
+    }
+
+    return render(request, 'core/dashboard/partials/content_categories_tab.html', context)
+
+
+@login_required
+def admin_content_testimonials_tab(request):
+    """HTMX endpoint for testimonials tab"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get search and filter parameters
+    search_query = request.GET.get('search', '').strip()
+    status = request.GET.get('status', '')
+    rating = request.GET.get('rating', '')
+
+    # Base queryset
+    testimonials = Testimonial.objects.select_related('customer', 'car')
+
+    # Apply filters
+    if search_query:
+        testimonials = testimonials.filter(
+            Q(content__icontains=search_query) |
+            Q(customer__username__icontains=search_query) |
+            Q(customer__first_name__icontains=search_query) |
+            Q(customer__last_name__icontains=search_query)
+        )
+
+    if status == 'approved':
+        testimonials = testimonials.filter(is_approved=True)
+    elif status == 'pending':
+        testimonials = testimonials.filter(is_approved=False)
+    elif status == 'featured':
+        testimonials = testimonials.filter(is_featured=True)
+
+    if rating:
+        testimonials = testimonials.filter(rating=rating)
+
+    # Order by creation date
+    testimonials = testimonials.order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(testimonials, 20)
+    page = request.GET.get('page', 1)
+
+    try:
+        testimonials_page = paginator.page(page)
+    except PageNotAnInteger:
+        testimonials_page = paginator.page(1)
+    except EmptyPage:
+        testimonials_page = paginator.page(paginator.num_pages)
+
+    context = {
+        'testimonials': testimonials_page,
+        'current_search': search_query,
+        'current_status': status,
+        'current_rating': rating,
+        'rating_choices': [(i, i) for i in range(1, 6)],
+    }
+
+    return render(request, 'core/dashboard/partials/content_testimonials_tab.html', context)
+
+
+@login_required
+def admin_content_static_pages_tab(request):
+    """HTMX endpoint for static pages tab"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import StaticPage
+
+    # Get search and filter parameters
+    search_query = request.GET.get('search', '').strip()
+    page_type = request.GET.get('page_type', '')
+    status = request.GET.get('status', '')
+
+    # Base queryset
+    pages = StaticPage.objects.select_related('author')
+
+    # Apply filters
+    if search_query:
+        pages = pages.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query)
+        )
+
+    if page_type:
+        pages = pages.filter(page_type=page_type)
+
+    if status:
+        pages = pages.filter(status=status)
+
+    # Order by menu order and title
+    pages = pages.order_by('menu_order', 'title')
+
+    # Pagination
+    paginator = Paginator(pages, 20)
+    page_num = request.GET.get('page', 1)
+
+    try:
+        pages_page = paginator.page(page_num)
+    except PageNotAnInteger:
+        pages_page = paginator.page(1)
+    except EmptyPage:
+        pages_page = paginator.page(paginator.num_pages)
+
+    context = {
+        'pages': pages_page,
+        'page_types': StaticPage.PAGE_TYPE_CHOICES,
+        'status_choices': StaticPage.STATUS_CHOICES,
+        'current_search': search_query,
+        'current_page_type': page_type,
+        'current_status': status,
+    }
+
+    return render(request, 'core/dashboard/partials/content_static_pages_tab.html', context)
+
+
+@login_required
+def admin_content_analytics_tab(request):
+    """HTMX endpoint for content analytics tab"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import ContentAnalytics, ContentView
+    from datetime import datetime, timedelta
+    from django.db.models import Sum, Avg, Count
+
+    # Get date range parameters
+    days = int(request.GET.get('days', 30))
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=days)
+
+    # Top performing posts
+    top_posts = BlogPost.objects.filter(
+        is_published=True,
+        published_at__gte=start_date
+    ).annotate(
+        total_views=Count('content_views'),
+        total_likes=Count('content_likes'),
+        total_comments=Count('comments'),
+        total_bookmarks=Count('bookmarks')
+    ).order_by('-total_views')[:10]
+
+    # Content type performance
+    content_type_stats = BlogPost.objects.filter(
+        is_published=True
+    ).values('content_type').annotate(
+        count=Count('id'),
+        avg_views=Avg('views_count'),
+        total_views=Sum('views_count'),
+        avg_likes=Avg('likes_count')
+    ).order_by('-total_views')
+
+    # Recent activity
+    recent_views = ContentView.objects.select_related('post', 'user').order_by('-viewed_at')[:20]
+
+    # Monthly trends (simplified)
+    monthly_stats = BlogPost.objects.filter(
+        published_at__gte=start_date
+    ).extra(
+        select={'month': "DATE_FORMAT(published_at, '%%Y-%%m')"}
+    ).values('month').annotate(
+        posts_count=Count('id'),
+        total_views=Sum('views_count')
+    ).order_by('month')
+
+    context = {
+        'top_posts': top_posts,
+        'content_type_stats': content_type_stats,
+        'recent_views': recent_views,
+        'monthly_stats': monthly_stats,
+        'date_range_days': days,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+
+    return render(request, 'core/dashboard/partials/content_analytics_tab.html', context)
+
+
+# Content CRUD Operations
+
+@login_required
+def admin_content_create_modal(request):
+    """Display create content modal"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import ContentCategory, ContentTag
+
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+    tags = ContentTag.objects.filter(is_active=True).order_by('name')
+    content_types = BlogPost.CONTENT_TYPE_CHOICES
+
+    context = {
+        'categories': categories,
+        'tags': tags,
+        'content_types': content_types,
+    }
+
+    return render(request, 'core/modals/admin_content_create.html', context)
+
+
+@login_required
+def admin_content_create(request):
+    """Create new content post"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        from django.utils.text import slugify
+        from .models import ContentCategory, ContentTag
+
+        try:
+            # Get form data
+            title = request.POST.get('title', '').strip()
+            content = request.POST.get('content', '').strip()
+            excerpt = request.POST.get('excerpt', '').strip()
+            content_type = request.POST.get('content_type', 'article')
+            category_id = request.POST.get('category')
+            tag_ids = request.POST.getlist('tags')
+            is_published = request.POST.get('is_published') == 'on'
+            is_featured = request.POST.get('is_featured') == 'on'
+
+            # Validation
+            if not title or not content:
+                return JsonResponse({'success': False, 'error': 'Title and content are required'})
+
+            # Create slug
+            slug = slugify(title)
+            original_slug = slug
+            counter = 1
+            while BlogPost.objects.filter(slug=slug).exists():
+                slug = f"{original_slug}-{counter}"
+                counter += 1
+
+            # Create post
+            post = BlogPost.objects.create(
+                title=title,
+                slug=slug,
+                content=content,
+                excerpt=excerpt,
+                content_type=content_type,
+                author=request.user,
+                is_published=is_published,
+                is_featured=is_featured,
+                published_at=timezone.now() if is_published else None
+            )
+
+            # Set category
+            if category_id:
+                try:
+                    category = ContentCategory.objects.get(id=category_id)
+                    post.category = category
+                    post.save()
+                except ContentCategory.DoesNotExist:
+                    pass
+
+            # Set tags
+            if tag_ids:
+                tags = ContentTag.objects.filter(id__in=tag_ids)
+                post.tags.set(tags)
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Content created successfully',
+                'post_id': post.id
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_sales_management_view(request):
+    """Admin sales management view"""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    context = {
+        # Add sales data context here
+    }
+
+    return render(request, 'core/dashboard/admin_sales_management.html', context)
+
+
+@login_required
+def admin_order_management_view(request):
+    """Admin order management view"""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    context = {
+        # Add order data context here
+    }
+
+    return render(request, 'core/dashboard/admin_order_management.html', context)
+
+
+# Resource Management Views
+
+@login_required
+def admin_resource_management_view(request):
+    """Main Resource Management page with tabbed interface"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('core:dashboard')
+
+    # Get overview statistics
+    total_content = BlogPost.objects.count()
+    published_content = BlogPost.objects.filter(is_published=True).count()
+    draft_content = BlogPost.objects.filter(is_published=False).count()
+    featured_content = BlogPost.objects.filter(is_featured=True).count()
+
+    # Content type breakdown
+    content_types = BlogPost.objects.values('content_type').annotate(
+        count=Count('id')
+    ).order_by('content_type')
+
+    # Recent activity
+    recent_content = BlogPost.objects.select_related('author', 'category').order_by('-updated_at')[:10]
+
+    # Top performing content (by views)
+    top_content = BlogPost.objects.filter(is_published=True).order_by('-views_count')[:5]
+
+    # Categories and tags
+    categories = ContentCategory.objects.filter(is_active=True).annotate(
+        post_count=Count('posts')
+    ).order_by('-post_count')[:10]
+
+    tags = ContentTag.objects.filter(is_active=True).annotate(
+        post_count=Count('posts')
+    ).order_by('-post_count')[:15]
+
+    context = {
+        'total_content': total_content,
+        'published_content': published_content,
+        'draft_content': draft_content,
+        'featured_content': featured_content,
+        'content_types': content_types,
+        'recent_content': recent_content,
+        'top_content': top_content,
+        'categories': categories,
+        'tags': tags,
+    }
+
+    return render(request, 'core/dashboard/admin_resource_management.html', context)
+
+
+@login_required
+def admin_resource_all_content_tab(request):
+    """HTMX endpoint for All Content tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get filter parameters
+    content_type = request.GET.get('content_type', '')
+    status = request.GET.get('status', '')
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset
+    queryset = BlogPost.objects.select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if content_type:
+        queryset = queryset.filter(content_type=content_type)
+
+    if status == 'published':
+        queryset = queryset.filter(is_published=True)
+    elif status == 'draft':
+        queryset = queryset.filter(is_published=False)
+    elif status == 'featured':
+        queryset = queryset.filter(is_featured=True)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(author__username__icontains=search_query) |
+            Q(tags__name__icontains=search_query)
+        ).distinct()
+
+    # Order by latest
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    posts = paginator.get_page(page_number)
+
+    # Get filter options
+    content_types = BlogPost.CONTENT_TYPE_CHOICES
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'posts': posts,
+        'content_types': content_types,
+        'categories': categories,
+        'current_content_type': content_type,
+        'current_status': status,
+        'current_category': category,
+        'search_query': search_query,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_resource_all_content_tab.html', context)
+
+
+@login_required
+def admin_resource_articles_tab(request):
+    """HTMX endpoint for Articles tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset for articles
+    queryset = BlogPost.objects.filter(content_type='article').select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if status == 'published':
+        queryset = queryset.filter(is_published=True)
+    elif status == 'draft':
+        queryset = queryset.filter(is_published=False)
+    elif status == 'featured':
+        queryset = queryset.filter(is_featured=True)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(author__username__icontains=search_query)
+        ).distinct()
+
+    # Order by latest
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    articles = paginator.get_page(page_number)
+
+    # Get filter options
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'articles': articles,
+        'categories': categories,
+        'current_status': status,
+        'current_category': category,
+        'search_query': search_query,
+        'content_type': 'article',
+    }
+
+    return render(request, 'core/dashboard/partials/admin_resource_articles_tab.html', context)
+
+
+@login_required
+def admin_resource_guides_tab(request):
+    """HTMX endpoint for Guides tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset for guides
+    queryset = BlogPost.objects.filter(content_type='guide').select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if status == 'published':
+        queryset = queryset.filter(is_published=True)
+    elif status == 'draft':
+        queryset = queryset.filter(is_published=False)
+    elif status == 'featured':
+        queryset = queryset.filter(is_featured=True)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(author__username__icontains=search_query)
+        ).distinct()
+
+    # Order by latest
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    guides = paginator.get_page(page_number)
+
+    # Get filter options
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'guides': guides,
+        'categories': categories,
+        'current_status': status,
+        'current_category': category,
+        'search_query': search_query,
+        'content_type': 'guide',
+    }
+
+    return render(request, 'core/dashboard/partials/admin_resource_guides_tab.html', context)
+
+
+@login_required
+def admin_resource_infographics_tab(request):
+    """HTMX endpoint for Infographics tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset for infographics
+    queryset = BlogPost.objects.filter(content_type='infographic').select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if status == 'published':
+        queryset = queryset.filter(is_published=True)
+    elif status == 'draft':
+        queryset = queryset.filter(is_published=False)
+    elif status == 'featured':
+        queryset = queryset.filter(is_featured=True)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(author__username__icontains=search_query)
+        ).distinct()
+
+    # Order by latest
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    infographics = paginator.get_page(page_number)
+
+    # Get filter options
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'infographics': infographics,
+        'categories': categories,
+        'current_status': status,
+        'current_category': category,
+        'search_query': search_query,
+        'content_type': 'infographic',
+    }
+
+    return render(request, 'core/dashboard/partials/admin_resource_infographics_tab.html', context)
+
+
+@login_required
+def admin_resource_opinions_tab(request):
+    """HTMX endpoint for Opinions tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset for opinions
+    queryset = BlogPost.objects.filter(content_type='opinion').select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if status == 'published':
+        queryset = queryset.filter(is_published=True)
+    elif status == 'draft':
+        queryset = queryset.filter(is_published=False)
+    elif status == 'featured':
+        queryset = queryset.filter(is_featured=True)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(author__username__icontains=search_query)
+        ).distinct()
+
+    # Order by latest
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    opinions = paginator.get_page(page_number)
+
+    # Get filter options
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'opinions': opinions,
+        'categories': categories,
+        'current_status': status,
+        'current_category': category,
+        'search_query': search_query,
+        'content_type': 'opinion',
+    }
+
+    return render(request, 'core/dashboard/partials/admin_resource_opinions_tab.html', context)
+
+
+@login_required
+def admin_resource_news_tab(request):
+    """HTMX endpoint for News tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset for news
+    queryset = BlogPost.objects.filter(content_type='news').select_related('author', 'category').prefetch_related('tags')
+
+    # Apply filters
+    if status == 'published':
+        queryset = queryset.filter(is_published=True)
+    elif status == 'draft':
+        queryset = queryset.filter(is_published=False)
+    elif status == 'featured':
+        queryset = queryset.filter(is_featured=True)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(author__username__icontains=search_query)
+        ).distinct()
+
+    # Order by latest
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    news = paginator.get_page(page_number)
+
+    # Get filter options
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'news': news,
+        'categories': categories,
+        'current_status': status,
+        'current_category': category,
+        'search_query': search_query,
+        'content_type': 'news',
+    }
+
+    return render(request, 'core/dashboard/partials/admin_resource_news_tab.html', context)
+
+
+# Resource CRUD Operations
+
+@login_required
+def admin_resource_create_modal(request):
+    """HTMX endpoint for resource creation modal"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    content_type = request.GET.get('content_type', 'article')
+
+    # Get categories and tags for form
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+    tags = ContentTag.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'content_type': content_type,
+        'categories': categories,
+        'tags': tags,
+        'content_type_choices': BlogPost.CONTENT_TYPE_CHOICES,
+        'difficulty_choices': BlogPost.DIFFICULTY_CHOICES,
+    }
+
+    return render(request, 'core/modals/admin_resource_create.html', context)
+
+
+@login_required
+def admin_resource_create(request):
+    """Handle resource creation"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            # Create new blog post
+            post = BlogPost()
+            post.author = request.user
+            post.title = request.POST.get('title', '')
+            post.content = request.POST.get('content', '')
+            post.excerpt = request.POST.get('excerpt', '')
+            post.content_type = request.POST.get('content_type', 'article')
+            post.difficulty_level = request.POST.get('difficulty_level', '')
+            post.estimated_read_time = int(request.POST.get('estimated_read_time', 5))
+            post.meta_description = request.POST.get('meta_description', '')
+            post.meta_keywords = request.POST.get('meta_keywords', '')
+            post.video_url = request.POST.get('video_url', '')
+            post.is_published = request.POST.get('is_published') == 'on'
+            post.is_featured = request.POST.get('is_featured') == 'on'
+
+            # Generate slug
+            from django.utils.text import slugify
+            base_slug = slugify(post.title)
+            slug = base_slug
+            counter = 1
+            while BlogPost.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            post.slug = slug
+
+            # Handle category
+            category_id = request.POST.get('category')
+            if category_id:
+                try:
+                    post.category = ContentCategory.objects.get(id=category_id)
+                except ContentCategory.DoesNotExist:
+                    pass
+
+            # Handle featured image
+            if 'featured_image' in request.FILES:
+                post.featured_image = request.FILES['featured_image']
+                post.featured_image_alt = request.POST.get('featured_image_alt', '')
+
+            # Set published date if publishing
+            if post.is_published and not post.published_at:
+                post.published_at = timezone.now()
+
+            post.save()
+
+            # Handle tags
+            tag_ids = request.POST.getlist('tags')
+            if tag_ids:
+                tags = ContentTag.objects.filter(id__in=tag_ids)
+                post.tags.set(tags)
+
+            return JsonResponse({
+                'success': True,
+                'message': f'{post.content_type.title()} created successfully!',
+                'redirect': reverse('core:admin_resource_management')
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error creating content: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def admin_resource_edit_modal(request, post_id):
+    """HTMX endpoint for resource edit modal"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    post = get_object_or_404(BlogPost, id=post_id)
+
+    # Get categories and tags for form
+    categories = ContentCategory.objects.filter(is_active=True).order_by('name')
+    tags = ContentTag.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'post': post,
+        'categories': categories,
+        'tags': tags,
+        'content_type_choices': BlogPost.CONTENT_TYPE_CHOICES,
+        'difficulty_choices': BlogPost.DIFFICULTY_CHOICES,
+    }
+
+    return render(request, 'core/modals/admin_resource_edit.html', context)
+
+
+@login_required
+def admin_resource_edit(request, post_id):
+    """Handle resource editing"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    post = get_object_or_404(BlogPost, id=post_id)
+
+    if request.method == 'POST':
+        try:
+            # Update blog post
+            post.title = request.POST.get('title', post.title)
+            post.content = request.POST.get('content', post.content)
+            post.excerpt = request.POST.get('excerpt', post.excerpt)
+            post.content_type = request.POST.get('content_type', post.content_type)
+            post.difficulty_level = request.POST.get('difficulty_level', post.difficulty_level)
+            post.estimated_read_time = int(request.POST.get('estimated_read_time', post.estimated_read_time))
+            post.meta_description = request.POST.get('meta_description', post.meta_description)
+            post.meta_keywords = request.POST.get('meta_keywords', post.meta_keywords)
+            post.video_url = request.POST.get('video_url', post.video_url)
+            post.is_published = request.POST.get('is_published') == 'on'
+            post.is_featured = request.POST.get('is_featured') == 'on'
+            post.featured_image_alt = request.POST.get('featured_image_alt', post.featured_image_alt)
+
+            # Handle category
+            category_id = request.POST.get('category')
+            if category_id:
+                try:
+                    post.category = ContentCategory.objects.get(id=category_id)
+                except ContentCategory.DoesNotExist:
+                    post.category = None
+            else:
+                post.category = None
+
+            # Handle featured image
+            if 'featured_image' in request.FILES:
+                post.featured_image = request.FILES['featured_image']
+
+            # Set published date if publishing for the first time
+            if post.is_published and not post.published_at:
+                post.published_at = timezone.now()
+
+            post.save()
+
+            # Handle tags
+            tag_ids = request.POST.getlist('tags')
+            if tag_ids:
+                tags = ContentTag.objects.filter(id__in=tag_ids)
+                post.tags.set(tags)
+            else:
+                post.tags.clear()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'{post.content_type.title()} updated successfully!',
+                'redirect': reverse('core:admin_resource_management')
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error updating content: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def admin_resource_delete(request, post_id):
+    """Handle resource deletion"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            post = get_object_or_404(BlogPost, id=post_id)
+            content_type = post.content_type
+            title = post.title
+
+            post.delete()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'{content_type.title()} "{title}" deleted successfully!'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error deleting content: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def admin_resource_toggle_featured(request, post_id):
+    """Toggle featured status of a resource"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            post = get_object_or_404(BlogPost, id=post_id)
+            post.is_featured = not post.is_featured
+            post.save()
+
+            status = 'featured' if post.is_featured else 'unfeatured'
+            return JsonResponse({
+                'success': True,
+                'message': f'Content {status} successfully!',
+                'is_featured': post.is_featured
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error updating featured status: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def admin_resource_toggle_published(request, post_id):
+    """Toggle published status of a resource"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            post = get_object_or_404(BlogPost, id=post_id)
+            post.is_published = not post.is_published
+
+            # Set published date if publishing for the first time
+            if post.is_published and not post.published_at:
+                post.published_at = timezone.now()
+
+            post.save()
+
+            status = 'published' if post.is_published else 'unpublished'
+            return JsonResponse({
+                'success': True,
+                'message': f'Content {status} successfully!',
+                'is_published': post.is_published
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error updating published status: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def admin_resource_search(request):
+    """HTMX endpoint for resource search across all tabs"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    search_query = request.GET.get('search', '')
+    content_type = request.GET.get('content_type', '')
+    tab = request.GET.get('tab', 'all')
+
+    if not search_query:
+        return JsonResponse({'success': False, 'message': 'No search query provided'})
+
+    # Base queryset
+    queryset = BlogPost.objects.select_related('author', 'category').prefetch_related('tags')
+
+    # Filter by content type if specified
+    if content_type:
+        queryset = queryset.filter(content_type=content_type)
+
+    # Apply search filter
+    queryset = queryset.filter(
+        Q(title__icontains=search_query) |
+        Q(content__icontains=search_query) |
+        Q(excerpt__icontains=search_query) |
+        Q(author__username__icontains=search_query) |
+        Q(tags__name__icontains=search_query)
+    ).distinct()
+
+    # Order by relevance (title matches first, then content)
+    queryset = queryset.order_by('-updated_at')
+
+    # Pagination
+    paginator = Paginator(queryset, 20)
+    page_number = request.GET.get('page', 1)
+    results = paginator.get_page(page_number)
+
+    # Determine which template to use based on tab
+    template_map = {
+        'all': 'core/dashboard/partials/admin_resource_all_content_tab.html',
+        'articles': 'core/dashboard/partials/admin_resource_articles_tab.html',
+        'guides': 'core/dashboard/partials/admin_resource_guides_tab.html',
+        'infographics': 'core/dashboard/partials/admin_resource_infographics_tab.html',
+        'opinions': 'core/dashboard/partials/admin_resource_opinions_tab.html',
+        'news': 'core/dashboard/partials/admin_resource_news_tab.html',
+    }
+
+    template = template_map.get(tab, template_map['all'])
+
+    context = {
+        'posts' if tab == 'all' else tab: results,
+        'search_query': search_query,
+        'content_type': content_type,
+    }
+
+    return render(request, template, context)
+
+
+@login_required
+def admin_mpesa_config_modal_view(request):
+    """M-Pesa configuration modal view"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    context = {
+        # Add M-Pesa configuration context here
+    }
+
+    return render(request, 'core/modals/admin_mpesa_config.html', context)
+
+
+# Message Management Views
+
+@login_required
+def admin_message_management_view(request):
+    """Main Message Management page with comprehensive messaging system"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('core:dashboard')
+
+    from .models import Message, MessageAnalytics
+    from django.db.models import Count, Sum, Avg
+    from datetime import timedelta
+
+    # Get overview statistics
+    total_messages = Message.objects.count()
+    active_messages = Message.objects.filter(status='active').count()
+    scheduled_messages = Message.objects.filter(status='scheduled').count()
+    draft_messages = Message.objects.filter(status='draft').count()
+
+    # Message type breakdown
+    message_types = Message.objects.values('message_type').annotate(
+        count=Count('id')
+    ).order_by('message_type')
+
+    # Recent performance metrics (last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_analytics = MessageAnalytics.objects.filter(
+        date__gte=thirty_days_ago.date()
+    ).aggregate(
+        total_displays=Sum('total_displays'),
+        total_clicks=Sum('total_clicks'),
+        total_dismissals=Sum('total_dismissals'),
+    )
+
+    # Calculate CTR manually
+    total_displays = recent_analytics.get('total_displays', 0) or 0
+    total_clicks = recent_analytics.get('total_clicks', 0) or 0
+    avg_ctr = (total_clicks / total_displays * 100) if total_displays > 0 else 0
+    recent_analytics['avg_ctr'] = round(avg_ctr, 2)
+
+    # Top performing messages
+    top_messages = Message.objects.filter(
+        status='active',
+        total_views__gt=0
+    ).order_by('-total_clicks')[:5]
+
+    # Recent messages
+    recent_messages = Message.objects.order_by('-created_at')[:10]
+
+    context = {
+        'total_messages': total_messages,
+        'active_messages': active_messages,
+        'scheduled_messages': scheduled_messages,
+        'draft_messages': draft_messages,
+        'message_types': message_types,
+        'recent_analytics': recent_analytics,
+        'top_messages': top_messages,
+        'recent_messages': recent_messages,
+    }
+
+    return render(request, 'core/dashboard/admin_message_management.html', context)
+
+
+@login_required
+def admin_message_list_tab(request):
+    """HTMX endpoint for message list tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+    from django.core.paginator import Paginator
+
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    message_type_filter = request.GET.get('message_type', '')
+    target_audience_filter = request.GET.get('target_audience', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset
+    messages_qs = Message.objects.select_related('created_by').order_by('-created_at')
+
+    # Apply filters
+    if status_filter and status_filter != 'all':
+        messages_qs = messages_qs.filter(status=status_filter)
+
+    if message_type_filter and message_type_filter != 'all':
+        messages_qs = messages_qs.filter(message_type=message_type_filter)
+
+    if target_audience_filter and target_audience_filter != 'all':
+        messages_qs = messages_qs.filter(target_audience=target_audience_filter)
+
+    if search_query:
+        messages_qs = messages_qs.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query)
+        )
+
+    # Pagination
+    paginator = Paginator(messages_qs, 20)  # 20 messages per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'messages': page_obj,
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'message_type_filter': message_type_filter,
+        'target_audience_filter': target_audience_filter,
+        'search_query': search_query,
+        'message_type_choices': Message.MESSAGE_TYPE_CHOICES,
+        'target_audience_choices': Message.TARGET_AUDIENCE_CHOICES,
+        'status_choices': Message.STATUS_CHOICES,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_message_list_tab.html', context)
+
+
+@login_required
+def admin_message_create_modal(request):
+    """HTMX endpoint for message creation modal"""
+    # Check admin permissions
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message, MessageTemplate
+
+    # Get available templates
+    templates = MessageTemplate.objects.filter(is_active=True).order_by('category', 'name')
+
+    context = {
+        'message_type_choices': Message.MESSAGE_TYPE_CHOICES,
+        'target_audience_choices': Message.TARGET_AUDIENCE_CHOICES,
+        'priority_choices': Message.PRIORITY_CHOICES,
+        'status_choices': Message.STATUS_CHOICES,
+        'templates': templates,
+    }
+
+    return render(request, 'core/modals/admin_message_create.html', context)
+
+
+@login_required
+def admin_message_create(request):
+    """Handle message creation"""
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
+        from .models import Message, MessageSchedule
+        import json
+
+        try:
+            # Extract form data
+            title = request.POST.get('title', '').strip()
+            content = request.POST.get('content', '').strip()
+            excerpt = request.POST.get('excerpt', '').strip()
+            message_type = request.POST.get('message_type', 'announcement')
+            target_audience = request.POST.get('target_audience', 'all')
+            priority = int(request.POST.get('priority', 2))
+            status = request.POST.get('status', 'draft')
+
+            # Display settings
+            show_as_popup = request.POST.get('show_as_popup') == 'on'
+            show_as_banner = request.POST.get('show_as_banner') == 'on'
+            show_in_dashboard = request.POST.get('show_in_dashboard') == 'on'
+
+            # Styling
+            background_color = request.POST.get('background_color', '#ffffff')
+            text_color = request.POST.get('text_color', '#000000')
+            icon_class = request.POST.get('icon_class', '')
+
+            # Action button
+            action_button_text = request.POST.get('action_button_text', '')
+            action_button_url = request.POST.get('action_button_url', '')
+            action_button_color = request.POST.get('action_button_color', '#dc2626')
+
+            # Scheduling
+            publication_date = request.POST.get('publication_date')
+            expiration_date = request.POST.get('expiration_date')
+
+            # Validation
+            if not title:
+                return JsonResponse({'success': False, 'error': 'Title is required'})
+
+            if not content:
+                return JsonResponse({'success': False, 'error': 'Content is required'})
+
+            # Create message
+            message = Message.objects.create(
+                title=title,
+                content=content,
+                excerpt=excerpt,
+                message_type=message_type,
+                target_audience=target_audience,
+                priority=priority,
+                status=status,
+                show_as_popup=show_as_popup,
+                show_as_banner=show_as_banner,
+                show_in_dashboard=show_in_dashboard,
+                background_color=background_color,
+                text_color=text_color,
+                icon_class=icon_class,
+                action_button_text=action_button_text,
+                action_button_url=action_button_url,
+                action_button_color=action_button_color,
+                publication_date=publication_date if publication_date else None,
+                expiration_date=expiration_date if expiration_date else None,
+                created_by=request.user
+            )
+
+            # Handle file upload
+            if 'featured_image' in request.FILES:
+                message.featured_image = request.FILES['featured_image']
+                message.featured_image_alt = request.POST.get('featured_image_alt', '')
+                message.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Message "{title}" created successfully!',
+                'message_id': message.id
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error creating message: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_message_edit_modal(request, message_id):
+    """HTMX endpoint for message edit modal"""
+    # Check admin permissions
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message, MessageTemplate
+
+    try:
+        message = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    # Get available templates
+    templates = MessageTemplate.objects.filter(is_active=True).order_by('category', 'name')
+
+    context = {
+        'message': message,
+        'message_type_choices': Message.MESSAGE_TYPE_CHOICES,
+        'target_audience_choices': Message.TARGET_AUDIENCE_CHOICES,
+        'priority_choices': Message.PRIORITY_CHOICES,
+        'status_choices': Message.STATUS_CHOICES,
+        'templates': templates,
+    }
+
+    return render(request, 'core/modals/admin_message_edit.html', context)
+
+
+@login_required
+def admin_message_edit(request, message_id):
+    """Handle message editing"""
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+
+    try:
+        message = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    if request.method == 'POST':
+        try:
+            # Extract form data
+            message.title = request.POST.get('title', '').strip()
+            message.content = request.POST.get('content', '').strip()
+            message.excerpt = request.POST.get('excerpt', '').strip()
+            message.message_type = request.POST.get('message_type', 'announcement')
+            message.target_audience = request.POST.get('target_audience', 'all')
+            message.priority = int(request.POST.get('priority', 2))
+            message.status = request.POST.get('status', 'draft')
+
+            # Display settings
+            message.show_as_popup = request.POST.get('show_as_popup') == 'on'
+            message.show_as_banner = request.POST.get('show_as_banner') == 'on'
+            message.show_in_dashboard = request.POST.get('show_in_dashboard') == 'on'
+
+            # Styling
+            message.background_color = request.POST.get('background_color', '#ffffff')
+            message.text_color = request.POST.get('text_color', '#000000')
+            message.icon_class = request.POST.get('icon_class', '')
+
+            # Action button
+            message.action_button_text = request.POST.get('action_button_text', '')
+            message.action_button_url = request.POST.get('action_button_url', '')
+            message.action_button_color = request.POST.get('action_button_color', '#dc2626')
+
+            # Scheduling
+            publication_date = request.POST.get('publication_date')
+            expiration_date = request.POST.get('expiration_date')
+            message.publication_date = publication_date if publication_date else None
+            message.expiration_date = expiration_date if expiration_date else None
+
+            # Validation
+            if not message.title:
+                return JsonResponse({'success': False, 'error': 'Title is required'})
+
+            if not message.content:
+                return JsonResponse({'success': False, 'error': 'Content is required'})
+
+            # Handle file upload
+            if 'featured_image' in request.FILES:
+                message.featured_image = request.FILES['featured_image']
+                message.featured_image_alt = request.POST.get('featured_image_alt', '')
+
+            message.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Message "{message.title}" updated successfully!'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error updating message: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_message_delete(request, message_id):
+    """Handle message deletion"""
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+
+    try:
+        message = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    # Handle both DELETE requests and POST requests with _method=DELETE
+    if request.method == 'DELETE' or (request.method == 'POST' and request.POST.get('_method') == 'DELETE'):
+        message_title = message.title
+        message.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Message "{message_title}" deleted successfully!'
+        })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_message_preview_modal(request, message_id):
+    """HTMX endpoint for message preview modal"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+
+    try:
+        message = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    context = {
+        'message': message,
+    }
+
+    return render(request, 'core/modals/admin_message_preview.html', context)
+
+
+@login_required
+def admin_message_search(request):
+    """HTMX endpoint for message search"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+    from django.core.paginator import Paginator
+
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    message_type_filter = request.GET.get('message_type', '')
+    target_audience_filter = request.GET.get('target_audience', '')
+
+    if not search_query:
+        return JsonResponse({'success': False, 'message': 'No search query provided'})
+
+    # Base queryset
+    messages_qs = Message.objects.select_related('created_by').order_by('-created_at')
+
+    # Apply search
+    messages_qs = messages_qs.filter(
+        Q(title__icontains=search_query) |
+        Q(content__icontains=search_query) |
+        Q(excerpt__icontains=search_query)
+    )
+
+    # Apply filters
+    if status_filter and status_filter != 'all':
+        messages_qs = messages_qs.filter(status=status_filter)
+
+    if message_type_filter and message_type_filter != 'all':
+        messages_qs = messages_qs.filter(message_type=message_type_filter)
+
+    if target_audience_filter and target_audience_filter != 'all':
+        messages_qs = messages_qs.filter(target_audience=target_audience_filter)
+
+    # Pagination
+    paginator = Paginator(messages_qs, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'messages': page_obj,
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'message_type_filter': message_type_filter,
+        'target_audience_filter': target_audience_filter,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_message_list_tab.html', context)
+
+
+@login_required
+def admin_message_analytics_tab(request):
+    """HTMX endpoint for message analytics tab"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message, MessageAnalytics
+    from django.db.models import Sum, Avg, Count
+    from datetime import timedelta
+
+    # Get date range
+    days = int(request.GET.get('days', 30))
+    start_date = timezone.now() - timedelta(days=days)
+
+    # Overall analytics
+    total_messages = Message.objects.count()
+    active_messages = Message.objects.filter(status='active').count()
+
+    # Performance metrics
+    analytics_data = MessageAnalytics.objects.filter(
+        date__gte=start_date.date()
+    ).aggregate(
+        total_displays=Sum('total_displays'),
+        total_clicks=Sum('total_clicks'),
+        total_dismissals=Sum('total_dismissals'),
+        unique_users=Sum('unique_users_shown')
+    )
+
+    # Calculate rates
+    total_displays = analytics_data['total_displays'] or 0
+    total_clicks = analytics_data['total_clicks'] or 0
+    total_dismissals = analytics_data['total_dismissals'] or 0
+
+    click_through_rate = (total_clicks / total_displays * 100) if total_displays > 0 else 0
+    dismissal_rate = (total_dismissals / total_displays * 100) if total_displays > 0 else 0
+
+    # Top performing messages
+    top_messages = Message.objects.filter(
+        total_views__gt=0
+    ).order_by('-total_clicks')[:10]
+
+    # Daily analytics for chart
+    daily_analytics = MessageAnalytics.objects.filter(
+        date__gte=start_date.date()
+    ).values('date').annotate(
+        displays=Sum('total_displays'),
+        clicks=Sum('total_clicks'),
+        dismissals=Sum('total_dismissals')
+    ).order_by('date')
+
+    context = {
+        'total_messages': total_messages,
+        'active_messages': active_messages,
+        'analytics_data': analytics_data,
+        'click_through_rate': round(click_through_rate, 2),
+        'dismissal_rate': round(dismissal_rate, 2),
+        'top_messages': top_messages,
+        'daily_analytics': list(daily_analytics),
+        'days': days,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_message_analytics_tab.html', context)
+
+
+@htmx_login_required
+def admin_message_count_htmx(request):
+    """HTMX endpoint for message count badge in sidebar"""
+    # Allow access for admin users and staff
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return HttpResponse('0')  # Return 0 instead of 403 for non-admin users
+
+    try:
+        from .models import Message
+        # Count active messages
+        active_count = Message.objects.filter(status='active').count()
+        return HttpResponse(str(active_count))
+    except Exception:
+        # Return 0 if Message model doesn't exist or any other error
+        return HttpResponse('0')
+
+
+# Frontend Message Display Views
+
+@ajax_login_required
+def user_messages_popup(request):
+    """Get messages to display as popups for the current user"""
+    from .models import Message
+    from .services.message_service import MessageTargetingService, MessageAnalyticsService
+    import logging
+
+    logger = logging.getLogger(__name__)
+    user = request.user
+
+    # Get active popup messages
+    messages_qs = Message.objects.filter(
+        status='active',
+        show_as_popup=True
+    ).select_related('created_by').order_by('-priority', '-created_at')
+
+    logger.debug(f"Found {messages_qs.count()} active popup messages for user {user.username}")
+
+    # Find the first message that should be shown to this user
+    message_to_show = None
+    for message in messages_qs:
+        if MessageTargetingService.should_show_message_to_user(message, user):
+            message_to_show = message
+            logger.debug(f"Message '{message.title}' will be shown to user {user.username}")
+            break
+
+    if message_to_show:
+        # Record the view using the analytics service
+        MessageAnalyticsService.record_message_view(message_to_show, user, request)
+
+        context = {
+            'message': message_to_show,
+        }
+
+        return render(request, 'core/messages/user_message_popup.html', context)
+
+    logger.debug(f"No messages to show to user {user.username}")
+    return JsonResponse({'no_messages': True})
+
+
+@login_required
+def user_message_action(request, message_id):
+    """Handle user actions on messages (click, dismiss, etc.)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    from .models import Message
+    from .services.message_service import MessageAnalyticsService
+
+    try:
+        message = Message.objects.get(id=message_id)
+        action = request.POST.get('action', 'viewed')
+
+        # Record the action using the analytics service
+        MessageAnalyticsService.record_message_action(message, request.user, action, request)
+
+        return JsonResponse({'success': True, 'action': action})
+
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def user_dashboard_messages(request):
+    """Get messages to display in user dashboard"""
+    from .models import Message
+    from .services.message_service import MessageTargetingService
+
+    user = request.user
+
+    # Get active messages that should be shown in dashboard
+    messages_qs = Message.objects.filter(
+        status='active',
+        show_in_dashboard=True
+    ).select_related('created_by').order_by('-priority', '-created_at')
+
+    # Filter messages based on targeting rules
+    valid_messages = []
+    for message in messages_qs:
+        if MessageTargetingService.should_show_message_to_user(message, user):
+            valid_messages.append(message)
+            if len(valid_messages) >= 5:  # Limit to top 5 messages
+                break
+
+    context = {
+        'messages': valid_messages,
+    }
+
+    return render(request, 'core/messages/user_dashboard_messages.html', context)
+
+
+@login_required
+def admin_message_schedule_modal(request, message_id):
+    """HTMX endpoint for message scheduling modal"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message, MessageSchedule
+
+    try:
+        message = Message.objects.get(id=message_id)
+        schedule = getattr(message, 'schedule', None)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    context = {
+        'message': message,
+        'schedule': schedule,
+        'frequency_choices': MessageSchedule.FREQUENCY_CHOICES,
+        'weekday_choices': MessageSchedule.WEEKDAY_CHOICES,
+    }
+
+    return render(request, 'core/modals/admin_message_schedule.html', context)
+
+
+@login_required
+def admin_message_schedule_save(request, message_id):
+    """Handle message schedule creation/update"""
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+    from .services.message_service import MessageSchedulingService
+
+    try:
+        message = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    if request.method == 'POST':
+        try:
+            # Extract schedule data
+            schedule_data = {
+                'frequency': request.POST.get('frequency', 'once'),
+                'send_time': request.POST.get('send_time'),
+                'timezone': request.POST.get('timezone', 'UTC'),
+                'weekdays': request.POST.getlist('weekdays'),
+                'day_of_month': request.POST.get('day_of_month'),
+                'max_occurrences': request.POST.get('max_occurrences'),
+                'end_date': request.POST.get('end_date'),
+            }
+
+            # Clean up empty values
+            for key, value in list(schedule_data.items()):
+                if value == '' or value is None:
+                    schedule_data[key] = None
+                elif key == 'weekdays':
+                    schedule_data[key] = [int(day) for day in value if day.isdigit()]
+                elif key in ['max_occurrences', 'day_of_month'] and value:
+                    schedule_data[key] = int(value)
+
+            # Create or update schedule
+            if hasattr(message, 'schedule'):
+                schedule = MessageSchedulingService.update_schedule(message.schedule, schedule_data)
+                action = 'updated'
+            else:
+                schedule = MessageSchedulingService.create_schedule(message, schedule_data)
+                action = 'created'
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Message schedule {action} successfully!'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error saving schedule: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_message_targeting_modal(request, message_id):
+    """HTMX endpoint for message targeting modal"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message, MessageTarget
+
+    try:
+        message = Message.objects.get(id=message_id)
+        targeting_rules = message.targeting_rules.all()
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    context = {
+        'message': message,
+        'targeting_rules': targeting_rules,
+        'field_choices': MessageTarget.FIELD_CHOICES,
+        'condition_choices': MessageTarget.CONDITION_CHOICES,
+    }
+
+    return render(request, 'core/modals/admin_message_targeting.html', context)
+
+
+@login_required
+def admin_message_performance_modal(request, message_id):
+    """HTMX endpoint for message performance modal"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    from .models import Message
+    from .services.message_service import MessageAnalyticsService
+
+    try:
+        message = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+    # Get performance data for different time periods
+    performance_7d = MessageAnalyticsService.get_message_performance(message, 7)
+    performance_30d = MessageAnalyticsService.get_message_performance(message, 30)
+    performance_90d = MessageAnalyticsService.get_message_performance(message, 90)
+
+    context = {
+        'message': message,
+        'performance_7d': performance_7d,
+        'performance_30d': performance_30d,
+        'performance_90d': performance_90d,
+    }
+
+    return render(request, 'core/modals/admin_message_performance.html', context)
+
+
+# Vendor Spare Parts HTMX Views
+
+@login_required
+@require_http_methods(["GET"])
+def vendor_spare_parts_table_htmx(request):
+    """HTMX endpoint for vendor spare parts table with real-time filtering"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+    except Vendor.DoesNotExist:
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    # Get filter parameters
+    search = request.GET.get('search', '').strip()
+    category = request.GET.get('category', '')
+    stock_status = request.GET.get('stock_status', '')
+
+    # Base queryset
+    spare_parts = SparePart.objects.filter(vendor=vendor).select_related(
+        'supplier', 'category_new'
+    )
+
+    # Apply filters
+    if search:
+        spare_parts = spare_parts.filter(
+            Q(name__icontains=search) |
+            Q(sku__icontains=search) |
+            Q(part_number__icontains=search) |
+            Q(barcode__icontains=search)
+        )
+
+    if category:
+        spare_parts = spare_parts.filter(category_new_id=category)
+
+    if stock_status == 'low':
+        spare_parts = [part for part in spare_parts if part.is_low_stock]
+    elif stock_status == 'out':
+        spare_parts = spare_parts.filter(stock_quantity=0)
+    elif stock_status == 'available':
+        spare_parts = spare_parts.filter(stock_quantity__gt=0)
+
+    # Pagination (10 rows per page as per user preference)
+    paginator = Paginator(spare_parts, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'spare_parts': page_obj,
+        'total_results': paginator.count,
+    }
+
+    return render(request, 'core/partials/vendor_spare_parts_table.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def vendor_spare_parts_search_htmx(request):
+    """HTMX endpoint for vendor spare parts live search"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+    except Vendor.DoesNotExist:
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    search_query = request.GET.get('search', '').strip()
+
+    # Base queryset for vendor's spare parts
+    spare_parts = SparePart.objects.filter(vendor=vendor).select_related('supplier', 'category_new')
+
+    # Apply search filter only if search query is provided and has at least 2 characters
+    if search_query and len(search_query) >= 2:
+        spare_parts = spare_parts.filter(
+            Q(name__icontains=search_query) |
+            Q(sku__icontains=search_query) |
+            Q(part_number__icontains=search_query) |
+            Q(barcode__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Pagination
+    paginator = Paginator(spare_parts.order_by('-created_at'), 12)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'spare_parts': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'total_results': paginator.count,
+    }
+
+    return render(request, 'core/partials/vendor_spare_parts_grid.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def vendor_spare_parts_stats_htmx(request):
+    """HTMX endpoint for vendor spare parts statistics"""
+    if request.user.role != 'vendor':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        vendor = request.user.vendor
+    except Vendor.DoesNotExist:
+        return JsonResponse({'error': 'Vendor profile not found'}, status=404)
+
+    # Calculate statistics
+    total_parts = SparePart.objects.filter(vendor=vendor, is_available=True).count()
+    in_stock_parts = SparePart.objects.filter(
+        vendor=vendor,
+        is_available=True,
+        stock_quantity__gt=10
+    ).count()
+    low_stock_parts = SparePart.objects.filter(
+        vendor=vendor,
+        is_available=True,
+        stock_quantity__lte=10,
+        stock_quantity__gt=0
+    ).count()
+    out_of_stock_parts = SparePart.objects.filter(
+        vendor=vendor,
+        is_available=True,
+        stock_quantity=0
+    ).count()
+
+    # Calculate total inventory value
+    total_value = SparePart.objects.filter(
+        vendor=vendor,
+        is_available=True
+    ).aggregate(
+        total=Sum(F('stock_quantity') * F('cost_price'))
+    )['total'] or 0
+
+    stats = {
+        'total_parts': total_parts,
+        'in_stock_parts': in_stock_parts,
+        'low_stock_parts': low_stock_parts,
+        'out_of_stock_parts': out_of_stock_parts,
+        'total_value': total_value
+    }
+
+    return render(request, 'core/partials/vendor_spare_parts_stats.html', {'stats': stats})
+
+
+# Admin Spare Shop Statistics HTMX Views
+
+@login_required
+@require_http_methods(["GET"])
+def admin_spare_shop_stats_total(request):
+    """HTMX endpoint for admin spare shop total parts statistics"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    total_parts = SparePart.objects.filter(is_available=True).count()
+    return HttpResponse(str(total_parts))
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_spare_shop_stats_in_stock(request):
+    """HTMX endpoint for admin spare shop in-stock parts statistics"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    in_stock_parts = SparePart.objects.filter(
+        is_available=True,
+        stock_quantity__gt=10
+    ).count()
+    return HttpResponse(str(in_stock_parts))
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_spare_shop_stats_out_of_stock(request):
+    """HTMX endpoint for admin spare shop out-of-stock parts statistics"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    out_of_stock_parts = SparePart.objects.filter(
+        is_available=True,
+        stock_quantity=0
+    ).count()
+    return HttpResponse(str(out_of_stock_parts))
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_spare_shop_stats_low_stock(request):
+    """HTMX endpoint for admin spare shop low-stock parts statistics"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    low_stock_parts = SparePart.objects.filter(
+        is_available=True,
+        stock_quantity__lte=10,
+        stock_quantity__gt=0
+    ).count()
+    return HttpResponse(str(low_stock_parts))

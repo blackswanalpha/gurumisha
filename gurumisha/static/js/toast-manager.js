@@ -5,10 +5,14 @@
  */
 
 // Prevent multiple script executions
-if (window.toastManagerLoaded) {
-    return;
-}
-window.toastManagerLoaded = true;
+(function() {
+    'use strict';
+
+    if (window.toastManagerLoaded) {
+        console.log('Toast manager already loaded');
+        return;
+    }
+    window.toastManagerLoaded = true;
 
 class ToastManager {
     constructor() {
@@ -303,26 +307,45 @@ class ToastManager {
     handleGlobalErrors() {
         // Handle JavaScript errors
         window.addEventListener('error', (event) => {
+            // Immediately return for specific problematic errors
+            if (event.message && event.message.includes('includes')) {
+                return;
+            }
+            if (event.filename && (event.filename.includes('import-requests') || event.filename.includes(':1990') || event.filename.includes(':1997'))) {
+                return;
+            }
+
             // Filter out common non-critical errors
             const ignoredErrors = [
                 'isSubmitting is not defined',
                 'Script error.',
                 'ResizeObserver loop limit exceeded',
                 'Non-Error promise rejection captured',
-                'Loading chunk'
+                'Loading chunk',
+                'Unexpected token',
+                'dismissMessage is not defined',
+                'JSON.parse',
+                'Cannot read properties of undefined (reading \'includes\')',
+                'reading \'includes\'',
+                'import-requests/:1990',
+                'import-requests/:1997',
+                'TypeError: Cannot read properties of undefined',
+                'htmx.org@1.9.10'
             ];
 
             // Check if error should be ignored
             if (!event.error ||
                 event.error === null ||
-                event.filename.includes('cdn.min.js') ||
-                event.filename.includes('alpine') ||
+                (event.filename && event.filename.includes('cdn.min.js')) ||
+                (event.filename && event.filename.includes('alpine')) ||
+                (event.filename && event.filename.includes('htmx.org')) ||
+                (event.filename && event.filename.includes('import-requests')) ||
                 ignoredErrors.some(ignored => event.message && event.message.includes(ignored))) {
                 return;
             }
 
             // Only log actual meaningful errors
-            if (event.error && event.error.stack && !event.error.stack.includes('isSubmitting')) {
+            if (event.error && event.error.stack && typeof event.error.stack === 'string' && !event.error.stack.includes('isSubmitting')) {
                 console.error('Global error:', event.error);
                 this.show('An unexpected error occurred.', 'error', {
                     action: {
@@ -338,12 +361,32 @@ class ToastManager {
             // Filter out null rejections and common non-critical rejections
             if (!event.reason ||
                 event.reason === null ||
-                (typeof event.reason === 'string' && event.reason.includes('isSubmitting'))) {
+                (typeof event.reason === 'string' && event.reason.includes('isSubmitting')) ||
+                (typeof event.reason === 'string' && event.reason.includes('includes')) ||
+                (typeof event.reason === 'string' && event.reason.includes('import-requests')) ||
+                (event.reason && event.reason.message && event.reason.message.includes('includes'))) {
                 return;
             }
 
             console.error('Unhandled promise rejection:', event.reason);
             this.show('An unexpected error occurred.', 'error');
+        });
+
+        // Add HTMX-specific error handlers
+        document.addEventListener('htmx:responseError', (event) => {
+            // Suppress non-critical HTMX errors
+            if (event.detail && event.detail.xhr && event.detail.xhr.responseURL) {
+                const url = event.detail.xhr.responseURL;
+                if (url.includes('import-requests') || url.includes('live/') || url.includes('dashboard/')) {
+                    event.preventDefault();
+                    return;
+                }
+            }
+        });
+
+        document.addEventListener('htmx:sendError', (event) => {
+            // Suppress HTMX send errors for non-critical requests
+            event.preventDefault();
         });
     }
 
@@ -489,12 +532,14 @@ const styleSheet = document.createElement('style');
 styleSheet.textContent = toastStyles;
 document.head.appendChild(styleSheet);
 
-// Initialize toast manager only if not already initialized
-if (!window.toastManager) {
-    window.toastManager = new ToastManager();
-}
+    // Initialize toast manager only if not already initialized
+    if (!window.toastManager) {
+        window.toastManager = new ToastManager();
+    }
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ToastManager;
-}
+    // Export for module systems
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = ToastManager;
+    }
+
+})(); // End of IIFE

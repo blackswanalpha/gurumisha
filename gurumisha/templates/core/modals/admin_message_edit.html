@@ -1,0 +1,636 @@
+{% load static %}
+
+<!-- Enhanced Message Edit Modal with Harrier Design -->
+<div id="message-edit-modal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="closeModal('message-edit-modal')"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full modal-panel">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-harrier-red to-harrier-dark px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-edit text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white font-montserrat" id="modal-title">
+                                Edit Message
+                            </h3>
+                            <p class="text-sm text-white/80 font-raleway">
+                                Update message content and settings
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="text-white/80 hover:text-white transition-colors duration-200 p-2 hover:bg-white/10 rounded-lg"
+                            onclick="closeModal('message-edit-modal')">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
+                <form id="message-edit-form"
+                      hx-post="{% url 'core:admin_message_edit' message.id %}"
+                      hx-encoding="multipart/form-data"
+                      hx-target="#message-edit-modal"
+                      hx-swap="outerHTML">
+                    {% csrf_token %}
+
+                    <!-- Basic Information Section -->
+                    <div class="form-section mb-6">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-info-circle mr-2 text-harrier-red"></i>
+                            Basic Information
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Title -->
+                            <div class="form-group lg:col-span-2">
+                                <label class="form-label">
+                                    <i class="fas fa-heading text-harrier-red"></i>
+                                    Message Title *
+                                </label>
+                                <input type="text" 
+                                       name="title" 
+                                       required
+                                       value="{{ message.title }}"
+                                       class="form-input"
+                                       placeholder="Enter message title"
+                                       maxlength="200">
+                            </div>
+
+                            <!-- Message Type -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-tag text-harrier-red"></i>
+                                    Message Type *
+                                </label>
+                                <select name="message_type" required class="form-input">
+                                    {% for value, label in message_type_choices %}
+                                        <option value="{{ value }}" {% if message.message_type == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Target Audience -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-users text-harrier-red"></i>
+                                    Target Audience *
+                                </label>
+                                <select name="target_audience" required class="form-input">
+                                    {% for value, label in target_audience_choices %}
+                                        <option value="{{ value }}" {% if message.target_audience == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Priority -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-exclamation-triangle text-harrier-red"></i>
+                                    Priority Level
+                                </label>
+                                <select name="priority" class="form-input">
+                                    {% for value, label in priority_choices %}
+                                        <option value="{{ value }}" {% if message.priority == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-toggle-on text-harrier-red"></i>
+                                    Status
+                                </label>
+                                <select name="status" class="form-input">
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if message.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Excerpt -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-quote-left text-harrier-red"></i>
+                                Brief Summary
+                            </label>
+                            <textarea name="excerpt" 
+                                      rows="2" 
+                                      class="form-input"
+                                      placeholder="Brief summary for previews and notifications">{{ message.excerpt }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Content Section -->
+                    <div class="form-section mb-6">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-edit mr-2 text-harrier-red"></i>
+                            Message Content
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-file-alt text-harrier-red"></i>
+                                Message Content *
+                            </label>
+                            <textarea name="content" 
+                                      required
+                                      rows="8" 
+                                      class="form-input"
+                                      placeholder="Enter your message content here. HTML formatting is supported.">{{ message.content }}</textarea>
+                            <p class="text-xs text-gray-500 mt-1">You can use HTML formatting in your content.</p>
+                        </div>
+                    </div>
+
+                    <!-- Display Settings Section -->
+                    <div class="form-section mb-6">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-desktop mr-2 text-harrier-red"></i>
+                            Display Settings
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Display Options -->
+                            <div class="form-group">
+                                <label class="form-label">Display Options</label>
+                                <div class="space-y-3">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="show_as_popup" class="form-checkbox" {% if message.show_as_popup %}checked{% endif %}>
+                                        <span class="ml-2 text-sm">Show as popup modal</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="show_as_banner" class="form-checkbox" {% if message.show_as_banner %}checked{% endif %}>
+                                        <span class="ml-2 text-sm">Show as banner notification</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="show_in_dashboard" class="form-checkbox" {% if message.show_in_dashboard %}checked{% endif %}>
+                                        <span class="ml-2 text-sm">Show in user dashboard</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Styling -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-palette text-harrier-red"></i>
+                                    Colors
+                                </label>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-xs text-gray-600">Background Color</label>
+                                        <input type="color" name="background_color" value="{{ message.background_color|default:'#ffffff' }}" class="form-input h-10">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-600">Text Color</label>
+                                        <input type="color" name="text_color" value="{{ message.text_color|default:'#000000' }}" class="form-input h-10">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Icon -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-icons text-harrier-red"></i>
+                                    Icon Class
+                                </label>
+                                <input type="text" 
+                                       name="icon_class" 
+                                       value="{{ message.icon_class }}"
+                                       class="form-input"
+                                       placeholder="fas fa-bell">
+                                <p class="text-xs text-gray-500 mt-1">Font Awesome icon class</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button Section -->
+                    <div class="form-section mb-6">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-mouse-pointer mr-2 text-harrier-red"></i>
+                            Action Button (Optional)
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-text-width text-harrier-red"></i>
+                                    Button Text
+                                </label>
+                                <input type="text" 
+                                       name="action_button_text" 
+                                       value="{{ message.action_button_text }}"
+                                       class="form-input"
+                                       placeholder="Learn More">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-link text-harrier-red"></i>
+                                    Button URL
+                                </label>
+                                <input type="url" 
+                                       name="action_button_url" 
+                                       value="{{ message.action_button_url }}"
+                                       class="form-input"
+                                       placeholder="https://example.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-palette text-harrier-red"></i>
+                                    Button Color
+                                </label>
+                                <input type="color" 
+                                       name="action_button_color" 
+                                       value="{{ message.action_button_color|default:'#dc2626' }}" 
+                                       class="form-input h-10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduling Section -->
+                    <div class="form-section mb-6">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-calendar-alt mr-2 text-harrier-red"></i>
+                            Scheduling (Optional)
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-play text-harrier-red"></i>
+                                    Publication Date
+                                </label>
+                                <input type="datetime-local" 
+                                       name="publication_date" 
+                                       value="{% if message.publication_date %}{{ message.publication_date|date:'Y-m-d\TH:i' }}{% endif %}"
+                                       class="form-input">
+                                <p class="text-xs text-gray-500 mt-1">When to start showing this message</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-stop text-harrier-red"></i>
+                                    Expiration Date
+                                </label>
+                                <input type="datetime-local" 
+                                       name="expiration_date" 
+                                       value="{% if message.expiration_date %}{{ message.expiration_date|date:'Y-m-d\TH:i' }}{% endif %}"
+                                       class="form-input">
+                                <p class="text-xs text-gray-500 mt-1">When to stop showing this message</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Media Section -->
+                    <div class="form-section mb-6">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-image mr-2 text-harrier-red"></i>
+                            Featured Image (Optional)
+                        </h3>
+                        
+                        {% if message.featured_image %}
+                        <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-2">Current Image:</p>
+                            <img src="{{ message.featured_image.url }}" alt="{{ message.featured_image_alt }}" class="max-w-xs rounded-lg">
+                        </div>
+                        {% endif %}
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-camera text-harrier-red"></i>
+                                    {% if message.featured_image %}Replace{% else %}Add{% endif %} Featured Image
+                                </label>
+                                <input type="file" 
+                                       name="featured_image" 
+                                       accept="image/*"
+                                       class="form-input">
+                                <p class="text-xs text-gray-500 mt-1">Recommended size: 1200x630px</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-eye text-harrier-red"></i>
+                                    Image Alt Text
+                                </label>
+                                <input type="text" 
+                                       name="featured_image_alt" 
+                                       value="{{ message.featured_image_alt }}"
+                                       class="form-input"
+                                       placeholder="Describe the image for accessibility">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row sm:justify-end gap-3">
+                <button type="button" 
+                        class="enhanced-btn enhanced-btn-cancel"
+                        onclick="closeModal('message-edit-modal')">
+                    <div class="btn-content">
+                        <div class="btn-icon-wrapper">
+                            <i class="btn-icon fas fa-times"></i>
+                        </div>
+                        <span class="btn-text">Cancel</span>
+                    </div>
+                </button>
+                
+                <button type="submit" 
+                        form="message-edit-form"
+                        class="enhanced-btn enhanced-btn-submit">
+                    <div class="btn-content">
+                        <div class="btn-icon-wrapper">
+                            <i class="btn-icon fas fa-save"></i>
+                        </div>
+                        <span class="btn-text">Update Message</span>
+                    </div>
+                    <div class="btn-glow"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the same styles from create modal -->
+<style>
+    /* Enhanced Modal Styles */
+    .modal-panel {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Enhanced Form Styling */
+    .form-group {
+        @apply space-y-3 mb-6;
+        position: relative;
+    }
+
+    .form-label {
+        @apply block text-sm font-bold text-gray-800 flex items-center mb-2;
+        font-family: 'Montserrat', sans-serif;
+        letter-spacing: 0.025em;
+    }
+
+    .form-label i {
+        margin-right: 8px;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .form-input {
+        @apply w-full border-2 rounded-2xl transition-all duration-300 ease-out;
+        font-family: 'Inter', 'Raleway', sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        line-height: 1.5;
+        padding: 16px 20px;
+
+        /* Modern glassmorphism background */
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+        backdrop-filter: blur(12px);
+        border: 2px solid rgba(226, 232, 240, 0.8);
+
+        /* Subtle shadow */
+        box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+
+        /* Text styling */
+        color: #1e293b;
+        letter-spacing: 0.01em;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--harrier-red);
+        box-shadow:
+            0 0 0 3px rgba(220, 38, 38, 0.1),
+            0 4px 12px rgba(0, 0, 0, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        background: rgba(255, 255, 255, 0.98);
+        transform: translateY(-1px);
+    }
+
+    .form-checkbox {
+        @apply w-4 h-4 text-harrier-red border-gray-300 rounded focus:ring-harrier-red;
+    }
+
+    .form-section-title {
+        @apply text-lg font-bold text-gray-800 mb-4 flex items-center;
+        font-family: 'Montserrat', sans-serif;
+        border-bottom: 2px solid rgba(220, 38, 38, 0.1);
+        padding-bottom: 8px;
+    }
+
+    /* Enhanced Button Base Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1.2;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(0);
+        font-family: 'Montserrat', sans-serif;
+        min-width: 120px;
+        max-width: 180px;
+        height: 44px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        overflow: visible;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+
+    .enhanced-btn-cancel {
+        background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+        color: #374151;
+        border: 1px solid #D1D5DB;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .enhanced-btn-cancel:hover {
+        background: linear-gradient(135deg, #E5E7EB 0%, #D1D5DB 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .enhanced-btn-submit {
+        background: linear-gradient(135deg,
+            var(--harrier-red) 0%,
+            var(--harrier-red) 15%,
+            var(--harrier-dark) 35%,
+            var(--harrier-dark) 65%,
+            var(--harrier-red) 85%,
+            var(--harrier-red) 100%);
+        background-size: 300% 100%;
+        background-position: 0% 50%;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+            0 8px 24px rgba(220, 38, 38, 0.4),
+            0 4px 12px rgba(31, 41, 55, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        position: relative;
+    }
+
+    .enhanced-btn-submit:hover {
+        background-position: 100% 50%;
+        transform: translateY(-2px) scale(1.02);
+        box-shadow:
+            0 12px 32px rgba(220, 38, 38, 0.5),
+            0 6px 16px rgba(31, 41, 55, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .btn-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-icon {
+        font-size: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-text {
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Pulse Glow Effect for Submit Button */
+    .btn-glow {
+        position: absolute;
+        inset: -2px;
+        border-radius: calc(1rem + 2px);
+        background: linear-gradient(135deg,
+            var(--harrier-red),
+            var(--harrier-red),
+            var(--harrier-dark));
+        opacity: 0;
+        filter: blur(8px);
+        transition: opacity 0.4s ease;
+        z-index: -1;
+    }
+
+    .enhanced-btn-submit:hover .btn-glow {
+        opacity: 0.6;
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+        0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+    }
+
+    /* CSS Variables */
+    :root {
+        --harrier-red: #dc2626;
+        --harrier-dark: #1f2937;
+    }
+</style>
+
+<script>
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Handle form submission response
+document.addEventListener('htmx:afterRequest', function(event) {
+    if (event.target.id === 'message-edit-form') {
+        try {
+            const responseText = event.detail.xhr.responseText.trim();
+            // Only try to parse as JSON if it looks like JSON
+            if (responseText.startsWith('{') && responseText.endsWith('}')) {
+                const response = JSON.parse(responseText);
+                if (response.success) {
+                    // Show success toast
+                    showToast(response.message, 'success');
+
+                    // Close modal
+                    closeModal('message-edit-modal');
+
+                    // Refresh the message list
+                    const activeTab = document.querySelector('.message-tab.active');
+                    if (activeTab) {
+                        htmx.trigger(activeTab, 'click');
+                    }
+                } else {
+                    // Show error toast
+                    showToast(response.error || 'Failed to update message', 'error');
+                }
+            } else {
+                // Non-JSON response, check status code
+                if (event.detail.xhr.status >= 200 && event.detail.xhr.status < 300) {
+                    showToast('Message updated successfully', 'success');
+                    closeModal('message-edit-modal');
+                    const activeTab = document.querySelector('.message-tab.active');
+                    if (activeTab) {
+                        htmx.trigger(activeTab, 'click');
+                    }
+                } else {
+                    showToast('Failed to update message', 'error');
+                }
+            }
+        } catch (e) {
+            console.debug('Error parsing response:', e.message);
+            showToast('An error occurred while updating the message', 'error');
+        }
+    }
+});
+
+// Handle HTMX errors
+document.addEventListener('htmx:responseError', function(event) {
+    if (event.target.id === 'message-edit-form') {
+        showToast('Failed to update message. Please try again.', 'error');
+    }
+});
+</script>

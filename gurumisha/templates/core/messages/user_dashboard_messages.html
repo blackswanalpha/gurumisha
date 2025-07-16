@@ -1,0 +1,379 @@
+{% load static %}
+
+<!-- Enhanced Dashboard Messages with Harrier Design -->
+{% if messages %}
+<div class="dashboard-messages-container mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800 font-montserrat flex items-center">
+            <i class="fas fa-bell mr-2 text-harrier-red"></i>
+            System Messages
+        </h3>
+        <span class="text-sm text-gray-500 font-raleway">{{ messages|length }} message{{ messages|length|pluralize }}</span>
+    </div>
+    
+    <div class="space-y-4">
+        {% for message in messages %}
+        <div class="dashboard-message-card glassmorphism-card animate-fade-in-up" 
+             style="animation-delay: {{ forloop.counter0|add:1|floatformat:1 }}00ms;"
+             data-message-id="{{ message.id }}">
+            
+            <div class="flex items-start space-x-4 p-4">
+                <!-- Message Icon -->
+                {% if message.icon_class %}
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-lg flex items-center justify-center message-icon"
+                             style="background: linear-gradient(135deg, {{ message.action_button_color|default:'#dc2626' }}, {{ message.action_button_color|default:'#dc2626' }}dd);">
+                            <i class="{{ message.icon_class }} text-white text-lg"></i>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Message Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h4 class="text-base font-bold text-gray-900 font-montserrat mb-1">
+                                {{ message.title }}
+                            </h4>
+                            
+                            <!-- Message Meta -->
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                    {% if message.message_type == 'announcement' %}bg-blue-100 text-blue-800
+                                    {% elif message.message_type == 'alert' %}bg-red-100 text-red-800
+                                    {% elif message.message_type == 'promotion' %}bg-green-100 text-green-800
+                                    {% elif message.message_type == 'maintenance' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ message.get_message_type_display }}
+                                </span>
+                                
+                                {% if message.priority >= 3 %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        {% if message.priority == 4 %}bg-red-100 text-red-800
+                                        {% else %}bg-orange-100 text-orange-800{% endif %}">
+                                        {% if message.priority == 4 %}
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>Critical
+                                        {% else %}
+                                            <i class="fas fa-exclamation-circle mr-1"></i>High Priority
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                                
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    {{ message.created_at|timesince }} ago
+                                </span>
+                            </div>
+                            
+                            <!-- Message Excerpt/Content -->
+                            {% if message.excerpt %}
+                                <p class="text-sm text-gray-600 font-raleway leading-relaxed">
+                                    {{ message.excerpt }}
+                                </p>
+                            {% else %}
+                                <div class="text-sm text-gray-600 font-raleway leading-relaxed message-content-preview">
+                                    {{ message.content|striptags|truncatewords:20 }}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Action Button -->
+                            {% if message.action_button_text and message.action_button_url %}
+                                <div class="mt-3">
+                                    <a href="{{ message.action_button_url }}" 
+                                       target="_blank"
+                                       class="dashboard-message-action-btn"
+                                       style="background-color: {{ message.action_button_color|default:'#dc2626' }};"
+                                       onclick="handleDashboardMessageClick({{ message.id }})">
+                                        {{ message.action_button_text }}
+                                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Dismiss Button -->
+                        <div class="flex-shrink-0 ml-4">
+                            <button type="button" 
+                                    class="dashboard-message-dismiss-btn"
+                                    onclick="dismissDashboardMessage({{ message.id }})"
+                                    title="Dismiss message">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expiration Notice -->
+            {% if message.expiration_date %}
+                <div class="px-4 pb-3">
+                    <div class="flex items-center text-xs text-gray-500">
+                        <i class="fas fa-hourglass-end mr-1"></i>
+                        <span>Expires on {{ message.expiration_date|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<style>
+    /* Enhanced Dashboard Messages Styles with Harrier Design */
+    .dashboard-messages-container {
+        font-family: 'Inter', 'Raleway', sans-serif;
+    }
+
+    .glassmorphism-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dashboard-message-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-message-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--harrier-red), var(--harrier-dark));
+        border-radius: 16px 16px 0 0;
+    }
+
+    .dashboard-message-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.15),
+            0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .message-icon {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dashboard-message-card:hover .message-icon {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .message-content-preview {
+        line-height: 1.6;
+    }
+
+    .dashboard-message-action-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .dashboard-message-action-btn:hover {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        text-decoration: none;
+        color: white;
+    }
+
+    .dashboard-message-dismiss-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: rgba(107, 114, 128, 0.1);
+        color: #6b7280;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 14px;
+    }
+
+    .dashboard-message-dismiss-btn:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        transform: scale(1.1);
+    }
+
+    /* Animation Classes */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Exit animations */
+    .animate-fade-out {
+        animation: fadeOut 0.3s ease-in forwards;
+    }
+
+    .animate-slide-out {
+        animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes fadeOut {
+        to {
+            opacity: 0;
+        }
+    }
+
+    @keyframes slideOut {
+        to {
+            opacity: 0;
+            transform: translateX(100%) scale(0.95);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 640px) {
+        .dashboard-message-card .flex {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .dashboard-message-card .flex-shrink-0 {
+            align-self: flex-end;
+            margin-top: 1rem;
+            margin-left: 0;
+        }
+        
+        .dashboard-message-action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+    }
+
+    /* CSS Variables */
+    :root {
+        --harrier-red: #dc2626;
+        --harrier-dark: #1f2937;
+    }
+</style>
+
+<script>
+// Dashboard message interaction functions
+function handleDashboardMessageClick(messageId) {
+    // Record click action
+    fetch(`/messages/action/${messageId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=clicked'
+    }).catch(error => {
+        console.error('Error recording dashboard message click:', error);
+    });
+}
+
+function dismissDashboardMessage(messageId) {
+    const messageCard = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageCard) return;
+    
+    // Add exit animations
+    messageCard.classList.add('animate-slide-out');
+    
+    // Record dismiss action
+    fetch(`/messages/action/${messageId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=dismissed'
+    }).catch(error => {
+        console.error('Error recording dashboard message dismissal:', error);
+    });
+    
+    // Remove message card after animation
+    setTimeout(() => {
+        messageCard.remove();
+        
+        // Check if there are any messages left
+        const remainingMessages = document.querySelectorAll('.dashboard-message-card');
+        if (remainingMessages.length === 0) {
+            const container = document.querySelector('.dashboard-messages-container');
+            if (container) {
+                container.remove();
+            }
+        } else {
+            // Update message count
+            const countElement = container.querySelector('.text-sm.text-gray-500');
+            if (countElement) {
+                const count = remainingMessages.length;
+                countElement.textContent = `${count} message${count !== 1 ? 's' : ''}`;
+            }
+        }
+    }, 300);
+}
+
+// Utility function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Auto-refresh dashboard messages periodically
+document.addEventListener('DOMContentLoaded', function() {
+    // Refresh dashboard messages every 5 minutes
+    setInterval(function() {
+        const container = document.querySelector('.dashboard-messages-container');
+        if (container) {
+            fetch('/messages/dashboard/')
+                .then(response => response.text())
+                .then(html => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    const newContainer = tempDiv.querySelector('.dashboard-messages-container');
+                    
+                    if (newContainer) {
+                        container.replaceWith(newContainer);
+                    } else if (container) {
+                        // No messages to show, remove container
+                        container.remove();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing dashboard messages:', error);
+                });
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+});
+</script>

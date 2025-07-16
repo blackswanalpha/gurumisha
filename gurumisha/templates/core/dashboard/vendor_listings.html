@@ -1,20 +1,77 @@
 {% extends 'base_dashboard.html' %}
 {% load static %}
+{% load core_extras %}
 
 {% block dashboard_title %}My Car Listings{% endblock %}
 {% block page_title %}My Car Listings{% endblock %}
-{% block page_description %}Manage your car inventory and listings{% endblock %}
 
-{% block breadcrumb_items %}
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">My Listings</span>
-        </div>
-    </li>
+{% block extra_css %}
+<style>
+    .listing-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+    }
+    .listing-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .status-badge {
+        animation: pulse 2s infinite;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .filter-button {
+        transition: all 0.3s ease;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        background: white;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    .filter-button:hover {
+        transform: translateY(-1px);
+        background: #f9fafb;
+    }
+    .filter-button.active {
+        background: #dc2626 !important;
+        color: white !important;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        border-color: #dc2626;
+    }
+    .search-input {
+        transition: all 0.3s ease;
+    }
+    .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+    .loading-overlay {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(4px);
+    }
+    .htmx-indicator {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .htmx-request .htmx-indicator {
+        opacity: 1;
+    }
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
 {% endblock %}
 
 {% block dashboard_content %}
+    {% csrf_token %}
     <!-- Enhanced Listing Stats with Modern Design -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up">
         <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
@@ -122,6 +179,31 @@
                         <option value="-views_count">👁️ Most Viewed</option>
                     </select>
 
+                    <!-- Location Filters -->
+                    <select
+                        name="city_filter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm text-sm font-raleway transition-all duration-200 hover:border-harrier-red/50"
+                        hx-get="{% url 'core:vendor_listings' %}"
+                        hx-target="#listings-container"
+                        hx-trigger="change">
+                        <option value="">🏙️ All Cities</option>
+                        {% for city in available_cities %}
+                            <option value="{{ city }}" {% if request.GET.city_filter == city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select
+                        name="country_filter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red bg-white shadow-sm text-sm font-raleway transition-all duration-200 hover:border-harrier-red/50"
+                        hx-get="{% url 'core:vendor_listings' %}"
+                        hx-target="#listings-container"
+                        hx-trigger="change">
+                        <option value="">🌍 All Countries</option>
+                        {% for country in available_countries %}
+                            <option value="{{ country }}" {% if request.GET.country_filter == country %}selected{% endif %}>{{ country }}</option>
+                        {% endfor %}
+                    </select>
+
                     <!-- View Toggle -->
                     <div class="flex items-center bg-gray-100 rounded-lg p-1">
                         <button
@@ -156,9 +238,14 @@
                         hx-trigger="keyup changed delay:500ms">
                 </div>
 
-                <a href="{% url 'core:sell_car' %}" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-semibold text-sm hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
-                    <i class="fas fa-plus mr-2"></i>Add New Car
-                </a>
+                <div class="flex space-x-3">
+                    <a href="{% url 'core:vendor_export_listings' %}" class="inline-flex items-center px-4 py-2 bg-white text-harrier-dark border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 font-medium text-sm">
+                        <i class="fas fa-download mr-2"></i>Export CSV
+                    </a>
+                    <a href="{% url 'core:sell_car' %}" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-semibold text-sm hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                        <i class="fas fa-plus mr-2"></i>Add New Car
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -174,7 +261,11 @@
 <script>
 // Enhanced car management functions with better UX
 function editCar(carId) {
-    window.location.href = `/cars/edit/${carId}/`;
+    window.location.href = `/dashboard/vendor/car/edit/${carId}/`;
+}
+
+function viewCar(carId) {
+    window.location.href = `/dashboard/vendor/car/view/${carId}/`;
 }
 
 function deleteCar(carId) {
@@ -187,7 +278,7 @@ function deleteCar(carId) {
             carElement.style.pointerEvents = 'none';
         }
 
-        htmx.ajax('DELETE', `/dashboard/vendor/delete-car/${carId}/`, {
+        htmx.ajax('DELETE', `/dashboard/vendor/car/delete/${carId}/`, {
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             },
@@ -207,7 +298,7 @@ function toggleCarStatus(carId, currentStatus) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Updating...';
     button.disabled = true;
 
-    htmx.ajax('POST', `/dashboard/vendor/toggle-car-status/${carId}/`, {
+    htmx.ajax('POST', `/dashboard/vendor/car/toggle-status/${carId}/`, {
         values: {
             'status': newStatus,
             'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
@@ -218,14 +309,14 @@ function toggleCarStatus(carId, currentStatus) {
 }
 
 function duplicateCar(carId) {
-    if (confirm('📋 Create a copy of this car listing?\n\nThis will create an exact duplicate that you can then modify. The copy will be marked as "Draft" until you publish it.')) {
+    if (confirm('📋 Create a copy of this car listing?\n\nThis will create an exact duplicate that you can then modify. The copy will be marked as "Pending Review" until approved.')) {
         // Show loading state
         const button = event.target.closest('button');
         const originalContent = button.innerHTML;
         button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Copying...';
         button.disabled = true;
 
-        htmx.ajax('POST', `/dashboard/vendor/duplicate-car/${carId}/`, {
+        htmx.ajax('POST', `/dashboard/vendor/car/duplicate/${carId}/`, {
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             },
@@ -306,10 +397,10 @@ function performBulkAction(action) {
             </div>
         `;
 
-        htmx.ajax('POST', `/dashboard/vendor/bulk-action/`, {
+        htmx.ajax('POST', `/dashboard/vendor/bulk-actions/`, {
             values: {
                 'action': action,
-                'car_ids': selected.join(','),
+                'car_ids': selected,
                 'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
             },
             target: '#listings-container',

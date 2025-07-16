@@ -1,0 +1,398 @@
+<!-- Route Timeline Visualization Component -->
+<div class="route-timeline-container" 
+     x-data="routeTimeline()"
+     x-init="initializeTimeline()"
+     data-order-number="{{ order.order_number }}">
+    
+    <!-- Timeline Header -->
+    <div class="bg-gradient-to-r from-red-900 to-black text-white p-6 rounded-t-lg">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-xl font-semibold font-montserrat">Journey Timeline</h3>
+                <p class="text-red-200 text-sm">Complete route from origin to destination</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                {% if order.route %}
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-white">{{ order.route.progress_percentage }}%</div>
+                    <div class="text-sm text-red-200">Complete</div>
+                </div>
+                {% endif %}
+                <button @click="toggleView()" 
+                        class="p-2 bg-red-700 hover:bg-red-600 rounded-lg transition-colors">
+                    <i class="fas fa-exchange-alt" x-show="!compactView"></i>
+                    <i class="fas fa-list" x-show="compactView"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Content -->
+    <div class="bg-white border-x border-b border-gray-200 rounded-b-lg p-6">
+        
+        <!-- Route Information -->
+        {% if order.route %}
+        <div class="bg-blue-50 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-semibold text-blue-900">{{ order.route.route_name }}</h4>
+                    <p class="text-blue-700 text-sm">{{ order.route.get_route_type_display }} • {{ order.route.get_route_status_display }}</p>
+                </div>
+                <div class="text-right">
+                    {% if order.route.total_distance_km %}
+                    <div class="text-sm text-blue-700">{{ order.route.total_distance_km|floatformat:0 }} km</div>
+                    {% endif %}
+                    {% if order.route.estimated_duration_hours %}
+                    <div class="text-xs text-blue-600">{{ order.route.estimated_duration_hours|floatformat:0 }}h estimated</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Timeline Visualization -->
+        <div class="relative">
+            <!-- Progress Line -->
+            <div class="absolute left-8 top-0 bottom-0 w-1 bg-gray-200 rounded-full"></div>
+            <div class="absolute left-8 top-0 w-1 bg-gradient-to-b from-red-600 to-red-800 rounded-full transition-all duration-1000"
+                 :style="`height: ${progressHeight}%`"
+                 style="height: {% if order.route %}{{ order.route.progress_percentage }}%{% else %}{{ order.progress_percentage }}%{% endif %}"></div>
+
+            <!-- Timeline Items -->
+            <div class="space-y-6" :class="{ 'space-y-3': compactView }">
+                
+                <!-- Standard Import Stages -->
+                {% for stage in import_stages %}
+                <div class="relative flex items-start space-x-4"
+                     :class="{ 'items-center': compactView }">
+                    
+                    <!-- Stage Icon -->
+                    <div class="relative z-10 w-16 h-16 rounded-full flex items-center justify-center border-4 transition-all duration-300"
+                         :class="{ 'w-10 h-10 border-2': compactView }"
+                         class="{% if stage.is_completed %}bg-green-500 border-green-300 text-white
+                                {% elif stage.is_current %}bg-blue-500 border-blue-300 text-white animate-pulse
+                                {% else %}bg-gray-100 border-gray-300 text-gray-400{% endif %}">
+                        <i class="fas fa-{{ stage.icon }} text-xl" :class="{ 'text-sm': compactView }"></i>
+                    </div>
+                    
+                    <!-- Stage Content -->
+                    <div class="flex-1 min-w-0" :class="{ 'py-2': !compactView }">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-gray-900" 
+                                :class="{ 'text-sm': compactView }">{{ stage.name }}</h4>
+                            <div class="flex items-center space-x-2">
+                                {% if stage.is_completed %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check mr-1"></i>Completed
+                                </span>
+                                {% elif stage.is_current %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <i class="fas fa-clock mr-1"></i>In Progress
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <i class="fas fa-hourglass mr-1"></i>Pending
+                                </span>
+                                {% endif %}
+                                {% if stage.estimated_date %}
+                                <span class="text-xs text-gray-500">{{ stage.estimated_date|date:"M d" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <p class="text-gray-600 text-sm mt-1" 
+                           :class="{ 'text-xs': compactView }"
+                           x-show="!compactView || {{ stage.is_current|yesno:'true,false' }}">{{ stage.description }}</p>
+                        
+                        <!-- Location Information -->
+                        {% if stage.location %}
+                        <div class="mt-2 p-3 bg-gray-50 rounded-lg" x-show="!compactView">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-map-marker-alt text-gray-500 text-sm"></i>
+                                <span class="text-sm text-gray-700">{{ stage.location.name }}</span>
+                                {% if stage.location.coordinates_string %}
+                                <span class="text-xs text-gray-500">{{ stage.location.coordinates_string }}</span>
+                                {% endif %}
+                            </div>
+                            {% if stage.location.estimated_arrival_time %}
+                            <div class="flex items-center space-x-2 mt-1">
+                                <i class="fas fa-clock text-gray-500 text-sm"></i>
+                                <span class="text-xs text-gray-600">
+                                    ETA: {{ stage.location.estimated_arrival_time|date:"M d, H:i" }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Stage Actions -->
+                        <div class="mt-3 flex space-x-2" x-show="!compactView">
+                            {% if stage.is_current and stage.location %}
+                            <button onclick="viewOnMap('{{ stage.location.latitude }}', '{{ stage.location.longitude }}')"
+                                    class="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-map mr-1"></i>View on Map
+                            </button>
+                            {% endif %}
+                            {% if stage.documents %}
+                            <button onclick="viewDocuments('{{ stage.id }}')"
+                                    class="text-xs bg-gray-600 text-white px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-file-alt mr-1"></i>Documents
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Custom Waypoints -->
+                {% if order.route.waypoints.all %}
+                <div class="border-t border-gray-200 pt-6 mt-6">
+                    <h5 class="font-semibold text-gray-900 mb-4">Route Waypoints</h5>
+                    
+                    {% for waypoint in order.route.waypoints.all %}
+                    <div class="relative flex items-start space-x-4 mb-4"
+                         :class="{ 'items-center mb-2': compactView }">
+                        
+                        <!-- Waypoint Icon -->
+                        <div class="relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300"
+                             :class="{ 'w-8 h-8': compactView }"
+                             class="{% if waypoint.is_completed %}bg-green-400 border-green-300 text-white
+                                    {% elif waypoint.is_current %}bg-yellow-400 border-yellow-300 text-white animate-pulse
+                                    {% else %}bg-gray-200 border-gray-300 text-gray-500{% endif %}">
+                            <span class="text-sm font-bold" :class="{ 'text-xs': compactView }">{{ waypoint.sequence_order }}</span>
+                        </div>
+                        
+                        <!-- Waypoint Content -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <h6 class="font-medium text-gray-900" 
+                                    :class="{ 'text-sm': compactView }">{{ waypoint.name }}</h6>
+                                <span class="text-xs text-gray-500">{{ waypoint.get_waypoint_type_display }}</span>
+                            </div>
+                            
+                            <p class="text-sm text-gray-600" 
+                               x-show="!compactView">{{ waypoint.description|default:"Route checkpoint" }}</p>
+                            
+                            {% if waypoint.estimated_arrival %}
+                            <div class="text-xs text-gray-500 mt-1">
+                                ETA: {{ waypoint.estimated_arrival|date:"M d, H:i" }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Timeline Controls -->
+        <div class="mt-8 flex justify-center space-x-4">
+            <button @click="scrollToCurrentStage()" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                <i class="fas fa-crosshairs mr-2"></i>Current Stage
+            </button>
+            <button @click="toggleView()" 
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-compress-alt mr-2" x-show="!compactView"></i>
+                <i class="fas fa-expand-alt mr-2" x-show="compactView"></i>
+                <span x-text="compactView ? 'Expand View' : 'Compact View'">Compact View</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function routeTimeline() {
+    return {
+        compactView: false,
+        progressHeight: {% if order.route %}{{ order.route.progress_percentage }}{% else %}{{ order.progress_percentage }}{% endif %},
+        isMobile: false,
+
+        initializeTimeline() {
+            this.checkMobileView();
+            this.scrollToCurrentStage();
+            this.setupMobileInteractions();
+        },
+
+        checkMobileView() {
+            this.isMobile = window.innerWidth <= 768;
+            if (this.isMobile) {
+                this.compactView = true;
+            }
+        },
+
+        setupMobileInteractions() {
+            // Add touch-friendly interactions for mobile
+            if (this.isMobile) {
+                // Enable swipe gestures for timeline navigation
+                let startY = 0;
+                let startX = 0;
+
+                const timeline = document.querySelector('.route-timeline-container');
+                if (timeline) {
+                    timeline.addEventListener('touchstart', (e) => {
+                        startY = e.touches[0].clientY;
+                        startX = e.touches[0].clientX;
+                    });
+
+                    timeline.addEventListener('touchend', (e) => {
+                        const endY = e.changedTouches[0].clientY;
+                        const endX = e.changedTouches[0].clientX;
+                        const diffY = startY - endY;
+                        const diffX = startX - endX;
+
+                        // Detect swipe gestures
+                        if (Math.abs(diffX) > Math.abs(diffY)) {
+                            if (diffX > 50) {
+                                // Swipe left - next stage
+                                this.scrollToNextStage();
+                            } else if (diffX < -50) {
+                                // Swipe right - previous stage
+                                this.scrollToPreviousStage();
+                            }
+                        }
+                    });
+                }
+            }
+        },
+        
+        toggleView() {
+            this.compactView = !this.compactView;
+        },
+        
+        scrollToCurrentStage() {
+            const currentStage = document.querySelector('.animate-pulse');
+            if (currentStage) {
+                currentStage.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }
+        },
+        
+        updateProgress(percentage) {
+            this.progressHeight = percentage;
+        },
+
+        scrollToNextStage() {
+            const stages = document.querySelectorAll('.route-timeline-container .relative.flex.items-start');
+            const currentIndex = Array.from(stages).findIndex(stage =>
+                stage.querySelector('.animate-pulse')
+            );
+
+            if (currentIndex !== -1 && currentIndex < stages.length - 1) {
+                stages[currentIndex + 1].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        },
+
+        scrollToPreviousStage() {
+            const stages = document.querySelectorAll('.route-timeline-container .relative.flex.items-start');
+            const currentIndex = Array.from(stages).findIndex(stage =>
+                stage.querySelector('.animate-pulse')
+            );
+
+            if (currentIndex > 0) {
+                stages[currentIndex - 1].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+    }
+}
+
+function viewOnMap(lat, lng) {
+    if (lat && lng) {
+        const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
+        window.open(mapUrl, '_blank');
+    }
+}
+
+function viewDocuments(stageId) {
+    // Implementation for viewing stage documents
+    console.log('View documents for stage:', stageId);
+}
+</script>
+
+<style>
+.route-timeline-container {
+    @apply shadow-lg rounded-lg overflow-hidden;
+}
+
+.route-timeline-container .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: .8;
+        transform: scale(1.05);
+    }
+}
+
+/* Timeline line animation */
+.route-timeline-container .absolute.w-1.bg-gradient-to-b {
+    transition: height 2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth transitions for compact view */
+.route-timeline-container .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .route-timeline-container .bg-gradient-to-r {
+        @apply px-4 py-4;
+    }
+
+    .route-timeline-container .p-6 {
+        @apply p-4;
+    }
+
+    .route-timeline-container .space-y-6 {
+        @apply space-y-4;
+    }
+
+    .route-timeline-container .w-16.h-16 {
+        @apply w-12 h-12;
+    }
+
+    .route-timeline-container .text-xl {
+        @apply text-lg;
+    }
+
+    .route-timeline-container .space-x-4 {
+        @apply space-x-3;
+    }
+
+    /* Auto-enable compact view on mobile */
+    .route-timeline-container {
+        --mobile-compact: true;
+    }
+}
+
+@media (max-width: 480px) {
+    .route-timeline-container .flex.items-center.justify-between {
+        @apply flex-col items-start space-y-2;
+    }
+
+    .route-timeline-container .flex.space-x-4 {
+        @apply flex-col space-x-0 space-y-2 w-full;
+    }
+
+    .route-timeline-container button {
+        @apply w-full text-center;
+    }
+}
+</style>

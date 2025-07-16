@@ -1,0 +1,166 @@
+<!-- Vendor Spare Parts Grid Partial -->
+{% if spare_parts %}
+    <!-- Grid View -->
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for part in spare_parts %}
+            <div class="bg-white rounded-xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                <!-- Part Image -->
+                <div class="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+                    {% if part.main_image %}
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="{{ part.main_image.url }}" alt="{{ part.name }}">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fas fa-cog text-6xl text-gray-400"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Stock Status Badge -->
+                    <div class="absolute top-3 right-3">
+                        {% if part.stock_quantity > 10 %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>In Stock
+                            </span>
+                        {% elif part.stock_quantity > 0 %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>Low Stock
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-times-circle mr-1"></i>Out of Stock
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Featured Badge -->
+                    {% if part.is_featured %}
+                    <div class="absolute top-3 left-3">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-harrier-red text-white">
+                            <i class="fas fa-star mr-1"></i>Featured
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Part Details -->
+                <div class="p-4">
+                    <!-- Part Name & Category -->
+                    <div class="mb-3">
+                        <h3 class="text-lg font-bold text-harrier-dark group-hover:text-harrier-red transition-colors duration-200 font-montserrat line-clamp-2">
+                            {{ part.name }}
+                        </h3>
+                        <p class="text-sm text-gray-500 font-raleway">{{ part.category_new.name|default:"Uncategorized" }}</p>
+                    </div>
+                    
+                    <!-- Part Info -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 font-raleway">SKU:</span>
+                            <span class="font-semibold text-harrier-dark font-montserrat">{{ part.sku }}</span>
+                        </div>
+                        {% if part.part_number %}
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 font-raleway">Part #:</span>
+                            <span class="font-semibold text-harrier-dark font-montserrat">{{ part.part_number }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 font-raleway">Stock:</span>
+                            <span class="font-semibold text-harrier-dark font-montserrat">{{ part.stock_quantity }} {{ part.get_unit_display|lower }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 font-raleway">Condition:</span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                {% if part.condition == 'new' %}bg-green-100 text-green-800
+                                {% elif part.condition == 'used' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ part.get_condition_display }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 font-raleway">Price:</span>
+                            <div class="text-right">
+                                {% if part.discount_price %}
+                                    <div class="text-sm text-gray-400 line-through font-raleway">KSh {{ part.price|floatformat:0 }}</div>
+                                    <div class="text-lg font-bold text-harrier-red font-montserrat">KSh {{ part.discount_price|floatformat:0 }}</div>
+                                {% else %}
+                                    <div class="text-lg font-bold text-green-600 font-montserrat">KSh {{ part.price|floatformat:0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openViewPartModal({{ part.id }})" class="flex-1 bg-gradient-to-r from-harrier-dark to-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-gray-700 hover:to-harrier-dark transition-all duration-200 transform hover:scale-105">
+                            <i class="fas fa-eye mr-1"></i>View
+                        </button>
+                        <button onclick="openEditPartModal({{ part.id }})" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:scale-105">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <button onclick="deletePartConfirm({{ part.id }})" class="bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-harrier-red-dark hover:to-harrier-red transition-all duration-200 transform hover:scale-105">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="flex justify-center mt-8">
+            <nav class="flex items-center space-x-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                {% endif %}
+                
+                <span class="px-4 py-2 text-sm font-medium text-harrier-dark bg-harrier-red bg-opacity-10 border border-harrier-red rounded-lg">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        
+        <!-- Results Summary -->
+        <div class="text-center mt-4">
+            <p class="text-sm text-gray-500 font-raleway">
+                Showing {{ spare_parts|length }} of {{ total_results }} spare parts
+            </p>
+        </div>
+    </div>
+{% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <i class="fas fa-cogs text-gray-300 text-6xl mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-600 mb-2 font-montserrat">No spare parts found</h3>
+        <p class="text-gray-500 mb-6 font-raleway">
+            {% if request.GET.search %}
+                No parts match your search criteria. Try adjusting your filters.
+            {% else %}
+                Start building your inventory by adding spare parts.
+            {% endif %}
+        </p>
+        <button onclick="openAddPartModal()" class="btn-harrier-primary px-6 py-3 rounded-xl font-semibold">
+            <i class="fas fa-plus mr-2"></i>Add Your First Part
+        </button>
+    </div>
+{% endif %}

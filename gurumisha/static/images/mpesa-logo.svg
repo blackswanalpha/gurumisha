@@ -1,0 +1,20 @@
+<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="120" height="40" rx="6" fill="#00A651"/>
+  
+  <!-- M-Pesa Text -->
+  <text x="60" y="26" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">M-PESA</text>
+  
+  <!-- Mobile phone icon -->
+  <g transform="translate(8, 8)">
+    <rect x="0" y="0" width="12" height="20" rx="2" fill="white" stroke="none"/>
+    <rect x="1" y="3" width="10" height="12" fill="#00A651"/>
+    <circle cx="6" cy="18" r="1" fill="#00A651"/>
+  </g>
+  
+  <!-- Signal waves -->
+  <g transform="translate(95, 12)">
+    <path d="M0 8 Q4 4 8 8" stroke="white" stroke-width="1.5" fill="none"/>
+    <path d="M2 8 Q4 6 6 8" stroke="white" stroke-width="1.5" fill="none"/>
+  </g>
+</svg>

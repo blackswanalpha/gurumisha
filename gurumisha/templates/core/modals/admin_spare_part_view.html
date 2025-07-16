@@ -1,0 +1,413 @@
+<!-- View Spare Part Details Modal -->
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
+     id="view-spare-part-modal"
+     x-data="{ show: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1400]"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Container -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-panel bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="modal-header bg-gradient-to-r from-purple-600 to-purple-800 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-eye text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">Spare Part Details</h3>
+                            <p class="text-white text-opacity-80 text-sm font-raleway">Complete information for {{ spare_part.name }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Close Button -->
+                    <button type="button"
+                            class="text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-all duration-200"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <span class="sr-only">Close</span>
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-96 overflow-y-auto modal-body">
+                <div class="space-y-6">
+                    <!-- Part Overview -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Part Image -->
+                        <div class="lg:col-span-1">
+                            <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200">
+                                {% if spare_part.main_image %}
+                                    <img src="{{ spare_part.main_image.url }}" 
+                                         alt="{{ spare_part.name }}" 
+                                         class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <i class="fas fa-cogs text-gray-400 text-6xl"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Basic Information -->
+                        <div class="lg:col-span-2">
+                            <div class="info-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-info-circle mr-2"></i>Basic Information
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="info-item">
+                                        <label class="info-label">Part Name</label>
+                                        <div class="info-value">{{ spare_part.name }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label class="info-label">SKU</label>
+                                        <div class="info-value">{{ spare_part.sku }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label class="info-label">Part Number</label>
+                                        <div class="info-value">{{ spare_part.part_number|default:"N/A" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label class="info-label">Barcode</label>
+                                        <div class="info-value">{{ spare_part.barcode|default:"N/A" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label class="info-label">Category</label>
+                                        <div class="info-value">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ spare_part.category_new.name|default:spare_part.category|default:"Uncategorized" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label class="info-label">Condition</label>
+                                        <div class="info-value">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                {% if spare_part.condition == 'new' %}bg-green-100 text-green-800
+                                                {% elif spare_part.condition == 'used' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                {{ spare_part.get_condition_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing and Stock Information -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Pricing Information -->
+                        <div class="info-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-dollar-sign mr-2"></i>Pricing Information
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="info-item">
+                                    <label class="info-label">Selling Price</label>
+                                    <div class="info-value text-lg font-semibold text-green-600">
+                                        KSh {{ spare_part.price|floatformat:0 }}
+                                    </div>
+                                </div>
+                                {% if spare_part.cost_price %}
+                                <div class="info-item">
+                                    <label class="info-label">Cost Price</label>
+                                    <div class="info-value">KSh {{ spare_part.cost_price|floatformat:0 }}</div>
+                                </div>
+                                {% endif %}
+                                {% if spare_part.discount_price %}
+                                <div class="info-item">
+                                    <label class="info-label">Discount Price</label>
+                                    <div class="info-value text-orange-600">KSh {{ spare_part.discount_price|floatformat:0 }}</div>
+                                </div>
+                                {% endif %}
+                                {% if profit_margin is not None %}
+                                <div class="info-item">
+                                    <label class="info-label">Profit Margin</label>
+                                    <div class="info-value text-blue-600 font-semibold">
+                                        {{ profit_margin }}%
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Information -->
+                        <div class="info-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-boxes mr-2"></i>Stock Information
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="info-item">
+                                    <label class="info-label">Current Stock</label>
+                                    <div class="info-value text-lg font-semibold 
+                                        {% if spare_part.stock_quantity > spare_part.minimum_stock %}text-green-600
+                                        {% elif spare_part.stock_quantity > 0 %}text-orange-600
+                                        {% else %}text-red-600{% endif %}">
+                                        {{ spare_part.stock_quantity }} units
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Minimum Stock</label>
+                                    <div class="info-value">{{ spare_part.minimum_stock|default:"Not set" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Maximum Stock</label>
+                                    <div class="info-value">{{ spare_part.maximum_stock|default:"Not set" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Reorder Point</label>
+                                    <div class="info-value">{{ spare_part.reorder_point|default:"Not set" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Stock Value</label>
+                                    <div class="info-value text-purple-600 font-semibold">
+                                        KSh {{ spare_part.stock_value|floatformat:0|default:"0" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vendor and Supplier Information -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Vendor Information -->
+                        <div class="info-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-store mr-2"></i>Vendor Information
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="info-item">
+                                    <label class="info-label">Vendor</label>
+                                    <div class="info-value">{{ spare_part.vendor.company_name|default:"Admin Store" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Contact</label>
+                                    <div class="info-value">{{ spare_part.vendor.contact_email|default:"admin@gurumisha.com" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Supplier Information -->
+                        <div class="info-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-truck mr-2"></i>Supplier Information
+                            </h4>
+                            <div class="space-y-3">
+                                {% if spare_part.supplier %}
+                                <div class="info-item">
+                                    <label class="info-label">Supplier</label>
+                                    <div class="info-value">{{ spare_part.supplier.name }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Contact</label>
+                                    <div class="info-value">{{ spare_part.supplier.contact_email|default:"N/A" }}</div>
+                                </div>
+                                {% else %}
+                                <div class="info-item">
+                                    <div class="info-value text-gray-500">No supplier assigned</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description and Specifications -->
+                    {% if spare_part.description or spare_part.specifications %}
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-align-left mr-2"></i>Description & Specifications
+                        </h4>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {% if spare_part.description %}
+                            <div>
+                                <label class="info-label">Description</label>
+                                <div class="info-value text-sm leading-relaxed">{{ spare_part.description }}</div>
+                            </div>
+                            {% endif %}
+                            {% if spare_part.specifications %}
+                            <div>
+                                <label class="info-label">Specifications</label>
+                                <div class="info-value text-sm leading-relaxed">{{ spare_part.specifications }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Timestamps -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-clock mr-2"></i>Timestamps
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="info-item">
+                                <label class="info-label">Created</label>
+                                <div class="info-value">{{ spare_part.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label">Last Updated</label>
+                                <div class="info-value">{{ spare_part.updated_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-3 justify-center pt-6 border-t border-gray-200">
+                        <button onclick="openEditPartModal({{ spare_part.id }})" 
+                                class="enhanced-btn enhanced-btn-secondary">
+                            <i class="fas fa-edit mr-2"></i>Edit Part
+                        </button>
+                        <button onclick="openRestockModal({{ spare_part.id }})" 
+                                class="enhanced-btn enhanced-btn-secondary">
+                            <i class="fas fa-plus-circle mr-2"></i>Restock
+                        </button>
+                        <button type="button"
+                                class="enhanced-btn enhanced-btn-cancel"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                            <i class="fas fa-times mr-2"></i>Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* View Modal Specific Styles */
+    .info-section {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        font-family: 'Montserrat', sans-serif;
+        border-bottom: 2px solid #F3F4F6;
+        padding-bottom: 0.5rem;
+    }
+
+    .section-title i {
+        color: var(--harrier-red);
+        margin-right: 0.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1F2937;
+        font-family: 'Raleway', sans-serif;
+        line-height: 1.4;
+    }
+
+    /* Enhanced Button Styles for View Modal */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 16px;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1.2;
+        border-radius: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        min-width: 100px;
+        border: 2px solid transparent;
+        cursor: pointer;
+    }
+
+    .enhanced-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--harrier-dark);
+        border-color: rgba(156, 163, 175, 0.3);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: var(--harrier-red);
+        color: var(--harrier-red);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .enhanced-btn-cancel {
+        background: rgba(255, 255, 255, 0.9);
+        color: #6B7280;
+        border-color: #D1D5DB;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .enhanced-btn-cancel:hover {
+        background: rgba(255, 255, 255, 1);
+        color: #374151;
+        border-color: #9CA3AF;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 640px) {
+        .modal-panel {
+            margin: 1rem;
+            max-width: calc(100vw - 2rem);
+        }
+
+        .info-section {
+            padding: 1rem;
+        }
+
+        .grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>

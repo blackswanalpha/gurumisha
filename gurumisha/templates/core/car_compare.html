@@ -1,0 +1,574 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block title %}Compare Cars - Gurumisha{% endblock %}
+{% block meta_description %}Compare up to 3 cars side by side with detailed specifications, features, and pricing to make the best choice for your needs.{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Enhanced Car Comparison Styles with Harrier Design */
+.compare-hero {
+    background: linear-gradient(135deg, #DC2626 0%, #1F2937 50%, #1E3A8A 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.compare-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+}
+
+.comparison-table {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.car-column {
+    border-right: 1px solid rgba(229, 231, 235, 0.5);
+    transition: all 0.3s ease;
+}
+
+.car-column:last-child {
+    border-right: none;
+}
+
+.car-column:hover {
+    background: rgba(220, 38, 38, 0.02);
+}
+
+.car-image {
+    height: 200px;
+    object-fit: cover;
+    border-radius: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.car-image:hover {
+    transform: scale(1.05);
+}
+
+.spec-row {
+    border-bottom: 1px solid rgba(229, 231, 235, 0.3);
+    transition: background-color 0.2s ease;
+}
+
+.spec-row:hover {
+    background: rgba(243, 244, 246, 0.5);
+}
+
+.spec-label {
+    background: rgba(249, 250, 251, 0.8);
+    font-weight: 600;
+    color: #374151;
+    border-right: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.spec-value {
+    color: #1F2937;
+    font-weight: 500;
+}
+
+.price-highlight {
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.remove-button {
+    background: linear-gradient(135deg, #EF4444, #F87171);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.remove-button:hover {
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    transform: scale(1.1);
+}
+
+.add-car-slot {
+    border: 2px dashed #D1D5DB;
+    border-radius: 1rem;
+    background: rgba(249, 250, 251, 0.5);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.add-car-slot:hover {
+    border-color: #DC2626;
+    background: rgba(220, 38, 38, 0.05);
+}
+
+.action-button {
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.4);
+    background: linear-gradient(135deg, #B91C1C, #DC2626);
+}
+
+.action-button-secondary {
+    background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+    color: white;
+}
+
+.action-button-secondary:hover {
+    background: linear-gradient(135deg, #1E40AF, #2563EB);
+    box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.4);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+
+@media (max-width: 768px) {
+    .comparison-table {
+        overflow-x: auto;
+    }
+    
+    .car-column {
+        min-width: 250px;
+    }
+    
+    .price-highlight {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="bg-harrier-gray py-4">
+    <div class="container mx-auto px-4">
+        <nav class="text-sm">
+            <ol class="flex items-center space-x-2">
+                <li><a href="{% url 'core:homepage' %}" class="text-harrier-dark hover:text-harrier-red">Home</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li><a href="{% url 'core:car_list' %}" class="text-harrier-dark hover:text-harrier-red">Cars</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li class="text-harrier-red font-semibold">Compare</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Hero Section -->
+<section class="compare-hero py-16 relative">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="animate-fade-in-up">
+            <h1 class="text-5xl lg:text-6xl font-bold text-white mb-6 font-montserrat">
+                Compare <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-yellow-300">Cars</span>
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto font-raleway">
+                Compare up to 3 cars side by side to find the perfect vehicle for your needs
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <div class="inline-flex items-center px-6 py-3 bg-white/20 rounded-full text-white font-semibold backdrop-blur-sm">
+                    <i class="fas fa-balance-scale mr-2"></i>
+                    <span>{{ compare_count }}/{{ max_compare }} Cars Selected</span>
+                </div>
+                {% if compare_count > 0 %}
+                <button onclick="clearComparison()" class="inline-flex items-center px-6 py-3 bg-red-500/20 rounded-full text-red-200 font-semibold backdrop-blur-sm hover:bg-red-500/30 transition-colors">
+                    <i class="fas fa-trash mr-2"></i>
+                    <span>Clear All</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Comparison Section -->
+<section class="py-16 bg-gradient-to-br from-gray-50 to-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {% if cars %}
+        <!-- Comparison Table -->
+        <div class="comparison-table animate-fade-in-up">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <!-- Car Images and Basic Info -->
+                    <thead>
+                        <tr>
+                            <th class="spec-label p-6 text-left">
+                                <h2 class="text-xl font-bold text-harrier-dark font-montserrat">Vehicle</h2>
+                            </th>
+                            {% for car in cars %}
+                            <th class="car-column p-6 text-center relative">
+                                <button onclick="removeFromComparison({{ car.id }})" class="remove-button">
+                                    <i class="fas fa-times text-sm"></i>
+                                </button>
+                                
+                                <div class="mb-4">
+                                    {% if car.main_image %}
+                                        <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="car-image w-full mx-auto">
+                                    {% else %}
+                                        <div class="car-image w-full mx-auto bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                            <i class="fas fa-car text-gray-400 text-4xl"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <h3 class="text-lg font-bold text-harrier-dark mb-2 font-montserrat">{{ car.title }}</h3>
+                                <div class="price-highlight mb-4">
+                                    {{ car.price|currency_ksh_no_decimals }}
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <a href="{% url 'core:car_detail' car.pk %}" class="action-button-secondary text-sm">
+                                        <i class="fas fa-eye"></i>View Details
+                                    </a>
+                                    <button onclick="openInquiryModal({{ car.id }}, '{{ car.title|escapejs }}')" class="action-button text-sm">
+                                        <i class="fas fa-envelope"></i>Contact Dealer
+                                    </button>
+                                </div>
+                            </th>
+                            {% endfor %}
+                            
+                            <!-- Add Car Slots -->
+                            {% for i in "123"|slice:compare_count %}
+                            <th class="car-column p-6">
+                                <div class="add-car-slot h-full min-h-[300px] flex flex-col items-center justify-center" onclick="window.location.href='{% url 'core:car_list' %}'">
+                                    <i class="fas fa-plus text-4xl text-gray-400 mb-4"></i>
+                                    <p class="text-gray-600 font-semibold font-raleway">Add Car to Compare</p>
+                                    <p class="text-sm text-gray-500 font-raleway">Browse our inventory</p>
+                                </div>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    
+                    <!-- Specifications -->
+                    <tbody>
+                        <!-- Brand -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-award text-harrier-red mr-2"></i>Brand
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center font-semibold">{{ car.brand.name }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Model -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-car text-harrier-red mr-2"></i>Model
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.model.name }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Year -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-calendar text-harrier-red mr-2"></i>Year
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.year }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Mileage -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-road text-harrier-red mr-2"></i>Mileage
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.mileage|floatformat:0|default:"N/A" }} km</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Engine Size -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-cogs text-harrier-red mr-2"></i>Engine Size
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.engine_size|default:"N/A" }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Fuel Type -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-gas-pump text-harrier-red mr-2"></i>Fuel Type
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.get_fuel_type_display }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Transmission -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-gear text-harrier-red mr-2"></i>Transmission
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.get_transmission_display }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Color -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-palette text-harrier-red mr-2"></i>Color
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.color|title }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Condition -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-star text-harrier-red mr-2"></i>Condition
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">{{ car.condition|title }}</td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Dealer -->
+                        <tr class="spec-row">
+                            <td class="spec-label p-4">
+                                <i class="fas fa-building text-harrier-red mr-2"></i>Dealer
+                            </td>
+                            {% for car in cars %}
+                            <td class="spec-value p-4 text-center">
+                                <a href="{% url 'core:dealer_profile' car.vendor.id %}" class="text-harrier-red hover:text-red-600 font-semibold">
+                                    {{ car.vendor.company_name }}
+                                </a>
+                            </td>
+                            {% endfor %}
+                            {% for i in "123"|slice:compare_count %}
+                            <td class="spec-value p-4 text-center text-gray-400">-</td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-16 animate-fade-in-up">
+            <div class="text-gray-400 mb-8">
+                <i class="fas fa-balance-scale text-8xl"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-harrier-dark mb-4 font-montserrat">No Cars to Compare</h2>
+            <p class="text-lg text-gray-600 mb-8 font-raleway">Start by adding cars to your comparison list</p>
+            <a href="{% url 'core:car_list' %}" class="action-button">
+                <i class="fas fa-car mr-2"></i>Browse Cars
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Comparison functionality
+function removeFromComparison(carId) {
+    fetch(`/compare/remove/${carId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            // Reload page to update comparison
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error removing car from comparison', 'error');
+    });
+}
+
+function clearComparison() {
+    if (confirm('Are you sure you want to clear all cars from comparison?')) {
+        fetch('/compare/clear/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error clearing comparison', 'error');
+        });
+    }
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg text-white font-semibold transform translate-x-full transition-transform duration-300`;
+    
+    switch(type) {
+        case 'success':
+            notification.classList.add('bg-green-500');
+            break;
+        case 'error':
+            notification.classList.add('bg-red-500');
+            break;
+        default:
+            notification.classList.add('bg-blue-500');
+    }
+    
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate elements on scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe all animated elements
+    document.querySelectorAll('.animate-fade-in-up').forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(30px)';
+        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(element);
+    });
+});
+</script>
+{% endblock %}

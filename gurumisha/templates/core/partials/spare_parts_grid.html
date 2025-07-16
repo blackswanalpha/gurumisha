@@ -5,14 +5,22 @@
         {% for part in spare_parts %}
             <div class="product-card-harrier bg-white rounded-xl shadow-lg overflow-hidden group">
                 <a href="{% url 'core:spare_part_detail' part.pk %}" class="block">
-                    <div class="relative">
+                    <div class="relative overflow-hidden">
                         {% if part.main_image %}
                             <img src="{{ part.main_image.url }}" alt="{{ part.name }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
                         {% else %}
-                            <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                            <div class="w-full h-40 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                                 <i class="fas fa-cog text-gray-400 text-4xl"></i>
                             </div>
                         {% endif %}
+
+                        <!-- Quick View Button -->
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <button onclick="openQuickView({{ part.id }})"
+                                    class="bg-white text-harrier-red px-3 py-2 rounded-lg font-semibold opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:bg-harrier-red hover:text-white text-sm">
+                                <i class="fas fa-eye mr-1"></i>Quick View
+                            </button>
+                        </div>
                     
                     <div class="absolute top-3 left-3">
                         <span class="bg-harrier-blue text-white px-2 py-1 rounded-full text-xs font-semibold">{{ part.condition|title }}</span>
@@ -133,3 +141,34 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+function addToCartQuick(partId, quantity) {
+    // Use HTMX to add to cart
+    htmx.ajax('POST', '{% url "core:add_to_cart_htmx" %}', {
+        values: {
+            'part_id': partId,
+            'quantity': quantity,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        target: '#cart-response-container',
+        swap: 'innerHTML'
+    });
+}
+
+function openQuickView(partId) {
+    // Load quick view modal content
+    htmx.ajax('GET', `/spare-parts/quick-view/${partId}/`, {
+        target: '#quick-view-modal-content',
+        swap: 'innerHTML'
+    });
+
+    // Show modal
+    const modal = document.getElementById('quick-view-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+}
+</script>

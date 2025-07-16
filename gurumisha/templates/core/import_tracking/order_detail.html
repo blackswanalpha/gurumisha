@@ -95,6 +95,43 @@
                     </div>
                 </div>
 
+                <!-- Live Tracking Map -->
+                {% if order.has_tracking_enabled %}
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-2xl font-heading font-bold text-harrier-dark">Live Tracking</h2>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex items-center space-x-1">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    <span class="text-sm text-green-600 font-medium">Real-time</span>
+                                </div>
+                                {% if order.last_location_update %}
+                                <span class="text-xs text-gray-500">
+                                    Updated {{ order.last_location_update|timesince }} ago
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Include Live Map Component -->
+                    {% include 'core/import_tracking/live_map.html' %}
+                </div>
+                {% endif %}
+
+                <!-- Live Status Component -->
+                {% if order.has_tracking_enabled %}
+                <div class="mb-8">
+                    {% include 'core/import_tracking/partials/live_status.html' %}
+                </div>
+                {% endif %}
+
+                <!-- Route Timeline Visualization -->
+                <div class="mb-8">
+                    {% include 'core/import_tracking/partials/route_timeline.html' with import_stages=order.get_import_stages_timeline %}
+                </div>
+
                 <!-- Status History -->
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex items-center justify-between mb-6">
@@ -215,6 +252,86 @@
                     </div>
                 </div>
 
+                <!-- Live Location & ETA -->
+                {% if order.has_tracking_enabled %}
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-heading font-bold text-harrier-dark">Live Location</h3>
+                        <div class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-xs text-green-600 font-medium">Live</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Current Location -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            {% if order.current_latitude and order.current_longitude %}
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-map-marker-alt text-red-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-900 mb-1">
+                                        {{ order.current_location_name|default:"Current Location" }}
+                                    </h4>
+                                    <p class="text-sm text-gray-600 mb-2">{{ order.current_coordinates_string }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        Updated {{ order.last_location_update|timesince }} ago
+                                    </p>
+                                    {% if order.google_maps_url %}
+                                    <a href="{{ order.google_maps_url }}"
+                                       target="_blank"
+                                       class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs mt-2">
+                                        <i class="fas fa-external-link-alt mr-1"></i>View on Maps
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-map-marker-alt text-gray-300 text-2xl mb-2"></i>
+                                <p class="text-gray-500 text-sm">Awaiting location update</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Estimated Arrival -->
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-clock text-blue-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-900 mb-1">Estimated Arrival</h4>
+                                    {% if order.estimated_arrival_date %}
+                                    <p class="text-sm text-gray-600 mb-1">{{ order.estimated_arrival_date|date:"M d, Y" }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ order.estimated_days_remaining }} days remaining
+                                    </p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-600">To be determined</p>
+                                    <p class="text-xs text-gray-500">Based on current progress</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="flex space-x-2">
+                            <button onclick="refreshLocation()"
+                                    class="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                <i class="fas fa-sync-alt mr-1"></i>Refresh
+                            </button>
+                            <button onclick="shareLocation()"
+                                    class="px-3 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Shipping Information -->
                 {% if order.vessel_name or order.bill_of_lading %}
                 <div class="bg-white rounded-lg shadow-lg p-6">
@@ -279,5 +396,153 @@
     setInterval(function() {
         htmx.trigger(document.querySelector('[hx-get*="status"]'), 'refresh');
     }, 30000);
+
+    // Location refresh functionality
+    function refreshLocation() {
+        const button = event.target;
+        const originalContent = button.innerHTML;
+
+        // Show loading state
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Refreshing...';
+        button.disabled = true;
+
+        // Fetch updated location data
+        fetch(`/import/tracking/{{ order.order_number }}/location/`, {
+            headers: {
+                'HX-Request': 'true',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.current_latitude && data.current_longitude) {
+                // Update location display
+                const locationName = document.querySelector('.font-medium.text-gray-900');
+                const coordinates = document.querySelector('.text-sm.text-gray-600');
+                const lastUpdate = document.querySelector('.text-xs.text-gray-500');
+
+                if (locationName && data.current_location_name) {
+                    locationName.textContent = data.current_location_name;
+                }
+                if (coordinates) {
+                    coordinates.textContent = data.coordinates_string;
+                }
+                if (lastUpdate) {
+                    lastUpdate.textContent = 'Updated just now';
+                }
+
+                // Update live map if present
+                if (window.liveTrackingMap && typeof window.liveTrackingMap.refreshLocation === 'function') {
+                    window.liveTrackingMap.refreshLocation();
+                }
+
+                showLocationToast('Location updated successfully', 'success');
+            } else {
+                showLocationToast('No location data available', 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching location:', error);
+            showLocationToast('Failed to update location', 'error');
+        })
+        .finally(() => {
+            // Restore button state
+            button.innerHTML = originalContent;
+            button.disabled = false;
+        });
+    }
+
+    // Share location functionality
+    function shareLocation() {
+        {% if order.google_maps_url %}
+        const shareData = {
+            title: 'Vehicle Location - {{ order.order_number }}',
+            text: 'Current location of {{ order.vehicle_details }}',
+            url: '{{ order.google_maps_url }}'
+        };
+
+        if (navigator.share) {
+            navigator.share(shareData);
+        } else {
+            // Fallback to clipboard
+            navigator.clipboard.writeText('{{ order.google_maps_url }}').then(() => {
+                showLocationToast('Location link copied to clipboard', 'success');
+            }).catch(() => {
+                showLocationToast('Failed to copy location link', 'error');
+            });
+        }
+        {% else %}
+        showLocationToast('No location available to share', 'warning');
+        {% endif %}
+    }
+
+    // Simple toast notification for location updates
+    function showLocationToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium transform transition-all duration-300 translate-x-full`;
+
+        switch(type) {
+            case 'success':
+                toast.classList.add('bg-green-600');
+                break;
+            case 'error':
+                toast.classList.add('bg-red-600');
+                break;
+            case 'warning':
+                toast.classList.add('bg-yellow-600');
+                break;
+            default:
+                toast.classList.add('bg-blue-600');
+        }
+
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 3000);
+    }
+
+    // Auto-refresh location every 60 seconds
+    {% if order.has_tracking_enabled %}
+    setInterval(function() {
+        // Silent location refresh
+        fetch(`/import/tracking/{{ order.order_number }}/location/`, {
+            headers: {
+                'HX-Request': 'true',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.current_latitude && data.current_longitude) {
+                // Update location display silently
+                const locationName = document.querySelector('.font-medium.text-gray-900');
+                const coordinates = document.querySelector('.text-sm.text-gray-600');
+                const lastUpdate = document.querySelector('.text-xs.text-gray-500');
+
+                if (locationName && data.current_location_name) {
+                    locationName.textContent = data.current_location_name;
+                }
+                if (coordinates) {
+                    coordinates.textContent = data.coordinates_string;
+                }
+                if (lastUpdate) {
+                    lastUpdate.textContent = 'Updated just now';
+                }
+
+                // Update live map if present
+                if (window.liveTrackingMap && typeof window.liveTrackingMap.refreshLocation === 'function') {
+                    window.liveTrackingMap.refreshLocation();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Silent location update failed:', error);
+        });
+    }, 60000);
+    {% endif %}
 </script>
 {% endblock %}

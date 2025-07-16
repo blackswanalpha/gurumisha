@@ -1,0 +1,198 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block dashboard_title %}Edit Car Listing{% endblock %}
+{% block page_title %}Edit Car Listing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .form-input {
+        transition: all 0.3s ease;
+    }
+    .form-input:focus {
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        border-color: #dc2626;
+    }
+    .save-button {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        transition: all 0.3s ease;
+    }
+    .save-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <!-- Header -->
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-harrier-dark font-montserrat">Edit Car Listing</h1>
+                    <p class="text-gray-600 mt-1">Update your vehicle information</p>
+                </div>
+                <a href="{% url 'core:vendor_listings' %}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Listings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="px-6 py-8">
+        <form method="post" class="max-w-4xl mx-auto">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="form-section rounded-xl p-6 shadow-lg mb-8">
+                <h2 class="text-xl font-bold text-harrier-dark font-montserrat mb-6">Basic Information</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Car Title</label>
+                        <input type="text" name="title" value="{{ car.title }}" 
+                               class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
+                               placeholder="e.g., Toyota Camry 2020" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (KSH)</label>
+                        <input type="number" name="price" value="{{ car.price }}" 
+                               class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
+                               placeholder="e.g., 2500000" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                        <input type="number" name="year" value="{{ car.year }}" 
+                               class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
+                               placeholder="e.g., 2020" min="1990" max="2025" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mileage (KM)</label>
+                        <input type="number" name="mileage" value="{{ car.mileage }}" 
+                               class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
+                               placeholder="e.g., 50000">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
+                        <select name="fuel_type" class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                            <option value="petrol" {% if car.fuel_type == 'petrol' %}selected{% endif %}>Petrol</option>
+                            <option value="diesel" {% if car.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                            <option value="hybrid" {% if car.fuel_type == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                            <option value="electric" {% if car.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                        <select name="transmission" class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                            <option value="manual" {% if car.transmission == 'manual' %}selected{% endif %}>Manual</option>
+                            <option value="automatic" {% if car.transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+                            <option value="cvt" {% if car.transmission == 'cvt' %}selected{% endif %}>CVT</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-section rounded-xl p-6 shadow-lg mb-8">
+                <h2 class="text-xl font-bold text-harrier-dark font-montserrat mb-6">Description</h2>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Car Description</label>
+                    <textarea name="description" rows="6" 
+                              class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
+                              placeholder="Describe your car's features, condition, and any additional information...">{{ car.description }}</textarea>
+                </div>
+            </div>
+
+            <!-- Current Status -->
+            <div class="form-section rounded-xl p-6 shadow-lg mb-8">
+                <h2 class="text-xl font-bold text-harrier-dark font-montserrat mb-6">Current Status</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">Approval Status</div>
+                        <div class="font-bold">
+                            {% if car.is_approved %}
+                                <span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>Approved</span>
+                            {% else %}
+                                <span class="text-yellow-600"><i class="fas fa-clock mr-1"></i>Pending Review</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">Featured Status</div>
+                        <div class="font-bold">
+                            {% if car.is_featured %}
+                                <span class="text-purple-600"><i class="fas fa-star mr-1"></i>Featured</span>
+                            {% else %}
+                                <span class="text-gray-600"><i class="fas fa-star-o mr-1"></i>Not Featured</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">Views</div>
+                        <div class="font-bold text-blue-600">{{ car.views_count|default:0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between items-center">
+                <a href="{% url 'core:vendor_listings' %}" 
+                   class="inline-flex items-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-300 font-medium">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                
+                <button type="submit" 
+                        class="save-button inline-flex items-center px-8 py-3 text-white rounded-lg font-medium shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    const saveButton = document.querySelector('.save-button');
+    
+    form.addEventListener('submit', function(e) {
+        // Add loading state
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        saveButton.disabled = true;
+    });
+    
+    // Auto-save draft functionality (optional)
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Could implement auto-save to localStorage here
+            console.log('Field changed:', this.name, this.value);
+        });
+    });
+});
+</script>
+{% endblock %}

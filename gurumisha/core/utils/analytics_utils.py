@@ -189,6 +189,8 @@ def get_vendor_analytics_summary(vendor):
         
         return {
             'analytics': analytics,
+            'profile_completion': analytics.profile_completion_score,
+            'customer_satisfaction': analytics.customer_satisfaction_score,
             'recent_activities': recent_activities,
             'daily_views': list(daily_views),
             'view_growth_rate': round(view_growth_rate, 1),
@@ -214,32 +216,67 @@ def get_performance_level(score):
         return {'level': 'Poor', 'color': 'red', 'icon': 'times-circle'}
 
 
+def calculate_user_profile_completion(user):
+    """Calculate profile completion percentage for any user"""
+    fields_to_check = [
+        # Basic user fields
+        (user.first_name, 10),
+        (user.last_name, 10),
+        (user.email, 5),
+        (user.phone, 10),
+        (user.profile_picture, 15),
+        (user.bio, 10),
+        (user.date_of_birth, 5),
+        (user.city, 5),
+        (user.address, 10),
+
+        # Additional fields
+        (user.secondary_phone, 5),
+        (user.whatsapp_number, 5),
+        (user.preferred_language, 5),
+        (user.gender, 5),
+    ]
+
+    total_score = 0
+    for field_value, weight in fields_to_check:
+        if field_value:
+            total_score += weight
+
+    return min(total_score, 100)
+
+
 def get_user_analytics_summary(user):
     """Get analytics summary for regular users"""
     try:
+        # Calculate profile completion
+        profile_completion = calculate_user_profile_completion(user)
+
         # Get recent activities
         recent_activities = UserActivityLog.objects.filter(
             user=user
         ).order_by('-timestamp')[:10]
-        
+
         # Count various activities
         total_activities = UserActivityLog.objects.filter(user=user).count()
-        
+
         # Activity breakdown
         activity_breakdown = UserActivityLog.objects.filter(
             user=user
         ).values('action').annotate(
             count=Count('id')
         ).order_by('-count')
-        
+
         # Profile views made by this user
         profile_views_made = ProfileView.objects.filter(viewer=user).count()
-        
+
         return {
+            'profile_completion': profile_completion,
             'recent_activities': recent_activities,
             'total_activities': total_activities,
             'activity_breakdown': list(activity_breakdown),
             'profile_views_made': profile_views_made,
+            'customer_satisfaction': 0,  # Default for non-vendors
+            'view_growth_rate': 0,  # Default for non-vendors
         }
         
     except Exception as e:

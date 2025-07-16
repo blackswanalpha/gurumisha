@@ -1,8 +1,169 @@
 {% extends 'base.html' %}
+
+<!-- Splash Screen -->
+{% include '../components/splash_screen.html' %}
 {% load static %}
 {% load math_filters %}
+{% load core_extras %}
+{% load promotion_tags %}
 
 {% block title %}Gurumisha - Premium Automotive Marketplace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/homepage-enhancements.css' %}">
+<link rel="stylesheet" href="{% static 'css/global-animations.css' %}">
+<link rel="stylesheet" href="{% static 'css/trusted-brands.css' %}">
+<style>
+    /* Admin-style components for homepage */
+    .admin-request-add-btn {
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif;
+        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);
+    }
+
+    .admin-request-add-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 12px 32px rgba(220, 38, 38, 0.5), 0 6px 16px rgba(31, 41, 55, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .admin-request-add-btn i {
+        margin-right: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .admin-stat-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        padding: 1.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .admin-stat-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .admin-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .admin-stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    /* Enhanced glassmorphism effects */
+    .glassmorphism-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Enhanced animations */
+    .animate-entrance {
+        animation: fadeInUp 0.8s ease-out both;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Harrier color variables */
+    :root {
+        --harrier-red: #DC2626;
+        --harrier-dark: #1F2937;
+        --harrier-blue: #1E40AF;
+        --harrier-gray: #F8FAFC;
+    }
+
+    /* Price Range Slider Styles */
+    .slider-thumb-red {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .slider-thumb-red::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #DC2626, #B91C1C);
+        cursor: pointer;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .slider-thumb-red::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    }
+
+    .slider-thumb-red::-moz-range-thumb {
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #DC2626, #B91C1C);
+        cursor: pointer;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .slider-thumb-red::-moz-range-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Remove default track styling */
+    .slider-thumb-red::-webkit-slider-track {
+        background: transparent;
+    }
+
+    .slider-thumb-red::-moz-range-track {
+        background: transparent;
+    }
+
+    /* Price display styling */
+    #min-price-display, #max-price-display {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- Enhanced Hero Section with Video Background -->
@@ -20,9 +181,9 @@
                 <!-- Hero Text Content -->
                 <div class="text-white space-y-8">
                     <div class="space-y-6">
-                        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight animate-fade-in-up font-montserrat">
+                        <h1 class="text-white text-5xl md:text-6xl lg:text-7xl font-bold leading-tight animate-fade-in-up font-montserrat">
                             Find Your
-                            <span class="text-gradient bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                            <span class="text-gradient bg-gradient-to-r from-red-500 to-gray-900 bg-clip-text text-transparent">
                                 Perfect
                             </span>
                             Vehicle
@@ -32,21 +193,26 @@
                         </p>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up animate-delay-600">
+                    <div class="flex flex-col sm:flex-row gap-6 animate-fade-in-up animate-delay-600">
                         <a href="{% url 'core:car_list' %}"
-                           class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl btn-animate font-montserrat"
-                           style="background: linear-gradient(135deg, #ed563b, #dc2626);">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                           class="admin-request-add-btn group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-105 hover:shadow-2xl font-montserrat relative overflow-hidden"
+                           style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);">
+                            <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            Browse Cars
+                            <span class="relative z-10">Browse Cars</span>
+                            <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-400 to-gray-800 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                         </a>
                         <a href="{% url 'core:sell_car' %}"
-                           class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white rounded-lg transition-all duration-300 hover:bg-white hover:text-gray-900 btn-animate font-montserrat">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                           class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white border-3 border-white/80 rounded-2xl transition-all duration-500 hover:bg-white hover:text-gray-900 font-montserrat relative overflow-hidden backdrop-blur-sm bg-white/10"
+                           style="box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);">
+                            <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
-                            Sell Your Car
+                            <span class="relative z-10">Sell Your Car</span>
+                            <div class="absolute inset-0 rounded-2xl bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         </a>
                     </div>
                 </div>
@@ -59,7 +225,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="form-group">
                                     <label for="condition" class="block text-sm font-semibold text-gray-700 mb-2">Condition</label>
-                                    <select name="condition" id="condition" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <select name="condition" id="condition" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
                                         <option value="">Any Condition</option>
                                         <option value="new">New</option>
                                         <option value="used">Used</option>
@@ -68,7 +234,7 @@
 
                                 <div class="form-group">
                                     <label for="brand" class="block text-sm font-semibold text-gray-700 mb-2">Brand</label>
-                                    <select name="brand" id="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <select name="brand" id="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
                                         <option value="">Select Brand</option>
                                         {% for brand in car_brands %}
                                             <option value="{{ brand.id }}">{{ brand.name }}</option>
@@ -80,7 +246,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="form-group">
                                     <label for="vehicle_type" class="block text-sm font-semibold text-gray-700 mb-2">Vehicle Type</label>
-                                    <select name="vehicle_type" id="vehicle_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <select name="vehicle_type" id="vehicle_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
                                         <option value="">Any Type</option>
                                         {% for type in vehicle_types %}
                                             <option value="{{ type|lower }}">{{ type }}</option>
@@ -90,7 +256,7 @@
 
                                 <div class="form-group">
                                     <label for="fuel_type" class="block text-sm font-semibold text-gray-700 mb-2">Fuel Type</label>
-                                    <select name="fuel_type" id="fuel_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <select name="fuel_type" id="fuel_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
                                         <option value="">Any Fuel</option>
                                         <option value="petrol">Petrol</option>
                                         <option value="diesel">Diesel</option>
@@ -103,7 +269,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="form-group">
                                     <label for="min_price" class="block text-sm font-semibold text-gray-700 mb-2">Min Price (KSh)</label>
-                                    <select name="min_price" id="min_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <select name="min_price" id="min_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
                                         <option value="">No Min</option>
                                         <option value="500000">500K</option>
                                         <option value="1000000">1M</option>
@@ -115,7 +281,7 @@
 
                                 <div class="form-group">
                                     <label for="max_price" class="block text-sm font-semibold text-gray-700 mb-2">Max Price (KSh)</label>
-                                    <select name="max_price" id="max_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                    <select name="max_price" id="max_price" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
                                         <option value="">No Max</option>
                                         <option value="1000000">1M</option>
                                         <option value="2000000">2M</option>
@@ -126,25 +292,75 @@
                                 </div>
                             </div>
 
+                            <!-- Price Range Slider -->
                             <div class="form-group">
-                                <label for="year" class="block text-sm font-semibold text-gray-700 mb-2">Year</label>
-                                <select name="year" id="year" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
-                                    <option value="">Any Year</option>
-                                    <option value="2024">2024</option>
-                                    <option value="2023">2023</option>
-                                    <option value="2022">2022</option>
-                                    <option value="2021">2021</option>
-                                    <option value="2020">2020</option>
-                                    <option value="2019">2019</option>
-                                    <option value="2018">2018</option>
-                                    <option value="2017">2017</option>
-                                    <option value="2016">2016</option>
-                                    <option value="2015">2015</option>
-                                </select>
+                                <label class="block text-sm font-semibold text-gray-700 mb-4">Price Range (KSh)</label>
+                                <div class="px-4">
+                                    <!-- Slider Container -->
+                                    <div class="relative">
+                                        <input type="range"
+                                               id="price-slider-min"
+                                               min="100000"
+                                               max="100000000"
+                                               value="100000"
+                                               step="100000"
+                                               class="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb-red z-10">
+                                        <input type="range"
+                                               id="price-slider-max"
+                                               min="100000"
+                                               max="100000000"
+                                               value="100000000"
+                                               step="100000"
+                                               class="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb-red">
+
+                                        <!-- Track -->
+                                        <div class="relative h-2 bg-gray-200 rounded-lg">
+                                            <div id="slider-track" class="absolute h-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Price Display -->
+                                    <div class="flex justify-between items-center mt-4 text-sm font-medium text-gray-600">
+                                        <span id="min-price-display" class="bg-red-50 px-3 py-1 rounded-full text-red-700">KSh 100,000</span>
+                                        <span class="text-gray-400">to</span>
+                                        <span id="max-price-display" class="bg-red-50 px-3 py-1 rounded-full text-red-700">KSh 100,000,000</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                                🔍 Search Cars
+                            <div class="form-group">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Year Range</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label for="min_year" class="block text-xs text-gray-600 mb-1">From Year</label>
+                                        <select name="min_year" id="min_year" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 text-sm">
+                                            <option value="">Any</option>
+                                            {% for year in year_range %}
+                                                <option value="{{ year }}">{{ year }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="max_year" class="block text-xs text-gray-600 mb-1">To Year</label>
+                                        <select name="max_year" id="max_year" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 text-sm">
+                                            <option value="">Any</option>
+                                            {% for year in year_range %}
+                                                <option value="{{ year }}">{{ year }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="admin-request-add-btn group w-full text-white font-bold py-4 px-6 rounded-xl transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl font-montserrat relative overflow-hidden"
+                                    style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);">
+                                <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                <span class="relative z-10 flex items-center justify-center">
+                                    <svg class="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    Search Cars
+                                </span>
                             </button>
                         </div>
                     </form>
@@ -156,26 +372,40 @@
 
 
 
-<!-- Browse by Vehicle Type Section -->
-<section class="py-20 bg-primary-white">
-    <div class="container mx-auto px-4">
-        <div class="text-center mb-16">
-            <h2 class="section-title-harrier mb-6">BROWSE BY VEHICLE TYPE</h2>
-            <p class="text-lg text-text-light max-w-2xl mx-auto font-body">Find the perfect vehicle for your needs from our diverse collection of premium automobiles</p>
+<!-- Enhanced Browse by Vehicle Type Section -->
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+    <!-- Background Pattern -->
+    {% comment %} <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p3.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div> {% endcomment %}
+
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="text-center mb-16 animate-entrance">
+            <div class="flex items-center justify-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-4">
+                    <i class="fas fa-car text-white text-2xl"></i>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
+                    BROWSE BY
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 block md:inline">VEHICLE TYPE</span>
+                </h2>
+            </div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Find the perfect vehicle for your needs from our diverse collection of premium automobiles</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
         </div>
 
         <!-- Vehicle Type Grid with Navigation -->
         <div class="relative">
-            <!-- Navigation Controls -->
+            <!-- Enhanced Navigation Controls -->
             <div class="hidden md:flex justify-between items-center absolute inset-y-0 left-0 right-0 z-10 pointer-events-none">
                 <!-- Previous Button -->
-                <button id="prevVehicleBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-primary-white rounded-full shadow-modern-lg hover:shadow-modern-xl transition-all duration-300 hover:bg-primary-red hover:text-primary-white group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-white disabled:hover:text-text-dark border-2 border-gray-100 hover:border-primary-red -ml-6">
-                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-text-dark group-hover:text-primary-white"></i>
+                <button id="prevVehicleBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -ml-7">
+                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
                 </button>
 
                 <!-- Next Button -->
-                <button id="nextVehicleBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-primary-white rounded-full shadow-modern-lg hover:shadow-modern-xl transition-all duration-300 hover:bg-primary-red hover:text-primary-white group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-white disabled:hover:text-text-dark border-2 border-gray-100 hover:border-primary-red -mr-6">
-                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-text-dark group-hover:text-primary-white"></i>
+                <button id="nextVehicleBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -mr-7">
+                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
                 </button>
             </div>
 
@@ -184,28 +414,40 @@
                 <div id="vehicleTypeGrid" class="flex gap-8 lg:gap-12 transition-transform duration-500 ease-in-out" style="width: max-content;">
                     {% load static %}
                     {% for type in vehicle_types %}
-                        <div class="flex-shrink-0 group cursor-pointer transition-all duration-300 hover:scale-105 hover:-translate-y-1 w-48 sm:w-56 md:w-64 lg:w-72 xl:w-80" onclick="window.location.href='{% url 'core:car_list' %}?vehicle_type={{ type|lower }}'">
-                            <!-- Enhanced Vehicle Image - 30% Additional Width Increase -->
-                            <div class="relative mb-4">
-                                {% if forloop.counter <= 8 %}
-                                    <img src="{% static 'images/products-images/p' %}{{ forloop.counter }}.jpg"
-                                         alt="{{ type }} vehicles"
-                                         class="w-full h-32 sm:h-36 md:h-44 lg:h-48 object-cover rounded-xl transition-all duration-300 group-hover:brightness-110 group-hover:shadow-modern-lg"
-                                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-32 sm:h-36 md:h-44 lg:h-48 bg-gradient-to-br from-primary-blue to-primary-red flex items-center justify-center rounded-xl\'><i class=\'fas fa-car text-primary-white text-3xl\'></i></div>'">
-                                {% else %}
-                                    <div class="w-full h-32 sm:h-36 md:h-44 lg:h-48 bg-gradient-to-br from-primary-blue to-primary-red flex items-center justify-center rounded-xl">
-                                        <i class="fas fa-car text-primary-white text-3xl"></i>
+                        <div class="flex-shrink-0 group cursor-pointer transition-all duration-500 hover:scale-105 hover:-translate-y-2 w-48 sm:w-56 md:w-64 lg:w-72 xl:w-80" onclick="window.location.href='{% url 'core:car_list' %}?vehicle_type={{ type|lower }}'">
+                            <!-- Enhanced Vehicle Card with Glassmorphism -->
+                            <div class="bg-white/95 backdrop-blur-md  hover:shadow-2xl transition-all duration-500  group-hover:border-red-200">
+                                <!-- Enhanced Vehicle Image -->
+                                <div class="relative mb-6">
+                                    {% if forloop.counter <= 8 %}
+                                        <img src="{% static 'images/products-images/p' %}{{ forloop.counter }}.jpg"
+                                             alt="{{ type }} vehicles"
+                                             class="w-full h-32 sm:h-36 md:h-44 lg:h-48 object-cover rounded-xl transition-all duration-500 group-hover:brightness-110 group-hover:scale-105"
+                                             onerror="this.parentElement.innerHTML='<div class=\'w-full h-32 sm:h-36 md:h-44 lg:h-48 bg-gradient-to-br from-red-600 to-gray-900 flex items-center justify-center rounded-xl\'><i class=\'fas fa-car text-white text-3xl\'></i></div>'">
+                                    {% else %}
+                                        <div class="w-full h-32 sm:h-36 md:h-44 lg:h-48 bg-gradient-to-br from-red-600 to-gray-900 flex items-center justify-center rounded-xl">
+                                            <i class="fas fa-car text-white text-3xl"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Enhanced Hover Overlay with Gradient -->
+                                    <div class="absolute inset-0 bg-gradient-to-t from-red-600/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
+
+                                    <!-- Icon Overlay -->
+                                    <div class="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform scale-0 group-hover:scale-100">
+                                        <i class="fas fa-arrow-right text-red-600 text-sm"></i>
                                     </div>
-                                {% endif %}
+                                </div>
 
-                                <!-- Subtle Hover Overlay -->
-                                <div class="absolute inset-0 bg-primary-red opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl"></div>
+                                <!-- Enhanced Vehicle Type Name -->
+                                <div class="text-center">
+                                    <h3 class="text-lg font-montserrat font-bold text-gray-900 group-hover:text-red-600 transition-all duration-500 tracking-wide uppercase mb-2">
+                                        {{ type }}
+                                    </h3>
+                                    <div class="w-12 h-0.5 bg-gradient-to-r from-red-600 to-red-800 mx-auto opacity-0 group-hover:opacity-100 transition-all duration-500 transform scale-x-0 group-hover:scale-x-100 rounded-full"></div>
+                                    <p class="text-sm text-gray-600 mt-2 opacity-0 group-hover:opacity-100 transition-all duration-500 font-raleway">Explore {{ type|lower }} vehicles</p>
+                                </div>
                             </div>
-
-                            <!-- Vehicle Type Name -->
-                            <h3 class="text-center text-sm sm:text-base lg:text-lg font-heading font-bold text-text-dark group-hover:text-primary-red transition-colors duration-300">
-                                {{ type }}
-                            </h3>
                         </div>
                     {% endfor %}
                 </div>
@@ -221,59 +463,176 @@
     </div>
 </section>
 
-<!-- Site Features Overview -->
-<section class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Why Choose Gurumisha Motors</h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Experience the difference with our comprehensive automotive services</p>
+<!-- Enhanced Why Choose Us Section -->
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16 animate-entrance">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
+                Why Choose
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Gurumisha Motors</span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Experience the difference with our comprehensive automotive services and unmatched commitment to excellence</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div class="text-center group">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-deep-ocean to-azure rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <i class="fas fa-shield-alt text-white text-3xl"></i>
+            <!-- Verified Dealers -->
+            <div class="group text-center animate-entrance">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-shield-alt text-white text-2xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-4 group-hover:text-red-600 transition-colors duration-300">Verified Dealers</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">All our dealers are thoroughly vetted and verified for your complete peace of mind and security</p>
+                    <div class="mt-6 pt-4 border-t border-gray-200/50">
+                        <span class="text-sm font-bold text-red-600 font-montserrat">100% Verified</span>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Verified Dealers</h3>
-                <p class="text-gray-600">All our dealers are thoroughly vetted and verified for your peace of mind</p>
             </div>
-            
-            <div class="text-center group">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <i class="fas fa-search text-white text-3xl"></i>
+
+            <!-- Quality Inspection -->
+            <div class="group text-center animate-entrance">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-search text-white text-2xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-star text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-4 group-hover:text-red-600 transition-colors duration-300">Quality Inspection</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">Every vehicle undergoes comprehensive quality checks and detailed inspection before listing</p>
+                    <div class="mt-6 pt-4 border-t border-gray-200/50">
+                        <span class="text-sm font-bold text-red-600 font-montserrat">Certified Quality</span>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Quality Inspection</h3>
-                <p class="text-gray-600">Every vehicle undergoes comprehensive quality checks before listing</p>
             </div>
-            
-            <div class="text-center group">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <i class="fas fa-shipping-fast text-white text-3xl"></i>
+
+            <!-- Import Services -->
+            <div class="group text-center animate-entrance">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-shipping-fast text-white text-2xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-globe text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-4 group-hover:text-red-600 transition-colors duration-300">Import Services</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">Seamless car import services from Japan, UK, and other countries with full documentation</p>
+                    <div class="mt-6 pt-4 border-t border-gray-200/50">
+                        <span class="text-sm font-bold text-red-600 font-montserrat">Global Reach</span>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Import Services</h3>
-                <p class="text-gray-600">Seamless car import services from Japan, UK, and other countries</p>
             </div>
-            
-            <div class="text-center group">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <i class="fas fa-headset text-white text-3xl"></i>
+
+            <!-- 24/7 Support -->
+            <div class="group text-center animate-entrance">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-headset text-white text-2xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-4 group-hover:text-red-600 transition-colors duration-300">24/7 Support</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">Round-the-clock customer support to assist you at every step of your automotive journey</p>
+                    <div class="mt-6 pt-4 border-t border-gray-200/50">
+                        <span class="text-sm font-bold text-red-600 font-montserrat">Always Available</span>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">24/7 Support</h3>
-                <p class="text-gray-600">Round-the-clock customer support to assist you at every step</p>
+            </div>
+        </div>
+
+        <!-- Enhanced Trust Indicators with Admin-Style Stats -->
+        <div class="mt-16">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="admin-stat-card text-center animate-entrance hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-users text-white text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="admin-stat-value text-red-600">2,500+</div>
+                    <div class="admin-stat-label">Happy Customers</div>
+                    <div class="mt-2 text-xs text-green-600 font-medium">
+                        <i class="fas fa-arrow-up mr-1"></i>+15% this month
+                    </div>
+                </div>
+                <div class="admin-stat-card text-center animate-entrance hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-car text-white text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="admin-stat-value text-red-600">5,000+</div>
+                    <div class="admin-stat-label">Cars Sold</div>
+                    <div class="mt-2 text-xs text-green-600 font-medium">
+                        <i class="fas fa-arrow-up mr-1"></i>+22% this month
+                    </div>
+                </div>
+                <div class="admin-stat-card text-center animate-entrance hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-shield-alt text-white text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="admin-stat-value text-red-600">150+</div>
+                    <div class="admin-stat-label">Verified Dealers</div>
+                    <div class="mt-2 text-xs text-red-600 font-medium">
+                        <i class="fas fa-check mr-1"></i>All verified
+                    </div>
+                </div>
+                <div class="admin-stat-card text-center animate-entrance hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-headset text-white text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="admin-stat-value text-red-600">24/7</div>
+                    <div class="admin-stat-label">Customer Support</div>
+                    <div class="mt-2 text-xs text-orange-600 font-medium">
+                        <i class="fas fa-clock mr-1"></i>Always available
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Featured Cars Showcase -->
-<section class="py-20 bg-primary-white">
-    <div class="container mx-auto px-4">
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-16">
-            <div class="mb-6 lg:mb-0">
-                <h2 class="section-title-harrier mb-6">FEATURED CARS</h2>
-                <p class="text-lg text-text-light max-w-2xl font-body">Handpicked premium vehicles from trusted dealers, featuring the latest models and best deals</p>
-            </div>
-            <a href="{% url 'core:car_list' %}" class="btn-harrier-secondary hidden md:inline-flex">
+<!-- Enhanced Featured Cars Showcase -->
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="text-center mb-16 animate-entrance">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
+                FEATURED
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">CARS</span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Handpicked premium vehicles from trusted dealers, featuring the latest models and best deals in our marketplace</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+        </div>
+
+        <div class="flex justify-center mb-12">
+            <a href="{% url 'core:car_list' %}" class="admin-request-add-btn">
                 <i class="fas fa-car mr-2"></i>VIEW ALL CARS
             </a>
         </div>
@@ -281,13 +640,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="featured-cars">
             {% for car in featured_cars %}
                 {% load promotion_tags %}
-                <div class="bg-primary-white rounded-2xl shadow-modern overflow-hidden hover:shadow-modern-xl transition-all duration-500 group border border-gray-100">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 group border border-gray-200/50 hover:scale-105 hover:-translate-y-2 overflow-hidden">
                     <div class="relative overflow-hidden">
                         {% if car.main_image %}
-                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500">
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500">
                         {% else %}
-                            <div class="w-full h-56 bg-gradient-to-br from-accent-gray to-gray-200 flex items-center justify-center">
-                                <i class="fas fa-car text-text-light text-5xl"></i>
+                            <div class="w-full h-64 bg-gradient-to-br from-red-600 to-gray-900 flex items-center justify-center">
+                                <i class="fas fa-car text-white text-5xl"></i>
                             </div>
                         {% endif %}
 
@@ -296,117 +655,109 @@
 
                         <!-- Hot Deal Countdown -->
                         {% if car.is_hot_deal %}
-                            <div class="absolute top-4 right-4">
+                            <div class="absolute top-4 left-4">
                                 {% if car.hot_deal_details %}
                                     {% with hot_deal=car.hot_deal_details %}
                                         {% hot_deal_countdown hot_deal %}
                                     {% endwith %}
                                 {% else %}
-                                    <div class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                                    <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse shadow-lg">
                                         <i class="fas fa-fire mr-1"></i>HOT DEAL
                                     </div>
                                 {% endif %}
                             </div>
                         {% endif %}
 
-                        <div class="absolute top-4 left-4">
-                            <span class="bg-primary-red text-primary-white px-4 py-2 rounded-full text-sm font-bold shadow-modern">Featured</span>
-                        </div>
+                        <!-- Heart Icon -->
                         <div class="absolute top-4 right-4">
-                            <button class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-crimson hover:text-white transition-colors">
-                                <i class="fas fa-heart"></i>
+                            <button class="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all duration-300 group-hover:scale-110">
+                                <i class="fas fa-heart text-lg"></i>
                             </button>
                         </div>
-                    </div>
-                    
-                    <div class="p-4">
-                        <!-- Brand -->
-                        <div style="font-size: 12px; color: #ed6663; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; font-family: 'Open Sans', sans-serif;">{{ car.brand.name }}</div>
 
-                        <!-- Title -->
-                        <h3 class="product-title-harrier">{{ car.title }}</h3>
-
-                        <!-- Enhanced Star Rating -->
-                        <div class="flex items-center mb-2">
-                            {% if car.calculated_rating > 0 %}
-                                {% star_rating_display car.calculated_rating show_number=False size="text-xs" %}
-                            {% else %}
-                                <div class="flex text-gray-300">
-                                    <i class="far fa-star text-xs"></i>
-                                    <i class="far fa-star text-xs"></i>
-                                    <i class="far fa-star text-xs"></i>
-                                    <i class="far fa-star text-xs"></i>
-                                    <i class="far fa-star text-xs"></i>
-                                </div>
-                            {% endif %}
-                            <span class="text-xs text-harrier-muted ml-2">({{ car.views_count }} views)</span>
+                        <!-- Featured Pill - Positioned below heart icon -->
+                        <div class="absolute top-20 right-4">
+                            <span class="bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg border border-white/20">
+                                <i class="fas fa-star mr-1"></i>Featured
+                            </span>
                         </div>
 
-                        <!-- Other Info -->
-                        <div class="other-info">
-                            <div class="col-km" style="float: left; width: 33.3%;">
-                                <i class="fas fa-tachometer-alt" style="display: block; margin-bottom: 5px; color: #ccc;"></i>
-                                {{ car.mileage|floatformat:0 }} km
+                        <!-- Glassmorphism Overlay on Hover -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    </div>
+
+                    <div class="p-6">
+                        <!-- Brand -->
+                        <div class="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 font-montserrat">{{ car.brand.name }}</div>
+
+                        <!-- Title -->
+                        <h3 class="text-xl font-bold text-gray-900 mb-3 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.title }}</h3>
+
+                        <!-- Enhanced Star Rating -->
+                        <div class="flex items-center mb-4">
+                            {% if car.calculated_rating > 0 %}
+                                {% star_rating_display car.calculated_rating show_number=False size="text-sm" %}
+                            {% else %}
+                                <div class="flex text-gray-300">
+                                    <i class="far fa-star text-sm"></i>
+                                    <i class="far fa-star text-sm"></i>
+                                    <i class="far fa-star text-sm"></i>
+                                    <i class="far fa-star text-sm"></i>
+                                    <i class="far fa-star text-sm"></i>
+                                </div>
+                            {% endif %}
+                            <span class="text-sm text-gray-500 ml-2 font-raleway">({{ car.views_count }} views)</span>
+                        </div>
+
+                        <!-- Enhanced Vehicle Info -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:bg-red-100 transition-colors duration-300">
+                                    <i class="fas fa-tachometer-alt text-gray-600 group-hover:text-red-600 transition-colors duration-300"></i>
+                                </div>
+                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ car.mileage|floatformat:0 }} km</div>
                             </div>
-                            <div class="col-engine" style="float: left; width: 33.3%;">
-                                <i class="fas fa-gas-pump" style="display: block; margin-bottom: 5px; color: #ccc;"></i>
-                                {{ car.fuel_type|title }}
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:bg-red-100 transition-colors duration-300">
+                                    <i class="fas fa-gas-pump text-gray-600 group-hover:text-red-600 transition-colors duration-300"></i>
+                                </div>
+                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ car.fuel_type|title }}</div>
                             </div>
-                            <div class="col-date" style="float: left; width: 33.3%; font-size: 14px;">
-                                <i class="fas fa-calendar" style="display: block; margin-bottom: 5px; color: #ccc;"></i>
-                                {{ car.year }}
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:bg-red-100 transition-colors duration-300">
+                                    <i class="fas fa-calendar text-gray-600 group-hover:text-red-600 transition-colors duration-300"></i>
+                                </div>
+                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ car.year }}</div>
                             </div>
-                            <div style="clear: both;"></div>
                         </div>
 
                         <!-- Price and Actions -->
-                        <div class="flex justify-between items-center pt-3 border-t border-gray-100 mt-4">
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-200/50">
                             <div>
-                                <span class="price-harrier">KSh {{ car.price|floatformat:0 }}</span>
+                                <span class="text-2xl font-bold text-red-600 font-montserrat">{{ car.price|add_commas }}</span>
                             </div>
                             <div class="flex space-x-2">
-                                <button class="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:border-harrier-red hover:text-harrier-red transition-colors" title="Compare">
-                                    <i class="fas fa-balance-scale text-xs"></i>
+                                <button class="w-10 h-10 border-2 border-gray-300 rounded-lg flex items-center justify-center hover:border-red-600 hover:text-red-600 transition-all duration-300 hover:scale-110" title="Compare">
+                                    <i class="fas fa-balance-scale text-sm"></i>
                                 </button>
-                                <a href="{% url 'core:car_detail' car.pk %}" class="btn-harrier-primary px-4 py-2 text-sm">VIEW</a>
+                                <a href="{% url 'core:car_detail' car.pk %}" class="admin-request-add-btn px-6 py-2 text-sm">
+                                    <i class="fas fa-eye mr-2"></i>VIEW
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             {% empty %}
-                <div class="col-span-full text-center py-12">
-                    <i class="fas fa-car text-gray-300 text-6xl mb-4"></i>
-                    <p class="text-gray-500 text-lg">No featured cars available at the moment.</p>
-                </div>
-            {% endfor %}
-        </div>
-        
-        <div class="text-center mt-8 md:hidden">
-            <a href="{% url 'core:car_list' %}" class="btn-secondary">View All Cars</a>
-        </div>
-    </div>
-</section>
-
-<!-- Car Brands Display -->
-<section class="py-20 bg-primary-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16">
-            <h2 class="section-title-harrier mb-6">TRUSTED BRANDS</h2>
-            <p class="text-lg text-text-light max-w-2xl mx-auto font-body">We work with the world's leading automotive brands to bring you quality and reliability</p>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-8 items-center">
-            {% for brand in car_brands %}
-                <div class="text-center group cursor-pointer">
-                    <div class="bg-accent-gray rounded-2xl p-8 hover:bg-primary-white hover:shadow-modern transition-all duration-300 border border-gray-100">
-                        {% if brand.logo %}
-                            <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" class="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300">
-                        {% else %}
-                            <div class="w-20 h-20 mx-auto bg-gradient-to-br from-primary-blue to-primary-red rounded-xl flex items-center justify-center">
-                                <span class="text-primary-white font-bold text-lg">{{ brand.name|slice:":2" }}</span>
-                            </div>
-                        {% endif %}
-                        <p class="mt-4 text-base font-semibold text-text-dark group-hover:text-primary-red transition-colors">{{ brand.name }}</p>
+                <div class="col-span-full text-center py-16">
+                    <div class="w-24 h-24 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i class="fas fa-car text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-montserrat">No Featured Cars Available</h3>
+                    <p class="text-gray-600 text-lg font-raleway">Check back soon for our latest featured vehicles.</p>
+                    <div class="mt-6">
+                        <a href="{% url 'core:car_list' %}" class="admin-request-add-btn">
+                            <i class="fas fa-search mr-2"></i>Browse All Cars
+                        </a>
                     </div>
                 </div>
             {% endfor %}
@@ -414,51 +765,259 @@
     </div>
 </section>
 
-<!-- Sell Your Car CTA -->
-<section class="py-16 sell-car-bg-section" style="background-image: url('{% static 'images/slide2.jpg' %}'); min-height: 500px;">
-    <!-- Content -->
-    <div class="content container mx-auto px-4">
-        <div class="text-center text-white">
-            <h2 class="section-title-harrier mb-6" style="background: #ed6663; display: inline-block; color: white;">READY TO SELL YOUR CAR?</h2>
-            <p style="font-family: 'Saira Condensed', sans-serif; font-size: 18px; line-height: 23px; letter-spacing: 0.5px; color: #fff; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">Get the best value for your vehicle with our trusted platform. List your car today and reach thousands of potential buyers.</p>
+<!-- Simplified Trusted Brands Section -->
+<section class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Simple Header -->
+        <div class="text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-4">
+                TRUSTED
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">BRANDS</span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway">
+                We work with the world's leading automotive brands to bring you quality and reliability
+            </p>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                <div class="text-center">
-                    <div class="w-20 h-20 mx-auto mb-6 bg-harrier-red rounded-full flex items-center justify-center shadow-lg">
-                        <i class="fas fa-camera text-white text-3xl"></i>
-                    </div>
-                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 10px;">UPLOAD PHOTOS</h3>
-                    <p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #fff; opacity: 0.9;">Add high-quality photos of your vehicle to attract more buyers</p>
-                </div>
-
-                <div class="text-center">
-                    <div class="w-20 h-20 mx-auto mb-6 bg-harrier-red rounded-full flex items-center justify-center shadow-lg">
-                        <i class="fas fa-edit text-white text-3xl"></i>
-                    </div>
-                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 10px;">ADD DETAILS</h3>
-                    <p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #fff; opacity: 0.9;">Provide comprehensive vehicle information and specifications</p>
-                </div>
-
-                <div class="text-center">
-                    <div class="w-20 h-20 mx-auto mb-6 bg-harrier-red rounded-full flex items-center justify-center shadow-lg">
-                        <i class="fas fa-handshake text-white text-3xl"></i>
-                    </div>
-                    <h3 style="font-family: 'Saira Condensed', sans-serif; font-size: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 10px;">GET OFFERS</h3>
-                    <p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #fff; opacity: 0.9;">Receive inquiries from thousands of interested buyers</p>
+        <!-- Simple Brand Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 items-center">
+            <!-- Toyota -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /toyota.png' %}" alt="Toyota" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Toyota</h3>
                 </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="#" class="btn-harrier-primary text-lg px-8 py-4 inline-flex items-center justify-center">
-                    <i class="fas fa-car mr-2"></i>SELL YOUR CAR
-                </a>
-                <a href="#" style="padding: 10px 20px 8px 20px; font-size: 16px; text-transform: uppercase; font-weight: 400; color: #fff; letter-spacing: 1px; background: transparent; border: 2px solid #fff; border-radius: 0px; font-family: 'Saira Condensed', sans-serif; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#fff'; this.style.color='#333';" onmouseout="this.style.background='transparent'; this.style.color='#fff';">
-                    <i class="fas fa-calculator mr-2"></i>GET VALUATION
-                </a>
+            <!-- Honda -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /honda.png' %}" alt="Honda" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Honda</h3>
+                </div>
+            </div>
+
+            <!-- Nissan -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /nissan.jpeg' %}" alt="Nissan" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Nissan</h3>
+                </div>
+            </div>
+
+            <!-- BMW -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /bmw.png' %}" alt="BMW" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">BMW</h3>
+                </div>
+            </div>
+
+            <!-- Mercedes -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /mercedez.png' %}" alt="Mercedes-Benz" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Mercedes</h3>
+                </div>
+            </div>
+
+            <!-- Mazda -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /mazda.png' %}" alt="Mazda" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Mazda</h3>
+                </div>
+            </div>
+
+            <!-- Mitsubishi -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /mitsubishi.png' %}" alt="Mitsubishi" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Mitsubishi</h3>
+                </div>
+            </div>
+
+            <!-- Subaru -->
+            <div class="group text-center transition-all duration-300 hover:scale-105">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+                    <img src="{% static 'images/brands /subaru.png' %}" alt="Subaru" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Subaru</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Trust Indicators -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center mt-16">
+            <div class="trust-indicator group">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
+                    <i class="icon fas fa-shield-alt text-white text-2xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2">100%</div>
+                <div class="text-gray-600 text-base font-raleway">Verified Brands</div>
+            </div>
+            <div class="trust-indicator group">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
+                    <i class="icon fas fa-star text-white text-2xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2">8+</div>
+                <div class="text-gray-600 text-base font-raleway">Premium Brands</div>
+            </div>
+            <div class="trust-indicator group">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
+                    <i class="icon fas fa-globe text-white text-2xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2">Global</div>
+                <div class="text-gray-600 text-base font-raleway">Reach</div>
+            </div>
+            <div class="trust-indicator group">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
+                    <i class="icon fas fa-handshake text-white text-2xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2">Trusted</div>
+                <div class="text-gray-600 text-base font-raleway">Partnerships</div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Enhanced Sell Your Car Section -->
+<section class="py-20 relative overflow-hidden">
+    <!-- Enhanced Background with Glassmorphism -->
+    <div class="absolute inset-0">
+        <img src="{% static 'images/slide2.jpg' %}" alt="Sell Your Car" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-red-900/30 to-gray-900/30"></div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center text-white mb-16">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold mb-6">
+                <span class="inline-block bg-gradient-to-r from-red-500 to-red-700 text-transparent bg-clip-text px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                    READY TO SELL YOUR CAR?
+                </span>
+            </h2>
+            <p class="text-xl font-raleway leading-relaxed max-w-3xl mx-auto mb-8 text-gray-100">
+                Get the best value for your vehicle with our trusted platform. List your car today and reach thousands of potential buyers across Kenya.
+            </p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-red-700 mx-auto rounded-full"></div>
+        </div>
+
+        <!-- Enhanced Process Steps -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div class="group text-center">
+                <div class="relative mb-8">
+                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20">
+                        <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
+                            <i class="fas fa-camera text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
+                </div>
+                <h3 class="text-xl font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">UPLOAD PHOTOS</h3>
+                <p class="text-gray-200 font-raleway leading-relaxed">Add high-quality photos of your vehicle to attract more buyers and showcase your car's best features</p>
+            </div>
+
+            <div class="group text-center">
+                <div class="relative mb-8">
+                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20">
+                        <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
+                            <i class="fas fa-edit text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+                </div>
+                <h3 class="text-xl font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">ADD DETAILS</h3>
+                <p class="text-gray-200 font-raleway leading-relaxed">Provide comprehensive vehicle information, specifications, and maintenance history for transparency</p>
+            </div>
+
+            <div class="group text-center">
+                <div class="relative mb-8">
+                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
+                            <i class="fas fa-handshake text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+                </div>
+                <h3 class="text-xl font-montserrat font-bold mb-4 group-hover:text-green-400 transition-colors duration-300">GET OFFERS</h3>
+                <p class="text-gray-200 font-raleway leading-relaxed">Receive inquiries and offers from thousands of interested buyers across our platform</p>
+            </div>
+        </div>
+
+        <!-- Enhanced Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-6 justify-center">
+            <a href="{% url 'core:sell_car' %}" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-2xl font-montserrat relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800">
+                <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <i class="fas fa-car mr-3 transition-transform duration-300 group-hover:rotate-12"></i>
+                <span class="relative z-10">SELL YOUR CAR</span>
+            </a>
+            <button id="get-valuation-btn" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white border-3 border-white/80 rounded-2xl transition-all duration-500 hover:bg-white hover:text-gray-900 font-montserrat relative overflow-hidden backdrop-blur-sm bg-white/10">
+                <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <i class="fas fa-calculator mr-3 transition-transform duration-300 group-hover:rotate-12"></i>
+                <span class="relative z-10">GET VALUATION</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Get Valuation Modal -->
+<div id="valuation-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 overflow-hidden">
+            <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-montserrat font-bold">Get Car Valuation</h3>
+                    <button id="close-valuation-modal" class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-red-100 mt-2 font-raleway">Get an instant estimate of your car's value</p>
+            </div>
+
+            <form id="valuation-form" class="p-6 space-y-4" hx-post="/get-valuation/" hx-target="#valuation-result">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2 font-montserrat">Car Make</label>
+                    <input type="text" name="make" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2 font-montserrat">Model</label>
+                    <input type="text" name="model" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2 font-montserrat">Year</label>
+                        <input type="number" name="year" required min="1990" max="2024" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2 font-montserrat">Mileage (km)</label>
+                        <input type="number" name="mileage" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2 font-montserrat">Condition</label>
+                    <select name="condition" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                        <option value="">Select Condition</option>
+                        <option value="excellent">Excellent</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                    </select>
+                </div>
+
+                <div id="valuation-result" class="mt-4"></div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white font-bold py-3 px-6 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
+                    Get Valuation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Hot Deals Section -->
 <section class="py-16 bg-gray-50">
@@ -544,7 +1103,7 @@
                                         Save: KSh {{ car.hot_deal_details.original_price|sub:car.hot_deal_details.discounted_price|floatformat:0 }}
                                     </p>
                                 {% else %}
-                                    <span class="text-lg font-bold text-crimson">KSh {{ car.price|floatformat:0 }}</span>
+                                    <span class="text-lg font-bold text-crimson">{{ car.price|add_commas }}</span>
                                 {% endif %}
                             </div>
                             <div class="flex space-x-2">
@@ -565,66 +1124,414 @@
     </div>
 </section>
 
-<!-- Spare Parts Preview -->
-<section class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Genuine Spare Parts</h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Quality spare parts for all major car brands. Keep your vehicle running smoothly with our authentic parts.</p>
+<!-- Enhanced Genuine Spare Parts Section -->
+<section class="py-20 bg-gradient-to-br from-white via-gray-50 to-white relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p3.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16 animate-entrance">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
+                Genuine
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Spare Parts</span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Quality spare parts for all major car brands. Keep your vehicle running smoothly with our authentic, certified automotive components.</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {% for category in spare_part_categories %}
-                <div class="bg-gray-50 rounded-xl p-6 text-center hover:bg-gray-100 transition-colors duration-300 group cursor-pointer">
-                    <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-deep-ocean to-azure rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-cog text-white text-2xl"></i>
+        <!-- Featured Spare Parts Categories -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <!-- Engine Parts -->
+            <div class="group cursor-pointer animate-entrance" onclick="window.location.href='{% url 'core:spare_parts' %}?category=engine'">
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white transition-all duration-500 shadow-xl hover:shadow-2xl border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-cog text-white text-3xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </div>
                     </div>
-                    <h3 class="font-semibold text-midnight mb-2">{{ category }}</h3>
-                    <p class="text-sm text-gray-600">High-quality parts available</p>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-3 group-hover:text-red-600 transition-colors duration-300">Engine Parts</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">High-performance engine components and accessories</p>
+                    <div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span class="text-red-600 font-medium">View Parts →</span>
+                    </div>
                 </div>
-            {% endfor %}
+            </div>
+
+            <!-- Brake System -->
+            <div class="group cursor-pointer animate-entrance" onclick="window.location.href='{% url 'core:spare_parts' %}?category=brakes'">
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white transition-all duration-500 shadow-xl hover:shadow-2xl border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-circle-notch text-white text-3xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-3 group-hover:text-red-600 transition-colors duration-300">Brake System</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">Safety-certified brake pads, discs, and components</p>
+                    <div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span class="text-red-600 font-medium">View Parts →</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Electrical -->
+            <div class="group cursor-pointer animate-entrance" onclick="window.location.href='{% url 'core:spare_parts' %}?category=electrical'">
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white transition-all duration-500 shadow-xl hover:shadow-2xl border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-bolt text-white text-3xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-star text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-3 group-hover:text-yellow-600 transition-colors duration-300">Electrical</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">Batteries, alternators, and electrical systems</p>
+                    <div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span class="text-yellow-600 font-medium">View Parts →</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Parts -->
+            <div class="group cursor-pointer animate-entrance" onclick="window.location.href='{% url 'core:spare_parts' %}?category=body'">
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white transition-all duration-500 shadow-xl hover:shadow-2xl border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+                    <div class="relative mb-6">
+                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
+                            <i class="fas fa-car text-white text-3xl"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-wrench text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-montserrat font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors duration-300">Body Parts</h3>
+                    <p class="text-gray-600 font-raleway leading-relaxed">Panels, bumpers, lights, and exterior components</p>
+                    <div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span class="text-purple-600 font-medium">View Parts →</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <!-- Featured Products Showcase -->
+        <div class="bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-gray-200/50 shadow-2xl mb-12">
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-montserrat font-bold text-gray-900 mb-4">Featured Products</h3>
+                <p class="text-gray-600 font-raleway">Top-quality spare parts from trusted manufacturers</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center group">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                        <img src="{% static 'images/products-images/p4.jpg' %}" alt="Brake Pads" class="w-12 h-12 object-cover rounded-lg">
+                    </div>
+                    <p class="text-sm font-medium text-gray-700">Brake Pads</p>
+                </div>
+
+                <div class="text-center group">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                        <img src="{% static 'images/products-images/p5.jpg' %}" alt="Oil Filters" class="w-12 h-12 object-cover rounded-lg">
+                    </div>
+                    <p class="text-sm font-medium text-gray-700">Oil Filters</p>
+                </div>
+
+                <div class="text-center group">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                        <img src="{% static 'images/products-images/p6.jpg' %}" alt="Spark Plugs" class="w-12 h-12 object-cover rounded-lg">
+                    </div>
+                    <p class="text-sm font-medium text-gray-700">Spark Plugs</p>
+                </div>
+
+                <div class="text-center group">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                        <img src="{% static 'images/products-images/p7.jpg' %}" alt="Batteries" class="w-12 h-12 object-cover rounded-lg">
+                    </div>
+                    <p class="text-sm font-medium text-gray-700">Batteries</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
         <div class="text-center">
-            <a href="{% url 'core:spare_parts' %}" class="btn-primary text-lg px-8 py-4">Browse Spare Parts</a>
+            <a href="{% url 'core:spare_parts' %}" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-2xl font-montserrat relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800">
+                <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <i class="fas fa-cog mr-3 transition-transform duration-300 group-hover:rotate-180"></i>
+                <span class="relative z-10">Browse All Spare Parts</span>
+            </a>
         </div>
     </div>
 </section>
 
-<!-- Customer Testimonials -->
-<section class="py-16 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">What Our Customers Say</h2>
-            <p class="text-lg text-gray-600">Real experiences from satisfied customers</p>
+<!-- Enhanced Customer Testimonials with Carousel -->
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p2.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16 animate-entrance">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
+                What Our
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Customers Say</span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Real experiences from satisfied customers who trust Gurumisha Motors for their automotive needs</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {% for testimonial in testimonials %}
-                <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                    <div class="flex items-center mb-4">
-                        {% if testimonial.rating >= 1 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
-                        {% if testimonial.rating >= 2 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
-                        {% if testimonial.rating >= 3 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
-                        {% if testimonial.rating >= 4 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
-                        {% if testimonial.rating >= 5 %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
-                    </div>
-                    <p class="text-gray-700 mb-6 italic">"{{ testimonial.content }}"</p>
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-crimson to-electric-red rounded-full flex items-center justify-center text-white font-semibold">
-                            {{ testimonial.customer.first_name|first|default:testimonial.customer.username|first }}{{ testimonial.customer.last_name|first|default:"" }}
+        <!-- Testimonials Carousel Container -->
+        <div class="relative">
+            <!-- Navigation Controls -->
+            <div class="hidden md:flex justify-between items-center absolute inset-y-0 left-0 right-0 z-10 pointer-events-none">
+                <!-- Previous Button -->
+                <button id="prevTestimonialBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-red-600 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 -ml-6">
+                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
+                </button>
+
+                <!-- Next Button -->
+                <button id="nextTestimonialBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-red-600 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 -mr-6">
+                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
+                </button>
+            </div>
+
+            <!-- Testimonials Container -->
+            <div class="overflow-hidden">
+                <div id="testimonialsGrid" class="flex gap-8 transition-transform duration-500 ease-in-out" style="width: max-content;">
+                    <!-- Testimonial 1 - Car Purchase -->
+                    <div class="flex-shrink-0 w-80 md:w-96">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                            <!-- Rating Stars -->
+                            <div class="flex items-center mb-6">
+                                <div class="flex text-yellow-400 mr-3">
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">5.0</span>
+                            </div>
+
+                            <!-- Testimonial Content -->
+                            <p class="text-gray-700 mb-6 italic font-raleway leading-relaxed text-lg">"Exceptional service! I found my dream Toyota Camry through Gurumisha Motors. The entire process was smooth, transparent, and professional. The team went above and beyond to ensure I got the best deal."</p>
+
+                            <!-- Customer Info -->
+                            <div class="flex items-center">
+                                <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    <img src="{% static 'images/testimonials/customer1.jpg' %}" alt="Sarah Wanjiku" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span style="display: none;">SW</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-gray-900 font-montserrat">Sarah Wanjiku</p>
+                                    <p class="text-sm text-gray-600 font-raleway">Car Purchase • Nairobi</p>
+                                    <p class="text-xs text-red-600 font-medium">Verified Customer</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="ml-3">
-                            <p class="font-semibold text-midnight">{{ testimonial.customer.get_full_name|default:testimonial.customer.username }}</p>
-                            <p class="text-sm text-gray-600">Verified Customer</p>
+                    </div>
+
+                    <!-- Testimonial 2 - Import Service -->
+                    <div class="flex-shrink-0 w-80 md:w-96">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                            <!-- Rating Stars -->
+                            <div class="flex items-center mb-6">
+                                <div class="flex text-yellow-400 mr-3">
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">5.0</span>
+                            </div>
+
+                            <!-- Testimonial Content -->
+                            <p class="text-gray-700 mb-6 italic font-raleway leading-relaxed text-lg">"Outstanding import service! They handled everything from Japan to Kenya seamlessly. Real-time tracking, transparent pricing, and my BMW arrived exactly as described. Highly recommended!"</p>
+
+                            <!-- Customer Info -->
+                            <div class="flex items-center">
+                                <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    <img src="{% static 'images/testimonials/customer2.jpg' %}" alt="James Mwangi" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span style="display: none;">JM</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-gray-900 font-montserrat">James Mwangi</p>
+                                    <p class="text-sm text-gray-600 font-raleway">Import Service • Mombasa</p>
+                                    <p class="text-xs text-red-600 font-medium">Verified Customer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 3 - Spare Parts -->
+                    <div class="flex-shrink-0 w-80 md:w-96">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                            <!-- Rating Stars -->
+                            <div class="flex items-center mb-6">
+                                <div class="flex text-yellow-400 mr-3">
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="far fa-star text-lg"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">4.0</span>
+                            </div>
+
+                            <!-- Testimonial Content -->
+                            <p class="text-gray-700 mb-6 italic font-raleway leading-relaxed text-lg">"Genuine spare parts at competitive prices! Quick delivery and excellent customer support. My Mercedes runs like new again. The quality assurance gives me complete peace of mind."</p>
+
+                            <!-- Customer Info -->
+                            <div class="flex items-center">
+                                <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    <img src="{% static 'images/testimonials/customer3.jpg' %}" alt="Grace Akinyi" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span style="display: none;">GA</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-gray-900 font-montserrat">Grace Akinyi</p>
+                                    <p class="text-sm text-gray-600 font-raleway">Spare Parts • Kisumu</p>
+                                    <p class="text-xs text-red-600 font-medium">Verified Customer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 4 - Dealer Service -->
+                    <div class="flex-shrink-0 w-80 md:w-96">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                            <!-- Rating Stars -->
+                            <div class="flex items-center mb-6">
+                                <div class="flex text-yellow-400 mr-3">
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">5.0</span>
+                            </div>
+
+                            <!-- Testimonial Content -->
+                            <p class="text-gray-700 mb-6 italic font-raleway leading-relaxed text-lg">"Professional dealer network and excellent financing options. They helped me secure the best loan terms for my Nissan X-Trail. The after-sales support is exceptional!"</p>
+
+                            <!-- Customer Info -->
+                            <div class="flex items-center">
+                                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    <img src="{% static 'images/testimonials/customer4.jpg' %}" alt="David Kiprop" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span style="display: none;">DK</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-gray-900 font-montserrat">David Kiprop</p>
+                                    <p class="text-sm text-gray-600 font-raleway">Dealer Service • Eldoret</p>
+                                    <p class="text-xs text-red-600 font-medium">Verified Customer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 5 - Sell Service -->
+                    <div class="flex-shrink-0 w-80 md:w-96">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                            <!-- Rating Stars -->
+                            <div class="flex items-center mb-6">
+                                <div class="flex text-yellow-400 mr-3">
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="far fa-star text-lg"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">4.0</span>
+                            </div>
+
+                            <!-- Testimonial Content -->
+                            <p class="text-gray-700 mb-6 italic font-raleway leading-relaxed text-lg">"Sold my Honda Civic quickly and at a fair price. The platform connected me with serious buyers, and the transaction was secure. Great experience overall!"</p>
+
+                            <!-- Customer Info -->
+                            <div class="flex items-center">
+                                <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    <img src="{% static 'images/testimonials/customer5.jpg' %}" alt="Mary Njeri" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span style="display: none;">MN</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-gray-900 font-montserrat">Mary Njeri</p>
+                                    <p class="text-sm text-gray-600 font-raleway">Car Seller • Nakuru</p>
+                                    <p class="text-xs text-red-600 font-medium">Verified Customer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 6 - Auction Service -->
+                    <div class="flex-shrink-0 w-80 md:w-96">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                            <!-- Rating Stars -->
+                            <div class="flex items-center mb-6">
+                                <div class="flex text-yellow-400 mr-3">
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">5.0</span>
+                            </div>
+
+                            <!-- Testimonial Content -->
+                            <p class="text-gray-700 mb-6 italic font-raleway leading-relaxed text-lg">"Amazing auction experience! Won a fantastic Subaru Forester at an unbeatable price. The bidding process was transparent and fair. Highly satisfied with my purchase!"</p>
+
+                            <!-- Customer Info -->
+                            <div class="flex items-center">
+                                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    <img src="{% static 'images/testimonials/customer6.jpg' %}" alt="Peter Otieno" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span style="display: none;">PO</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-gray-900 font-montserrat">Peter Otieno</p>
+                                    <p class="text-sm text-gray-600 font-raleway">Auction Winner • Thika</p>
+                                    <p class="text-xs text-red-600 font-medium">Verified Customer</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            {% empty %}
-                <div class="col-span-full text-center py-8">
-                    <p class="text-gray-500">No testimonials available yet.</p>
+            </div>
+
+            <!-- Mobile Navigation Dots -->
+            <div class="flex md:hidden justify-center mt-8 space-x-2">
+                <div id="testimonialDots" class="flex space-x-2">
+                    <!-- Dots will be generated by JavaScript -->
                 </div>
-            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Trust Indicators -->
+        <div class="mt-16 text-center">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="animate-entrance">
+                    <div class="text-3xl font-bold text-red-600 font-montserrat">4.8/5</div>
+                    <div class="text-gray-600 font-raleway">Average Rating</div>
+                </div>
+                <div class="animate-entrance">
+                    <div class="text-3xl font-bold text-red-600 font-montserrat">2,500+</div>
+                    <div class="text-gray-600 font-raleway">Happy Customers</div>
+                </div>
+                <div class="animate-entrance">
+                    <div class="text-3xl font-bold text-red-600 font-montserrat">98%</div>
+                    <div class="text-gray-600 font-raleway">Satisfaction Rate</div>
+                </div>
+                <div class="animate-entrance">
+                    <div class="text-3xl font-bold text-red-600 font-montserrat">24/7</div>
+                    <div class="text-gray-600 font-raleway">Customer Support</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -690,6 +1597,179 @@
 <!-- Enhanced Vehicle Type List Navigation JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Testimonials Carousel
+    const testimonialsGrid = document.getElementById('testimonialsGrid');
+    const prevTestimonialBtn = document.getElementById('prevTestimonialBtn');
+    const nextTestimonialBtn = document.getElementById('nextTestimonialBtn');
+    const testimonialDots = document.getElementById('testimonialDots');
+    const testimonialContainer = testimonialsGrid?.parentElement;
+
+    if (testimonialsGrid && testimonialContainer) {
+        const testimonialItems = Array.from(testimonialsGrid.children);
+        const totalTestimonials = testimonialItems.length;
+        let currentTestimonialIndex = 0;
+        let testimonialScrollAmount = 0;
+
+        function getTestimonialScrollAmount() {
+            const width = window.innerWidth;
+            if (width >= 768) return 416; // md: scroll by ~1 item (w-96 + gap = 416px)
+            return 336; // mobile: scroll by ~1 item (w-80 + gap = 336px)
+        }
+
+        function getVisibleTestimonials() {
+            const containerWidth = testimonialContainer.offsetWidth;
+            const itemWidth = getTestimonialScrollAmount();
+            return Math.floor(containerWidth / itemWidth);
+        }
+
+        function getMaxTestimonialScroll() {
+            const containerWidth = testimonialContainer.offsetWidth;
+            const totalWidth = testimonialsGrid.scrollWidth;
+            return Math.max(0, totalWidth - containerWidth);
+        }
+
+        function getTotalTestimonialPages() {
+            const visibleItems = getVisibleTestimonials();
+            return Math.ceil(totalTestimonials / visibleItems);
+        }
+
+        function updateTestimonialNavigation() {
+            const maxScroll = getMaxTestimonialScroll();
+
+            if (prevTestimonialBtn && nextTestimonialBtn) {
+                prevTestimonialBtn.disabled = testimonialScrollAmount <= 0;
+                nextTestimonialBtn.disabled = testimonialScrollAmount >= maxScroll;
+
+                if (prevTestimonialBtn.disabled) {
+                    prevTestimonialBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    prevTestimonialBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+
+                if (nextTestimonialBtn.disabled) {
+                    nextTestimonialBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    nextTestimonialBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            updateTestimonialDots();
+            testimonialsGrid.style.transform = `translateX(-${testimonialScrollAmount}px)`;
+        }
+
+        function updateTestimonialDots() {
+            if (!testimonialDots) return;
+
+            const totalPages = getTotalTestimonialPages();
+            const visibleItems = getVisibleTestimonials();
+            const currentPage = Math.floor(currentTestimonialIndex / visibleItems);
+
+            testimonialDots.innerHTML = '';
+
+            if (totalPages > 1) {
+                for (let i = 0; i < totalPages; i++) {
+                    const dot = document.createElement('button');
+                    dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${
+                        i === currentPage
+                            ? 'bg-red-600 w-6'
+                            : 'bg-gray-300 hover:bg-gray-400'
+                    }`;
+                    dot.addEventListener('click', () => goToTestimonialPage(i));
+                    testimonialDots.appendChild(dot);
+                }
+            }
+        }
+
+        function goToTestimonialPage(page) {
+            const visibleItems = getVisibleTestimonials();
+            const newIndex = page * visibleItems;
+            const itemScrollAmount = getTestimonialScrollAmount();
+
+            currentTestimonialIndex = Math.min(newIndex, totalTestimonials - 1);
+            testimonialScrollAmount = Math.min(currentTestimonialIndex * itemScrollAmount, getMaxTestimonialScroll());
+
+            updateTestimonialNavigation();
+        }
+
+        function goToPreviousTestimonial() {
+            const itemScrollAmount = getTestimonialScrollAmount();
+            const newScrollAmount = Math.max(0, testimonialScrollAmount - itemScrollAmount);
+
+            if (newScrollAmount !== testimonialScrollAmount) {
+                testimonialScrollAmount = newScrollAmount;
+                currentTestimonialIndex = Math.max(0, currentTestimonialIndex - 1);
+                updateTestimonialNavigation();
+            }
+        }
+
+        function goToNextTestimonial() {
+            const itemScrollAmount = getTestimonialScrollAmount();
+            const maxScroll = getMaxTestimonialScroll();
+            const newScrollAmount = Math.min(maxScroll, testimonialScrollAmount + itemScrollAmount);
+
+            if (newScrollAmount !== testimonialScrollAmount) {
+                testimonialScrollAmount = newScrollAmount;
+                currentTestimonialIndex = Math.min(totalTestimonials - 1, currentTestimonialIndex + 1);
+                updateTestimonialNavigation();
+            }
+        }
+
+        // Event listeners for testimonials
+        if (prevTestimonialBtn) {
+            prevTestimonialBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                goToPreviousTestimonial();
+            });
+        }
+
+        if (nextTestimonialBtn) {
+            nextTestimonialBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                goToNextTestimonial();
+            });
+        }
+
+        // Auto-scroll for testimonials
+        let testimonialAutoScrollInterval;
+
+        function startTestimonialAutoScroll() {
+            testimonialAutoScrollInterval = setInterval(function() {
+                const maxScroll = getMaxTestimonialScroll();
+                if (testimonialScrollAmount >= maxScroll) {
+                    testimonialScrollAmount = 0;
+                    currentTestimonialIndex = 0;
+                } else {
+                    goToNextTestimonial();
+                }
+            }, 5000);
+        }
+
+        function stopTestimonialAutoScroll() {
+            if (testimonialAutoScrollInterval) {
+                clearInterval(testimonialAutoScrollInterval);
+            }
+        }
+
+        // Initialize testimonials carousel
+        updateTestimonialNavigation();
+        startTestimonialAutoScroll();
+
+        // Pause auto-scroll on hover
+        const testimonialSection = testimonialContainer.closest('section');
+        if (testimonialSection) {
+            testimonialSection.addEventListener('mouseenter', stopTestimonialAutoScroll);
+            testimonialSection.addEventListener('mouseleave', startTestimonialAutoScroll);
+        }
+
+        // Handle window resize for testimonials
+        window.addEventListener('resize', function() {
+            testimonialScrollAmount = 0;
+            currentTestimonialIndex = 0;
+            updateTestimonialNavigation();
+        });
+    }
+
+    // Vehicle Type Grid Navigation
     const vehicleTypeGrid = document.getElementById('vehicleTypeGrid');
     const prevBtn = document.getElementById('prevVehicleBtn');
     const nextBtn = document.getElementById('nextVehicleBtn');
@@ -983,8 +2063,281 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 30000);
 });
+
+// Enhanced Entrance Animations
+function initEntranceAnimations() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    // Observe all elements with entrance animation classes
+    const animatedElements = document.querySelectorAll('.animate-entrance, .animate-slide-in-left, .animate-slide-in-right, .animate-scale-in');
+    animatedElements.forEach(el => {
+        observer.observe(el);
+    });
+}
+
+// Initialize animations when DOM is loaded
+document.addEventListener('DOMContentLoaded', initEntranceAnimations);
+
+// Get Valuation Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const getValuationBtn = document.getElementById('get-valuation-btn');
+    const valuationModal = document.getElementById('valuation-modal');
+    const closeModalBtn = document.getElementById('close-valuation-modal');
+    const valuationForm = document.getElementById('valuation-form');
+
+    // Open modal
+    if (getValuationBtn) {
+        getValuationBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            valuationModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Close modal
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            valuationModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    // Close modal when clicking outside
+    valuationModal.addEventListener('click', function(e) {
+        if (e.target === valuationModal) {
+            valuationModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !valuationModal.classList.contains('hidden')) {
+            valuationModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Form submission (placeholder - would need backend implementation)
+    if (valuationForm) {
+        valuationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Get form data
+            const formData = new FormData(valuationForm);
+            const make = formData.get('make');
+            const model = formData.get('model');
+            const year = formData.get('year');
+            const mileage = formData.get('mileage');
+            const condition = formData.get('condition');
+
+            // Simple valuation calculation (placeholder)
+            let baseValue = 1000000; // Base value in KSh
+            const currentYear = new Date().getFullYear();
+            const age = currentYear - parseInt(year);
+
+            // Depreciation based on age
+            baseValue -= (age * 50000);
+
+            // Adjust for mileage
+            const mileageValue = parseInt(mileage);
+            if (mileageValue > 100000) {
+                baseValue -= 200000;
+            } else if (mileageValue > 50000) {
+                baseValue -= 100000;
+            }
+
+            // Adjust for condition
+            const conditionMultipliers = {
+                'excellent': 1.2,
+                'good': 1.0,
+                'fair': 0.8,
+                'poor': 0.6
+            };
+
+            baseValue *= conditionMultipliers[condition] || 1.0;
+
+            // Ensure minimum value
+            baseValue = Math.max(baseValue, 200000);
+
+            // Display result
+            const resultDiv = document.getElementById('valuation-result');
+            resultDiv.innerHTML = `
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mt-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        <h4 class="font-bold text-green-800 font-montserrat">Estimated Value</h4>
+                    </div>
+                    <p class="text-2xl font-bold text-green-700 mt-2 font-montserrat">KSH ${baseValue.toLocaleString()}</p>
+                    <p class="text-sm text-green-600 mt-1 font-raleway">This is an estimated value. Contact us for a detailed assessment.</p>
+                </div>
+            `;
+        });
+    }
+
+    // Price Range Slider Functionality
+    const minSlider = document.getElementById('price-slider-min');
+    const maxSlider = document.getElementById('price-slider-max');
+    const minPriceDisplay = document.getElementById('min-price-display');
+    const maxPriceDisplay = document.getElementById('max-price-display');
+    const sliderTrack = document.getElementById('slider-track');
+    const minPriceSelect = document.getElementById('min_price');
+    const maxPriceSelect = document.getElementById('max_price');
+
+    if (minSlider && maxSlider) {
+        // Format number with commas
+        function formatPrice(price) {
+            return 'KSh ' + parseInt(price).toLocaleString();
+        }
+
+        // Update slider track visual
+        function updateSliderTrack() {
+            const min = parseInt(minSlider.min);
+            const max = parseInt(minSlider.max);
+            const minVal = parseInt(minSlider.value);
+            const maxVal = parseInt(maxSlider.value);
+
+            const minPercent = ((minVal - min) / (max - min)) * 100;
+            const maxPercent = ((maxVal - min) / (max - min)) * 100;
+
+            sliderTrack.style.left = minPercent + '%';
+            sliderTrack.style.width = (maxPercent - minPercent) + '%';
+        }
+
+        // Update price displays and sync with select dropdowns
+        function updatePriceDisplays() {
+            const minVal = parseInt(minSlider.value);
+            const maxVal = parseInt(maxSlider.value);
+
+            // Ensure min is not greater than max
+            if (minVal >= maxVal) {
+                minSlider.value = maxVal - 100000;
+            }
+            if (maxVal <= minVal) {
+                maxSlider.value = parseInt(minSlider.value) + 100000;
+            }
+
+            // Update displays
+            minPriceDisplay.textContent = formatPrice(minSlider.value);
+            maxPriceDisplay.textContent = formatPrice(maxSlider.value);
+
+            // Update select dropdowns to closest values
+            updateSelectDropdowns();
+            updateSliderTrack();
+        }
+
+        // Update select dropdowns based on slider values
+        function updateSelectDropdowns() {
+            const minVal = parseInt(minSlider.value);
+            const maxVal = parseInt(maxSlider.value);
+
+            // Update min price select
+            const minOptions = Array.from(minPriceSelect.options);
+            let closestMinOption = minOptions[0];
+            let minDiff = Math.abs(parseInt(closestMinOption.value || 0) - minVal);
+
+            minOptions.forEach(option => {
+                if (option.value) {
+                    const diff = Math.abs(parseInt(option.value) - minVal);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestMinOption = option;
+                    }
+                }
+            });
+
+            // Update max price select
+            const maxOptions = Array.from(maxPriceSelect.options);
+            let closestMaxOption = maxOptions[0];
+            let maxDiff = Math.abs(parseInt(closestMaxOption.value || 100000000) - maxVal);
+
+            maxOptions.forEach(option => {
+                if (option.value) {
+                    const diff = Math.abs(parseInt(option.value) - maxVal);
+                    if (diff < maxDiff) {
+                        maxDiff = diff;
+                        closestMaxOption = option;
+                    }
+                }
+            });
+
+            minPriceSelect.value = closestMinOption.value;
+            maxPriceSelect.value = closestMaxOption.value;
+        }
+
+        // Update sliders when select dropdowns change
+        function updateSlidersFromSelects() {
+            const minSelectVal = minPriceSelect.value;
+            const maxSelectVal = maxPriceSelect.value;
+
+            if (minSelectVal) {
+                minSlider.value = minSelectVal;
+            }
+            if (maxSelectVal) {
+                maxSlider.value = maxSelectVal;
+            }
+
+            updatePriceDisplays();
+        }
+
+        // Event listeners
+        minSlider.addEventListener('input', updatePriceDisplays);
+        maxSlider.addEventListener('input', updatePriceDisplays);
+        minPriceSelect.addEventListener('change', updateSlidersFromSelects);
+        maxPriceSelect.addEventListener('change', updateSlidersFromSelects);
+
+        // Initialize
+        updatePriceDisplays();
+    }
+});
+
+// Test message popup functionality
+function testMessagePopup() {
+    console.log('Testing message popup...');
+    console.log('User authenticated:', window.messageIntegration ? window.messageIntegration.isUserAuthenticated() : 'messageIntegration not found');
+
+    if (window.messageIntegration) {
+        console.log('Message integration found, checking for popup messages...');
+        window.messageIntegration.checkForPopupMessages();
+    } else {
+        console.log('Message integration not found');
+        // Try to manually fetch popup messages
+        fetch('/messages/popup/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        }).then(response => {
+            console.log('Manual fetch response status:', response.status);
+            return response.text();
+        }).then(data => {
+            console.log('Manual fetch response data:', data);
+        }).catch(error => {
+            console.error('Manual fetch error:', error);
+        });
+    }
+}
+
+
 </script>
 
 <script src="{% static 'js/hot-deals.js' %}"></script>
+
+<!-- Simple Welcome Popup Component - No Dependencies -->
+{% include 'components/simple_welcome_popup.html' %}
 
 {% endblock %}

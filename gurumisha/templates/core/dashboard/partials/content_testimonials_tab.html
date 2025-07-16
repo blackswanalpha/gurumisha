@@ -1,0 +1,312 @@
+<!-- Enhanced Testimonials Tab with Harrier Design -->
+<div class="glassmorphism-card">
+    <!-- Tab Header -->
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-gradient-to-br from-harrier-blue to-harrier-blue-dark rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-star text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Testimonials</h3>
+                    <p class="text-sm text-gray-600 font-raleway">Manage customer testimonials and reviews</p>
+                </div>
+            </div>
+
+            <!-- Enhanced Action Bar -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Search Bar -->
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Search testimonials..." 
+                           id="testimonial-search"
+                           value="{{ current_search }}"
+                           hx-get="{% url 'core:admin_content_testimonials_tab' %}"
+                           hx-target="#tab-content"
+                           hx-swap="innerHTML"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="[name='status'], [name='rating']"
+                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent text-sm w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <!-- Status Filter -->
+                <select name="status"
+                        hx-get="{% url 'core:admin_content_testimonials_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML"
+                        hx-include="[name='search'], [name='rating']"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red">
+                    <option value="">All Status</option>
+                    <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="featured" {% if current_status == 'featured' %}selected{% endif %}>Featured</option>
+                </select>
+
+                <!-- Rating Filter -->
+                <select name="rating"
+                        hx-get="{% url 'core:admin_content_testimonials_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML"
+                        hx-include="[name='search'], [name='status']"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red">
+                    <option value="">All Ratings</option>
+                    {% for rating, label in rating_choices %}
+                    <option value="{{ rating }}" {% if current_rating == rating|stringformat:"s" %}selected{% endif %}>{{ rating }} Star{{ rating|pluralize }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Export Button -->
+                <button class="enhanced-btn enhanced-btn-secondary text-sm">
+                    <i class="fas fa-download mr-1"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials List -->
+    <div class="p-6">
+        {% if testimonials %}
+            <!-- Results Info -->
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 font-raleway">
+                    Showing {{ testimonials|length }} of {{ testimonials.paginator.count }} testimonials
+                </p>
+            </div>
+
+            <!-- Testimonials Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {% for testimonial in testimonials %}
+                <div class="testimonial-item bg-white border border-gray-200 rounded-xl p-6 hover:border-harrier-blue hover:shadow-lg transition-all duration-300">
+                    <!-- Testimonial Header -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-harrier-dark font-montserrat">
+                                    {{ testimonial.customer.get_full_name|default:testimonial.customer.username }}
+                                </h4>
+                                <div class="flex items-center mt-1">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= testimonial.rating %}
+                                        <i class="fas fa-star text-yellow-400"></i>
+                                        {% else %}
+                                        <i class="far fa-star text-gray-300"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="ml-2 text-sm text-gray-600">{{ testimonial.rating }}/5</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status Badges -->
+                        <div class="flex flex-col items-end space-y-1">
+                            {% if testimonial.is_approved %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check mr-1"></i>Approved
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                <i class="fas fa-clock mr-1"></i>Pending
+                            </span>
+                            {% endif %}
+                            
+                            {% if testimonial.is_featured %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-star mr-1"></i>Featured
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Testimonial Content -->
+                    <div class="mb-4">
+                        <blockquote class="text-gray-700 italic font-raleway leading-relaxed">
+                            "{{ testimonial.content }}"
+                        </blockquote>
+                    </div>
+
+                    <!-- Related Car (if any) -->
+                    {% if testimonial.car %}
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-car text-harrier-red mr-2"></i>
+                            <span class="text-sm font-medium text-gray-700">
+                                Related to: {{ testimonial.car.brand.name }} {{ testimonial.car.model.name }} ({{ testimonial.car.year }})
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Testimonial Meta -->
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar mr-1"></i>
+                            <span>{{ testimonial.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-1"></i>
+                            <span>{{ testimonial.customer.email }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-2">
+                        {% if not testimonial.is_approved %}
+                        <button class="action-btn action-btn-success flex-1"
+                                title="Approve Testimonial">
+                            <i class="fas fa-check mr-1"></i>Approve
+                        </button>
+                        {% else %}
+                        <button class="action-btn action-btn-warning flex-1"
+                                title="Unapprove Testimonial">
+                            <i class="fas fa-times mr-1"></i>Unapprove
+                        </button>
+                        {% endif %}
+                        
+                        {% if not testimonial.is_featured %}
+                        <button class="action-btn action-btn-primary flex-1"
+                                title="Feature Testimonial">
+                            <i class="fas fa-star mr-1"></i>Feature
+                        </button>
+                        {% else %}
+                        <button class="action-btn action-btn-secondary flex-1"
+                                title="Unfeature Testimonial">
+                            <i class="fas fa-star-half-alt mr-1"></i>Unfeature
+                        </button>
+                        {% endif %}
+                        
+                        <button class="action-btn action-btn-edit"
+                                title="Edit Testimonial">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <button class="action-btn action-btn-danger"
+                                title="Delete Testimonial">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if testimonials.has_other_pages %}
+            <div class="mt-8 flex justify-center">
+                <nav class="flex items-center space-x-2">
+                    {% if testimonials.has_previous %}
+                    <a href="?page={{ testimonials.previous_page_number }}"
+                       hx-get="{% url 'core:admin_content_testimonials_tab' %}?page={{ testimonials.previous_page_number }}"
+                       hx-target="#tab-content"
+                       hx-swap="innerHTML"
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Previous
+                    </a>
+                    {% endif %}
+
+                    {% for num in testimonials.paginator.page_range %}
+                        {% if testimonials.number == num %}
+                        <span class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-md">
+                            {{ num }}
+                        </span>
+                        {% elif num > testimonials.number|add:'-3' and num < testimonials.number|add:'3' %}
+                        <a href="?page={{ num }}"
+                           hx-get="{% url 'core:admin_content_testimonials_tab' %}?page={{ num }}"
+                           hx-target="#tab-content"
+                           hx-swap="innerHTML"
+                           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            {{ num }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if testimonials.has_next %}
+                    <a href="?page={{ testimonials.next_page_number }}"
+                       hx-get="{% url 'core:admin_content_testimonials_tab' %}?page={{ testimonials.next_page_number }}"
+                       hx-target="#tab-content"
+                       hx-swap="innerHTML"
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Next
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-star text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 font-montserrat mb-2">No testimonials found</h3>
+                <p class="text-gray-600 font-raleway mb-6">
+                    {% if current_search or current_status or current_rating %}
+                    Try adjusting your search criteria or filters.
+                    {% else %}
+                    Customer testimonials will appear here once they start leaving reviews.
+                    {% endif %}
+                </p>
+                {% if current_search or current_status or current_rating %}
+                <button class="enhanced-btn enhanced-btn-secondary"
+                        hx-get="{% url 'core:admin_content_testimonials_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-times mr-2"></i>Clear Filters
+                </button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Testimonial-specific styles */
+    .testimonial-item blockquote {
+        position: relative;
+        padding-left: 1rem;
+        border-left: 4px solid var(--harrier-blue);
+    }
+
+    .testimonial-item blockquote::before {
+        content: '"';
+        position: absolute;
+        left: -0.5rem;
+        top: -0.5rem;
+        font-size: 2rem;
+        color: var(--harrier-blue);
+        font-family: serif;
+    }
+
+    /* Action Button Styles */
+    .action-btn {
+        @apply inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .action-btn-primary {
+        @apply bg-harrier-red bg-opacity-10 text-harrier-red hover:bg-opacity-20;
+    }
+
+    .action-btn-secondary {
+        @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+    }
+
+    .action-btn-success {
+        @apply bg-green-100 text-green-700 hover:bg-green-200;
+    }
+
+    .action-btn-warning {
+        @apply bg-orange-100 text-orange-700 hover:bg-orange-200;
+    }
+
+    .action-btn-danger {
+        @apply bg-red-100 text-red-700 hover:bg-red-200;
+    }
+
+    .action-btn-edit {
+        @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
+    }
+</style>

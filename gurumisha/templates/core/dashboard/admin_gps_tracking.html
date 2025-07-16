@@ -1,0 +1,253 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}GPS Tracking Management - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 font-montserrat">GPS Tracking Management</h1>
+                    <p class="text-gray-600 font-raleway">Monitor and manage real-time vehicle locations</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-green-600 font-medium">Live Tracking Active</span>
+                    </div>
+                    <button onclick="refreshAllLocations()" 
+                            class="btn-harrier-primary">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="px-6 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Total Tracked Orders -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-map-marked-alt text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Tracked Orders</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ total_tracked_orders }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders with Location -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-map-marker-alt text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">With Location</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ orders_with_current_location }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Coverage -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-percentage text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Coverage</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ location_coverage_percentage }}%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Updates -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Recent Updates</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ recent_updates|length }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Tracked Orders Table -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gray-900 font-montserrat">Active Tracking</h2>
+                            <div class="flex items-center space-x-2">
+                                <input type="text" 
+                                       placeholder="Search orders..." 
+                                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                       onkeyup="filterOrders(this.value)">
+                                <button class="p-2 text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="tracking-table-container">
+                        {% include 'core/dashboard/partials/admin_gps_tracking_table.html' %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Updates & Quick Actions -->
+            <div class="space-y-6">
+                <!-- Recent Location Updates -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 font-montserrat">Recent Updates</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4 max-h-96 overflow-y-auto">
+                            {% for update in recent_updates %}
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-map-pin text-blue-600 text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900">
+                                        {{ update.import_order.order_number }}
+                                    </p>
+                                    <p class="text-sm text-gray-600 truncate">
+                                        {{ update.notes|default:"Location updated" }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ update.recorded_at|timesince }} ago
+                                    </p>
+                                </div>
+                                <button onclick="viewOrderLocation('{{ update.import_order.order_number }}')"
+                                        class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-8">
+                                <i class="fas fa-map-marker-alt text-gray-300 text-3xl mb-3"></i>
+                                <p class="text-gray-500">No recent updates</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 font-montserrat">Quick Actions</h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <button onclick="showBulkLocationUpdate()" 
+                                class="w-full btn-harrier-secondary text-left">
+                            <i class="fas fa-map-marked-alt mr-3"></i>
+                            Bulk Location Update
+                        </button>
+                        <button onclick="exportTrackingData()" 
+                                class="w-full btn-harrier-secondary text-left">
+                            <i class="fas fa-download mr-3"></i>
+                            Export Tracking Data
+                        </button>
+                        <button onclick="showTrackingSettings()" 
+                                class="w-full btn-harrier-secondary text-left">
+                            <i class="fas fa-cog mr-3"></i>
+                            Tracking Settings
+                        </button>
+                        <button onclick="viewTrackingAnalytics()" 
+                                class="w-full btn-harrier-secondary text-left">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            View Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location Update Modal Placeholder -->
+<div id="location-modal-container"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function refreshAllLocations() {
+    // Refresh all location data
+    htmx.ajax('GET', '{% url "core:admin_gps_tracking" %}', {
+        target: '#tracking-table-container',
+        swap: 'innerHTML'
+    });
+}
+
+function filterOrders(searchTerm) {
+    // Filter orders table
+    const rows = document.querySelectorAll('#tracking-table-container tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+    });
+}
+
+function viewOrderLocation(orderNumber) {
+    // Open location management modal
+    htmx.ajax('GET', `/dashboard/admin/tracking/${orderNumber}/location-modal/`, {
+        target: '#location-modal-container',
+        swap: 'innerHTML'
+    });
+}
+
+function updateOrderLocation(orderId) {
+    // Open location update modal
+    htmx.ajax('GET', `/dashboard/admin/tracking/${orderId}/location-update-modal/`, {
+        target: '#location-modal-container',
+        swap: 'innerHTML'
+    });
+}
+
+function showBulkLocationUpdate() {
+    // Show bulk update modal
+    console.log('Bulk location update');
+}
+
+function exportTrackingData() {
+    // Export tracking data
+    window.location.href = '{% url "core:admin_gps_tracking" %}?export=csv';
+}
+
+function showTrackingSettings() {
+    // Show tracking settings
+    console.log('Tracking settings');
+}
+
+function viewTrackingAnalytics() {
+    // View analytics
+    console.log('Tracking analytics');
+}
+
+// Auto-refresh every 30 seconds
+setInterval(refreshAllLocations, 30000);
+</script>
+{% endblock %}

@@ -215,9 +215,14 @@ class NotificationBadgeManager {
     setupEventListeners() {
         // Listen for HTMX events
         document.addEventListener('htmx:afterRequest', (event) => {
-            if (event.detail.xhr.getResponseHeader('X-Badge-Updates')) {
-                const updates = JSON.parse(event.detail.xhr.getResponseHeader('X-Badge-Updates'));
-                this.processBadgeUpdates(updates);
+            const badgeUpdatesHeader = event.detail.xhr.getResponseHeader('X-Badge-Updates');
+            if (badgeUpdatesHeader) {
+                try {
+                    const updates = JSON.parse(badgeUpdatesHeader);
+                    this.processBadgeUpdates(updates);
+                } catch (e) {
+                    console.debug('Error parsing badge updates header:', e.message);
+                }
             }
         });
 

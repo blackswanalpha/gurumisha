@@ -5,8 +5,11 @@ from .models import (
     ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
     SparePart, SparePartCategory, SparePartImage,
     Supplier, PurchaseOrder, PurchaseOrderItem, StockMovement,
-    InventoryAlert, Inquiry, Message, Testimonial, BlogPost,
-    VendorSubscription, FeaturedCarTier, HotDeal, CarRating, PromotionAnalytics
+    InventoryAlert, Inquiry, Message, MessageRead, MessageSchedule, MessageTarget, MessageAnalytics, MessageTemplate, Testimonial, BlogPost,
+    VendorSubscription, FeaturedCarTier, HotDeal, CarRating, PromotionAnalytics,
+    ContentCategory, ContentTag, ContentSeries, ContentSeriesItem,
+    ContentView, ContentLike, ContentComment, ContentBookmark,
+    StaticPage, ContentAnalytics, ContentPerformanceReport, RecentlyViewedCar
 )
 
 
@@ -109,6 +112,7 @@ class PromotionAnalyticsAdmin(admin.ModelAdmin):
     list_filter = ('metric_type', 'date', 'hour')
     search_fields = ('car__title', 'vendor__company_name')
     date_hierarchy = 'date'
+
 
 
 @admin.register(CarBrand)
@@ -557,9 +561,90 @@ class InquiryAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'recipient', 'inquiry', 'is_read', 'created_at')
-    list_filter = ('is_read', 'created_at')
-    search_fields = ('sender__username', 'recipient__username', 'content')
+    list_display = ['title', 'message_type', 'target_audience', 'status', 'priority', 'created_by', 'created_at']
+    list_filter = ['status', 'message_type', 'target_audience', 'priority', 'created_at']
+    search_fields = ['title', 'content', 'excerpt', 'created_by__username']
+    readonly_fields = ['created_at', 'updated_at', 'total_views', 'total_clicks', 'total_dismissals']
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'content', 'excerpt', 'message_type', 'target_audience', 'priority', 'status')
+        }),
+        ('Display Settings', {
+            'fields': ('show_as_popup', 'show_as_banner', 'show_in_dashboard', 'background_color', 'text_color', 'icon_class')
+        }),
+        ('Action Button', {
+            'fields': ('action_button_text', 'action_button_url', 'action_button_color'),
+            'classes': ('collapse',)
+        }),
+        ('Scheduling', {
+            'fields': ('publication_date', 'expiration_date'),
+            'classes': ('collapse',)
+        }),
+        ('Targeting', {
+            'fields': ('min_user_age_days', 'max_user_age_days', 'require_email_verified', 'max_displays_per_user', 'display_frequency_hours'),
+            'classes': ('collapse',)
+        }),
+        ('Media', {
+            'fields': ('featured_image', 'featured_image_alt'),
+            'classes': ('collapse',)
+        }),
+        ('Analytics', {
+            'fields': ('total_views', 'total_clicks', 'total_dismissals'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:  # If creating new object
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(MessageRead)
+class MessageReadAdmin(admin.ModelAdmin):
+    list_display = ['message', 'user', 'action', 'display_count', 'first_seen_at', 'last_seen_at']
+    list_filter = ['action', 'first_seen_at', 'last_seen_at']
+    search_fields = ['message__title', 'user__username']
+    readonly_fields = ['first_seen_at', 'last_seen_at', 'action_taken_at']
+
+
+@admin.register(MessageSchedule)
+class MessageScheduleAdmin(admin.ModelAdmin):
+    list_display = ['message', 'frequency', 'is_active', 'occurrences_sent', 'next_send_at']
+    list_filter = ['frequency', 'is_active', 'next_send_at']
+    search_fields = ['message__title']
+    readonly_fields = ['occurrences_sent', 'last_sent_at', 'next_send_at', 'created_at', 'updated_at']
+
+
+@admin.register(MessageTarget)
+class MessageTargetAdmin(admin.ModelAdmin):
+    list_display = ['message', 'field_name', 'condition', 'value', 'is_required']
+    list_filter = ['field_name', 'condition', 'is_required']
+    search_fields = ['message__title', 'value']
+
+
+@admin.register(MessageAnalytics)
+class MessageAnalyticsAdmin(admin.ModelAdmin):
+    list_display = ['message', 'date', 'total_displays', 'total_clicks', 'click_through_rate', 'total_dismissals']
+    list_filter = ['date', 'message__message_type']
+    search_fields = ['message__title']
+    readonly_fields = ['click_through_rate', 'dismissal_rate', 'created_at', 'updated_at']
+
+    def click_through_rate(self, obj):
+        return f"{obj.click_through_rate:.1f}%"
+    click_through_rate.short_description = "CTR"
+
+
+@admin.register(MessageTemplate)
+class MessageTemplateAdmin(admin.ModelAdmin):
+    list_display = ['name', 'category', 'default_message_type', 'usage_count', 'is_active', 'created_at']
+    list_filter = ['category', 'default_message_type', 'is_active', 'created_at']
+    search_fields = ['name', 'description', 'title_template', 'content_template']
+    readonly_fields = ['usage_count', 'created_at', 'updated_at']
 
 
 @admin.register(Testimonial)
@@ -578,9 +663,248 @@ class TestimonialAdmin(admin.ModelAdmin):
     feature_testimonials.short_description = "Feature selected testimonials"
 
 
+# Enhanced Content Management Admin
+
+@admin.register(ContentCategory)
+class ContentCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'parent', 'is_active', 'sort_order', 'created_at')
+    list_filter = ('is_active', 'parent', 'created_at')
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('sort_order', 'name')
+    list_editable = ('sort_order', 'is_active')
+
+
+@admin.register(ContentTag)
+class ContentTagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    list_editable = ('color', 'is_active')
+
+
+class ContentSeriesItemInline(admin.TabularInline):
+    model = ContentSeriesItem
+    extra = 0
+    ordering = ('order',)
+
+
+@admin.register(ContentSeries)
+class ContentSeriesAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'sort_order', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('title', 'description')
+    prepopulated_fields = {'slug': ('title',)}
+    inlines = [ContentSeriesItemInline]
+    list_editable = ('sort_order', 'is_active')
+
+
 @admin.register(BlogPost)
 class BlogPostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'is_published', 'published_at', 'created_at')
-    list_filter = ('is_published', 'published_at', 'created_at')
-    search_fields = ('title', 'content', 'author__username')
+    list_display = ('title', 'author', 'content_type', 'category', 'is_published', 'is_featured', 'views_count', 'published_at', 'created_at')
+    list_filter = ('content_type', 'category', 'is_published', 'is_featured', 'difficulty_level', 'published_at', 'created_at')
+    search_fields = ('title', 'content', 'excerpt', 'author__username')
     prepopulated_fields = {'slug': ('title',)}
+    filter_horizontal = ('tags',)
+    readonly_fields = ('views_count', 'likes_count', 'shares_count')
+    list_editable = ('is_published', 'is_featured')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'slug', 'author', 'content_type', 'category', 'tags')
+        }),
+        ('Content', {
+            'fields': ('excerpt', 'content', 'difficulty_level', 'estimated_read_time')
+        }),
+        ('Media', {
+            'fields': ('featured_image', 'featured_image_alt', 'video_url'),
+            'classes': ('collapse',)
+        }),
+        ('SEO', {
+            'fields': ('meta_description', 'meta_keywords'),
+            'classes': ('collapse',)
+        }),
+        ('Publishing', {
+            'fields': ('is_published', 'is_featured', 'published_at')
+        }),
+        ('Metrics', {
+            'fields': ('views_count', 'likes_count', 'shares_count'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    actions = ['publish_posts', 'unpublish_posts', 'feature_posts', 'unfeature_posts']
+
+    def publish_posts(self, request, queryset):
+        queryset.update(is_published=True, published_at=timezone.now())
+    publish_posts.short_description = "Publish selected posts"
+
+    def unpublish_posts(self, request, queryset):
+        queryset.update(is_published=False)
+    unpublish_posts.short_description = "Unpublish selected posts"
+
+    def feature_posts(self, request, queryset):
+        queryset.update(is_featured=True)
+    feature_posts.short_description = "Feature selected posts"
+
+    def unfeature_posts(self, request, queryset):
+        queryset.update(is_featured=False)
+    unfeature_posts.short_description = "Unfeature selected posts"
+
+
+@admin.register(ContentView)
+class ContentViewAdmin(admin.ModelAdmin):
+    list_display = ('post', 'user', 'ip_address', 'viewed_at')
+    list_filter = ('viewed_at', 'post__content_type')
+    search_fields = ('post__title', 'user__username', 'ip_address')
+    readonly_fields = ('post', 'user', 'ip_address', 'user_agent', 'referrer', 'viewed_at')
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(ContentLike)
+class ContentLikeAdmin(admin.ModelAdmin):
+    list_display = ('post', 'user', 'created_at')
+    list_filter = ('created_at', 'post__content_type')
+    search_fields = ('post__title', 'user__username')
+    readonly_fields = ('post', 'user', 'created_at')
+
+
+@admin.register(ContentComment)
+class ContentCommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'user', 'is_approved', 'created_at')
+    list_filter = ('is_approved', 'created_at', 'post__content_type')
+    search_fields = ('post__title', 'user__username', 'content')
+    list_editable = ('is_approved',)
+    actions = ['approve_comments', 'disapprove_comments']
+
+    def approve_comments(self, request, queryset):
+        queryset.update(is_approved=True)
+    approve_comments.short_description = "Approve selected comments"
+
+    def disapprove_comments(self, request, queryset):
+        queryset.update(is_approved=False)
+    disapprove_comments.short_description = "Disapprove selected comments"
+
+
+@admin.register(ContentBookmark)
+class ContentBookmarkAdmin(admin.ModelAdmin):
+    list_display = ('user', 'post', 'created_at')
+    list_filter = ('created_at', 'post__content_type')
+    search_fields = ('user__username', 'post__title')
+    readonly_fields = ('user', 'post', 'created_at')
+
+
+# Static Pages Admin
+
+@admin.register(StaticPage)
+class StaticPageAdmin(admin.ModelAdmin):
+    list_display = ('title', 'page_type', 'status', 'show_in_menu', 'menu_order', 'is_featured', 'views_count', 'updated_at')
+    list_filter = ('page_type', 'status', 'show_in_menu', 'is_featured', 'created_at')
+    search_fields = ('title', 'content', 'meta_title', 'meta_description')
+    prepopulated_fields = {'slug': ('title',)}
+    list_editable = ('status', 'show_in_menu', 'menu_order', 'is_featured')
+    readonly_fields = ('views_count', 'created_at', 'updated_at', 'published_at')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'slug', 'page_type', 'status', 'author')
+        }),
+        ('Content', {
+            'fields': ('content', 'excerpt')
+        }),
+        ('SEO Settings', {
+            'fields': ('meta_title', 'meta_description', 'meta_keywords'),
+            'classes': ('collapse',)
+        }),
+        ('Media', {
+            'fields': ('featured_image', 'featured_image_alt'),
+            'classes': ('collapse',)
+        }),
+        ('Display Settings', {
+            'fields': ('is_featured', 'show_in_menu', 'menu_order')
+        }),
+        ('Analytics', {
+            'fields': ('views_count',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'published_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:  # If creating new object
+            obj.author = request.user
+        super().save_model(request, obj, form, change)
+
+
+# Content Analytics Admin
+
+@admin.register(ContentAnalytics)
+class ContentAnalyticsAdmin(admin.ModelAdmin):
+    list_display = ('post', 'date', 'views', 'unique_views', 'likes', 'shares', 'comments', 'bounce_rate')
+    list_filter = ('date', 'post__category', 'post__content_type')
+    search_fields = ('post__title',)
+    date_hierarchy = 'date'
+    readonly_fields = ('created_at', 'updated_at')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('post', 'date')
+        }),
+        ('Engagement Metrics', {
+            'fields': ('views', 'unique_views', 'likes', 'shares', 'comments', 'bookmarks')
+        }),
+        ('Performance Metrics', {
+            'fields': ('avg_time_on_page', 'bounce_rate')
+        }),
+        ('Traffic Sources', {
+            'fields': ('direct_traffic', 'search_traffic', 'social_traffic', 'referral_traffic'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(ContentPerformanceReport)
+class ContentPerformanceReportAdmin(admin.ModelAdmin):
+    list_display = ('title', 'report_type', 'start_date', 'end_date', 'is_generated', 'generated_at')
+    list_filter = ('report_type', 'is_generated', 'start_date', 'end_date')
+    search_fields = ('title',)
+    readonly_fields = ('is_generated', 'generated_at', 'generated_by', 'created_at')
+
+    fieldsets = (
+        ('Report Information', {
+            'fields': ('title', 'report_type', 'start_date', 'end_date')
+        }),
+        ('Summary Metrics', {
+            'fields': ('total_views', 'total_unique_views', 'total_engagement'),
+            'classes': ('collapse',)
+        }),
+        ('Report Data', {
+            'fields': ('top_performing_posts', 'report_data'),
+            'classes': ('collapse',)
+        }),
+        ('Generation Status', {
+            'fields': ('is_generated', 'generated_at', 'generated_by', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+@admin.register(RecentlyViewedCar)
+class RecentlyViewedCarAdmin(admin.ModelAdmin):
+    list_display = ['user', 'car', 'viewed_at', 'session_key']
+    list_filter = ['viewed_at', 'car__brand']
+    search_fields = ['user__username', 'car__title', 'car__brand__name']
+    readonly_fields = ['viewed_at']
+    ordering = ['-viewed_at']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'car', 'car__brand')

@@ -3,276 +3,952 @@
 
 {% block title %}Sell Your Car - Gurumisha{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/enhanced-profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard-mobile.css' %}">
+<style>
+/* Enhanced Sell Car Page Styles */
+:root {
+    --harrier-red: #DC2626;
+    --harrier-red-light: #EF4444;
+    --harrier-red-dark: #B91C1C;
+    --harrier-dark: #1F2937;
+    --harrier-blue: #1E3A8A;
+    --harrier-blue-light: #3B82F6;
+    --harrier-white: #FFFFFF;
+    --harrier-gray: #F9FAFB;
+    --harrier-gray-dark: #6B7280;
+
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 350ms;
+}
+
+/* Enhanced Hero Section */
+.sell-car-hero {
+    position: relative;
+    min-height: 70vh;
+    background: linear-gradient(135deg, var(--harrier-red) 0%, var(--harrier-dark) 50%, var(--harrier-blue) 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sell-car-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('{% static "images/car-image-1-1200x600.jpg" %}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    z-index: 1;
+}
+
+.sell-car-hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+    z-index: 2;
+}
+
+.sell-car-hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.sell-car-hero-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeInUp 0.8s var(--ease-out-quart);
+}
+
+.sell-car-hero-subtitle {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    animation: fadeInUp 0.8s var(--ease-out-quart) 0.2s both;
+}
+
+.sell-car-hero-features {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    animation: fadeInUp 0.8s var(--ease-out-quart) 0.4s both;
+}
+
+.sell-car-hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.sell-car-hero-feature i {
+    color: var(--harrier-red-light);
+    font-size: 1.1rem;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation Classes */
+.animate-fade-in-up {
+    animation: fadeInUp 0.8s var(--ease-out-quart) both;
+    /* Fallback to ensure visibility */
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Responsive Hero */
+/* Enhanced Form Styling */
+.enhanced-sell-car-form .form-section {
+    transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.enhanced-sell-car-form .form-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.enhanced-label {
+    transition: color var(--duration-fast) var(--ease-out-quart);
+}
+
+.enhanced-input,
+.enhanced-select,
+.enhanced-textarea {
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    position: relative;
+}
+
+.enhanced-input:focus,
+.enhanced-select:focus,
+.enhanced-textarea:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.2), 0 4px 6px -2px rgba(220, 38, 38, 0.1);
+}
+
+.enhanced-file-input {
+    transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.enhanced-checkbox {
+    transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.enhanced-checkbox:checked {
+    background-color: var(--harrier-red);
+    border-color: var(--harrier-red);
+}
+
+.enhanced-submit-btn:hover {
+    background: linear-gradient(135deg, var(--harrier-red-light) 0%, var(--harrier-red-dark) 100%);
+}
+
+.enhanced-cancel-btn:hover {
+    background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+}
+
+.glassmorphism-card {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Ensure visibility */
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Form sections visibility */
+.form-section {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    /* Fallback background for browsers without backdrop-filter support */
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Ensure form is always visible */
+.enhanced-sell-car-form {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.section-header {
+    position: relative;
+}
+
+.section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--harrier-red) 0%, var(--harrier-blue) 100%);
+    border-radius: 2px;
+}
+
+.error-message {
+    animation: shake 0.5s var(--ease-out-quart);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.help-text {
+    opacity: 0.8;
+    transition: opacity var(--duration-fast) var(--ease-out-quart);
+}
+
+.form-group:hover .help-text {
+    opacity: 1;
+}
+
+.upload-guidelines {
+    transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.negotiable-option {
+    transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.negotiable-option:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.review-notice {
+    animation: fadeInUp 0.6s var(--ease-out-quart) 0.8s both;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sell-car-hero {
+        min-height: 60vh;
+    }
+
+    .sell-car-hero-title {
+        font-size: 2.5rem;
+    }
+
+    .sell-car-hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .sell-car-hero-features {
+        gap: 1rem;
+    }
+
+    .form-section {
+        padding: 1.5rem !important;
+    }
+
+    .enhanced-submit-btn,
+    .enhanced-cancel-btn {
+        padding: 1rem 1.5rem !important;
+        font-size: 1rem !important;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Page Header -->
-<div class="bg-harrier-dark py-16">
-    <div class="container mx-auto px-4">
-        <div class="text-center">
-            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
-                SELL YOUR CAR
-            </h1>
-            <p class="text-xl text-gray-300">
-                List your vehicle on Kenya's most trusted automotive marketplace
-            </p>
+<!-- Enhanced Hero Section -->
+<section class="sell-car-hero">
+    <div class="sell-car-hero-content">
+        <h1 class="sell-car-hero-title">
+            Sell Your Car with Confidence
+        </h1>
+        <p class="sell-car-hero-subtitle">
+            Join thousands of satisfied sellers on Kenya's most trusted automotive marketplace.
+            Get the best value for your vehicle with our premium listing service.
+        </p>
+        <div class="sell-car-hero-features">
+            <div class="sell-car-hero-feature">
+                <i class="fas fa-shield-alt"></i>
+                <span>Verified Buyers</span>
+            </div>
+            <div class="sell-car-hero-feature">
+                <i class="fas fa-clock"></i>
+                <span>Quick Approval</span>
+            </div>
+            <div class="sell-car-hero-feature">
+                <i class="fas fa-handshake"></i>
+                <span>Secure Transactions</span>
+            </div>
+            <div class="sell-car-hero-feature">
+                <i class="fas fa-star"></i>
+                <span>Premium Exposure</span>
+            </div>
         </div>
     </div>
-</div>
+</section>
 
-<!-- Sell Car Form Section -->
-<section class="py-16 bg-harrier-gray">
-    <div class="container mx-auto px-4">
-        <div class="max-w-4xl mx-auto">
-            <!-- Progress Steps -->
-            <div class="mb-12">
-                <div class="flex items-center justify-center space-x-4 md:space-x-8">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-harrier-red text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                        <span class="ml-2 text-sm font-medium text-harrier-dark">Car Details</span>
+<!-- Enhanced Sell Car Form Section -->
+<section class="py-20 bg-gradient-to-br from-harrier-gray via-white to-harrier-gray relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23DC2626\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M20 20c0 11.046-8.954 20-20 20s-20-8.954-20-20 8.954-20 20-20 20 8.954 20 20zm-20-16c-8.837 0-16 7.163-16 16s7.163 16 16 16 16-7.163 16-16-7.163-16-16-16z\'/%3E%3C/g%3E%3C/svg%3E');"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="max-w-5xl mx-auto">
+            <!-- Enhanced Progress Steps -->
+            <div class="mb-16 animate-fade-in-up">
+                <div class="flex items-center justify-center space-x-6 md:space-x-12">
+                    <div class="flex items-center group">
+                        <div class="w-12 h-12 bg-gradient-to-r from-harrier-red to-harrier-red-light text-white rounded-full flex items-center justify-center text-lg font-bold shadow-lg transform transition-all duration-300 group-hover:scale-110">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <span class="ml-3 text-base font-semibold text-harrier-dark font-montserrat">Car Details</span>
                     </div>
-                    <div class="w-8 h-1 bg-gray-300"></div>
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-bold">2</div>
-                        <span class="ml-2 text-sm font-medium text-gray-600">Review</span>
+                    <div class="w-16 h-1 bg-gradient-to-r from-harrier-red to-gray-300 rounded-full"></div>
+                    <div class="flex items-center group">
+                        <div class="w-12 h-12 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-lg font-bold shadow-md transition-all duration-300 group-hover:bg-gray-300">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <span class="ml-3 text-base font-medium text-gray-500 font-montserrat">Review</span>
                     </div>
-                    <div class="w-8 h-1 bg-gray-300"></div>
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                        <span class="ml-2 text-sm font-medium text-gray-600">Publish</span>
+                    <div class="w-16 h-1 bg-gray-300 rounded-full"></div>
+                    <div class="flex items-center group">
+                        <div class="w-12 h-12 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-lg font-bold shadow-md transition-all duration-300 group-hover:bg-gray-300">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <span class="ml-3 text-base font-medium text-gray-500 font-montserrat">Published</span>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-xl p-8 lg:p-12">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-2">List Your Vehicle</h2>
-                    <p class="text-gray-600">Provide detailed information about your car to attract serious buyers</p>
+            <!-- Enhanced Form Container with Glassmorphism -->
+            <div class="glassmorphism-card bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 lg:p-16 border border-white/20">
+                <!-- Visibility Check -->
+                <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-800 rounded-lg text-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <strong>Form is loading correctly!</strong> If you can see this message, the form container is visible.
                 </div>
 
-                <!-- Display Messages -->
+                <div class="mb-12 text-center">
+                    <h2 class="text-4xl lg:text-5xl font-montserrat font-bold text-harrier-dark mb-4 bg-gradient-to-r from-harrier-dark via-harrier-blue to-harrier-red bg-clip-text text-transparent">
+                        List Your Vehicle
+                    </h2>
+                    <p class="text-lg text-harrier-gray-dark font-raleway leading-relaxed max-w-2xl mx-auto">
+                        Provide detailed information about your car to attract serious buyers and get the best value for your vehicle
+                    </p>
+                    <div class="mt-6 flex justify-center">
+                        <div class="w-24 h-1 bg-gradient-to-r from-harrier-red to-harrier-blue rounded-full"></div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Messages Display -->
                 {% if messages %}
-                    {% for message in messages %}
-                        <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+                    <div class="mb-8 space-y-4">
+                        {% for message in messages %}
+                            <div class="enhanced-message p-6 rounded-2xl border-l-4 {% if message.tags == 'error' %}bg-red-50/80 border-red-500 text-red-800{% elif message.tags == 'success' %}bg-green-50/80 border-green-500 text-green-800{% else %}bg-blue-50/80 border-blue-500 text-blue-800{% endif %} backdrop-blur-sm font-raleway animate-fade-in-up">
+                                <div class="flex items-center">
+                                    <i class="{% if message.tags == 'error' %}fas fa-exclamation-triangle text-red-500{% elif message.tags == 'success' %}fas fa-check-circle text-green-500{% else %}fas fa-info-circle text-blue-500{% endif %} mr-3 text-lg"></i>
+                                    <span class="font-medium">{{ message }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data" class="sell-car-form space-y-8">
+                <form method="post" enctype="multipart/form-data" class="enhanced-sell-car-form space-y-12" hx-boost="true">
                     {% csrf_token %}
-                    
-                    <!-- Basic Information -->
-                    <div>
-                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Basic Information</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+
+                    <!-- Enhanced Basic Information Section -->
+                    <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-info-circle text-harrier-red mr-3"></i>
+                                Basic Information
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Essential details about your vehicle listing</p>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="form-group">
+                                <label for="{{ form.title.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-tag text-harrier-red mr-2"></i>
                                     Listing Title <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.title }}
                                 {% if form.title.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.title.errors.0 }}
+                                    </div>
                                 {% endif %}
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">Create an attractive title that highlights your car's best features</p>
                             </div>
-                            <div>
-                                <label for="{{ form.price.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.price.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-money-bill-wave text-harrier-red mr-2"></i>
                                     Price (KES) <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.price }}
                                 {% if form.price.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.price.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.price.errors.0 }}
+                                    </div>
                                 {% endif %}
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">Set a competitive price based on market value</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Vehicle Details -->
-                    <div>
-                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Vehicle Details</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label for="{{ form.brand.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                    <!-- Enhanced Vehicle Details Section -->
+                    <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-car text-harrier-red mr-3"></i>
+                                Vehicle Details
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Specify your vehicle's make, model, and key characteristics</p>
+                        </div>
+
+                        <!-- Primary Vehicle Info -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                            <div class="form-group">
+                                <label for="{{ form.brand.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-industry text-harrier-red mr-2"></i>
                                     Brand <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.brand }}
                                 {% if form.brand.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.brand.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.brand.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.model.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.model.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-car-side text-harrier-red mr-2"></i>
                                     Model <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.model }}
                                 {% if form.model.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.model.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.model.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.year.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.year.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-calendar-alt text-harrier-red mr-2"></i>
                                     Year <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.year }}
                                 {% if form.year.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.year.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.year.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                            <div>
-                                <label for="{{ form.condition.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                        <!-- Secondary Vehicle Info -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="form-group">
+                                <label for="{{ form.condition.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-star text-harrier-red mr-2"></i>
                                     Condition <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.condition }}
                                 {% if form.condition.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.condition.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.condition.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.color.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.color.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-palette text-harrier-red mr-2"></i>
                                     Color <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.color }}
                                 {% if form.color.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.color.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.color.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Technical Specifications -->
-                    <div>
-                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Technical Specifications</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div>
-                                <label for="{{ form.engine_size.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                    <!-- Enhanced Technical Specifications Section -->
+                    <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-cogs text-harrier-red mr-3"></i>
+                                Technical Specifications
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Engine, transmission, and performance details</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <div class="form-group">
+                                <label for="{{ form.engine_size.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-tachometer-alt text-harrier-red mr-2"></i>
                                     Engine Size
                                 </label>
                                 {{ form.engine_size }}
                                 {% if form.engine_size.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.engine_size.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.engine_size.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.fuel_type.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.fuel_type.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-gas-pump text-harrier-red mr-2"></i>
                                     Fuel Type <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.fuel_type }}
                                 {% if form.fuel_type.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.fuel_type.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.fuel_type.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.transmission.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.transmission.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-cog text-harrier-red mr-2"></i>
                                     Transmission <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.transmission }}
                                 {% if form.transmission.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.transmission.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.transmission.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.mileage.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.mileage.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-road text-harrier-red mr-2"></i>
                                     Mileage (KM) <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.mileage }}
                                 {% if form.mileage.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.mileage.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.mileage.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Description and Features -->
-                    <div>
-                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Description & Features</h3>
-                        <div class="space-y-6">
-                            <div>
-                                <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                    <!-- Enhanced Description and Features Section -->
+                    <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-file-alt text-harrier-red mr-3"></i>
+                                Description & Features
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Detailed description and key features of your vehicle</p>
+                        </div>
+                        <div class="space-y-8">
+                            <div class="form-group">
+                                <label for="{{ form.description.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-align-left text-harrier-red mr-2"></i>
                                     Description <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.description }}
                                 {% if form.description.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.description.errors.0 }}
+                                    </div>
                                 {% endif %}
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">Provide a detailed description highlighting your car's condition, history, and unique selling points</p>
                             </div>
-                            <div>
-                                <label for="{{ form.features.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                            <div class="form-group">
+                                <label for="{{ form.features.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-list-ul text-harrier-red mr-2"></i>
                                     Features
                                 </label>
                                 {{ form.features }}
-                                <p class="mt-1 text-sm text-gray-500">
-                                    List key features separated by commas (e.g., Air Conditioning, Power Steering, ABS, Airbags)
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">
+                                    List key features separated by commas (e.g., Air Conditioning, Power Steering, ABS, Airbags, Leather Seats, Navigation System)
                                 </p>
                                 {% if form.features.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.features.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.features.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Main Image -->
-                    <div>
-                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Main Photo</h3>
-                        <div>
-                            <label for="{{ form.main_image.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                    <!-- Enhanced Image Upload Section -->
+                    <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-camera text-harrier-red mr-3"></i>
+                                Main Photo
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Upload a high-quality image that showcases your vehicle</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.main_image.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                <i class="fas fa-upload text-harrier-red mr-2"></i>
                                 Upload Main Photo <span class="text-harrier-red">*</span>
                             </label>
-                            {{ form.main_image }}
-                            <p class="mt-1 text-sm text-gray-500">
-                                Upload a high-quality photo of your car. This will be the main image buyers see first.
-                            </p>
+                            <div class="image-upload-container relative">
+                                {{ form.main_image }}
+                                <div class="upload-guidelines mt-4 p-4 bg-blue-50/80 rounded-xl border border-blue-200">
+                                    <h4 class="font-semibold text-blue-800 mb-2 font-montserrat">Photo Guidelines:</h4>
+                                    <ul class="text-sm text-blue-700 space-y-1 font-raleway">
+                                        <li>• Use high-resolution images (minimum 800x600px)</li>
+                                        <li>• Show the car from the front-side angle</li>
+                                        <li>• Ensure good lighting and clear visibility</li>
+                                        <li>• Avoid filters or heavy editing</li>
+                                    </ul>
+                                </div>
+                            </div>
                             {% if form.main_image.errors %}
-                                <div class="mt-1 text-sm text-red-600">{{ form.main_image.errors.0 }}</div>
+                                <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>{{ form.main_image.errors.0 }}
+                                </div>
                             {% endif %}
                         </div>
                     </div>
 
-                    <!-- Listing Options -->
-                    <div>
-                        <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Listing Options</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="{{ form.listing_type.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                    <!-- Enhanced Listing Options Section -->
+                    <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-sliders-h text-harrier-red mr-3"></i>
+                                Listing Options
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Configure how your vehicle will be listed and displayed</p>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="form-group">
+                                <label for="{{ form.listing_type.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-tags text-harrier-red mr-2"></i>
                                     Listing Type <span class="text-harrier-red">*</span>
                                 </label>
                                 {{ form.listing_type }}
-                                <p class="mt-1 text-sm text-gray-500">
-                                    Choose how you want to list your car
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">
+                                    Choose how you want to list your car on our platform
                                 </p>
                                 {% if form.listing_type.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.listing_type.errors.0 }}</div>
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.listing_type.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div class="flex items-center">
-                                <div class="flex items-center h-5">
-                                    {{ form.negotiable }}
+                            <div class="form-group">
+                                <div class="negotiable-option bg-gradient-to-r from-harrier-gray to-white p-6 rounded-2xl border border-gray-200">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="flex items-center h-6 mt-1">
+                                            {{ form.negotiable }}
+                                        </div>
+                                        <div class="flex-1">
+                                            <label for="{{ form.negotiable.id_for_label }}" class="enhanced-label text-base font-semibold text-harrier-dark font-montserrat cursor-pointer">
+                                                <i class="fas fa-handshake text-harrier-red mr-2"></i>
+                                                Price is negotiable
+                                            </label>
+                                            <p class="help-text mt-1 text-sm text-harrier-gray-dark font-raleway">
+                                                Check this if you're open to price negotiations with potential buyers
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="ml-3">
-                                    <label for="{{ form.negotiable.id_for_label }}" class="text-sm font-semibold text-harrier-dark">
-                                        Price is negotiable
-                                    </label>
-                                    <p class="text-sm text-gray-500">
-                                        Check this if you're open to price negotiations
-                                    </p>
-                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Information Section -->
+                        <div class="section-header mb-8">
+                            <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
+                                <i class="fas fa-map-marker-alt text-harrier-red mr-3"></i>
+                                Location Information
+                            </h3>
+                            <p class="text-harrier-gray-dark font-raleway">Specify where your vehicle is located</p>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="form-group">
+                                <label for="{{ form.area.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-map-pin text-harrier-red mr-2"></i>
+                                    Area/Neighborhood
+                                </label>
+                                {{ form.area }}
+                                {% if form.area.errors %}
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.area.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">Specific area or neighborhood where the car is located</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.city.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-city text-harrier-red mr-2"></i>
+                                    City
+                                </label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.city.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">City where the vehicle is currently located</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_country" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
+                                    <i class="fas fa-globe text-harrier-red mr-2"></i>
+                                    Country
+                                </label>
+                                <select name="country" id="id_country" class="enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base">
+                                    <option value="">Select a country</option>
+                                    <!-- Primary Market - Kenya -->
+                                    <option value="Kenya">Kenya</option>
+                                    <!-- East African Community -->
+                                    <option value="Uganda">Uganda</option>
+                                    <option value="Tanzania">Tanzania</option>
+                                    <option value="Rwanda">Rwanda</option>
+                                    <option value="Burundi">Burundi</option>
+                                    <option value="South Sudan">South Sudan</option>
+                                    <!-- Other East African Countries -->
+                                    <option value="Ethiopia">Ethiopia</option>
+                                    <option value="Somalia">Somalia</option>
+                                    <option value="Djibouti">Djibouti</option>
+                                    <option value="Eritrea">Eritrea</option>
+                                    <!-- Major African Markets -->
+                                    <option value="South Africa">South Africa</option>
+                                    <option value="Nigeria">Nigeria</option>
+                                    <option value="Egypt">Egypt</option>
+                                    <option value="Morocco">Morocco</option>
+                                    <option value="Ghana">Ghana</option>
+                                    <option value="Algeria">Algeria</option>
+                                    <option value="Tunisia">Tunisia</option>
+                                    <option value="Libya">Libya</option>
+                                    <!-- Other African Countries -->
+                                    <option value="Angola">Angola</option>
+                                    <option value="Benin">Benin</option>
+                                    <option value="Botswana">Botswana</option>
+                                    <option value="Burkina Faso">Burkina Faso</option>
+                                    <option value="Cameroon">Cameroon</option>
+                                    <option value="Cape Verde">Cape Verde</option>
+                                    <option value="Central African Republic">Central African Republic</option>
+                                    <option value="Chad">Chad</option>
+                                    <option value="Comoros">Comoros</option>
+                                    <option value="Democratic Republic of Congo">Democratic Republic of Congo</option>
+                                    <option value="Equatorial Guinea">Equatorial Guinea</option>
+                                    <option value="Gabon">Gabon</option>
+                                    <option value="Gambia">Gambia</option>
+                                    <option value="Guinea">Guinea</option>
+                                    <option value="Guinea-Bissau">Guinea-Bissau</option>
+                                    <option value="Ivory Coast">Ivory Coast</option>
+                                    <option value="Lesotho">Lesotho</option>
+                                    <option value="Liberia">Liberia</option>
+                                    <option value="Madagascar">Madagascar</option>
+                                    <option value="Malawi">Malawi</option>
+                                    <option value="Mali">Mali</option>
+                                    <option value="Mauritius">Mauritius</option>
+                                    <option value="Mozambique">Mozambique</option>
+                                    <option value="Namibia">Namibia</option>
+                                    <option value="Niger">Niger</option>
+                                    <option value="Republic of Congo">Republic of Congo</option>
+                                    <option value="Sao Tome and Principe">Sao Tome and Principe</option>
+                                    <option value="Senegal">Senegal</option>
+                                    <option value="Seychelles">Seychelles</option>
+                                    <option value="Sierra Leone">Sierra Leone</option>
+                                    <option value="Sudan">Sudan</option>
+                                    <option value="Swaziland">Swaziland</option>
+                                    <option value="Togo">Togo</option>
+                                    <option value="Zambia">Zambia</option>
+                                    <option value="Zimbabwe">Zimbabwe</option>
+                                    <!-- Major Global Markets -->
+                                    <option value="United States">United States</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                    <option value="Germany">Germany</option>
+                                    <option value="Japan">Japan</option>
+                                    <option value="China">China</option>
+                                    <option value="India">India</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="France">France</option>
+                                    <option value="Italy">Italy</option>
+                                    <option value="Spain">Spain</option>
+                                    <option value="Brazil">Brazil</option>
+                                    <option value="Mexico">Mexico</option>
+                                    <option value="South Korea">South Korea</option>
+                                    <option value="Netherlands">Netherlands</option>
+                                    <option value="Belgium">Belgium</option>
+                                    <option value="Switzerland">Switzerland</option>
+                                    <option value="Austria">Austria</option>
+                                    <option value="Sweden">Sweden</option>
+                                    <option value="Norway">Norway</option>
+                                    <option value="Denmark">Denmark</option>
+                                    <option value="Finland">Finland</option>
+                                    <option value="Poland">Poland</option>
+                                    <option value="Czech Republic">Czech Republic</option>
+                                    <option value="Hungary">Hungary</option>
+                                    <option value="Romania">Romania</option>
+                                    <option value="Bulgaria">Bulgaria</option>
+                                    <option value="Greece">Greece</option>
+                                    <option value="Portugal">Portugal</option>
+                                    <option value="Ireland">Ireland</option>
+                                    <option value="Luxembourg">Luxembourg</option>
+                                    <option value="Malta">Malta</option>
+                                    <option value="Cyprus">Cyprus</option>
+                                    <option value="Estonia">Estonia</option>
+                                    <option value="Latvia">Latvia</option>
+                                    <option value="Lithuania">Lithuania</option>
+                                    <option value="Slovenia">Slovenia</option>
+                                    <option value="Slovakia">Slovakia</option>
+                                    <option value="Croatia">Croatia</option>
+                                    <option value="Serbia">Serbia</option>
+                                    <option value="Montenegro">Montenegro</option>
+                                    <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+                                    <option value="North Macedonia">North Macedonia</option>
+                                    <option value="Albania">Albania</option>
+                                    <option value="Moldova">Moldova</option>
+                                    <option value="Ukraine">Ukraine</option>
+                                    <option value="Belarus">Belarus</option>
+                                    <option value="Russia">Russia</option>
+                                    <option value="Turkey">Turkey</option>
+                                    <option value="Israel">Israel</option>
+                                    <option value="Saudi Arabia">Saudi Arabia</option>
+                                    <option value="United Arab Emirates">United Arab Emirates</option>
+                                    <option value="Qatar">Qatar</option>
+                                    <option value="Kuwait">Kuwait</option>
+                                    <option value="Bahrain">Bahrain</option>
+                                    <option value="Oman">Oman</option>
+                                    <option value="Jordan">Jordan</option>
+                                    <option value="Lebanon">Lebanon</option>
+                                    <option value="Syria">Syria</option>
+                                    <option value="Iraq">Iraq</option>
+                                    <option value="Iran">Iran</option>
+                                    <option value="Afghanistan">Afghanistan</option>
+                                    <option value="Pakistan">Pakistan</option>
+                                    <option value="Bangladesh">Bangladesh</option>
+                                    <option value="Sri Lanka">Sri Lanka</option>
+                                    <option value="Nepal">Nepal</option>
+                                    <option value="Bhutan">Bhutan</option>
+                                    <option value="Maldives">Maldives</option>
+                                    <option value="Thailand">Thailand</option>
+                                    <option value="Vietnam">Vietnam</option>
+                                    <option value="Malaysia">Malaysia</option>
+                                    <option value="Singapore">Singapore</option>
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="Philippines">Philippines</option>
+                                    <option value="Brunei">Brunei</option>
+                                    <option value="Myanmar">Myanmar</option>
+                                    <option value="Cambodia">Cambodia</option>
+                                    <option value="Laos">Laos</option>
+                                    <option value="New Zealand">New Zealand</option>
+                                    <option value="Papua New Guinea">Papua New Guinea</option>
+                                    <option value="Fiji">Fiji</option>
+                                    <option value="Argentina">Argentina</option>
+                                    <option value="Chile">Chile</option>
+                                    <option value="Peru">Peru</option>
+                                    <option value="Colombia">Colombia</option>
+                                    <option value="Venezuela">Venezuela</option>
+                                    <option value="Ecuador">Ecuador</option>
+                                    <option value="Bolivia">Bolivia</option>
+                                    <option value="Paraguay">Paraguay</option>
+                                    <option value="Uruguay">Uruguay</option>
+                                    <option value="Guyana">Guyana</option>
+                                    <option value="Suriname">Suriname</option>
+                                    <option value="Guatemala">Guatemala</option>
+                                    <option value="Belize">Belize</option>
+                                    <option value="El Salvador">El Salvador</option>
+                                    <option value="Honduras">Honduras</option>
+                                    <option value="Nicaragua">Nicaragua</option>
+                                    <option value="Costa Rica">Costa Rica</option>
+                                    <option value="Panama">Panama</option>
+                                    <option value="Cuba">Cuba</option>
+                                    <option value="Jamaica">Jamaica</option>
+                                    <option value="Haiti">Haiti</option>
+                                    <option value="Dominican Republic">Dominican Republic</option>
+                                    <option value="Trinidad and Tobago">Trinidad and Tobago</option>
+                                    <option value="Barbados">Barbados</option>
+                                    <option value="Saint Lucia">Saint Lucia</option>
+                                    <option value="Grenada">Grenada</option>
+                                    <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+                                    <option value="Antigua and Barbuda">Antigua and Barbuda</option>
+                                    <option value="Dominica">Dominica</option>
+                                    <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+                                    <option value="Bahamas">Bahamas</option>
+                                </select>
+                                {% if form.country.errors %}
+                                    <div class="error-message mt-2 text-sm text-red-600 font-raleway">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ form.country.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <p class="help-text mt-2 text-sm text-harrier-gray-dark font-raleway">Country where the vehicle is located</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <div class="pt-6 border-t border-gray-200">
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <button type="submit" class="flex-1 btn-harrier-primary py-4 text-lg font-semibold">
-                                <i class="fas fa-check mr-2"></i>SUBMIT FOR REVIEW
+                    <!-- Enhanced Submit Section -->
+                    <div class="submit-section pt-12 mt-8 border-t-2 border-gradient-to-r from-harrier-red to-harrier-blue">
+                        <div class="text-center mb-8">
+                            <h4 class="text-xl font-montserrat font-bold text-harrier-dark mb-2">Ready to List Your Vehicle?</h4>
+                            <p class="text-harrier-gray-dark font-raleway">Review your information and submit for approval</p>
+                        </div>
+                        <div class="flex flex-col lg:flex-row gap-6 max-w-2xl mx-auto">
+                            <button type="submit" class="enhanced-submit-btn flex-1 bg-gradient-to-r from-harrier-red to-harrier-red-light text-white py-5 px-8 rounded-2xl text-lg font-bold font-montserrat shadow-xl hover:shadow-2xl transform transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-harrier-red/30">
+                                <i class="fas fa-rocket mr-3"></i>SUBMIT FOR REVIEW
                             </button>
-                            <a href="{% url 'core:dashboard' %}" class="flex-1 btn-harrier-secondary py-4 text-lg font-semibold text-center">
-                                <i class="fas fa-times mr-2"></i>CANCEL
+                            <a href="{% url 'core:dashboard' %}" class="enhanced-cancel-btn flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white py-5 px-8 rounded-2xl text-lg font-bold font-montserrat shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 text-center">
+                                <i class="fas fa-arrow-left mr-3"></i>CANCEL
                             </a>
                         </div>
-                        <p class="mt-4 text-sm text-gray-600 text-center">
-                            Your listing will be reviewed by our team before being published. This usually takes 24-48 hours.
-                        </p>
+                        <div class="review-notice mt-8 p-6 bg-blue-50/80 rounded-2xl border border-blue-200 text-center">
+                            <div class="flex items-center justify-center mb-3">
+                                <i class="fas fa-info-circle text-blue-600 text-xl mr-2"></i>
+                                <h5 class="font-semibold text-blue-800 font-montserrat">Review Process</h5>
+                            </div>
+                            <p class="text-sm text-blue-700 font-raleway leading-relaxed">
+                                Your listing will be carefully reviewed by our team to ensure quality and accuracy.
+                                This process typically takes 24-48 hours. You'll receive an email notification once your listing is approved and published.
+                            </p>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -319,198 +995,4 @@
 </section>
 {% endblock %}
 
-{% block extra_css %}
-{{ block.super }}
-<style>
-/* Enhanced Input Styling for Sell Car Form */
-.sell-car-form input[type="text"],
-.sell-car-form input[type="email"],
-.sell-car-form input[type="number"],
-.sell-car-form select,
-.sell-car-form textarea {
-    font-family: 'Inter', 'Raleway', sans-serif !important;
-    font-size: 15px !important;
-    font-weight: 500 !important;
-    line-height: 1.5 !important;
-    padding: 16px 20px !important;
-    border-radius: 16px !important;
-    border: 2px solid rgba(226, 232, 240, 0.8) !important;
 
-    /* Modern glassmorphism background */
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
-    backdrop-filter: blur(12px);
-
-    /* Subtle shadow */
-    box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.05),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
-
-    /* Text styling */
-    color: #1e293b !important;
-    letter-spacing: 0.01em;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.sell-car-form input:hover,
-.sell-car-form select:hover,
-.sell-car-form textarea:hover {
-    border-color: rgba(220, 38, 38, 0.3) !important;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(254, 242, 242, 0.95) 100%) !important;
-    box-shadow:
-        0 2px 8px rgba(220, 38, 38, 0.08),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
-    transform: translateY(-1px);
-}
-
-.sell-car-form input:focus,
-.sell-car-form select:focus,
-.sell-car-form textarea:focus {
-    outline: none !important;
-    border-color: #dc2626 !important;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(254, 242, 242, 0.98) 100%) !important;
-    box-shadow:
-        0 4px 20px rgba(220, 38, 38, 0.15),
-        0 0 0 4px rgba(220, 38, 38, 0.1),
-        0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
-    transform: translateY(-2px);
-}
-
-.sell-car-form input::placeholder,
-.sell-car-form textarea::placeholder {
-    color: #94a3b8 !important;
-    font-weight: 400 !important;
-    opacity: 0.8;
-}
-
-/* Select specific styling */
-.sell-car-form select {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23dc2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
-    background-position: right 16px center !important;
-    background-repeat: no-repeat !important;
-    background-size: 16px 12px !important;
-    padding-right: 48px !important;
-    cursor: pointer;
-}
-
-.sell-car-form select:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23b91c1c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
-}
-
-/* Textarea specific styling */
-.sell-car-form textarea {
-    resize: vertical !important;
-    min-height: 120px !important;
-    line-height: 1.6 !important;
-}
-
-/* File input styling */
-.sell-car-form input[type="file"] {
-    padding: 16px !important;
-    border: 2px dashed rgba(220, 38, 38, 0.3) !important;
-    background: linear-gradient(135deg, rgba(254, 242, 242, 0.5) 0%, rgba(255, 255, 255, 0.8) 100%) !important;
-    border-radius: 16px !important;
-    cursor: pointer;
-    transition: all 0.3s ease !important;
-}
-
-.sell-car-form input[type="file"]:hover {
-    border-color: rgba(220, 38, 38, 0.5) !important;
-    background: linear-gradient(135deg, rgba(254, 242, 242, 0.8) 0%, rgba(255, 255, 255, 0.9) 100%) !important;
-    transform: translateY(-1px);
-}
-
-.sell-car-form input[type="file"]:focus {
-    border-color: #dc2626 !important;
-    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15) !important;
-    outline: none !important;
-}
-
-/* Checkbox styling */
-.sell-car-form input[type="checkbox"] {
-    width: 20px !important;
-    height: 20px !important;
-    border-radius: 6px !important;
-    border: 2px solid #e2e8f0 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-    cursor: pointer;
-    transition: all 0.2s ease !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: relative;
-}
-
-.sell-car-form input[type="checkbox"]:checked {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-    border-color: #dc2626 !important;
-    transform: scale(1.05);
-}
-
-.sell-car-form input[type="checkbox"]:checked::before {
-    content: "✓";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.sell-car-form input[type="checkbox"]:focus {
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
-    outline: none !important;
-}
-
-/* Enhanced labels */
-.sell-car-form label {
-    font-family: 'Montserrat', sans-serif !important;
-    font-weight: 600 !important;
-    color: #1f2937 !important;
-    letter-spacing: 0.025em;
-    margin-bottom: 8px !important;
-}
-
-/* Error styling */
-.sell-car-form .text-red-600 {
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    margin-top: 6px !important;
-    display: flex;
-    align-items: center;
-}
-
-.sell-car-form .text-red-600::before {
-    content: "⚠";
-    margin-right: 6px;
-    font-size: 14px;
-}
-
-/* Form sections */
-.sell-car-form h3 {
-    position: relative;
-    padding-left: 20px;
-}
-
-.sell-car-form h3::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 24px;
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    border-radius: 2px;
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-    .sell-car-form input,
-    .sell-car-form select,
-    .sell-car-form textarea {
-        font-size: 16px !important; /* Prevents zoom on iOS */
-        padding: 16px 14px !important;
-    }
-}
-</style>
-{% endblock %}

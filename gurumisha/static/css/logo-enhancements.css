@@ -1,0 +1,296 @@
+/* Logo Enhancement Styles for Gurumisha Motors */
+
+/* Logo Size Variables */
+:root {
+    /* Primary Logo Sizes */
+    --logo-xs: 1.5rem;      /* 24px */
+    --logo-sm: 2rem;        /* 32px */
+    --logo-md: 2.5rem;      /* 40px */
+    --logo-lg: 3rem;        /* 48px */
+    --logo-xl: 3.5rem;      /* 56px */
+    --logo-2xl: 4rem;       /* 64px */
+    --logo-3xl: 5rem;       /* 80px */
+    
+    /* Logo Animation Variables */
+    --logo-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --logo-hover-scale: 1.05;
+    --logo-active-scale: 0.98;
+}
+
+/* Base Logo Styles */
+.logo-primary,
+.logo-compact,
+.logo-full,
+.logo-footer {
+    transition: var(--logo-transition);
+    will-change: transform;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* Primary Logo - Main Header */
+.logo-primary {
+    height: var(--logo-sm);
+    width: auto;
+    max-width: none;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Responsive Logo Sizing */
+@media (min-width: 640px) {
+    .logo-primary {
+        height: var(--logo-md);
+    }
+}
+
+@media (min-width: 768px) {
+    .logo-primary {
+        height: var(--logo-lg);
+    }
+}
+
+@media (min-width: 1024px) {
+    .logo-primary {
+        height: var(--logo-xl);
+    }
+}
+
+@media (min-width: 1280px) {
+    .logo-primary {
+        height: var(--logo-2xl);
+    }
+}
+
+/* Extra Large Screens */
+@media (min-width: 1536px) {
+    .logo-primary {
+        height: var(--logo-3xl);
+    }
+}
+
+/* Compact Logo for Mobile */
+.logo-compact {
+    height: var(--logo-sm);
+    width: auto;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Full Logo for Desktop */
+.logo-full {
+    height: var(--logo-lg);
+    width: auto;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+@media (min-width: 1024px) {
+    .logo-full {
+        height: var(--logo-xl);
+    }
+}
+
+@media (min-width: 1280px) {
+    .logo-full {
+        height: var(--logo-2xl);
+    }
+}
+
+/* Footer Logo */
+.logo-footer {
+    height: var(--logo-md);
+    width: auto;
+    filter: brightness(1.1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+@media (min-width: 640px) {
+    .logo-footer {
+        height: var(--logo-lg);
+    }
+}
+
+@media (min-width: 768px) {
+    .logo-footer {
+        height: var(--logo-xl);
+    }
+}
+
+/* Logo Hover Effects */
+.logo-primary:hover,
+.logo-compact:hover,
+.logo-full:hover,
+.logo-footer:hover {
+    transform: scale(var(--logo-hover-scale));
+    filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+/* Logo Active State */
+.logo-primary:active,
+.logo-compact:active,
+.logo-full:active,
+.logo-footer:active {
+    transform: scale(var(--logo-active-scale));
+}
+
+/* Logo Focus State for Accessibility */
+.logo-primary:focus,
+.logo-compact:focus,
+.logo-full:focus,
+.logo-footer:focus {
+    outline: 2px solid #DC2626;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Logo Container Enhancements */
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+}
+
+.logo-container::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #DC2626, #B91C1C);
+    transition: width 0.3s ease;
+}
+
+.logo-container:hover::after {
+    width: 100%;
+}
+
+/* Alternative Logo Sizes (Utility Classes) */
+.logo-xs { height: var(--logo-xs) !important; }
+.logo-sm { height: var(--logo-sm) !important; }
+.logo-md { height: var(--logo-md) !important; }
+.logo-lg { height: var(--logo-lg) !important; }
+.logo-xl { height: var(--logo-xl) !important; }
+.logo-2xl { height: var(--logo-2xl) !important; }
+.logo-3xl { height: var(--logo-3xl) !important; }
+
+/* Logo with Text Combination */
+.logo-with-text {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-text {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #111827;
+    letter-spacing: -0.025em;
+    transition: color 0.3s ease;
+}
+
+.logo-with-text:hover .logo-text {
+    color: #DC2626;
+}
+
+/* Responsive Logo Text */
+@media (min-width: 768px) {
+    .logo-text {
+        font-size: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .logo-text {
+        font-size: 1.75rem;
+    }
+}
+
+/* Logo Loading State */
+.logo-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: logo-shimmer 2s infinite;
+    border-radius: 4px;
+}
+
+@keyframes logo-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Logo Error State */
+.logo-error {
+    background: #F3F4F6;
+    border: 2px dashed #D1D5DB;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6B7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Dark Mode Logo Adjustments */
+@media (prefers-color-scheme: dark) {
+    .logo-primary,
+    .logo-compact,
+    .logo-full {
+        filter: brightness(1.1) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.1));
+    }
+    
+    .logo-footer {
+        filter: brightness(1.2) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.2));
+    }
+}
+
+/* High DPI Display Optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .logo-primary,
+    .logo-compact,
+    .logo-full,
+    .logo-footer {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .logo-primary,
+    .logo-compact,
+    .logo-full,
+    .logo-footer {
+        transition: none;
+        animation: none;
+    }
+    
+    .logo-primary:hover,
+    .logo-compact:hover,
+    .logo-full:hover,
+    .logo-footer:hover {
+        transform: none;
+    }
+    
+    .logo-container::after {
+        transition: none;
+    }
+    
+    .logo-loading {
+        animation: none;
+        background: #f0f0f0;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .logo-primary,
+    .logo-compact,
+    .logo-full,
+    .logo-footer {
+        filter: none;
+        transform: none;
+        height: 2rem;
+    }
+}

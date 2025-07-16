@@ -4,131 +4,331 @@
 {% block page_title %}Content Management{% endblock %}
 {% block page_description %}Manage website content, blog posts, and testimonials{% endblock %}
 
+<!-- Add CSRF token for JavaScript -->
+{% csrf_token %}
+
 {% block dashboard_content %}
 <div class="space-y-8">
-    <!-- Content Management Header -->
-    <div class="flex justify-between items-center animate-fade-in-up" style="animation-delay: 0.1s;">
+    <!-- Enhanced Content Management Header -->
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 animate-fade-in-up" style="animation-delay: 0.1s;">
         <div>
             <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Content Management</h2>
-            <p class="text-gray-600 mt-1 font-raleway">Manage website content, blog posts, and testimonials</p>
+            <p class="text-gray-600 mt-1 font-raleway">Manage website content, blog posts, testimonials, and static pages</p>
         </div>
-        
-        <div class="flex space-x-3">
-            <button class="btn-admin-secondary text-sm">
-                <i class="fas fa-eye mr-2"></i>Preview Site
+
+        <div class="flex flex-wrap gap-3">
+            <button class="enhanced-btn enhanced-btn-secondary text-sm"
+                    onclick="previewSite()">
+                <i class="fas fa-eye mr-2"></i>
+                <span>Preview Site</span>
             </button>
-            <button class="btn-admin-primary text-sm">
-                <i class="fas fa-plus mr-2"></i>Create Content
+            <button class="enhanced-btn enhanced-btn-primary text-sm"
+                    hx-get="{% url 'core:admin_content_create_modal' %}"
+                    hx-target="body"
+                    hx-swap="beforeend">
+                <i class="fas fa-plus mr-2"></i>
+                <span>Create Content</span>
             </button>
         </div>
     </div>
 
-    <!-- Content Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-blue-600">{{ total_posts|default:0 }}</div>
-            <div class="admin-stat-label">Total Posts</div>
+    <!-- Enhanced Stats Cards with Glassmorphism -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Content Posts Card -->
+        <div class="glassmorphism-card stat-card group">
+            <div class="flex items-center">
+                <div class="stat-icon-wrapper bg-gradient-to-br from-harrier-red to-harrier-red-dark">
+                    <i class="fas fa-newspaper text-white text-xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="stat-label">Total Posts</p>
+                    <p class="stat-value">{{ total_posts|default:0 }}</p>
+                    <p class="stat-sublabel">{{ published_posts|default:0 }} published</p>
+                </div>
+            </div>
         </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-green-600">{{ published_posts|default:0 }}</div>
-            <div class="admin-stat-label">Published</div>
+
+        <!-- Testimonials Card -->
+        <div class="glassmorphism-card stat-card group">
+            <div class="flex items-center">
+                <div class="stat-icon-wrapper bg-gradient-to-br from-harrier-blue to-harrier-blue-dark">
+                    <i class="fas fa-star text-white text-xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="stat-label">Testimonials</p>
+                    <p class="stat-value">{{ total_testimonials|default:0 }}</p>
+                    <p class="stat-sublabel">{{ approved_testimonials|default:0 }} approved</p>
+                </div>
+            </div>
         </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-orange-600">{{ draft_posts|default:0 }}</div>
-            <div class="admin-stat-label">Drafts</div>
+
+        <!-- Static Pages Card -->
+        <div class="glassmorphism-card stat-card group">
+            <div class="flex items-center">
+                <div class="stat-icon-wrapper bg-gradient-to-br from-harrier-dark to-gray-800">
+                    <i class="fas fa-file-alt text-white text-xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="stat-label">Static Pages</p>
+                    <p class="stat-value">{{ total_static_pages|default:0 }}</p>
+                    <p class="stat-sublabel">{{ published_pages|default:0 }} published</p>
+                </div>
+            </div>
         </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-purple-600">{{ total_testimonials|default:0 }}</div>
-            <div class="admin-stat-label">Testimonials</div>
+
+        <!-- Categories Card -->
+        <div class="glassmorphism-card stat-card group">
+            <div class="flex items-center">
+                <div class="stat-icon-wrapper bg-gradient-to-br from-purple-500 to-purple-700">
+                    <i class="fas fa-folder text-white text-xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="stat-label">Categories</p>
+                    <p class="stat-value">{{ total_categories|default:0 }}</p>
+                    <p class="stat-sublabel">Active</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tags Card -->
+        <div class="glassmorphism-card stat-card group">
+            <div class="flex items-center">
+                <div class="stat-icon-wrapper bg-gradient-to-br from-green-500 to-green-700">
+                    <i class="fas fa-tags text-white text-xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="stat-label">Tags</p>
+                    <p class="stat-value">{{ total_tags|default:0 }}</p>
+                    <p class="stat-sublabel">Active</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Featured Content Card -->
+        <div class="glassmorphism-card stat-card group">
+            <div class="flex items-center">
+                <div class="stat-icon-wrapper bg-gradient-to-br from-orange-500 to-orange-700">
+                    <i class="fas fa-fire text-white text-xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="stat-label">Featured</p>
+                    <p class="stat-value">{{ featured_posts|default:0 }}</p>
+                    <p class="stat-sublabel">Posts</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Content Tabs -->
+    <!-- Enhanced Content Tabs with Harrier Design -->
     <div class="animate-fade-in-up" style="animation-delay: 0.3s;">
-        <div class="border-b border-gray-200">
-            <nav class="-mb-px flex space-x-8">
-                <button class="content-tab active" data-tab="blog">
-                    <i class="fas fa-newspaper mr-2"></i>Blog Posts
+        <div class="glassmorphism-card p-2">
+            <nav class="flex flex-wrap gap-2">
+                <button class="content-tab active" data-tab="content-posts"
+                        hx-get="{% url 'core:admin_content_posts_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-newspaper mr-2"></i>
+                    <span>Content Posts</span>
                 </button>
-                <button class="content-tab" data-tab="testimonials">
-                    <i class="fas fa-quote-left mr-2"></i>Testimonials
+                <button class="content-tab" data-tab="resources"
+                        hx-get="{% url 'core:admin_content_posts_tab' %}?content_type=article,guide,infographic"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-book mr-2"></i>
+                    <span>Resources</span>
                 </button>
-                <button class="content-tab" data-tab="pages">
-                    <i class="fas fa-file-alt mr-2"></i>Static Pages
+                <button class="content-tab" data-tab="opinions"
+                        hx-get="{% url 'core:admin_content_posts_tab' %}?content_type=opinion"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-comment-alt mr-2"></i>
+                    <span>Opinions</span>
                 </button>
-                <button class="content-tab" data-tab="media">
-                    <i class="fas fa-images mr-2"></i>Media Library
+                <button class="content-tab" data-tab="categories"
+                        hx-get="{% url 'core:admin_content_categories_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-folder mr-2"></i>
+                    <span>Categories</span>
+                </button>
+                <button class="content-tab" data-tab="analytics"
+                        hx-get="{% url 'core:admin_content_analytics_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    <span>Analytics</span>
+                </button>
+                <button class="content-tab" data-tab="testimonials"
+                        hx-get="{% url 'core:admin_content_testimonials_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-star mr-2"></i>
+                    <span>Testimonials</span>
+                </button>
+                <button class="content-tab" data-tab="static-pages"
+                        hx-get="{% url 'core:admin_content_static_pages_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    <span>Static Pages</span>
                 </button>
             </nav>
         </div>
     </div>
 
-    <!-- Blog Posts Tab -->
-    <div id="blog-tab" class="tab-content active animate-fade-in-up" style="animation-delay: 0.4s;">
-        <div class="admin-card">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                            <i class="fas fa-newspaper text-white"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Blog Posts</h3>
+    <!-- Enhanced Tab Content Area -->
+    <div class="mt-8">
+        <div id="tab-content" class="min-h-[600px]">
+            <!-- Default content will be loaded via HTMX -->
+            <div class="glassmorphism-card p-8 text-center">
+                <div class="animate-pulse">
+                    <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-spinner fa-spin text-harrier-red text-2xl"></i>
                     </div>
-                    <div class="flex space-x-2">
-                        <button class="btn-admin-secondary text-sm">
-                            <i class="fas fa-filter mr-1"></i>Filter
+                    <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-2">Loading Content...</h3>
+                    <p class="text-gray-600 font-raleway">Please wait while we load the content management interface.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+                            <i class="fas fa-download mr-1"></i>Export
                         </button>
-                        <button class="btn-admin-primary text-sm">
-                            <i class="fas fa-plus mr-1"></i>New Post
+
+                        <!-- Add New Button -->
+                        <button class="btn-admin-primary text-sm" onclick="openContentModal()">
+                            <i class="fas fa-plus mr-1"></i>New Content
                         </button>
                     </div>
                 </div>
             </div>
-            
-            <div class="p-6">
+
+            <!-- Enhanced Content List -->
+            <div class="p-6" id="content-list">
                 {% if blog_posts %}
+                    <!-- Bulk Actions Bar -->
+                    <div class="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <input type="checkbox" id="select-all" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <label for="select-all" class="text-sm font-medium text-gray-700">Select All</label>
+                            <span class="text-sm text-gray-500" id="selected-count">0 selected</span>
+                        </div>
+
+                        <div class="flex items-center space-x-2" id="bulk-actions" style="display: none;">
+                            <button class="px-3 py-1 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 transition-colors">
+                                <i class="fas fa-check mr-1"></i>Publish
+                            </button>
+                            <button class="px-3 py-1 bg-orange-100 text-orange-700 rounded-md text-sm hover:bg-orange-200 transition-colors">
+                                <i class="fas fa-pause mr-1"></i>Unpublish
+                            </button>
+                            <button class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 transition-colors">
+                                <i class="fas fa-star mr-1"></i>Feature
+                            </button>
+                            <button class="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 transition-colors">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Content Items -->
                     <div class="space-y-4">
                         {% for post in blog_posts %}
                         <div class="content-item border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all duration-300">
                             <div class="flex items-start justify-between">
                                 <div class="flex items-start space-x-4 flex-1">
+                                    <!-- Selection Checkbox -->
+                                    <input type="checkbox" class="content-checkbox mt-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="{{ post.id }}">
+
+                                    <!-- Featured Image -->
                                     {% if post.featured_image %}
                                         <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="w-20 h-20 object-cover rounded-lg border-2 border-gray-200">
                                     {% else %}
                                         <div class="w-20 h-20 bg-gradient-to-br from-blue-200 to-blue-300 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-newspaper text-blue-600 text-xl"></i>
+                                            <i class="fas fa-{{ post.content_type|default:'newspaper' }} text-blue-600 text-xl"></i>
                                         </div>
                                     {% endif %}
-                                    
+
+                                    <!-- Content Info -->
                                     <div class="flex-1 min-w-0">
-                                        <div class="flex items-center space-x-3 mb-2">
+                                        <div class="flex items-center space-x-3 mb-2 flex-wrap">
                                             <h4 class="text-lg font-semibold text-harrier-dark font-raleway">{{ post.title }}</h4>
+
+                                            <!-- Status Badge -->
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-montserrat
                                                 {% if post.is_published %}bg-green-100 text-green-800
                                                 {% else %}bg-orange-100 text-orange-800{% endif %}">
                                                 {% if post.is_published %}Published{% else %}Draft{% endif %}
                                             </span>
+
+                                            <!-- Content Type Badge -->
+                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                                                <i class="fas fa-{{ post.content_type|default:'newspaper' }} mr-1"></i>
+                                                {{ post.content_type_display|default:'Article' }}
+                                            </span>
+
+                                            <!-- Featured Badge -->
+                                            {% if post.is_featured %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-star mr-1"></i>Featured
+                                            </span>
+                                            {% endif %}
                                         </div>
-                                        
-                                        <p class="text-sm text-gray-600 mb-2">By {{ post.author.get_full_name|default:post.author.username }}</p>
-                                        <p class="text-gray-800 font-raleway line-clamp-2">{{ post.excerpt|default:post.content|truncatewords:20 }}</p>
-                                        
-                                        <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+
+                                        <p class="text-sm text-gray-600 mb-2">
+                                            By {{ post.author.get_full_name|default:post.author.username }}
+                                            {% if post.category %}
+                                                • in <span class="text-blue-600">{{ post.category.name }}</span>
+                                            {% endif %}
+                                        </p>
+
+                                        <p class="text-gray-800 font-raleway line-clamp-2 mb-3">{{ post.excerpt|default:post.content|truncatewords:20 }}</p>
+
+                                        <!-- Tags -->
+                                        {% if post.tags.all %}
+                                        <div class="flex flex-wrap gap-1 mb-3">
+                                            {% for tag in post.tags.all|slice:":3" %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                                                {{ tag.name }}
+                                            </span>
+                                            {% endfor %}
+                                            {% if post.tags.count > 3 %}
+                                            <span class="text-xs text-gray-500">+{{ post.tags.count|add:"-3" }} more</span>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- Metrics -->
+                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
                                             <span><i class="fas fa-calendar mr-1"></i>{{ post.created_at|date:"M d, Y" }}</span>
-                                            <span><i class="fas fa-eye mr-1"></i>{{ post.views|default:0 }} views</span>
-                                            <span><i class="fas fa-comments mr-1"></i>{{ post.comments_count|default:0 }} comments</span>
+                                            <span><i class="fas fa-eye mr-1"></i>{{ post.views_count|default:0 }} views</span>
+                                            <span><i class="fas fa-heart mr-1"></i>{{ post.likes_count|default:0 }} likes</span>
+                                            <span><i class="fas fa-clock mr-1"></i>{{ post.estimated_read_time }} min read</span>
                                         </div>
                                     </div>
                                 </div>
-                                
+
+                                <!-- Action Buttons -->
                                 <div class="flex flex-col space-y-2 ml-4">
-                                    <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            onclick="editContent({{ post.id }})">
                                         <i class="fas fa-edit mr-1"></i>Edit
                                     </button>
-                                    <button class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    <a href="{% url 'core:resource_detail' post.slug %}" target="_blank"
+                                       class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center">
                                         <i class="fas fa-eye mr-1"></i>View
+                                    </a>
+                                    {% if post.is_published %}
+                                    <button class="bg-orange-100 text-orange-700 hover:bg-orange-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            onclick="togglePublish({{ post.id }}, false)">
+                                        <i class="fas fa-pause mr-1"></i>Unpublish
                                     </button>
-                                    <button class="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    {% else %}
+                                    <button class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            onclick="togglePublish({{ post.id }}, true)">
+                                        <i class="fas fa-check mr-1"></i>Publish
+                                    </button>
+                                    {% endif %}
+                                    <button class="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            onclick="deleteContent({{ post.id }})">
                                         <i class="fas fa-trash mr-1"></i>Delete
                                     </button>
                                 </div>
@@ -136,18 +336,308 @@
                         </div>
                         {% endfor %}
                     </div>
+
+                    <!-- Pagination -->
+                    <div class="flex justify-center mt-8">
+                        <nav class="flex items-center space-x-2">
+                            <button class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm">
+                                <i class="fas fa-chevron-left mr-1"></i>Previous
+                            </button>
+                            <span class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">1</span>
+                            <button class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm">2</button>
+                            <button class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm">3</button>
+                            <button class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm">
+                                Next<i class="fas fa-chevron-right ml-1"></i>
+                            </button>
+                        </nav>
+                    </div>
                 {% else %}
                     <div class="text-center py-12">
                         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-newspaper text-gray-400 text-2xl"></i>
                         </div>
-                        <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No blog posts yet</h4>
-                        <p class="text-gray-600 font-raleway">Create your first blog post to get started.</p>
-                        <button class="mt-4 btn-admin-primary">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No content posts yet</h4>
+                        <p class="text-gray-600 font-raleway">Create your first content post to get started.</p>
+                        <button class="mt-4 btn-admin-primary" onclick="openContentModal()">
                             <i class="fas fa-plus mr-2"></i>Create First Post
                         </button>
                     </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Tab -->
+    <div id="categories-tab" class="tab-content hidden">
+        <div class="admin-card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-folder text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Content Categories</h3>
+                    </div>
+                    <button class="btn-admin-primary text-sm" onclick="openCategoryModal()">
+                        <i class="fas fa-plus mr-1"></i>New Category
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Sample categories - replace with dynamic content -->
+                    <div class="category-card bg-white border border-gray-200 rounded-lg p-6 hover:border-purple-300 hover:shadow-md transition-all duration-300">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-car text-purple-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-harrier-dark font-raleway">Car Reviews</h4>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">In-depth reviews of vehicles and automotive products</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">12 posts</span>
+                            <div class="flex space-x-2">
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-card bg-white border border-gray-200 rounded-lg p-6 hover:border-purple-300 hover:shadow-md transition-all duration-300">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-tools text-purple-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-harrier-dark font-raleway">Maintenance Tips</h4>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">Vehicle maintenance guides and tips</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">8 posts</span>
+                            <div class="flex space-x-2">
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tags Tab -->
+    <div id="tags-tab" class="tab-content hidden">
+        <div class="admin-card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-tags text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Content Tags</h3>
+                    </div>
+                    <button class="btn-admin-primary text-sm" onclick="openTagModal()">
+                        <i class="fas fa-plus mr-1"></i>New Tag
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="flex flex-wrap gap-3">
+                    <!-- Sample tags - replace with dynamic content -->
+                    <div class="tag-item bg-white border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                <span class="font-medium text-gray-900">Electric Vehicles</span>
+                            </div>
+                            <div class="flex items-center space-x-2 ml-4">
+                                <span class="text-sm text-gray-500">15 posts</span>
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tag-item bg-white border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                <span class="font-medium text-gray-900">Safety</span>
+                            </div>
+                            <div class="flex items-center space-x-2 ml-4">
+                                <span class="text-sm text-gray-500">8 posts</span>
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Series Tab -->
+    <div id="series-tab" class="tab-content hidden">
+        <div class="admin-card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-list text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Content Series</h3>
+                    </div>
+                    <button class="btn-admin-primary text-sm" onclick="openSeriesModal()">
+                        <i class="fas fa-plus mr-1"></i>New Series
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="space-y-4">
+                    <!-- Sample series - replace with dynamic content -->
+                    <div class="series-item border border-gray-200 rounded-lg p-6 hover:border-indigo-300 hover:shadow-md transition-all duration-300">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-4 flex-1">
+                                <img src="{% static 'images/series-placeholder.jpg' %}" alt="Series" class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200">
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-semibold text-harrier-dark font-raleway mb-2">Electric Vehicle Guide Series</h4>
+                                    <p class="text-gray-600 mb-3">Complete guide to understanding and buying electric vehicles</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-list mr-1"></i>5 parts</span>
+                                        <span><i class="fas fa-eye mr-1"></i>1,234 total views</span>
+                                        <span><i class="fas fa-calendar mr-1"></i>Updated 2 days ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-edit mr-1"></i>Edit
+                                </button>
+                                <button class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="analytics-tab" class="tab-content hidden">
+        <div class="admin-card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chart-line text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Content Analytics</h3>
+                    </div>
+                    <button class="btn-admin-secondary text-sm">
+                        <i class="fas fa-download mr-1"></i>Export Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Analytics Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-600 text-sm font-medium">Total Views</p>
+                                <p class="text-2xl font-bold text-blue-900">12,345</p>
+                            </div>
+                            <i class="fas fa-eye text-blue-500 text-2xl"></i>
+                        </div>
+                        <p class="text-blue-600 text-sm mt-2">+15% from last month</p>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-600 text-sm font-medium">Total Likes</p>
+                                <p class="text-2xl font-bold text-green-900">1,234</p>
+                            </div>
+                            <i class="fas fa-heart text-green-500 text-2xl"></i>
+                        </div>
+                        <p class="text-green-600 text-sm mt-2">+8% from last month</p>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-600 text-sm font-medium">Comments</p>
+                                <p class="text-2xl font-bold text-purple-900">456</p>
+                            </div>
+                            <i class="fas fa-comments text-purple-500 text-2xl"></i>
+                        </div>
+                        <p class="text-purple-600 text-sm mt-2">+22% from last month</p>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-orange-600 text-sm font-medium">Shares</p>
+                                <p class="text-2xl font-bold text-orange-900">789</p>
+                            </div>
+                            <i class="fas fa-share text-orange-500 text-2xl"></i>
+                        </div>
+                        <p class="text-orange-600 text-sm mt-2">+12% from last month</p>
+                    </div>
+                </div>
+
+                <!-- Top Performing Content -->
+                <div class="bg-white border border-gray-200 rounded-lg p-6">
+                    <h4 class="text-lg font-semibold text-harrier-dark mb-4">Top Performing Content</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-newspaper text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h5 class="font-medium text-gray-900">Complete Guide to Electric Vehicles</h5>
+                                    <p class="text-sm text-gray-500">Article • Published 3 days ago</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-semibold text-gray-900">2,345 views</p>
+                                <p class="text-sm text-green-600">+45% this week</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -342,22 +832,188 @@
 {% block extra_css %}
 {{ block.super }}
 <style>
-    /* Content Management specific styles */
-    .content-tab {
-        @apply py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200;
+    /* Enhanced Content Management Styles with Harrier Design */
+
+    /* Glassmorphism Card Base */
+    .glassmorphism-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glassmorphism-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Enhanced Stat Cards */
+    .stat-card {
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--harrier-red), var(--harrier-blue), var(--harrier-dark));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-icon-wrapper {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover .stat-icon-wrapper {
+        transform: scale(1.1);
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6B7280;
         font-family: 'Raleway', sans-serif;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--harrier-dark);
+        font-family: 'Montserrat', sans-serif;
+        line-height: 1;
+    }
+
+    .stat-sublabel {
+        font-size: 0.75rem;
+        color: #9CA3AF;
+        font-family: 'Raleway', sans-serif;
+        margin-top: 0.25rem;
+    }
+
+    /* Enhanced Tab Styles */
+    .content-tab {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6B7280;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(229, 231, 235, 0.8);
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .content-tab::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .content-tab:hover::before {
+        left: 100%;
+    }
+
+    .content-tab:hover {
+        color: var(--harrier-red);
+        background: rgba(220, 38, 38, 0.1);
+        border-color: var(--harrier-red);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
     }
 
     .content-tab.active {
-        @apply border-harrier-red text-harrier-red;
+        color: white;
+        background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+        border-color: var(--harrier-red);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
 
-    .tab-content {
-        @apply transition-all duration-300;
+    .content-tab.active:hover {
+        background: linear-gradient(135deg, var(--harrier-red-dark), var(--harrier-red));
+        transform: translateY(-2px);
     }
 
-    .tab-content.hidden {
-        @apply opacity-0 pointer-events-none;
+    .content-tab i {
+        font-size: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .content-tab:hover i {
+        transform: scale(1.1);
+    }
+
+    /* Enhanced Button Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid transparent;
+    }
+
+    .enhanced-btn-primary {
+        background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .enhanced-btn-primary:hover {
+        background: linear-gradient(135deg, var(--harrier-red-dark), var(--harrier-red));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+    }
+
+    .enhanced-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--harrier-dark);
+        border-color: rgba(229, 231, 235, 0.8);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: rgba(249, 250, 251, 1);
+        border-color: var(--harrier-red);
+        color: var(--harrier-red);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .tab-content.active {
@@ -397,22 +1053,23 @@
 </style>
 
 <script>
-// Tab switching functionality
+// Enhanced Content Management JavaScript
 document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching functionality
     const tabs = document.querySelectorAll('.content-tab');
     const tabContents = document.querySelectorAll('.tab-content');
-    
+
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
             const targetTab = this.dataset.tab;
-            
+
             // Remove active class from all tabs and contents
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(tc => {
                 tc.classList.remove('active');
                 tc.classList.add('hidden');
             });
-            
+
             // Add active class to clicked tab and corresponding content
             this.classList.add('active');
             const targetContent = document.getElementById(targetTab + '-tab');
@@ -422,6 +1079,313 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Bulk selection functionality
+    const selectAllCheckbox = document.getElementById('select-all');
+    const contentCheckboxes = document.querySelectorAll('.content-checkbox');
+    const selectedCountElement = document.getElementById('selected-count');
+    const bulkActionsElement = document.getElementById('bulk-actions');
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            contentCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+
+    contentCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    function updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('.content-checkbox:checked').length;
+        if (selectedCountElement) {
+            selectedCountElement.textContent = `${selectedCount} selected`;
+        }
+
+        if (bulkActionsElement) {
+            bulkActionsElement.style.display = selectedCount > 0 ? 'flex' : 'none';
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < contentCheckboxes.length;
+            selectAllCheckbox.checked = selectedCount === contentCheckboxes.length && selectedCount > 0;
+        }
+    }
+});
+
+// Content Management Functions
+function openContentModal() {
+    // Open content creation modal
+    alert('Content creation modal would open here. This would be integrated with a rich text editor.');
+}
+
+function editContent(postId) {
+    // Open content editing modal
+    alert(`Edit content with ID: ${postId}. This would open an editing modal with the content data.`);
+}
+
+function deleteContent(postId) {
+    if (confirm('Are you sure you want to delete this content? This action cannot be undone.')) {
+        // For now, just show a message since we haven't implemented the backend endpoint
+        showToast('Delete functionality will be implemented in the backend', 'info');
+
+        // Simulate removal from DOM for demo purposes
+        setTimeout(() => {
+            const contentItems = document.querySelectorAll('.content-item');
+            contentItems.forEach(item => {
+                const editButton = item.querySelector(`button[onclick*="${postId}"]`);
+                if (editButton) {
+                    item.style.opacity = '0.5';
+                    item.style.pointerEvents = 'none';
+                    const title = item.querySelector('h4').textContent;
+                    showToast(`"${title}" marked for deletion`, 'success');
+                }
+            });
+        }, 500);
+    }
+}
+
+function togglePublish(postId, publish) {
+    const action = publish ? 'publish' : 'unpublish';
+
+    // For now, just show a message and update UI locally since we haven't implemented the backend endpoint
+    showToast(`${action.charAt(0).toUpperCase() + action.slice(1)} functionality will be implemented in the backend`, 'info');
+
+    // Simulate UI update for demo purposes
+    setTimeout(() => {
+        const contentItems = document.querySelectorAll('.content-item');
+        contentItems.forEach(item => {
+            const toggleButton = item.querySelector(`button[onclick*="${postId}"][onclick*="${publish}"]`);
+            if (toggleButton) {
+                const statusBadge = item.querySelector('.bg-green-100, .bg-orange-100');
+                if (statusBadge) {
+                    if (publish) {
+                        statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-montserrat bg-green-100 text-green-800';
+                        statusBadge.textContent = 'Published';
+                        toggleButton.innerHTML = '<i class="fas fa-pause mr-1"></i>Unpublish';
+                        toggleButton.onclick = () => togglePublish(postId, false);
+                    } else {
+                        statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-montserrat bg-orange-100 text-orange-800';
+                        statusBadge.textContent = 'Draft';
+                        toggleButton.innerHTML = '<i class="fas fa-check mr-1"></i>Publish';
+                        toggleButton.onclick = () => togglePublish(postId, true);
+                    }
+                }
+                const title = item.querySelector('h4').textContent;
+                showToast(`"${title}" ${action}ed successfully`, 'success');
+            }
+        });
+    }, 500);
+}
+
+function openCategoryModal() {
+    alert('Category creation modal would open here.');
+}
+
+function openTagModal() {
+    alert('Tag creation modal would open here.');
+}
+
+function openSeriesModal() {
+    alert('Series creation modal would open here.');
+}
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    let bgColor = 'bg-gray-500';
+
+    switch(type) {
+        case 'success':
+            bgColor = 'bg-green-500';
+            break;
+        case 'error':
+            bgColor = 'bg-red-500';
+            break;
+        case 'info':
+            bgColor = 'bg-blue-500';
+            break;
+        default:
+            bgColor = 'bg-gray-500';
+    }
+
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${bgColor} shadow-lg transform transition-all duration-300`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateY(0)';
+    }, 10);
+
+    // Remove after delay
+    setTimeout(() => {
+        toast.style.transform = 'translateY(-100%)';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Enhanced Search and Filter functionality
+function setupSearch() {
+    const searchInput = document.getElementById('content-search');
+    const typeFilter = document.getElementById('content-type-filter');
+    const statusFilter = document.querySelector('select[class*="All Status"]')?.parentElement?.querySelector('select');
+
+    if (searchInput) {
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filterContent();
+            }, 300);
+        });
+    }
+
+    if (typeFilter) {
+        typeFilter.addEventListener('change', filterContent);
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterContent);
+    }
+}
+
+function filterContent() {
+    const searchTerm = document.getElementById('content-search')?.value.toLowerCase().trim() || '';
+    const selectedType = document.getElementById('content-type-filter')?.value || '';
+    const contentItems = document.querySelectorAll('.content-item');
+
+    let visibleCount = 0;
+
+    contentItems.forEach(item => {
+        const title = item.querySelector('h4')?.textContent.toLowerCase() || '';
+        const contentType = item.querySelector('.bg-blue-100')?.textContent.toLowerCase() || '';
+        const excerpt = item.querySelector('.line-clamp-2')?.textContent.toLowerCase() || '';
+
+        const matchesSearch = !searchTerm ||
+            title.includes(searchTerm) ||
+            contentType.includes(searchTerm) ||
+            excerpt.includes(searchTerm);
+
+        const matchesType = !selectedType || contentType.includes(selectedType);
+
+        if (matchesSearch && matchesType) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Update results count
+    updateResultsCount(visibleCount);
+}
+
+function updateResultsCount(count) {
+    const contentList = document.getElementById('content-list');
+    let resultsInfo = contentList.querySelector('.results-info');
+
+    if (!resultsInfo) {
+        resultsInfo = document.createElement('div');
+        resultsInfo.className = 'results-info text-sm text-gray-600 mb-4';
+        contentList.insertBefore(resultsInfo, contentList.firstChild);
+    }
+
+    resultsInfo.textContent = `Showing ${count} content item${count !== 1 ? 's' : ''}`;
+}
+
+// Initialize search on page load
+document.addEventListener('DOMContentLoaded', setupSearch);
+
+// Enhanced Tab functionality with HTMX
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.content-tab');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            tabs.forEach(t => t.classList.remove('active'));
+
+            // Add active class to clicked tab
+            this.classList.add('active');
+        });
+    });
+
+    // Load default tab content on page load
+    const defaultTab = document.querySelector('.content-tab.active');
+    if (defaultTab) {
+        // Trigger HTMX request for default tab
+        htmx.trigger(defaultTab, 'click');
+    }
+});
+
+// Preview Site Function
+function previewSite() {
+    window.open('/', '_blank');
+}
+
+// Enhanced Content Management Functions
+function openContentModal() {
+    // This will be handled by HTMX in the button
+    console.log('Opening content modal...');
+}
+
+// HTMX Event Handlers
+document.addEventListener('htmx:beforeRequest', function(event) {
+    // Show loading state
+    const tabContent = document.getElementById('tab-content');
+    if (tabContent && event.target.classList.contains('content-tab')) {
+        tabContent.innerHTML = `
+            <div class="glassmorphism-card p-8 text-center">
+                <div class="animate-pulse">
+                    <div class="w-16 h-16 bg-harrier-red bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-spinner fa-spin text-harrier-red text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-2">Loading Content...</h3>
+                    <p class="text-gray-600 font-raleway">Please wait while we load the content.</p>
+                </div>
+            </div>
+        `;
+    }
+});
+
+document.addEventListener('htmx:afterRequest', function(event) {
+    // Re-initialize any JavaScript functionality after HTMX loads content
+    if (event.target.classList.contains('content-tab')) {
+        // Re-setup search functionality if needed
+        setupSearch();
+
+        // Re-initialize any other components
+        initializeTooltips();
+    }
+});
+
+// Initialize tooltips
+function initializeTooltips() {
+    // Add tooltip functionality if needed
+    const tooltipElements = document.querySelectorAll('[data-tooltip]');
+    tooltipElements.forEach(element => {
+        // Tooltip implementation
+    });
+}
+
+// Enhanced error handling
+document.addEventListener('htmx:responseError', function(event) {
+    showToast('Failed to load content. Please try again.', 'error');
+});
+
+document.addEventListener('htmx:timeout', function(event) {
+    showToast('Request timed out. Please check your connection.', 'error');
 });
 </script>
 {% endblock %}

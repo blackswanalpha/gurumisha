@@ -1,0 +1,256 @@
+<!-- Live Tracking Status Component -->
+<div class="live-tracking-status" 
+     hx-get="{% url 'core:import_order_live_tracking_htmx' order.order_number %}"
+     hx-trigger="every 30s"
+     hx-swap="outerHTML"
+     hx-target="this"
+     x-data="liveStatus()"
+     x-init="initializeStatus()">
+    
+    <!-- Status Header -->
+    <div class="bg-gradient-to-r from-red-900 to-black text-white p-4 rounded-t-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center animate-pulse">
+                    <i class="fas fa-satellite-dish text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold font-montserrat">Live Status</h3>
+                    <p class="text-red-200 text-sm">Real-time tracking active</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-green-200 text-xs">Live</span>
+                </div>
+                <span class="text-xs text-red-200" x-text="lastUpdate">Just now</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Content -->
+    <div class="bg-white border-x border-b border-gray-200 rounded-b-lg p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Current Status -->
+            <div class="space-y-4">
+                <h4 class="font-semibold text-gray-900 font-montserrat">Current Status</h4>
+                
+                <!-- Status Badge -->
+                <div class="flex items-center space-x-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                        {% if order.status == 'delivered' %}bg-green-100 text-green-800
+                        {% elif order.status == 'cancelled' %}bg-red-100 text-red-800
+                        {% elif order.status in 'in_transit,shipped' %}bg-blue-100 text-blue-800
+                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        <i class="fas fa-{{ order.get_status_icon }} mr-2"></i>
+                        {{ order.get_status_display }}
+                    </span>
+                    <span class="text-sm text-gray-600">{{ order.progress_percentage }}% Complete</span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-gradient-to-r from-red-600 to-red-800 h-3 rounded-full transition-all duration-1000" 
+                         style="width: {{ order.progress_percentage }}%"
+                         x-bind:style="`width: ${progressPercentage}%`"></div>
+                </div>
+                
+                <!-- Current Waypoint -->
+                {% if order.route and order.route.current_waypoint %}
+                <div class="bg-blue-50 rounded-lg p-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-map-pin text-blue-600"></i>
+                        <div>
+                            <p class="font-medium text-blue-900">{{ order.route.current_waypoint.name }}</p>
+                            <p class="text-sm text-blue-700">{{ order.route.current_waypoint.get_waypoint_type_display }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Location Information -->
+            <div class="space-y-4">
+                <h4 class="font-semibold text-gray-900 font-montserrat">Location</h4>
+                
+                {% if order.current_latitude and order.current_longitude %}
+                <div class="bg-green-50 rounded-lg p-3">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-map-marker-alt text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium text-green-900" x-text="locationName">
+                                {{ order.current_location_name|default:"Current Location" }}
+                            </p>
+                            <p class="text-sm text-green-700" x-text="coordinates">
+                                {{ order.current_coordinates_string }}
+                            </p>
+                            <p class="text-xs text-green-600 mt-1" x-text="locationUpdate">
+                                Updated {{ order.last_location_update|timesince }} ago
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-map-marker-alt text-gray-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-600">Awaiting location update</p>
+                            <p class="text-sm text-gray-500">GPS tracking in progress</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Next Waypoint -->
+                {% if order.route and order.route.next_waypoint %}
+                <div class="bg-yellow-50 rounded-lg p-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-arrow-right text-yellow-600"></i>
+                        <div>
+                            <p class="font-medium text-yellow-900">Next: {{ order.route.next_waypoint.name }}</p>
+                            {% if order.route.next_waypoint.estimated_arrival %}
+                            <p class="text-sm text-yellow-700">
+                                ETA: {{ order.route.next_waypoint.estimated_arrival|date:"M d, H:i" }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-6 flex space-x-3">
+            <button onclick="refreshLiveStatus()" 
+                    class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                    x-bind:disabled="refreshing">
+                <i class="fas fa-sync-alt mr-2" x-bind:class="{ 'animate-spin': refreshing }"></i>
+                <span x-text="refreshing ? 'Refreshing...' : 'Refresh Status'">Refresh Status</span>
+            </button>
+            <button onclick="viewFullMap()" 
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                <i class="fas fa-map mr-2"></i>View Map
+            </button>
+            <button onclick="shareTracking()" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                <i class="fas fa-share-alt mr-2"></i>Share
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function liveStatus() {
+    return {
+        lastUpdate: 'Just now',
+        progressPercentage: {{ order.progress_percentage }},
+        locationName: '{{ order.current_location_name|default:"Current Location" }}',
+        coordinates: '{{ order.current_coordinates_string }}',
+        locationUpdate: 'Updated {{ order.last_location_update|timesince }} ago',
+        refreshing: false,
+        
+        initializeStatus() {
+            // Initialize real-time updates
+            this.startLiveUpdates();
+        },
+        
+        startLiveUpdates() {
+            // Update timestamp every second
+            setInterval(() => {
+                const now = new Date();
+                this.lastUpdate = now.toLocaleTimeString();
+            }, 1000);
+        },
+        
+        updateFromData(data) {
+            // Update component data from HTMX response
+            if (data.current_location) {
+                this.locationName = data.current_location.name;
+                this.coordinates = data.current_location.coordinates_string;
+                this.locationUpdate = 'Updated just now';
+            }
+            this.progressPercentage = data.progress_percentage || this.progressPercentage;
+        }
+    }
+}
+
+function refreshLiveStatus() {
+    const component = document.querySelector('.live-tracking-status');
+    if (component) {
+        // Trigger HTMX refresh
+        htmx.trigger(component, 'refresh');
+        
+        // Update Alpine.js state
+        const alpineData = Alpine.$data(component);
+        if (alpineData) {
+            alpineData.refreshing = true;
+            setTimeout(() => {
+                alpineData.refreshing = false;
+            }, 2000);
+        }
+    }
+}
+
+function viewFullMap() {
+    window.open('{% url "core:import_order_detail" order.order_number %}#live-map', '_blank');
+}
+
+function shareTracking() {
+    const shareData = {
+        title: 'Vehicle Tracking - {{ order.order_number }}',
+        text: 'Track the live location of {{ order.vehicle_details }}',
+        url: window.location.href
+    };
+    
+    if (navigator.share) {
+        navigator.share(shareData);
+    } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            showToast('Tracking link copied to clipboard', 'success');
+        });
+    }
+}
+
+// Listen for HTMX responses to update Alpine.js data
+document.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.xhr.responseURL && event.detail.xhr.responseURL.includes('live/')) {
+        try {
+            const data = JSON.parse(event.detail.xhr.responseText);
+            const component = event.target;
+            const alpineData = Alpine.$data(component);
+            if (alpineData && alpineData.updateFromData) {
+                alpineData.updateFromData(data);
+            }
+        } catch (e) {
+            console.log('Response is not JSON, likely HTML template');
+        }
+    }
+});
+</script>
+
+<style>
+.live-tracking-status {
+    @apply shadow-lg rounded-lg overflow-hidden;
+}
+
+.live-tracking-status .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+}
+</style>

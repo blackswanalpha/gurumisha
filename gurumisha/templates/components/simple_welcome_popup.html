@@ -1,0 +1,267 @@
+<!-- Simple Welcome Popup - No Dependencies -->
+<!-- This is a standalone welcome popup that doesn't rely on any template tags or complex includes -->
+
+<div id="simple-welcome-popup" class="fixed inset-0 z-50 hidden bg-black bg-opacity-60 flex items-center justify-center p-4" style="backdrop-filter: blur(10px);">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden transform transition-all duration-500 scale-95 opacity-0" id="popup-content">
+        
+        <!-- Header with Gradient -->
+        <div class="bg-gradient-to-br from-red-600 via-red-700 to-black px-6 pt-8 pb-6 text-center relative">
+            <!-- Close Button -->
+            <button onclick="closeSimpleWelcomePopup()" class="absolute top-4 right-4 text-white hover:text-red-200 transition-colors" aria-label="Close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            
+            <!-- Logo -->
+            <div class="mb-4">
+                <div class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center">
+                    <span class="text-2xl font-bold text-red-600">G</span>
+                </div>
+            </div>
+            
+            <!-- Title -->
+            <h2 class="text-3xl font-bold text-white mb-2" style="font-family: 'Montserrat', sans-serif;">
+                Welcome to Gurumisha!
+            </h2>
+            
+            <!-- Subtitle -->
+            <p class="text-red-100 text-sm" style="font-family: 'Raleway', sans-serif;">
+                Kenya's Premier Automotive Marketplace
+            </p>
+        </div>
+        
+        <!-- Content -->
+        <div class="px-6 py-6">
+            <!-- Description -->
+            <p class="text-gray-700 text-base leading-relaxed mb-6" style="font-family: 'Inter', sans-serif;">
+                Discover your perfect vehicle with Kenya's most trusted automotive platform. Whether you're looking to buy, sell, or import, we've got you covered.
+            </p>
+            
+            <!-- Features -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="flex items-center space-x-2 p-3 rounded-lg bg-red-50 border border-red-100">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-gray-800">Premium Cars</span>
+                </div>
+                
+                <div class="flex items-center space-x-2 p-3 rounded-lg bg-red-50 border border-red-100">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3s-4.5 4.03-4.5 9 2.015 9 4.5 9z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-gray-800">Import Services</span>
+                </div>
+                
+                <div class="flex items-center space-x-2 p-3 rounded-lg bg-red-50 border border-red-100">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-gray-800">Spare Parts</span>
+                </div>
+                
+                <div class="flex items-center space-x-2 p-3 rounded-lg bg-red-50 border border-red-100">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-gray-800">Trusted Dealers</span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                <button onclick="getStartedSimple()" class="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:from-red-700 hover:to-red-800 hover:shadow-lg transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    <span class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path>
+                        </svg>
+                        <span>Get Started</span>
+                    </span>
+                </button>
+                
+                <button onclick="browseCarsSimple()" class="flex-1 bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:border-red-600 hover:text-red-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    Browse Cars
+                </button>
+            </div>
+            
+            <!-- Don't show again -->
+            <div class="text-center">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="simple-dont-show-again" class="rounded border-gray-300 text-red-600 focus:ring-red-500 focus:ring-offset-0">
+                    <span class="ml-2 text-sm text-gray-600">Don't show this again</span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simple Welcome Popup JavaScript -->
+<script>
+(function() {
+    'use strict';
+    
+    // Configuration
+    const CONFIG = {
+        SESSION_KEY: 'gurumisha_welcome_seen',
+        PERSISTENT_KEY: 'gurumisha_welcome_dont_show',
+        INITIAL_DELAY: 1500
+    };
+    
+    // Check if popup should be shown
+    function shouldShowPopup() {
+        // Check if user has permanently opted out
+        if (localStorage.getItem(CONFIG.PERSISTENT_KEY) === 'true') {
+            return false;
+        }
+        
+        // Check session storage for current session
+        if (sessionStorage.getItem(CONFIG.SESSION_KEY) === 'true') {
+            return false;
+        }
+        
+        // Check if we're on the homepage
+        const isHomepage = window.location.pathname === '/' || 
+                          window.location.pathname === '/homepage/' ||
+                          window.location.pathname.endsWith('/');
+        
+        return isHomepage;
+    }
+    
+    // Show popup
+    function showPopup() {
+        const popup = document.getElementById('simple-welcome-popup');
+        const content = document.getElementById('popup-content');
+        
+        if (!popup || !content) return;
+        
+        popup.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Animate in
+        setTimeout(() => {
+            content.style.transform = 'scale(1)';
+            content.style.opacity = '1';
+        }, 50);
+        
+        // Mark as seen
+        sessionStorage.setItem(CONFIG.SESSION_KEY, 'true');
+    }
+    
+    // Close popup
+    function closePopup() {
+        const popup = document.getElementById('simple-welcome-popup');
+        const content = document.getElementById('popup-content');
+        const dontShowCheckbox = document.getElementById('simple-dont-show-again');
+        
+        if (!popup || !content) return;
+        
+        // Animate out
+        content.style.transform = 'scale(0.95)';
+        content.style.opacity = '0';
+        
+        // Handle "don't show again" preference
+        if (dontShowCheckbox && dontShowCheckbox.checked) {
+            localStorage.setItem(CONFIG.PERSISTENT_KEY, 'true');
+        }
+        
+        // Hide popup
+        setTimeout(() => {
+            popup.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 300);
+    }
+    
+    // Get Started action
+    function getStarted() {
+        closePopup();
+        
+        setTimeout(() => {
+            const searchSection = document.querySelector('.car-search-form, .hero-content form, [data-search-form]');
+            if (searchSection) {
+                searchSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                
+                // Focus on the first input field
+                setTimeout(() => {
+                    const firstInput = searchSection.querySelector('input:not([type="hidden"]), select');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                }, 500);
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }, 400);
+    }
+    
+    // Browse Cars action
+    function browseCars() {
+        closePopup();
+        setTimeout(() => {
+            window.location.href = '/cars/';
+        }, 400);
+    }
+    
+    // Make functions globally available
+    window.closeSimpleWelcomePopup = closePopup;
+    window.getStartedSimple = getStarted;
+    window.browseCarsSimple = browseCars;
+    
+    // Global utilities
+    window.SimpleWelcomePopup = {
+        forceShow() {
+            sessionStorage.removeItem(CONFIG.SESSION_KEY);
+            localStorage.removeItem(CONFIG.PERSISTENT_KEY);
+            location.reload();
+        },
+        
+        reset() {
+            sessionStorage.removeItem(CONFIG.SESSION_KEY);
+            localStorage.removeItem(CONFIG.PERSISTENT_KEY);
+            console.log('Simple welcome popup data reset');
+        }
+    };
+    
+    // Initialize popup
+    document.addEventListener('DOMContentLoaded', function() {
+        if (shouldShowPopup()) {
+            setTimeout(showPopup, CONFIG.INITIAL_DELAY);
+        }
+    });
+    
+    // Keyboard support
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const popup = document.getElementById('simple-welcome-popup');
+            if (popup && !popup.classList.contains('hidden')) {
+                closePopup();
+            }
+        }
+    });
+    
+})();
+</script>
+
+<!-- Inline Styles for Better Compatibility -->
+<style>
+#simple-welcome-popup {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+#popup-content {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@media (max-width: 640px) {
+    #simple-welcome-popup .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    #simple-welcome-popup .flex-col.sm\\:flex-row {
+        flex-direction: column;
+    }
+}
+</style>

@@ -1,0 +1,207 @@
+{% load static %}
+
+<!-- Car Delete Confirmation Modal -->
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
+     id="car-delete-modal"
+     x-data="{ show: false, confirmed: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1400]"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Container -->
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+        <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-exclamation-triangle text-white text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="text-xl font-bold text-white font-montserrat">Delete Car Listing</h3>
+                            <p class="text-white text-opacity-80 text-sm font-raleway">This action cannot be undone</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <i class="fas fa-times text-white text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-white px-6 py-6">
+                <div class="text-center">
+                    <!-- Warning Icon -->
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                        <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
+                    </div>
+                    
+                    <!-- Warning Message -->
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 font-montserrat">
+                        Are you sure you want to delete this car?
+                    </h3>
+                    
+                    <div class="text-left bg-gray-50 rounded-lg p-4 mb-6">
+                        <h4 class="font-semibold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-car text-harrier-red mr-2"></i>
+                            <span id="car-title-display">{{ car.title|default:"Car Listing" }}</span>
+                        </h4>
+                        
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <p><strong>Brand:</strong> <span id="car-brand-display">{{ car.brand_name|default:"N/A" }}</span></p>
+                            <p><strong>Model:</strong> <span id="car-model-display">{{ car.model_name|default:"N/A" }}</span></p>
+                            <p><strong>Year:</strong> <span id="car-year-display">{{ car.year|default:"N/A" }}</span></p>
+                            <p><strong>Price:</strong> <span id="car-price-display">{{ car.price|default:"N/A" }}</span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Warning Details -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-semibold text-red-800 mb-3 flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                            This action will permanently:
+                        </h4>
+                        <ul class="text-sm text-red-700 space-y-2 text-left">
+                            <li class="flex items-start">
+                                <i class="fas fa-times text-red-500 mr-2 mt-0.5 text-xs"></i>
+                                Remove the car from all listings
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-times text-red-500 mr-2 mt-0.5 text-xs"></i>
+                                Delete all associated images
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-times text-red-500 mr-2 mt-0.5 text-xs"></i>
+                                Remove from featured cars (if applicable)
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-times text-red-500 mr-2 mt-0.5 text-xs"></i>
+                                Cancel any active inquiries
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-times text-red-500 mr-2 mt-0.5 text-xs"></i>
+                                Remove all view statistics
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Confirmation Checkbox -->
+                    <div class="flex items-start space-x-3 mb-6">
+                        <input type="checkbox" 
+                               id="confirm-delete" 
+                               class="mt-1 w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                               x-model="confirmed">
+                        <label for="confirm-delete" class="text-sm text-gray-700 text-left">
+                            I understand that this action is permanent and cannot be undone. I want to delete this car listing.
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row gap-3 justify-end">
+                <button type="button" 
+                        class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold font-montserrat"
+                        @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button type="button" 
+                        id="confirm-delete-btn"
+                        class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-semibold font-montserrat disabled:opacity-50 disabled:cursor-not-allowed"
+                        x-bind:disabled="!confirmed"
+                        @click="confirmDelete()">
+                    <i class="fas fa-trash-alt mr-2"></i>Delete Car
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal specific styles */
+#car-delete-modal {
+    backdrop-filter: blur(4px);
+}
+
+#car-delete-modal .bg-red-50 {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+#car-delete-modal .bg-gray-50 {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+/* Checkbox styling */
+#confirm-delete:checked {
+    background-color: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Button hover effects */
+#confirm-delete-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+#confirm-delete-btn:disabled {
+    transform: none;
+    box-shadow: none;
+}
+</style>
+
+<script>
+// Global variables to store car info and callback
+let carToDelete = null;
+let deleteCallback = null;
+
+// Function to set car information and callback
+window.setCarDeleteInfo = function(carInfo, callback) {
+    carToDelete = carInfo;
+    deleteCallback = callback;
+    
+    // Update modal content with car information
+    if (carInfo.title) document.getElementById('car-title-display').textContent = carInfo.title;
+    if (carInfo.brand) document.getElementById('car-brand-display').textContent = carInfo.brand;
+    if (carInfo.model) document.getElementById('car-model-display').textContent = carInfo.model;
+    if (carInfo.year) document.getElementById('car-year-display').textContent = carInfo.year;
+    if (carInfo.price) document.getElementById('car-price-display').textContent = carInfo.price;
+};
+
+// Function called when delete is confirmed
+window.confirmDelete = function() {
+    if (deleteCallback && carToDelete) {
+        // Close modal
+        document.getElementById('car-delete-modal').remove();
+        // Execute the delete callback
+        deleteCallback(carToDelete.id);
+    }
+};
+
+// Auto-remove modal if no interaction after 30 seconds
+setTimeout(() => {
+    const modal = document.getElementById('car-delete-modal');
+    if (modal) {
+        modal.remove();
+    }
+}, 30000);
+</script>

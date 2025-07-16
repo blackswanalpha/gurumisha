@@ -1,0 +1,214 @@
+{% load static %}
+
+<!-- Infographic Chart Preview -->
+{% if has_chart %}
+<div class="chart-preview-container animate-fade-in-up">
+    <div class="glassmorphism-card p-6">
+        <div class="chart-header mb-6">
+            <h3 class="text-xl font-bold text-harrier-dark font-montserrat mb-2">
+                <i class="fas fa-chart-bar text-harrier-red mr-2"></i>
+                Interactive Chart
+            </h3>
+            <p class="text-gray-600 font-raleway">Explore the data visualization below</p>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="chart-container mb-6">
+            <div class="chart-wrapper bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                <canvas id="infographic-chart-{{ post.id }}" 
+                        width="400" 
+                        height="300"
+                        class="max-w-full">
+                </canvas>
+            </div>
+        </div>
+
+        <!-- Chart Controls -->
+        <div class="chart-controls flex flex-wrap gap-3 justify-center">
+            <button class="chart-control-btn" 
+                    onclick="toggleChartAnimation({{ post.id }})">
+                <i class="fas fa-play mr-2"></i>
+                Animate
+            </button>
+            
+            <button class="chart-control-btn" 
+                    onclick="downloadChart({{ post.id }})">
+                <i class="fas fa-download mr-2"></i>
+                Download
+            </button>
+            
+            <button class="chart-control-btn" 
+                    onclick="toggleChartLegend({{ post.id }})">
+                <i class="fas fa-list mr-2"></i>
+                Toggle Legend
+            </button>
+            
+            <button class="chart-control-btn" 
+                    onclick="resetChartZoom({{ post.id }})">
+                <i class="fas fa-search-minus mr-2"></i>
+                Reset Zoom
+            </button>
+        </div>
+
+        <!-- Chart Info -->
+        <div class="chart-info mt-6 p-4 bg-gray-50 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="info-item">
+                    <div class="info-icon mb-2">
+                        <i class="fas fa-chart-line text-2xl text-harrier-red"></i>
+                    </div>
+                    <div class="info-value text-lg font-bold text-harrier-dark font-montserrat">{{ post.chart_type|title }}</div>
+                    <div class="info-label text-sm text-gray-600 font-raleway">Chart Type</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon mb-2">
+                        <i class="fas fa-database text-2xl text-harrier-red"></i>
+                    </div>
+                    <div class="info-value text-lg font-bold text-harrier-dark font-montserrat" id="data-points-{{ post.id }}">-</div>
+                    <div class="info-label text-sm text-gray-600 font-raleway">Data Points</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon mb-2">
+                        <i class="fas fa-eye text-2xl text-harrier-red"></i>
+                    </div>
+                    <div class="info-value text-lg font-bold text-harrier-dark font-montserrat">Interactive</div>
+                    <div class="info-label text-sm text-gray-600 font-raleway">Visualization</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart configuration from backend
+    const chartConfig = {{ chart_config|safe }};
+    const postId = {{ post.id }};
+    
+    // Initialize chart
+    const ctx = document.getElementById(`infographic-chart-${postId}`).getContext('2d');
+    
+    // Enhanced chart configuration
+    const enhancedConfig = {
+        ...chartConfig,
+        options: {
+            ...chartConfig.options,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                ...chartConfig.options.plugins,
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: '#dc2626',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true
+                }
+            }
+        }
+    };
+    
+    // Create chart
+    window[`chart_${postId}`] = new Chart(ctx, enhancedConfig);
+    
+    // Update data points count
+    const dataPoints = chartConfig.data.datasets ? 
+        chartConfig.data.datasets.reduce((sum, dataset) => sum + (dataset.data ? dataset.data.length : 0), 0) : 0;
+    document.getElementById(`data-points-${postId}`).textContent = dataPoints;
+});
+
+// Chart control functions
+function toggleChartAnimation(postId) {
+    const chart = window[`chart_${postId}`];
+    if (chart) {
+        chart.update('active');
+    }
+}
+
+function downloadChart(postId) {
+    const chart = window[`chart_${postId}`];
+    if (chart) {
+        const url = chart.toBase64Image();
+        const link = document.createElement('a');
+        link.download = `{{ post.title|slugify }}-chart.png`;
+        link.href = url;
+        link.click();
+    }
+}
+
+function toggleChartLegend(postId) {
+    const chart = window[`chart_${postId}`];
+    if (chart) {
+        chart.options.plugins.legend.display = !chart.options.plugins.legend.display;
+        chart.update();
+    }
+}
+
+function resetChartZoom(postId) {
+    const chart = window[`chart_${postId}`];
+    if (chart && chart.resetZoom) {
+        chart.resetZoom();
+    }
+}
+</script>
+{% else %}
+<div class="no-chart-container animate-fade-in-up">
+    <div class="glassmorphism-card p-6 text-center">
+        <div class="no-chart-icon mb-4">
+            <i class="fas fa-chart-bar text-4xl text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-700 font-montserrat mb-2">No Chart Data Available</h3>
+        <p class="text-gray-600 font-raleway">This infographic doesn't have interactive chart data configured.</p>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.glassmorphism-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+}
+
+.chart-control-btn {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Raleway', sans-serif;
+}
+
+.chart-control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.info-item {
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    transform: translateY(-2px);
+}
+</style>

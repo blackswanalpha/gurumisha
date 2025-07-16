@@ -1,0 +1,469 @@
+{% load static %}
+
+<div class="glassmorphism-card p-6">
+    <!-- Analytics Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        <div>
+            <h3 class="text-xl font-bold text-gray-800 font-montserrat mb-2">
+                <i class="fas fa-chart-line mr-2 text-harrier-red"></i>
+                Message Analytics
+            </h3>
+            <p class="text-gray-600 font-raleway">
+                Performance insights and engagement metrics for your messages
+            </p>
+        </div>
+        
+        <!-- Time Period Selector -->
+        <div class="flex items-center space-x-3">
+            <label class="text-sm font-semibold text-gray-700">Time Period:</label>
+            <select name="analytics_period" 
+                    class="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent bg-white"
+                    hx-get="{% url 'core:admin_message_analytics_tab' %}"
+                    hx-target="#message-tab-content"
+                    hx-trigger="change"
+                    hx-include="this">
+                <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 Days</option>
+                <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 Days</option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 Days</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Messages -->
+        <div class="analytics-metric-card">
+            <div class="metric-icon bg-gradient-to-r from-blue-500 to-blue-600">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ total_messages }}</div>
+                <div class="metric-label">Total Messages</div>
+                <div class="metric-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>{{ active_messages }} Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Displays -->
+        <div class="analytics-metric-card">
+            <div class="metric-icon bg-gradient-to-r from-green-500 to-green-600">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ analytics_data.total_displays|default:0|floatformat:0 }}</div>
+                <div class="metric-label">Total Displays</div>
+                <div class="metric-change">
+                    <i class="fas fa-users"></i>
+                    <span>{{ analytics_data.unique_users|default:0 }} Users</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Click Through Rate -->
+        <div class="analytics-metric-card">
+            <div class="metric-icon bg-gradient-to-r from-purple-500 to-purple-600">
+                <i class="fas fa-mouse-pointer"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ click_through_rate }}%</div>
+                <div class="metric-label">Click Rate</div>
+                <div class="metric-change">
+                    <i class="fas fa-hand-pointer"></i>
+                    <span>{{ analytics_data.total_clicks|default:0 }} Clicks</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dismissal Rate -->
+        <div class="analytics-metric-card">
+            <div class="metric-icon bg-gradient-to-r from-orange-500 to-orange-600">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ dismissal_rate }}%</div>
+                <div class="metric-label">Dismissal Rate</div>
+                <div class="metric-change">
+                    <i class="fas fa-ban"></i>
+                    <span>{{ analytics_data.total_dismissals|default:0 }} Dismissed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Daily Performance Chart -->
+        <div class="analytics-chart-card">
+            <div class="chart-header">
+                <h4 class="chart-title">
+                    <i class="fas fa-chart-area mr-2"></i>
+                    Daily Performance
+                </h4>
+                <p class="chart-subtitle">Message displays, clicks, and dismissals over time</p>
+            </div>
+            <div class="chart-container">
+                <canvas id="dailyPerformanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Message Type Distribution -->
+        <div class="analytics-chart-card">
+            <div class="chart-header">
+                <h4 class="chart-title">
+                    <i class="fas fa-chart-pie mr-2"></i>
+                    Message Types
+                </h4>
+                <p class="chart-subtitle">Distribution of message types</p>
+            </div>
+            <div class="chart-container">
+                <canvas id="messageTypeChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performing Messages -->
+    <div class="analytics-section mb-8">
+        <div class="section-header">
+            <h4 class="section-title">
+                <i class="fas fa-trophy mr-2 text-yellow-500"></i>
+                Top Performing Messages
+            </h4>
+            <p class="section-subtitle">Messages with highest engagement rates</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Message</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Views</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Clicks</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-700">CTR</th>
+                        <th class="text-center py-3 px-4 font-semibold text-gray-700">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in top_messages %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
+                        <td class="py-4 px-4">
+                            <div class="flex items-center space-x-3">
+                                {% if message.icon_class %}
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                                         style="background: {{ message.background_color|default:'#dc2626' }};">
+                                        <i class="{{ message.icon_class }} text-sm"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h5 class="font-semibold text-gray-900 font-montserrat">{{ message.title }}</h5>
+                                    <p class="text-sm text-gray-600">Created {{ message.created_at|date:"M d, Y" }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ message.get_message_type_display }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="text-sm">
+                                <div class="font-semibold text-gray-900">{{ message.total_views|default:0 }}</div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="text-sm">
+                                <div class="font-semibold text-gray-900">{{ message.total_clicks|default:0 }}</div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="text-sm">
+                                <div class="font-semibold {% if message.click_through_rate > 5 %}text-green-600{% elif message.click_through_rate > 2 %}text-yellow-600{% else %}text-gray-600{% endif %}">
+                                    {{ message.click_through_rate|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="flex items-center justify-center space-x-2">
+                                <!-- Performance Details -->
+                                <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                        hx-get="{% url 'core:admin_message_performance_modal' message.id %}"
+                                        hx-target="body"
+                                        hx-swap="beforeend"
+                                        title="View Performance">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                                
+                                <!-- Edit Message -->
+                                <button class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                                        hx-get="{% url 'core:admin_message_edit_modal' message.id %}"
+                                        hx-target="body"
+                                        hx-swap="beforeend"
+                                        title="Edit Message">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-8 text-center">
+                            <div class="text-gray-500">
+                                <i class="fas fa-chart-line text-3xl mb-3 text-gray-300"></i>
+                                <p class="text-lg font-semibold mb-2">No performance data available</p>
+                                <p class="text-sm">Create and activate messages to see analytics here.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Export and Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+            Analytics data for the last {{ days }} days
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center">
+                <i class="fas fa-download mr-2"></i>
+                Export CSV
+            </button>
+            
+            <button class="px-4 py-2 bg-harrier-red hover:bg-harrier-dark text-white rounded-lg transition-colors duration-200 flex items-center"
+                    hx-get="{% url 'core:admin_message_analytics_tab' %}"
+                    hx-target="#message-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-refresh mr-2"></i>
+                Refresh Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Analytics Specific Styles */
+    .analytics-metric-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .analytics-metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .metric-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 800;
+        font-family: 'Montserrat', sans-serif;
+        color: #1f2937;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: 'Raleway', sans-serif;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-change {
+        display: flex;
+        align-items: center;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #6b7280;
+    }
+
+    .metric-change.positive {
+        color: #059669;
+    }
+
+    .metric-change i {
+        margin-right: 0.25rem;
+    }
+
+    .analytics-chart-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .chart-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1f2937;
+        font-family: 'Montserrat', sans-serif;
+        margin-bottom: 0.25rem;
+    }
+
+    .chart-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 200px;
+    }
+
+    .analytics-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .section-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1f2937;
+        font-family: 'Montserrat', sans-serif;
+        margin-bottom: 0.25rem;
+    }
+
+    .section-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    /* CSS Variables */
+    :root {
+        --harrier-red: #dc2626;
+        --harrier-dark: #1f2937;
+    }
+</style>
+
+<script>
+// Initialize charts when the tab loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAnalyticsCharts();
+});
+
+function initializeAnalyticsCharts() {
+    // Daily Performance Chart
+    const dailyCtx = document.getElementById('dailyPerformanceChart');
+    if (dailyCtx) {
+        const dailyData = {{ daily_analytics|safe }};
+        
+        new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(d => d.date),
+                datasets: [{
+                    label: 'Displays',
+                    data: dailyData.map(d => d.displays),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Clicks',
+                    data: dailyData.map(d => d.clicks),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Dismissals',
+                    data: dailyData.map(d => d.dismissals),
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Message Type Chart
+    const typeCtx = document.getElementById('messageTypeChart');
+    if (typeCtx) {
+        // This would need message type data from the backend
+        new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Announcements', 'Alerts', 'Promotions', 'Updates'],
+                datasets: [{
+                    data: [40, 25, 20, 15],
+                    backgroundColor: [
+                        '#3b82f6',
+                        '#ef4444',
+                        '#10b981',
+                        '#f59e0b'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Re-initialize charts when tab content is updated via HTMX
+document.addEventListener('htmx:afterSwap', function(event) {
+    if (event.target.id === 'message-tab-content') {
+        setTimeout(initializeAnalyticsCharts, 100);
+    }
+});
+</script>

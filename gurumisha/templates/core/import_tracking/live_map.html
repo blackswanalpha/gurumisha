@@ -1,0 +1,599 @@
+{% load static %}
+
+<!-- Live Tracking Map Component -->
+<div class="live-tracking-map-container"
+     x-data="liveTrackingMap()"
+     x-init="initializeMap()"
+     data-order-number="{{ order.order_number }}"
+     data-current-lat="{{ order.current_latitude|default:'0' }}"
+     data-current-lng="{{ order.current_longitude|default:'0' }}"
+     hx-get="{% url 'core:import_order_live_tracking_htmx' order.order_number %}"
+     hx-trigger="every 60s"
+     hx-swap="none"
+     hx-on:htmx:after-request="updateMapFromResponse(event)">
+    
+    <!-- Map Header -->
+    <div class="bg-gradient-to-r from-red-900 to-black text-white p-4 rounded-t-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <i class="fas fa-map-marker-alt text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold font-montserrat">Live Tracking</h3>
+                    <p class="text-red-200 text-sm">{{ order.vehicle_details }}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1 text-sm">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-green-200">Live</span>
+                </div>
+                <button @click="refreshLocation()" 
+                        class="p-2 bg-red-700 hover:bg-red-600 rounded-lg transition-colors"
+                        title="Refresh Location">
+                    <i class="fas fa-sync-alt" :class="{ 'animate-spin': refreshing }"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="relative bg-gray-100 rounded-b-lg overflow-hidden">
+        <!-- Map Element -->
+        <div id="live-tracking-map" class="w-full h-96 relative z-10"></div>
+        
+        <!-- Map Loading Overlay -->
+        <div x-show="loading" 
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="absolute inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-20">
+            <div class="text-center text-white">
+                <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <i class="fas fa-map text-white text-2xl"></i>
+                </div>
+                <h4 class="text-lg font-semibold mb-2 font-montserrat">Loading Map...</h4>
+                <p class="text-gray-300 font-raleway">Initializing live tracking</p>
+                <div class="mt-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Controls -->
+        <div class="absolute top-4 right-4 space-y-2 z-30">
+            <button @click="centerOnVehicle()" 
+                    class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-3 hover:bg-opacity-100 transition-all duration-200 group"
+                    title="Center on Vehicle">
+                <i class="fas fa-crosshairs text-gray-700 group-hover:text-red-600 transition-colors"></i>
+            </button>
+            <button @click="toggleSatelliteView()" 
+                    class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-3 hover:bg-opacity-100 transition-all duration-200 group"
+                    title="Toggle Satellite View">
+                <i class="fas fa-satellite text-gray-700 group-hover:text-red-600 transition-colors"></i>
+            </button>
+            <button @click="showFullRoute()" 
+                    class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-3 hover:bg-opacity-100 transition-all duration-200 group"
+                    title="Show Full Route">
+                <i class="fas fa-route text-gray-700 group-hover:text-red-600 transition-colors"></i>
+            </button>
+            <button @click="toggleTrafficLayer()" 
+                    class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-3 hover:bg-opacity-100 transition-all duration-200 group"
+                    title="Toggle Traffic">
+                <i class="fas fa-traffic-light text-gray-700 group-hover:text-red-600 transition-colors"></i>
+            </button>
+        </div>
+
+        <!-- Location Info Panel -->
+        <div class="absolute bottom-4 left-4 right-4 z-30">
+            <div class="bg-white bg-opacity-95 backdrop-blur-sm rounded-lg shadow-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Current Location -->
+                    <div class="text-center md:text-left">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <i class="fas fa-map-marker-alt text-red-600"></i>
+                            <span class="font-semibold text-gray-800 font-montserrat">Current Location</span>
+                        </div>
+                        <p class="text-sm text-gray-600" x-text="currentLocationName">{{ order.current_location_name|default:'Updating...' }}</p>
+                        <p class="text-xs text-gray-500" x-text="coordinates">{{ order.current_coordinates_string }}</p>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="text-center">
+                        <div class="flex items-center justify-center space-x-2 mb-1">
+                            <i class="fas fa-{{ order.get_status_icon }} text-blue-600"></i>
+                            <span class="font-semibold text-gray-800 font-montserrat">Status</span>
+                        </div>
+                        <p class="text-sm text-gray-600">{{ order.get_status_display }}</p>
+                        <p class="text-xs text-gray-500">{{ order.progress_percentage }}% Complete</p>
+                    </div>
+                    
+                    <!-- Last Update -->
+                    <div class="text-center md:text-right">
+                        <div class="flex items-center justify-center md:justify-end space-x-2 mb-1">
+                            <i class="fas fa-clock text-green-600"></i>
+                            <span class="font-semibold text-gray-800 font-montserrat">Last Update</span>
+                        </div>
+                        <p class="text-sm text-gray-600" x-text="lastUpdate">
+                            {% if order.last_location_update %}
+                                {{ order.last_location_update|timesince }} ago
+                            {% else %}
+                                Not available
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-gray-500" x-text="updateStatus">Real-time tracking</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+      crossorigin="" />
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+        crossorigin=""></script>
+
+<style>
+/* Custom map styles */
+.live-tracking-map-container {
+    @apply shadow-xl rounded-lg overflow-hidden;
+}
+
+.leaflet-container {
+    font-family: 'Raleway', sans-serif;
+}
+
+.leaflet-popup-content-wrapper {
+    @apply bg-white rounded-lg shadow-lg;
+    border-radius: 12px;
+}
+
+.leaflet-popup-content {
+    @apply p-4;
+    margin: 0;
+}
+
+.leaflet-popup-tip {
+    @apply bg-white;
+}
+
+/* Custom marker styles */
+.vehicle-marker {
+    background: linear-gradient(135deg, #dc2626, #000000);
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    animation: pulse-marker 2s infinite;
+}
+
+.waypoint-marker {
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.waypoint-marker.current {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+    animation: pulse-waypoint 2s infinite;
+}
+
+@keyframes pulse-waypoint {
+    0% {
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+    }
+    50% {
+        box-shadow: 0 2px 16px rgba(16, 185, 129, 0.8);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+    }
+}
+
+@keyframes pulse-marker {
+    0% {
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(220, 38, 38, 0.8);
+    }
+    100% {
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    #live-tracking-map {
+        height: 300px;
+    }
+
+    .absolute.top-4.right-4 {
+        @apply top-2 right-2;
+    }
+
+    .absolute.top-4.right-4 button {
+        @apply p-2;
+    }
+
+    .absolute.bottom-4 {
+        @apply bottom-2 left-2 right-2;
+    }
+
+    .live-tracking-map-container .grid-cols-3 {
+        @apply grid-cols-1 gap-2;
+    }
+
+    .live-tracking-map-container .text-center.md\\:text-left {
+        @apply text-center;
+    }
+
+    .live-tracking-map-container .text-center.md\\:text-right {
+        @apply text-center;
+    }
+}
+
+@media (max-width: 480px) {
+    .live-tracking-map-container .bg-gradient-to-r {
+        @apply px-3 py-3;
+    }
+
+    .live-tracking-map-container .text-lg {
+        @apply text-base;
+    }
+
+    .live-tracking-map-container .w-10.h-10 {
+        @apply w-8 h-8;
+    }
+
+    #live-tracking-map {
+        height: 250px;
+    }
+
+    .absolute.bottom-4.left-4.right-4 .grid {
+        @apply grid-cols-1 gap-2;
+    }
+
+    .absolute.top-4.right-4 {
+        @apply flex-col space-y-1;
+    }
+}
+</style>
+
+<script>
+function liveTrackingMap() {
+    return {
+        map: null,
+        loading: true,
+        refreshing: false,
+        currentLocationName: '{{ order.current_location_name|default:"Updating..." }}',
+        coordinates: '{{ order.current_coordinates_string }}',
+        lastUpdate: 'Just now',
+        updateStatus: 'Real-time tracking',
+        vehicleMarker: null,
+        routePolyline: null,
+        waypoints: [],
+        satelliteView: false,
+        trafficLayer: null,
+        
+        initializeMap() {
+            setTimeout(() => {
+                this.setupMap();
+            }, 500);
+        },
+        
+        setupMap() {
+            const container = document.getElementById('live-tracking-map');
+            if (!container) return;
+            
+            // Initialize map
+            this.map = L.map('live-tracking-map', {
+                zoomControl: false,
+                attributionControl: false
+            });
+            
+            // Add zoom control to bottom right
+            L.control.zoom({
+                position: 'bottomright'
+            }).addTo(this.map);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(this.map);
+            
+            // Set initial view
+            const lat = parseFloat(container.dataset.currentLat) || -1.2921;
+            const lng = parseFloat(container.dataset.currentLng) || 36.8219;
+            
+            this.map.setView([lat, lng], 10);
+            
+            // Add vehicle marker
+            this.addVehicleMarker(lat, lng);
+            
+            // Load route and waypoints
+            this.loadRouteData();
+            
+            this.loading = false;
+            
+            // Start real-time updates
+            this.startRealTimeUpdates();
+        },
+        
+        addVehicleMarker(lat, lng) {
+            if (this.vehicleMarker) {
+                this.map.removeLayer(this.vehicleMarker);
+            }
+            
+            const vehicleIcon = L.divIcon({
+                className: 'vehicle-marker',
+                html: '<i class="fas fa-car text-white text-sm"></i>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+            
+            this.vehicleMarker = L.marker([lat, lng], { icon: vehicleIcon })
+                .addTo(this.map)
+                .bindPopup(`
+                    <div class="text-center">
+                        <h4 class="font-semibold text-gray-800 mb-2">{{ order.vehicle_details }}</h4>
+                        <p class="text-sm text-gray-600 mb-1">Order: {{ order.order_number }}</p>
+                        <p class="text-sm text-gray-600 mb-2">Status: {{ order.get_status_display }}</p>
+                        <p class="text-xs text-gray-500">${this.coordinates}</p>
+                    </div>
+                `);
+        },
+        
+        loadRouteData() {
+            // Fetch route and waypoint data from backend
+            fetch(`/import/tracking/{{ order.order_number }}/route/`, {
+                headers: {
+                    'HX-Request': 'true',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.route_exists && data.waypoints.length > 0) {
+                    this.addWaypoints(data.waypoints);
+                    this.drawRoute(data.waypoints);
+                } else if (data.locations.length > 0) {
+                    // If no formal route, show locations as waypoints
+                    this.addLocationMarkers(data.locations);
+                } else {
+                    // Fallback to sample waypoints for demonstration
+                    this.addSampleWaypoints();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading route data:', error);
+                // Fallback to sample waypoints
+                this.addSampleWaypoints();
+            });
+        },
+        
+        addWaypoints(waypoints) {
+            waypoints.forEach(waypoint => {
+                const waypointIcon = L.divIcon({
+                    className: waypoint.is_current ? 'waypoint-marker current' : 'waypoint-marker',
+                    html: `<i class="fas fa-map-pin text-white text-xs"></i>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+
+                const marker = L.marker([waypoint.latitude, waypoint.longitude], { icon: waypointIcon })
+                    .addTo(this.map)
+                    .bindPopup(`
+                        <div class="text-center">
+                            <h5 class="font-semibold text-gray-800 mb-1">${waypoint.name}</h5>
+                            <p class="text-sm text-gray-600 mb-1">${waypoint.waypoint_type}</p>
+                            ${waypoint.is_completed ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Completed</span>' : ''}
+                            ${waypoint.is_current ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Current</span>' : ''}
+                        </div>
+                    `);
+
+                this.waypoints.push(marker);
+            });
+        },
+
+        addLocationMarkers(locations) {
+            locations.forEach(location => {
+                const locationIcon = L.divIcon({
+                    className: location.is_current_location ? 'waypoint-marker current' : 'waypoint-marker',
+                    html: `<i class="fas fa-map-marker-alt text-white text-xs"></i>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+
+                L.marker([location.latitude, location.longitude], { icon: locationIcon })
+                    .addTo(this.map)
+                    .bindPopup(`
+                        <div class="text-center">
+                            <h5 class="font-semibold text-gray-800 mb-1">${location.name}</h5>
+                            <p class="text-sm text-gray-600 mb-1">${location.location_type}</p>
+                            ${location.address ? `<p class="text-xs text-gray-500">${location.address}</p>` : ''}
+                            ${location.is_current_location ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Current</span>' : ''}
+                        </div>
+                    `);
+            });
+        },
+
+        drawRoute(waypoints) {
+            if (waypoints.length < 2) return;
+
+            const routeCoordinates = waypoints.map(wp => [wp.latitude, wp.longitude]);
+
+            if (this.routePolyline) {
+                this.map.removeLayer(this.routePolyline);
+            }
+
+            this.routePolyline = L.polyline(routeCoordinates, {
+                color: '#dc2626',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 5'
+            }).addTo(this.map);
+        },
+
+        addSampleWaypoints() {
+            // Sample waypoints for demonstration
+            const waypoints = [
+                { lat: -1.2921, lng: 36.8219, name: 'Nairobi Port', type: 'departure' },
+                { lat: -4.0435, lng: 39.6682, name: 'Mombasa Port', type: 'arrival' },
+            ];
+
+            waypoints.forEach(waypoint => {
+                const waypointIcon = L.divIcon({
+                    className: 'waypoint-marker',
+                    html: '<i class="fas fa-map-pin text-white text-xs"></i>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+
+                L.marker([waypoint.lat, waypoint.lng], { icon: waypointIcon })
+                    .addTo(this.map)
+                    .bindPopup(`
+                        <div class="text-center">
+                            <h5 class="font-semibold text-gray-800 mb-1">${waypoint.name}</h5>
+                            <p class="text-sm text-gray-600">${waypoint.type}</p>
+                        </div>
+                    `);
+            });
+        },
+        
+        centerOnVehicle() {
+            if (this.vehicleMarker) {
+                this.map.setView(this.vehicleMarker.getLatLng(), 15);
+            }
+        },
+        
+        toggleSatelliteView() {
+            // Toggle between street and satellite view
+            this.satelliteView = !this.satelliteView;
+            // Implementation would switch tile layers
+        },
+        
+        showFullRoute() {
+            if (this.map) {
+                this.map.fitBounds(this.map.getBounds());
+            }
+        },
+        
+        toggleTrafficLayer() {
+            // Toggle traffic layer
+            // Implementation would add/remove traffic overlay
+        },
+        
+        refreshLocation() {
+            this.refreshing = true;
+
+            // Fetch updated location data
+            fetch(`/import/tracking/{{ order.order_number }}/location/`, {
+                headers: {
+                    'HX-Request': 'true',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.current_latitude && data.current_longitude) {
+                    // Update vehicle marker position
+                    this.addVehicleMarker(data.current_latitude, data.current_longitude);
+
+                    // Update location info
+                    this.currentLocationName = data.current_location_name;
+                    this.coordinates = data.coordinates_string;
+                    this.lastUpdate = 'Just now';
+
+                    // Update status if changed
+                    if (data.status_display) {
+                        this.updateStatus = data.status_display;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching location:', error);
+            })
+            .finally(() => {
+                this.refreshing = false;
+            });
+        },
+        
+        startRealTimeUpdates() {
+            // Poll for updates every 30 seconds
+            setInterval(() => {
+                this.refreshLocation();
+            }, 30000);
+        },
+
+        updateFromHTMXResponse(data) {
+            // Update map from HTMX live tracking response
+            if (data.current_location) {
+                const lat = data.current_location.latitude;
+                const lng = data.current_location.longitude;
+
+                // Update vehicle marker position
+                this.addVehicleMarker(lat, lng);
+
+                // Update location info
+                this.currentLocationName = data.current_location.name;
+                this.coordinates = data.current_location.coordinates_string;
+                this.lastUpdate = 'Just now';
+
+                // Center map on new location
+                if (this.map) {
+                    this.map.setView([lat, lng], this.map.getZoom());
+                }
+            }
+
+            // Update route progress if available
+            if (data.route && data.route.progress_percentage !== undefined) {
+                // Update any progress indicators
+                const progressElements = document.querySelectorAll('[data-progress]');
+                progressElements.forEach(el => {
+                    el.style.width = `${data.route.progress_percentage}%`;
+                });
+            }
+        }
+    }
+}
+
+// Global function to handle HTMX responses for map updates
+function updateMapFromResponse(event) {
+    try {
+        const data = JSON.parse(event.detail.xhr.responseText);
+        const mapContainer = document.querySelector('.live-tracking-map-container');
+
+        if (mapContainer && window.liveTrackingMapInstance) {
+            window.liveTrackingMapInstance.updateFromHTMXResponse(data);
+        }
+    } catch (e) {
+        console.log('HTMX response is not JSON or map not initialized');
+    }
+}
+
+// Store map instance globally for HTMX updates
+document.addEventListener('DOMContentLoaded', function() {
+    const mapContainer = document.querySelector('.live-tracking-map-container');
+    if (mapContainer) {
+        // Wait for Alpine.js to initialize
+        setTimeout(() => {
+            const alpineData = Alpine.$data(mapContainer);
+            if (alpineData) {
+                window.liveTrackingMapInstance = alpineData;
+            }
+        }, 1000);
+    }
+});
+</script>

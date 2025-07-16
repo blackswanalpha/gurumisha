@@ -168,8 +168,8 @@
                             <i class="fas fa-bars text-lg"></i>
                         </button>
 
-                        <a href="{% url 'core:dashboard' %}" class="flex items-center">
-                            <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="h-8 sm:h-10 w-auto">
+                        <a href="{% url 'core:dashboard' %}" class="flex items-center group">
+                            <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="logo-primary h-16 sm:h-14 md:h-16 lg:h-18 xl:h-20 2xl:h-24 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 filter drop-shadow-sm">
                         </a>
                     </div>
 
@@ -231,6 +231,64 @@
 
     {% block extra_js %}
     <script>
+    // Global dismissMessage function for all admin pages
+    function dismissMessage(messageId) {
+        const popup = document.getElementById(`user-message-popup-${messageId}`);
+        if (!popup) {
+            // Try alternative selectors for different message types
+            const messageCard = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageCard) {
+                messageCard.classList.add('animate-slide-out');
+                setTimeout(() => messageCard.remove(), 300);
+            }
+            return;
+        }
+
+        // Add exit animations
+        const overlay = popup.querySelector('.bg-black');
+        const panel = popup.querySelector('.message-panel');
+
+        if (overlay) overlay.classList.add('animate-fade-out');
+        if (panel) panel.classList.add('animate-slide-down');
+
+        // Record dismiss action
+        fetch(`/messages/action/${messageId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: 'action=dismissed'
+        }).catch(error => {
+            console.error('Error recording message dismissal:', error);
+        });
+
+        // Remove popup after animation
+        setTimeout(() => {
+            popup.remove();
+        }, 300);
+    }
+
+    // Global getCookie function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Make functions globally available
+    window.dismissMessage = dismissMessage;
+    window.getCookie = getCookie;
+
     // Admin-specific JavaScript
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize admin panel features

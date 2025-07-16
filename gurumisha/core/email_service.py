@@ -22,10 +22,16 @@ class PromotionEmailService:
     def get_site_url(self):
         """Get the site URL for email links"""
         try:
+            # First try to get from settings
+            site_url = getattr(settings, 'SITE_URL', None)
+            if site_url:
+                return site_url
+
+            # Fallback to Sites framework
             site = Site.objects.get_current()
-            return f"http://{site.domain}"
+            return f"https://{site.domain}"
         except:
-            return "http://localhost:8000"  # Fallback for development
+            return "https://gurumishamotors.com"  # Production fallback
     
     def send_hot_deal_notification(self, hot_deal, recipients=None):
         """Send hot deal notification email"""

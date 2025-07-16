@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -59,8 +61,9 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',
     'core.middleware.EmailVerificationMiddleware',
     'core.middleware.SessionSecurityMiddleware',
-    'core.middleware.ActivityTrackingMiddleware',
-    'core.middleware.AuditTrackingMiddleware',
+    # Temporarily disabled to debug recursion issue
+    # 'core.middleware.ActivityTrackingMiddleware',
+    # 'core.middleware.AuditTrackingMiddleware',
     'core.middleware.ToastErrorHandlingMiddleware',
     'core.middleware.Custom404Middleware',
 ]
@@ -92,6 +95,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,  # 30 second timeout for database operations
+            'init_command': 'PRAGMA journal_mode=WAL;',  # Use WAL mode for better concurrency
+        },
+        'CONN_MAX_AGE': 0,  # Don't persist connections to avoid locks
     }
 }
 
@@ -173,7 +181,93 @@ VENDOR_SUMMARY_DAY = 1  # Day of month to send vendor summaries
 # Sites Framework
 SITE_ID = 1
 
+# Site URL for email links and redirects
+SITE_URL = config('SITE_URL', default='https://gurumishamotors.com')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# M-Pesa Configuration
+# Environment setting (sandbox or production)
+MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')
+
+# Sandbox Configuration
+MPESA_SANDBOX_CONSUMER_KEY = config('MPESA_SANDBOX_CONSUMER_KEY', default='')
+MPESA_SANDBOX_CONSUMER_SECRET = config('MPESA_SANDBOX_CONSUMER_SECRET', default='')
+MPESA_SANDBOX_BUSINESS_SHORT_CODE = config('MPESA_SANDBOX_BUSINESS_SHORT_CODE', default='174379')
+MPESA_SANDBOX_PASSKEY = config('MPESA_SANDBOX_PASSKEY', default='')
+
+# Production Configuration
+MPESA_PRODUCTION_CONSUMER_KEY = config('MPESA_PRODUCTION_CONSUMER_KEY', default='')
+MPESA_PRODUCTION_CONSUMER_SECRET = config('MPESA_PRODUCTION_CONSUMER_SECRET', default='')
+MPESA_PRODUCTION_BUSINESS_SHORT_CODE = config('MPESA_PRODUCTION_BUSINESS_SHORT_CODE', default='')
+MPESA_PRODUCTION_PASSKEY = config('MPESA_PRODUCTION_PASSKEY', default='')
+
+# Current configuration based on environment
+if MPESA_ENVIRONMENT == 'production':
+    MPESA_CONSUMER_KEY = MPESA_PRODUCTION_CONSUMER_KEY
+    MPESA_CONSUMER_SECRET = MPESA_PRODUCTION_CONSUMER_SECRET
+    MPESA_BUSINESS_SHORT_CODE = MPESA_PRODUCTION_BUSINESS_SHORT_CODE
+    MPESA_PASSKEY = MPESA_PRODUCTION_PASSKEY
+else:
+    MPESA_CONSUMER_KEY = MPESA_SANDBOX_CONSUMER_KEY
+    MPESA_CONSUMER_SECRET = MPESA_SANDBOX_CONSUMER_SECRET
+    MPESA_BUSINESS_SHORT_CODE = MPESA_SANDBOX_BUSINESS_SHORT_CODE
+    MPESA_PASSKEY = MPESA_SANDBOX_PASSKEY
+
+# Callback URLs - Dynamic based on environment
+if DEBUG:
+    # Development callback URL (use ngrok or similar for testing)
+    MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://your-ngrok-url.ngrok.io/payments/mpesa/callback/')
+    MPESA_TIMEOUT_URL = config('MPESA_TIMEOUT_URL', default='https://your-ngrok-url.ngrok.io/payments/mpesa/timeout/')
+else:
+    # Production callback URLs
+    MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://yourdomain.com/payments/mpesa/callback/')
+    MPESA_TIMEOUT_URL = config('MPESA_TIMEOUT_URL', default='https://yourdomain.com/payments/mpesa/timeout/')
+
+# M-Pesa API URLs
+MPESA_BASE_URL = {
+    'sandbox': 'https://sandbox.safaricom.co.ke',
+    'production': 'https://api.safaricom.co.ke'
+}
+
+# M-Pesa API Endpoints
+MPESA_ENDPOINTS = {
+    'oauth': '/oauth/v1/generate?grant_type=client_credentials',
+    'stk_push': '/mpesa/stkpush/v1/processrequest',
+    'stk_query': '/mpesa/stkpushquery/v1/query',
+    'b2c': '/mpesa/b2c/v1/paymentrequest',
+    'account_balance': '/mpesa/accountbalance/v1/query',
+    'transaction_status': '/mpesa/transactionstatus/v1/query'
+}
+
+# M-Pesa Transaction Types
+MPESA_TRANSACTION_TYPES = {
+    'customer_paybill': 'CustomerPayBillOnline',
+    'customer_buygoods': 'CustomerBuyGoodsOnline',
+    'business_paybill': 'BusinessPayBill',
+    'business_buygoods': 'BusinessBuyGoods',
+    'salary_payment': 'SalaryPayment',
+    'business_payment': 'BusinessPayment',
+    'promotion_payment': 'PromotionPayment'
+}
+
+# M-Pesa Default Settings
+MPESA_DEFAULT_TRANSACTION_TYPE = MPESA_TRANSACTION_TYPES['customer_paybill']
+MPESA_DEFAULT_ACCOUNT_REFERENCE = 'GURUMISHA'
+MPESA_DEFAULT_TRANSACTION_DESC = 'Payment for Gurumisha Motors'
+
+# M-Pesa Validation Settings
+MPESA_PHONE_NUMBER_REGEX = r'^254[0-9]{9}$'
+MPESA_MIN_AMOUNT = 1
+MPESA_MAX_AMOUNT = 70000
+
+# M-Pesa Timeout Settings (in seconds)
+MPESA_REQUEST_TIMEOUT = 30
+MPESA_TOKEN_CACHE_TIMEOUT = 3600  # 1 hour
+
+# M-Pesa Logging
+MPESA_ENABLE_LOGGING = True
+MPESA_LOG_LEVEL = 'INFO'

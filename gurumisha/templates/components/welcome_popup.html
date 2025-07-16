@@ -1,0 +1,463 @@
+{% load static %}
+
+<!-- Welcome Popup Component -->
+<!-- Usage: {% include 'components/welcome_popup.html' %} -->
+
+<div id="welcome-popup"
+     class="fixed inset-0 z-50 overflow-y-auto hidden opacity-0 transition-all duration-500"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="welcome-title"
+     aria-describedby="welcome-description"
+     style="transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);">
+    
+    <!-- Backdrop with glassmorphism -->
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+         onclick="closeWelcomePopup()"
+         aria-hidden="true"></div>
+
+    <!-- Popup Container -->
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+
+        <!-- Popup Panel -->
+        <div id="welcome-popup-panel"
+             class="relative transform overflow-hidden rounded-2xl bg-white/95 backdrop-blur-md text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-white/20 opacity-0 translate-y-4 scale-95"
+             style="transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);">
+            
+            <!-- Close Button -->
+            <button type="button"
+                    class="absolute top-4 right-4 z-10 rounded-full bg-white/80 p-2 text-gray-400 hover:text-gray-600 hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2"
+                    onclick="closeWelcomePopup()"
+                    aria-label="Close welcome popup">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            
+            <!-- Header with Gradient Background -->
+            <div class="relative bg-gradient-to-br from-primary-red via-red-600 to-black px-6 pt-8 pb-6 text-center">
+                <!-- Decorative Pattern -->
+                <div class="absolute inset-0 bg-pattern opacity-10"></div>
+                
+                <!-- Logo -->
+                <div class="relative z-10 mb-4">
+                    <img src="{% static 'images/logo.png' %}" 
+                         alt="Gurumisha Motors" 
+                         class="h-16 w-auto mx-auto filter brightness-0 invert transition-transform duration-300 hover:scale-105">
+                </div>
+                
+                <!-- Welcome Title -->
+                <h2 id="welcome-title" 
+                    class="text-2xl sm:text-3xl font-bold text-white font-montserrat mb-2">
+                    Welcome to Gurumisha!
+                </h2>
+                
+                <!-- Subtitle -->
+                <p class="text-red-100 text-sm font-raleway">
+                    Kenya's Premier Automotive Marketplace
+                </p>
+            </div>
+            
+            <!-- Content Body -->
+            <div class="px-6 py-6">
+                <!-- Main Description -->
+                <div id="welcome-description" class="mb-6">
+                    <p class="text-gray-700 text-base leading-relaxed font-inter mb-4">
+                        Discover your perfect vehicle with Kenya's most trusted automotive platform. Whether you're looking to buy, sell, or import, we've got you covered.
+                    </p>
+                    
+                    <!-- Feature Highlights -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        <div class="flex items-center space-x-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-primary-red" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0V8.25a1.5 1.5 0 013 0v10.5zM12 18.75a1.5 1.5 0 01-3 0V8.25a1.5 1.5 0 013 0v10.5zM15.75 18.75a1.5 1.5 0 01-3 0V8.25a1.5 1.5 0 013 0v10.5z" />
+                                </svg>
+                            </div>
+                            <span class="text-sm font-medium text-gray-800 font-raleway">Premium Car Listings</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-primary-red" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3s-4.5 4.03-4.5 9 2.015 9 4.5 9z" />
+                                </svg>
+                            </div>
+                            <span class="text-sm font-medium text-gray-800 font-raleway">Import Services</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-primary-red" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+                                </svg>
+                            </div>
+                            <span class="text-sm font-medium text-gray-800 font-raleway">Genuine Spare Parts</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-primary-red" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                                </svg>
+                            </div>
+                            <span class="text-sm font-medium text-gray-800 font-raleway">Trusted Dealers</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="button"
+                            class="flex-1 bg-gradient-to-r from-primary-red to-red-600 text-white px-6 py-3 rounded-lg font-semibold font-raleway transition-all duration-300 hover:from-red-600 hover:to-red-700 hover:shadow-lg transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2"
+                            onclick="getStartedWelcome()">
+                        <span class="flex items-center justify-center space-x-2">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                            <span>Get Started</span>
+                        </span>
+                    </button>
+
+                    <button type="button"
+                            class="flex-1 bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold font-raleway transition-all duration-300 hover:border-primary-red hover:text-primary-red hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2"
+                            onclick="browseCarsWelcome()">
+                        Browse Cars
+                    </button>
+                </div>
+                
+                <!-- Don't show again option -->
+                <div class="mt-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer" for="dont-show-again">
+                        <input type="checkbox"
+                               id="dont-show-again"
+                               class="rounded border-gray-300 text-primary-red focus:ring-primary-red focus:ring-offset-0"
+                               aria-describedby="dont-show-help">
+                        <span class="ml-2 text-sm text-gray-600 font-inter">Don't show this again</span>
+                    </label>
+                    <div id="dont-show-help" class="sr-only">
+                        Checking this option will prevent the welcome popup from appearing on future visits to this website.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Screen Reader Announcements -->
+<div aria-live="polite" aria-atomic="true" class="sr-only" id="welcome-announcements">
+    <span id="welcome-sr-text" style="display: none;">Welcome popup is now open. Use Tab to navigate through the options or press Escape to close.</span>
+</div>
+
+<!-- Welcome Popup Vanilla JavaScript -->
+<script>
+// Welcome Popup Functionality (Vanilla JS)
+(function() {
+    'use strict';
+
+    // Configuration
+    const WELCOME_CONFIG = {
+        SESSION_KEY: 'gurumisha_welcome_seen',
+        PERSISTENT_KEY: 'gurumisha_welcome_dont_show',
+        INITIAL_DELAY: 1000,
+        CLOSE_ANIMATION_DELAY: 300,
+        SCROLL_DELAY: 400
+    };
+
+    // Check if popup should be shown
+    function shouldShowPopup() {
+        // Check if user has permanently opted out
+        const dontShowAgain = localStorage.getItem(WELCOME_CONFIG.PERSISTENT_KEY);
+        if (dontShowAgain === 'true') {
+            return false;
+        }
+
+        // Check session storage for current session
+        const seenThisSession = sessionStorage.getItem(WELCOME_CONFIG.SESSION_KEY);
+        if (seenThisSession === 'true') {
+            return false;
+        }
+
+        // Check if we're on the homepage
+        const isHomepage = window.location.pathname === '/' ||
+                          window.location.pathname === '/homepage/' ||
+                          window.location.pathname.endsWith('/');
+
+        return isHomepage;
+    }
+
+    // Show popup with animation
+    function showPopup() {
+        const popup = document.getElementById('welcome-popup');
+        const panel = document.getElementById('welcome-popup-panel');
+        const srText = document.getElementById('welcome-sr-text');
+
+        if (!popup || !panel) return;
+
+        // Show popup
+        popup.classList.remove('hidden');
+        popup.style.opacity = '0';
+
+        // Animate in
+        requestAnimationFrame(() => {
+            popup.style.opacity = '1';
+            panel.style.opacity = '1';
+            panel.style.transform = 'translateY(0) scale(1)';
+        });
+
+        // Show screen reader text
+        if (srText) {
+            srText.style.display = 'inline';
+        }
+
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+
+        // Mark as seen
+        sessionStorage.setItem(WELCOME_CONFIG.SESSION_KEY, 'true');
+
+        // Add keyboard event listener
+        document.addEventListener('keydown', handleKeydown);
+    }
+
+    // Close popup with animation
+    function closePopup() {
+        const popup = document.getElementById('welcome-popup');
+        const panel = document.getElementById('welcome-popup-panel');
+        const srText = document.getElementById('welcome-sr-text');
+        const dontShowCheckbox = document.getElementById('dont-show-again');
+
+        if (!popup || !panel) return;
+
+        // Animate out
+        popup.style.opacity = '0';
+        panel.style.opacity = '0';
+        panel.style.transform = 'translateY(16px) scale(0.95)';
+
+        // Hide screen reader text
+        if (srText) {
+            srText.style.display = 'none';
+        }
+
+        // Handle "don't show again" preference
+        if (dontShowCheckbox && dontShowCheckbox.checked) {
+            localStorage.setItem(WELCOME_CONFIG.PERSISTENT_KEY, 'true');
+
+            // Show confirmation if toast manager is available
+            if (window.showSuccess) {
+                setTimeout(() => {
+                    window.showSuccess('Got it! We won\'t show this welcome message again.', {
+                        duration: 4000
+                    });
+                }, WELCOME_CONFIG.CLOSE_ANIMATION_DELAY);
+            }
+        }
+
+        // Restore body scroll
+        document.body.style.overflow = '';
+
+        // Remove keyboard event listener
+        document.removeEventListener('keydown', handleKeydown);
+
+        // Hide popup after animation
+        setTimeout(() => {
+            popup.classList.add('hidden');
+        }, WELCOME_CONFIG.CLOSE_ANIMATION_DELAY);
+    }
+
+    // Handle keyboard events
+    function handleKeydown(event) {
+        if (event.key === 'Escape') {
+            closePopup();
+        }
+    }
+
+    // Get Started action
+    function getStarted() {
+        closePopup();
+
+        setTimeout(() => {
+            const searchSection = document.querySelector('.car-search-form, .hero-content form, [data-search-form]');
+            if (searchSection) {
+                searchSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+
+                // Focus on the first input field
+                setTimeout(() => {
+                    const firstInput = searchSection.querySelector('input:not([type="hidden"]), select');
+                    if (firstInput) {
+                        firstInput.focus();
+
+                        // Add visual highlight
+                        firstInput.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.3)';
+                        setTimeout(() => {
+                            firstInput.style.boxShadow = '';
+                        }, 2000);
+                    }
+                }, 500);
+            } else {
+                // Fallback: scroll to top of page
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }, WELCOME_CONFIG.SCROLL_DELAY);
+    }
+
+    // Browse Cars action
+    function browseCars() {
+        closePopup();
+
+        setTimeout(() => {
+            window.location.href = '/cars/';
+        }, WELCOME_CONFIG.SCROLL_DELAY);
+    }
+
+    // Make functions globally available
+    window.closeWelcomePopup = closePopup;
+    window.getStartedWelcome = getStarted;
+    window.browseCarsWelcome = browseCars;
+
+    // Global utilities
+    window.WelcomePopup = {
+        forceShow() {
+            sessionStorage.removeItem(WELCOME_CONFIG.SESSION_KEY);
+            localStorage.removeItem(WELCOME_CONFIG.PERSISTENT_KEY);
+            location.reload();
+        },
+
+        reset() {
+            sessionStorage.removeItem(WELCOME_CONFIG.SESSION_KEY);
+            localStorage.removeItem(WELCOME_CONFIG.PERSISTENT_KEY);
+            console.log('Welcome popup data reset');
+        }
+    };
+
+    // Initialize popup
+    document.addEventListener('DOMContentLoaded', function() {
+        if (shouldShowPopup()) {
+            // Wait for page to be fully loaded
+            setTimeout(() => {
+                const heroSection = document.querySelector('.main-banner, .hero-content');
+                if (heroSection || document.readyState === 'complete') {
+                    showPopup();
+                }
+            }, WELCOME_CONFIG.INITIAL_DELAY);
+        }
+    });
+
+})();
+</script>
+
+<!-- Custom Styles -->
+<style>
+.bg-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Enhanced glassmorphism effect */
+#welcome-popup .backdrop-blur-md {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Smooth transitions with cubic-bezier */
+#welcome-popup * {
+    transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced Mobile Optimizations */
+@media (max-width: 640px) {
+    #welcome-popup .sm\\:max-w-lg {
+        max-width: calc(100vw - 1rem);
+        margin: 0.5rem;
+    }
+
+    #welcome-popup .grid-cols-1.sm\\:grid-cols-2 {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    #welcome-popup .px-6 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    #welcome-popup .py-6 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    #welcome-popup h2 {
+        font-size: 1.5rem;
+    }
+
+    #welcome-popup .text-base {
+        font-size: 0.875rem;
+    }
+
+    #welcome-popup .flex-col.sm\\:flex-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    #welcome-popup button {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+    #welcome-popup .sm\\:max-w-lg {
+        max-width: 28rem;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    #welcome-popup .bg-white\\/95 {
+        background: white;
+    }
+
+    #welcome-popup .border-white\\/20 {
+        border-color: #000;
+        border-width: 2px;
+    }
+
+    #welcome-popup .text-gray-700 {
+        color: #000;
+    }
+
+    #welcome-popup .text-gray-600 {
+        color: #333;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    #welcome-popup * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    #welcome-popup .transform {
+        transform: none !important;
+    }
+}
+
+/* Focus management */
+#welcome-popup button:focus,
+#welcome-popup input:focus {
+    outline: 2px solid #DC2626;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    #welcome-popup {
+        display: none !important;
+    }
+}
+</style>

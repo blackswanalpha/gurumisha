@@ -1,0 +1,1619 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Resource Management - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Modern Resource Management UI Redesign */
+    :root {
+        --gradient-primary: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+        --gradient-secondary: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        --gradient-accent: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
+        --border-radius-lg: 20px;
+        --border-radius-xl: 24px;
+        --animation-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Enhanced Page Background */
+    .dashboard-content {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+        min-height: 100vh;
+        position: relative;
+    }
+
+    .dashboard-content::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 300px;
+        background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(185, 28, 28, 0.03) 100%);
+        z-index: 0;
+    }
+
+    /* Modern Header Design */
+    .resource-header {
+        position: relative;
+        z-index: 1;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-xl);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .resource-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+    }
+
+    .header-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .header-subtitle {
+        font-size: 1.125rem;
+        color: #64748b;
+        font-weight: 500;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    /* Enhanced Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .modern-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 12px;
+        transition: all 0.3s var(--animation-spring);
+        font-family: 'Montserrat', sans-serif;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .modern-btn:hover::before {
+        left: 100%;
+    }
+
+    .modern-btn-primary {
+        background: var(--gradient-primary);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+    }
+
+    .modern-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+    }
+
+    .modern-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #374151;
+        border: 1px solid rgba(209, 213, 219, 0.5);
+        backdrop-filter: blur(10px);
+    }
+
+    .modern-btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-soft);
+    }
+
+    /* Revolutionary Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stats-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-xl);
+        padding: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--shadow-soft);
+        transition: all 0.4s var(--animation-spring);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: var(--shadow-strong);
+        border-color: rgba(220, 38, 38, 0.2);
+    }
+
+    .stats-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .stats-icon {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-icon::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--gradient-primary);
+        opacity: 0.1;
+        border-radius: inherit;
+    }
+
+    .stats-icon i {
+        font-size: 1.5rem;
+        color: #dc2626;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stats-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .stats-value {
+        font-size: 3rem;
+        font-weight: 900;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-family: 'Montserrat', sans-serif;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    /* Modern Tab Navigation */
+    .tab-navigation {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-xl);
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        z-index: 1;
+    }
+
+    .tab-container {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+    .resource-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 12px;
+        transition: all 0.3s var(--animation-spring);
+        font-family: 'Montserrat', sans-serif;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        background: transparent;
+        color: #6b7280;
+        border: 1px solid transparent;
+    }
+
+    .resource-tab:hover {
+        background: rgba(220, 38, 38, 0.05);
+        color: #dc2626;
+        transform: translateY(-2px);
+    }
+
+    .resource-tab.active {
+        background: var(--gradient-primary);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .resource-tab i {
+        font-size: 1rem;
+    }
+
+    /* Content Type Badges Redesign */
+    .content-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .content-type-badge.article {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .content-type-badge.guide {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .content-type-badge.infographic {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .content-type-badge.opinion {
+        background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+        color: #6b21a8;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .content-type-badge.news {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    /* Enhanced Content Areas */
+    .content-breakdown-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .breakdown-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-xl);
+        padding: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s ease;
+    }
+
+    .breakdown-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .breakdown-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        font-family: 'Montserrat', sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .breakdown-title i {
+        color: #dc2626;
+    }
+
+    /* Content Item Styling */
+    .content-item {
+        display: flex;
+        align-items: center;
+        justify-content: between;
+        padding: 1rem;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        margin-bottom: 0.75rem;
+    }
+
+    .content-item:hover {
+        background: rgba(249, 250, 251, 0.8);
+        border-color: rgba(220, 38, 38, 0.2);
+        transform: translateX(4px);
+    }
+
+    .content-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Performance Metrics */
+    .performance-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(249, 250, 251, 0.5);
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .performance-item:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(220, 38, 38, 0.2);
+        transform: scale(1.02);
+    }
+
+    .performance-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Tab Content Area */
+    .tab-content-area {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--shadow-soft);
+        min-height: 600px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Loading States */
+    .loading-shimmer {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .header-title {
+            font-size: 2rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .tab-container {
+            flex-direction: column;
+        }
+
+        .resource-tab {
+            justify-content: center;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .modern-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Animation Classes */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-scale-in {
+        animation: scaleIn 0.4s var(--animation-spring) forwards;
+    }
+
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Enhanced Resource Management Toast System */
+    #resource-toast-container {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 10000;
+        max-width: 420px;
+        pointer-events: none;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .resource-toast {
+        pointer-events: auto;
+        transform: translateX(100%) scale(0.95);
+        opacity: 0;
+        transition: all 0.4s var(--animation-spring);
+        margin-bottom: 1rem;
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        position: relative;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .resource-toast::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        z-index: 1;
+    }
+
+    .resource-toast.toast-show {
+        transform: translateX(0) scale(1) !important;
+        opacity: 1 !important;
+    }
+
+    .resource-toast.toast-removing {
+        transform: translateX(100%) scale(0.9) !important;
+        opacity: 0 !important;
+    }
+
+    /* Toast Type Specific Styles */
+    .resource-toast.toast-success {
+        background: linear-gradient(135deg,
+            rgba(34, 197, 94, 0.95) 0%,
+            rgba(22, 163, 74, 0.98) 100%);
+    }
+
+    .resource-toast.toast-success::before {
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+
+    .resource-toast.toast-error {
+        background: linear-gradient(135deg,
+            rgba(239, 68, 68, 0.95) 0%,
+            rgba(220, 38, 38, 0.98) 100%);
+    }
+
+    .resource-toast.toast-error::before {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .resource-toast.toast-warning {
+        background: linear-gradient(135deg,
+            rgba(245, 158, 11, 0.95) 0%,
+            rgba(217, 119, 6, 0.98) 100%);
+    }
+
+    .resource-toast.toast-warning::before {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .resource-toast.toast-info {
+        background: linear-gradient(135deg,
+            rgba(59, 130, 246, 0.95) 0%,
+            rgba(37, 99, 235, 0.98) 100%);
+    }
+
+    .resource-toast.toast-info::before {
+        background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    /* Toast Content Layout */
+    .resource-toast-content {
+        display: flex;
+        align-items: flex-start;
+        padding: 1.25rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .resource-toast-icon {
+        flex-shrink: 0;
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        margin-right: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .resource-toast-icon::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: inherit;
+    }
+
+    .resource-toast-icon i {
+        font-size: 1.125rem;
+        color: white;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .resource-toast-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .resource-toast-title {
+        color: white;
+        font-weight: 700;
+        font-size: 0.875rem;
+        line-height: 1.25;
+        margin-bottom: 0.25rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .resource-toast-message {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+        font-size: 0.8125rem;
+        line-height: 1.4;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .resource-toast-action {
+        margin-top: 0.75rem;
+    }
+
+    .resource-toast-action button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .resource-toast-action button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-1px);
+    }
+
+    .resource-toast-close {
+        flex-shrink: 0;
+        margin-left: 1rem;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .resource-toast-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .resource-toast-close i {
+        font-size: 0.75rem;
+    }
+
+    /* Progress Bar */
+    .resource-toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+        transform-origin: left;
+        animation: toastProgress linear;
+    }
+
+    @keyframes toastProgress {
+        from { transform: scaleX(1); }
+        to { transform: scaleX(0); }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 640px) {
+        #resource-toast-container {
+            top: 1rem;
+            right: 1rem;
+            left: 1rem;
+            max-width: none;
+        }
+
+        .resource-toast-content {
+            padding: 1rem;
+        }
+
+        .resource-toast-icon {
+            width: 2rem;
+            height: 2rem;
+            margin-right: 0.75rem;
+        }
+
+        .resource-toast-icon i {
+            font-size: 1rem;
+        }
+
+        .resource-toast-title {
+            font-size: 0.8125rem;
+        }
+
+        .resource-toast-message {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+        .resource-toast {
+            transition: opacity 0.2s ease;
+        }
+
+        .resource-toast.toast-show {
+            transform: none !important;
+        }
+
+        .resource-toast-progress {
+            animation: none;
+        }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+        .resource-toast {
+            border: 2px solid;
+            backdrop-filter: none;
+        }
+
+        .resource-toast.toast-success {
+            background: #16a34a;
+            border-color: #15803d;
+        }
+
+        .resource-toast.toast-error {
+            background: #dc2626;
+            border-color: #b91c1c;
+        }
+
+        .resource-toast.toast-warning {
+            background: #d97706;
+            border-color: #b45309;
+        }
+
+        .resource-toast.toast-info {
+            background: #2563eb;
+            border-color: #1d4ed8;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mr-3"></i>
+            <span class="text-sm font-medium text-gray-500">Resource Management</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-content">
+    <!-- Modern Header Section -->
+    <div class="resource-header animate-fade-in-up">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div class="flex-1">
+                <h1 class="header-title">Resource Management</h1>
+                <p class="header-subtitle">Create, manage, and optimize your content strategy across all channels</p>
+            </div>
+
+            <div class="action-buttons">
+                <button class="modern-btn modern-btn-secondary"
+                        onclick="exportResources()">
+                    <i class="fas fa-download"></i>
+                    <span>Export Data</span>
+                </button>
+                <button class="modern-btn modern-btn-secondary"
+                        onclick="demoToastSystem()"
+                        title="Demo the enhanced toast system">
+                    <i class="fas fa-bell"></i>
+                    <span>Demo Toasts</span>
+                </button>
+                <button class="modern-btn modern-btn-primary"
+                        hx-get="{% url 'core:admin_resource_create_modal' %}"
+                        hx-target="body"
+                        hx-swap="beforeend">
+                    <i class="fas fa-plus"></i>
+                    <span>Create Content</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revolutionary Statistics Dashboard -->
+    <div class="stats-grid animate-scale-in" style="animation-delay: 0.1s;">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <h3 class="stats-title">Total Content</h3>
+            <div class="stats-value">{{ total_content }}</div>
+            <p class="stats-label">Total content pieces across all types</p>
+        </div>
+
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="stats-title">Published Content</h3>
+            <div class="stats-value">{{ published_content }}</div>
+            <p class="stats-label">Live content visible to users</p>
+        </div>
+
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <h3 class="stats-title">Draft Content</h3>
+            <div class="stats-value">{{ draft_content }}</div>
+            <p class="stats-label">Content in development</p>
+        </div>
+
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <h3 class="stats-title">Featured Content</h3>
+            <div class="stats-value">{{ featured_content }}</div>
+            <p class="stats-label">Highlighted premium content</p>
+        </div>
+    </div>
+
+    <!-- Enhanced Content Analytics -->
+    <div class="content-breakdown-grid animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="breakdown-card">
+            <h3 class="breakdown-title">
+                <i class="fas fa-chart-pie"></i>
+                Content Distribution
+            </h3>
+            <div class="space-y-3">
+                {% for content_type in content_types %}
+                <div class="content-item">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex items-center gap-3">
+                            <span class="content-type-badge {{ content_type.content_type }}">
+                                {{ content_type.content_type|title }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-lg text-harrier-dark">{{ content_type.count }}</span>
+                            <div class="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-harrier-red to-red-600 rounded-full"
+                                     style="width: {% widthratio content_type.count total_content 100 %}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="breakdown-card">
+            <h3 class="breakdown-title">
+                <i class="fas fa-trophy"></i>
+                Top Performing Content
+            </h3>
+            <div class="space-y-3">
+                {% for post in top_content %}
+                <div class="performance-item">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-harrier-dark text-sm line-clamp-1 mb-1">{{ post.title }}</h4>
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <span class="content-type-badge {{ post.content_type }}">{{ post.content_type|title }}</span>
+                            <span>•</span>
+                            <div class="flex items-center gap-1">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ post.views_count|default:0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-harrier-red">{{ post.views_count|default:0 }}</div>
+                        <div class="text-xs text-gray-500">views</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-chart-line text-3xl mb-2 opacity-50"></i>
+                    <p>No performance data available yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Revolutionary Tab Navigation -->
+    <div class="tab-navigation animate-fade-in-up" style="animation-delay: 0.3s;">
+        <div class="tab-container">
+            <button class="resource-tab active" data-tab="all-content"
+                    hx-get="{% url 'core:admin_resource_all_content_tab' %}"
+                    hx-target="#resource-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-th-large"></i>
+                <span>All Content</span>
+            </button>
+            <button class="resource-tab" data-tab="articles"
+                    hx-get="{% url 'core:admin_resource_articles_tab' %}"
+                    hx-target="#resource-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-newspaper"></i>
+                <span>Articles</span>
+            </button>
+            <button class="resource-tab" data-tab="guides"
+                    hx-get="{% url 'core:admin_resource_guides_tab' %}"
+                    hx-target="#resource-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-book"></i>
+                <span>Guides</span>
+            </button>
+            <button class="resource-tab" data-tab="infographics"
+                    hx-get="{% url 'core:admin_resource_infographics_tab' %}"
+                    hx-target="#resource-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-chart-bar"></i>
+                <span>Infographics</span>
+            </button>
+            <button class="resource-tab" data-tab="opinions"
+                    hx-get="{% url 'core:admin_resource_opinions_tab' %}"
+                    hx-target="#resource-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-comment-alt"></i>
+                <span>Opinions</span>
+            </button>
+            <button class="resource-tab" data-tab="news"
+                    hx-get="{% url 'core:admin_resource_news_tab' %}"
+                    hx-target="#resource-tab-content"
+                    hx-swap="innerHTML">
+                <i class="fas fa-rss"></i>
+                <span>News</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modern Tab Content Area -->
+    <div class="tab-content-area animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div id="resource-tab-content" class="min-h-[600px]">
+            <!-- Default content will be loaded via HTMX -->
+            <div class="flex items-center justify-center h-full p-8">
+                <div class="text-center">
+                    <div class="loading-shimmer w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center">
+                        <i class="fas fa-spinner fa-spin text-harrier-red text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat mb-3">Loading Content...</h3>
+                    <p class="text-gray-600 font-raleway max-w-md mx-auto">
+                        Preparing your resource management interface with the latest data and insights.
+                    </p>
+                    <div class="mt-6 flex justify-center">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-harrier-red rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                            <div class="w-2 h-2 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+// Modern Resource Management JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize animations
+    initializeAnimations();
+
+    // Setup tab functionality
+    setupTabNavigation();
+
+    // Load default content
+    loadDefaultTab();
+
+    // Setup performance monitoring
+    setupPerformanceTracking();
+});
+
+function initializeAnimations() {
+    // Add staggered animations to stats cards
+    const statsCards = document.querySelectorAll('.stats-card');
+    statsCards.forEach((card, index) => {
+        card.style.animationDelay = `${0.1 + (index * 0.1)}s`;
+    });
+
+    // Add hover effects to interactive elements
+    const interactiveElements = document.querySelectorAll('.stats-card, .breakdown-card, .resource-tab');
+    interactiveElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            this.style.transform = this.classList.contains('stats-card') ?
+                'translateY(-8px) scale(1.02)' : 'translateY(-2px)';
+        });
+
+        element.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+}
+
+function setupTabNavigation() {
+    const tabs = document.querySelectorAll('.resource-tab');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs with animation
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.style.transform = '';
+            });
+
+            // Add active class to clicked tab with animation
+            this.classList.add('active');
+            this.style.transform = 'translateY(-2px)';
+
+            // Add ripple effect
+            createRippleEffect(this);
+        });
+    });
+}
+
+function createRippleEffect(element) {
+    const ripple = document.createElement('div');
+    ripple.style.cssText = `
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    `;
+
+    const rect = element.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (rect.width / 2 - size / 2) + 'px';
+    ripple.style.top = (rect.height / 2 - size / 2) + 'px';
+
+    element.style.position = 'relative';
+    element.appendChild(ripple);
+
+    setTimeout(() => {
+        ripple.remove();
+    }, 600);
+}
+
+function loadDefaultTab() {
+    const defaultTab = document.querySelector('.resource-tab.active');
+    if (defaultTab) {
+        // Add loading animation
+        showModernLoading();
+
+        // Trigger HTMX request
+        setTimeout(() => {
+            htmx.trigger(defaultTab, 'click');
+        }, 500);
+    }
+}
+
+function showModernLoading() {
+    const tabContent = document.getElementById('resource-tab-content');
+    if (tabContent) {
+        tabContent.innerHTML = `
+            <div class="flex items-center justify-center h-full p-8">
+                <div class="text-center">
+                    <div class="loading-shimmer w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center">
+                        <i class="fas fa-spinner fa-spin text-harrier-red text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat mb-3">Loading Content...</h3>
+                    <p class="text-gray-600 font-raleway max-w-md mx-auto">
+                        Preparing your resource management interface with the latest data and insights.
+                    </p>
+                    <div class="mt-6 flex justify-center">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-harrier-red rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                            <div class="w-2 h-2 bg-harrier-red rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function setupPerformanceTracking() {
+    // Track tab switching performance
+    let tabSwitchStart = 0;
+
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        if (event.target.classList.contains('resource-tab')) {
+            tabSwitchStart = performance.now();
+            showModernLoading();
+        }
+    });
+
+    document.addEventListener('htmx:afterRequest', function(event) {
+        if (event.target.classList.contains('resource-tab')) {
+            const loadTime = performance.now() - tabSwitchStart;
+            console.log(`Tab loaded in ${loadTime.toFixed(2)}ms`);
+
+            // Add success animation
+            const tabContent = document.getElementById('resource-tab-content');
+            if (tabContent) {
+                tabContent.style.opacity = '0';
+                tabContent.style.transform = 'translateY(20px)';
+
+                setTimeout(() => {
+                    tabContent.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    tabContent.style.opacity = '1';
+                    tabContent.style.transform = 'translateY(0)';
+                }, 100);
+            }
+        }
+    });
+}
+
+// Enhanced Export Function
+function exportResources() {
+    const button = event.target.closest('.modern-btn');
+    const originalText = button.innerHTML;
+
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Exporting...</span>';
+    button.disabled = true;
+
+    // Show loading toast
+    showResourceInfo('Preparing export...', {
+        title: 'Export in Progress',
+        persistent: true,
+        id: 'export-progress'
+    });
+
+    // Simulate export process
+    setTimeout(() => {
+        button.innerHTML = '<i class="fas fa-check"></i><span>Exported!</span>';
+
+        // Remove loading toast and show success
+        resourceToastManager.remove('export-progress');
+        showResourceSuccess('Resources exported successfully! Download will begin shortly.', {
+            title: 'Export Complete',
+            action: {
+                text: 'Download',
+                handler: () => {
+                    // Simulate download
+                    showResourceInfo('Download started', { title: 'Download' });
+                }
+            }
+        });
+
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 2000);
+    }, 2000);
+}
+
+// Demo Toast System Function
+function demoToastSystem() {
+    let delay = 0;
+
+    // Success toast
+    setTimeout(() => {
+        showResourceSuccess('Article published successfully! Your content is now live and visible to users.', {
+            title: 'Content Published',
+            action: {
+                text: 'View Article',
+                handler: () => {
+                    showResourceInfo('Opening article in new tab...', { title: 'Redirecting' });
+                }
+            }
+        });
+    }, delay);
+    delay += 1000;
+
+    // Info toast with action
+    setTimeout(() => {
+        showResourceInfo('New content guidelines are available. Review them to ensure your content meets our quality standards.', {
+            title: 'Guidelines Updated',
+            action: {
+                text: 'Review',
+                handler: () => {
+                    showResourceSuccess('Guidelines opened successfully', { title: 'Guidelines' });
+                }
+            }
+        });
+    }, delay);
+    delay += 1500;
+
+    // Warning toast
+    setTimeout(() => {
+        showResourceWarning('Your draft has been auto-saved. Remember to publish when ready.', {
+            title: 'Auto-Save Complete',
+            duration: 4000
+        });
+    }, delay);
+    delay += 2000;
+
+    // Error toast with retry action
+    setTimeout(() => {
+        showResourceError('Failed to upload image. Please check your file size and format.', {
+            title: 'Upload Failed',
+            action: {
+                text: 'Retry Upload',
+                handler: () => {
+                    showResourceInfo('Retrying upload...', {
+                        title: 'Upload in Progress',
+                        persistent: true,
+                        id: 'retry-upload'
+                    });
+
+                    // Simulate retry success
+                    setTimeout(() => {
+                        resourceToastManager.remove('retry-upload');
+                        showResourceSuccess('Image uploaded successfully!', {
+                            title: 'Upload Complete'
+                        });
+                    }, 2000);
+                },
+                dismissOnClick: false
+            }
+        });
+    }, delay);
+    delay += 2500;
+
+    // Persistent toast
+    setTimeout(() => {
+        showResourceInfo('System maintenance scheduled for tonight at 2 AM EST. Please save your work.', {
+            title: 'Maintenance Notice',
+            persistent: true,
+            action: {
+                text: 'Dismiss',
+                handler: () => {
+                    showResourceSuccess('Reminder dismissed', { title: 'Noted' });
+                }
+            }
+        });
+    }, delay);
+}
+
+// Additional utility functions for enhanced toast experience
+function showBulkActionToast(action, count, type = 'success') {
+    const messages = {
+        delete: `${count} item${count > 1 ? 's' : ''} deleted successfully`,
+        publish: `${count} item${count > 1 ? 's' : ''} published successfully`,
+        unpublish: `${count} item${count > 1 ? 's' : ''} unpublished successfully`,
+        feature: `${count} item${count > 1 ? 's' : ''} marked as featured`,
+        unfeature: `${count} item${count > 1 ? 's' : ''} removed from featured`
+    };
+
+    const titles = {
+        delete: 'Bulk Delete Complete',
+        publish: 'Bulk Publish Complete',
+        unpublish: 'Bulk Unpublish Complete',
+        feature: 'Bulk Feature Complete',
+        unfeature: 'Bulk Unfeature Complete'
+    };
+
+    if (type === 'success') {
+        showResourceSuccess(messages[action] || `Bulk ${action} completed`, {
+            title: titles[action] || 'Bulk Action Complete',
+            action: {
+                text: 'Undo',
+                handler: () => {
+                    showResourceWarning('Undo functionality would be implemented here', {
+                        title: 'Undo Action'
+                    });
+                }
+            }
+        });
+    } else {
+        showResourceError(`Failed to ${action} ${count} item${count > 1 ? 's' : ''}`, {
+            title: `Bulk ${action.charAt(0).toUpperCase() + action.slice(1)} Failed`,
+            action: {
+                text: 'Retry',
+                handler: () => {
+                    showResourceInfo('Retrying bulk action...', { title: 'Retrying' });
+                }
+            }
+        });
+    }
+}
+
+// Enhanced Error Handling
+document.addEventListener('htmx:responseError', function(event) {
+    const tabContent = document.getElementById('resource-tab-content');
+    if (tabContent) {
+        tabContent.innerHTML = `
+            <div class="flex items-center justify-center h-full p-8">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-red-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-red-600 font-montserrat mb-3">Loading Failed</h3>
+                    <p class="text-gray-600 font-raleway max-w-md mx-auto mb-6">
+                        We encountered an issue loading the content. Please try again.
+                    </p>
+                    <button class="modern-btn modern-btn-primary" onclick="location.reload()">
+                        <i class="fas fa-refresh"></i>
+                        <span>Retry</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Show enhanced error toast
+    showResourceError('Failed to load content. Please check your connection and try again.', {
+        title: 'Connection Error',
+        action: {
+            text: 'Retry',
+            handler: () => {
+                location.reload();
+            }
+        },
+        persistent: true
+    });
+});
+
+// Success handling for HTMX requests
+document.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.successful && event.target.classList.contains('resource-tab')) {
+        // Show subtle success feedback for tab loads
+        const tabName = event.target.textContent.trim();
+        showResourceInfo(`${tabName} loaded successfully`, {
+            title: 'Content Updated',
+            duration: 2000
+        });
+    }
+});
+
+// Enhanced Resource Management Toast System
+class ResourceToastManager {
+    constructor() {
+        this.toasts = new Map();
+        this.container = null;
+        this.maxToasts = 4;
+        this.defaultDuration = 5000;
+        this.init();
+    }
+
+    init() {
+        this.createContainer();
+        this.setupGlobalMethods();
+    }
+
+    createContainer() {
+        if (document.getElementById('resource-toast-container')) {
+            this.container = document.getElementById('resource-toast-container');
+            return;
+        }
+
+        this.container = document.createElement('div');
+        this.container.id = 'resource-toast-container';
+        document.body.appendChild(this.container);
+    }
+
+    setupGlobalMethods() {
+        // Override global toast methods for resource management
+        window.showResourceToast = this.show.bind(this);
+        window.showResourceSuccess = (message, options) => this.show(message, 'success', options);
+        window.showResourceError = (message, options) => this.show(message, 'error', options);
+        window.showResourceWarning = (message, options) => this.show(message, 'warning', options);
+        window.showResourceInfo = (message, options) => this.show(message, 'info', options);
+    }
+
+    show(message, type = 'info', options = {}) {
+        const config = {
+            duration: options.duration || this.defaultDuration,
+            persistent: options.persistent || false,
+            dismissible: options.dismissible !== false,
+            action: options.action || null,
+            id: options.id || this.generateId(),
+            title: options.title || this.getDefaultTitle(type),
+            ...options
+        };
+
+        // Remove existing toast with same ID
+        if (this.toasts.has(config.id)) {
+            this.remove(config.id);
+        }
+
+        // Limit number of toasts
+        if (this.toasts.size >= this.maxToasts) {
+            const oldestId = this.toasts.keys().next().value;
+            this.remove(oldestId);
+        }
+
+        const toast = this.createToast(message, type, config);
+        this.toasts.set(config.id, toast);
+        this.container.appendChild(toast.element);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.element.classList.add('toast-show');
+        });
+
+        // Auto-remove if not persistent
+        if (!config.persistent && config.duration > 0) {
+            toast.timeout = setTimeout(() => {
+                this.remove(config.id);
+            }, config.duration);
+        }
+
+        return config.id;
+    }
+
+    createToast(message, type, config) {
+        const toast = document.createElement('div');
+        toast.className = `resource-toast toast-${type}`;
+
+        const icon = this.getIcon(type);
+
+        toast.innerHTML = `
+            <div class="resource-toast-content">
+                <div class="resource-toast-icon">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="resource-toast-body">
+                    <div class="resource-toast-title">${this.escapeHtml(config.title)}</div>
+                    <div class="resource-toast-message">${this.escapeHtml(message)}</div>
+                    ${config.action ? `
+                        <div class="resource-toast-action">
+                            <button class="toast-action-btn">
+                                ${config.action.text}
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+                ${config.dismissible ? `
+                    <div class="resource-toast-close">
+                        <i class="fas fa-times"></i>
+                    </div>
+                ` : ''}
+            </div>
+            ${!config.persistent && config.duration > 0 ? `
+                <div class="resource-toast-progress" style="animation-duration: ${config.duration}ms;"></div>
+            ` : ''}
+        `;
+
+        // Add event listeners
+        if (config.dismissible) {
+            const closeBtn = toast.querySelector('.resource-toast-close');
+            closeBtn.addEventListener('click', () => this.remove(config.id));
+        }
+
+        if (config.action) {
+            const actionBtn = toast.querySelector('.toast-action-btn');
+            actionBtn.addEventListener('click', () => {
+                if (config.action.handler) {
+                    config.action.handler();
+                }
+                if (config.action.dismissOnClick !== false) {
+                    this.remove(config.id);
+                }
+            });
+        }
+
+        return {
+            element: toast,
+            timeout: null,
+            config: config
+        };
+    }
+
+    remove(id) {
+        const toast = this.toasts.get(id);
+        if (!toast) return;
+
+        // Clear timeout
+        if (toast.timeout) {
+            clearTimeout(toast.timeout);
+        }
+
+        // Animate out
+        toast.element.classList.add('toast-removing');
+
+        setTimeout(() => {
+            if (toast.element.parentNode) {
+                toast.element.parentNode.removeChild(toast.element);
+            }
+            this.toasts.delete(id);
+        }, 400);
+    }
+
+    clearAll() {
+        this.toasts.forEach((toast, id) => {
+            this.remove(id);
+        });
+    }
+
+    generateId() {
+        return 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    getIcon(type) {
+        const icons = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle'
+        };
+        return icons[type] || icons.info;
+    }
+
+    getDefaultTitle(type) {
+        const titles = {
+            success: 'Success',
+            error: 'Error',
+            warning: 'Warning',
+            info: 'Information'
+        };
+        return titles[type] || titles.info;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize Resource Toast Manager
+const resourceToastManager = new ResourceToastManager();
+
+// Override showToast for resource management context
+const originalShowToast = window.showToast;
+window.showToast = function(message, type = 'info', options = {}) {
+    // Use resource toast manager if we're in resource management context
+    if (document.getElementById('resource-tab-content')) {
+        return resourceToastManager.show(message, type, options);
+    }
+    // Fall back to original toast manager
+    return originalShowToast ? originalShowToast(message, type, options) : null;
+};
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

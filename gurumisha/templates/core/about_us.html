@@ -4,22 +4,80 @@
 {% block title %}About Us - Gurumisha{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="bg-harrier-dark py-20">
-    <div class="container mx-auto px-4">
-        <div class="text-center">
-            <h1 class="text-4xl md:text-6xl font-heading font-bold text-white mb-6">
-                ABOUT GURUMISHA
+<!-- Compact Hero Section with Image -->
+<section class="relative h-96 md:h-[500px] flex items-center justify-center overflow-hidden">
+    <!-- Background Image with Overlay -->
+    <div class="absolute inset-0 z-0">
+        <img src="{% static 'images/about-hero.jpg' %}" alt="Gurumisha Motors - About Us" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-br from-black/60 via-red-900/40 to-black/70"></div>
+    </div>
+
+    <!-- Animated Background Elements -->
+    <div class="absolute inset-0 z-10">
+        <div class="absolute top-10 left-10 w-20 h-20 bg-red-500/20 rounded-full blur-2xl animate-pulse"></div>
+        <div class="absolute bottom-16 right-16 w-24 h-24 bg-orange-500/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <!-- Breadcrumb -->
+        <div class="mb-6">
+            <nav class="flex justify-center" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{% url 'core:homepage' %}" class="text-gray-300 hover:text-white transition-colors duration-300 font-raleway text-sm">
+                            <i class="fas fa-home mr-2"></i>Home
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
+                            <span class="text-white font-semibold font-raleway text-sm">About Us</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Main Heading -->
+        <div class="mb-8">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-montserrat font-bold text-white mb-4 leading-tight">
+                ABOUT
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400">
+                    GURUMISHA
+                </span>
             </h1>
-            <p class="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-                Kenya's premier automotive marketplace, connecting car enthusiasts with their dream vehicles and providing world-class import services since our inception.
+            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto mb-6 rounded-full"></div>
+        </div>
+
+        <!-- Description -->
+        <div class="max-w-3xl mx-auto mb-8">
+            <p class="text-lg md:text-xl text-gray-200 leading-relaxed font-raleway">
+                Kenya's premier automotive marketplace, connecting car enthusiasts with their dream vehicles and providing
+                <span class="text-yellow-300 font-semibold">world-class import services</span> since our inception.
             </p>
         </div>
+
+        <!-- Call to Action -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="{% url 'core:car_list' %}" class="group inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-gradient-to-r from-red-600 to-red-800 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-montserrat">
+                <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform duration-300"></i>
+                Explore Cars
+            </a>
+            <a href="#our-story" class="group inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white border-2 border-white/50 rounded-xl backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white transform hover:scale-105 transition-all duration-300 font-montserrat">
+                <i class="fas fa-arrow-down mr-2 group-hover:bounce transition-transform duration-300"></i>
+                Our Story
+            </a>
+        </div>
     </div>
-</div>
+
+    <!-- Floating Elements -->
+    <div class="absolute top-20 right-16 w-3 h-3 bg-red-400 rounded-full opacity-60 animate-bounce delay-300 z-10"></div>
+    <div class="absolute bottom-24 left-16 w-2 h-2 bg-orange-400 rounded-full opacity-50 animate-bounce delay-700 z-10"></div>
+</section>
 
 <!-- Our Story -->
-<section class="py-16 bg-white">
+<section id="our-story" class="py-16 bg-white">
     <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -70,23 +128,23 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div class="text-center">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-deep-ocean to-azure rounded-full flex items-center justify-center">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center">
                     <i class="fas fa-bullseye text-white text-3xl"></i>
                 </div>
-                <h3 class="text-2xl font-heading font-bold text-midnight mb-4">Our Mission</h3>
+                <h3 class="text-2xl font-heading font-bold text-gray-900 mb-4">Our Mission</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    To provide a transparent, reliable, and efficient platform that connects car buyers and sellers, 
+                    To provide a transparent, reliable, and efficient platform that connects car buyers and sellers,
                     making vehicle transactions seamless and trustworthy for everyone involved.
                 </p>
             </div>
-            
+
             <div class="text-center">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-crimson to-electric-red rounded-full flex items-center justify-center">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-red-600 to-red-800 rounded-full flex items-center justify-center">
                     <i class="fas fa-eye text-white text-3xl"></i>
                 </div>
-                <h3 class="text-2xl font-heading font-bold text-midnight mb-4">Our Vision</h3>
+                <h3 class="text-2xl font-heading font-bold text-gray-900 mb-4">Our Vision</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    To become the leading automotive marketplace in East Africa, known for innovation, 
+                    To become the leading automotive marketplace in East Africa, known for innovation,
                     quality service, and creating lasting relationships between buyers, sellers, and automotive enthusiasts.
                 </p>
             </div>
@@ -98,40 +156,40 @@
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Our Core Values</h2>
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">Our Core Values</h2>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">The principles that guide everything we do</p>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div class="text-center group">
                 <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <i class="fas fa-shield-alt text-white text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-midnight mb-2">Trust</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Trust</h3>
                 <p class="text-gray-600 text-sm">Building lasting relationships through transparency and reliability</p>
             </div>
-            
+
             <div class="text-center group">
                 <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <i class="fas fa-star text-white text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-midnight mb-2">Quality</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Quality</h3>
                 <p class="text-gray-600 text-sm">Ensuring every vehicle meets our high standards of excellence</p>
             </div>
-            
+
             <div class="text-center group">
                 <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <i class="fas fa-lightbulb text-white text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-midnight mb-2">Innovation</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Innovation</h3>
                 <p class="text-gray-600 text-sm">Continuously improving our platform with cutting-edge technology</p>
             </div>
-            
+
             <div class="text-center group">
                 <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <i class="fas fa-users text-white text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-midnight mb-2">Community</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Community</h3>
                 <p class="text-gray-600 text-sm">Creating a supportive ecosystem for all automotive enthusiasts</p>
             </div>
         </div>
@@ -142,24 +200,24 @@
 <section class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Why Choose Gurumisha Motors?</h2>
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">Why Choose Gurumisha Motors?</h2>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">Experience the difference with our comprehensive automotive services</p>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div class="w-12 h-12 mb-4 bg-gradient-to-br from-crimson to-electric-red rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 mb-4 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
                     <i class="fas fa-search text-white text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Verified Listings</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Verified Listings</h3>
                 <p class="text-gray-600">Every vehicle undergoes thorough verification to ensure authenticity and quality.</p>
             </div>
-            
+
             <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div class="w-12 h-12 mb-4 bg-gradient-to-br from-deep-ocean to-azure rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 mb-4 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
                     <i class="fas fa-handshake text-white text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Trusted Dealers</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Trusted Dealers</h3>
                 <p class="text-gray-600">Work with verified and approved dealers who meet our strict quality standards.</p>
             </div>
             
@@ -167,31 +225,31 @@
                 <div class="w-12 h-12 mb-4 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
                     <i class="fas fa-shipping-fast text-white text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Import Services</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Import Services</h3>
                 <p class="text-gray-600">Seamless car import services from Japan, UK, and other countries worldwide.</p>
             </div>
-            
+
             <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <div class="w-12 h-12 mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
                     <i class="fas fa-tools text-white text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Spare Parts</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Spare Parts</h3>
                 <p class="text-gray-600">Comprehensive inventory of genuine spare parts for all major car brands.</p>
             </div>
-            
+
             <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <div class="w-12 h-12 mb-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                     <i class="fas fa-headset text-white text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">24/7 Support</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">24/7 Support</h3>
                 <p class="text-gray-600">Round-the-clock customer support to assist you at every step of your journey.</p>
             </div>
-            
+
             <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <div class="w-12 h-12 mb-4 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
                     <i class="fas fa-dollar-sign text-white text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-midnight mb-3">Best Prices</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Best Prices</h3>
                 <p class="text-gray-600">Competitive pricing and transparent transactions with no hidden fees.</p>
             </div>
         </div>
@@ -203,7 +261,7 @@
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">What Our Customers Say</h2>
+            <h2 class="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">What Our Customers Say</h2>
             <p class="text-lg text-gray-600">Real experiences from satisfied customers</p>
         </div>
         
@@ -219,11 +277,11 @@
                     </div>
                     <p class="text-gray-700 mb-6 italic">"{{ testimonial.content }}"</p>
                     <div class="flex items-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-crimson to-electric-red rounded-full flex items-center justify-center text-white font-semibold">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-full flex items-center justify-center text-white font-semibold">
                             {{ testimonial.customer.first_name|first|default:testimonial.customer.username|first }}{{ testimonial.customer.last_name|first|default:"" }}
                         </div>
                         <div class="ml-3">
-                            <p class="font-semibold text-midnight">{{ testimonial.customer.get_full_name|default:testimonial.customer.username }}</p>
+                            <p class="font-semibold text-gray-900">{{ testimonial.customer.get_full_name|default:testimonial.customer.username }}</p>
                             <p class="text-sm text-gray-600">Verified Customer</p>
                         </div>
                     </div>
@@ -234,16 +292,87 @@
 </section>
 {% endif %}
 
-<!-- Call to Action -->
-<section class="py-16 bg-gradient-to-r from-crimson to-electric-red text-white">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">Ready to Find Your Dream Car?</h2>
-        <p class="text-xl mb-8 opacity-90">Join thousands of satisfied customers who found their perfect vehicle with us.</p>
-        
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="{% url 'core:car_list' %}" class="bg-white text-crimson px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-lg">Browse Cars</a>
-            <a href="{% url 'core:contact_us' %}" class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-crimson transition-colors text-lg">Contact Us</a>
+<!-- Enhanced Call to Action -->
+<section class="relative py-20 bg-gradient-to-br from-red-900 via-red-800 to-black overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-20 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div class="absolute top-1/2 left-1/4 w-24 h-24 bg-white rounded-full blur-2xl animate-pulse delay-500"></div>
+    </div>
+
+    <!-- Glassmorphism Container -->
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 shadow-2xl p-8 md:p-12 text-center">
+            <!-- Icon -->
+            <div class="w-20 h-20 mx-auto mb-8 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
+                <i class="fas fa-car text-white text-3xl"></i>
+            </div>
+
+            <!-- Main Content -->
+            <div class="mb-10">
+                <h2 class="text-4xl md:text-5xl lg:text-6xl font-montserrat font-bold text-white mb-6 leading-tight">
+                    Ready to Find Your
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">Dream Car?</span>
+                </h2>
+                <p class="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto font-raleway leading-relaxed">
+                    Join thousands of satisfied customers who found their perfect vehicle with us.
+                    <span class="text-yellow-300 font-semibold">Your journey starts here.</span>
+                </p>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div class="text-3xl font-bold text-white font-montserrat">5000+</div>
+                    <div class="text-gray-300 text-sm font-raleway">Happy Customers</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div class="text-3xl font-bold text-white font-montserrat">1200+</div>
+                    <div class="text-gray-300 text-sm font-raleway">Cars Available</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div class="text-3xl font-bold text-white font-montserrat">24/7</div>
+                    <div class="text-gray-300 text-sm font-raleway">Support</div>
+                </div>
+            </div>
+
+            <!-- Enhanced Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <a href="{% url 'core:car_list' %}" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-red-800 bg-white rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 font-montserrat min-w-[200px]">
+                    <i class="fas fa-search mr-3 text-red-600 group-hover:rotate-12 transition-transform duration-300"></i>
+                    Browse Cars
+                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-300/20 to-orange-300/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </a>
+
+                <a href="{% url 'core:contact_us' %}" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white/50 rounded-2xl backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white transform hover:scale-105 transition-all duration-300 font-montserrat min-w-[200px]">
+                    <i class="fas fa-phone mr-3 group-hover:rotate-12 transition-transform duration-300"></i>
+                    Contact Us
+                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </a>
+            </div>
+
+            <!-- Trust Indicators -->
+            <div class="mt-10 flex flex-wrap justify-center items-center gap-6 text-gray-300">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-green-400"></i>
+                    <span class="text-sm font-raleway">Verified Dealers</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-400"></i>
+                    <span class="text-sm font-raleway">5-Star Service</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-lock text-blue-400"></i>
+                    <span class="text-sm font-raleway">Secure Transactions</span>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Floating Elements -->
+    <div class="absolute top-20 right-10 w-6 h-6 bg-yellow-300 rounded-full opacity-60 animate-bounce delay-300"></div>
+    <div class="absolute bottom-32 left-16 w-4 h-4 bg-orange-300 rounded-full opacity-40 animate-bounce delay-700"></div>
+    <div class="absolute top-1/3 right-1/4 w-3 h-3 bg-white rounded-full opacity-50 animate-pulse delay-1000"></div>
 </section>
 {% endblock %}

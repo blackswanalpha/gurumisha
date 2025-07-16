@@ -307,11 +307,18 @@
                                                  style="width: {{ order.progress_percentage }}%"></div>
                                         </div>
                                     </div>
+                                    {% if order.order_number %}
                                     <a href="{% url 'core:import_order_detail' order.order_number %}"
                                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
                                         <i class="fas fa-eye mr-2"></i>
                                         Details
                                     </a>
+                                    {% else %}
+                                    <span class="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                                        Invalid
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}

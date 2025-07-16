@@ -79,245 +79,479 @@
 
 {% block dashboard_content %}
     {% csrf_token %}
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_vendors|default:0 }}</div>
-                    <div class="text-sm text-gray-600 font-raleway">Total Vendors</div>
+    <!-- Enhanced Vendor Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Vendors Card -->
+        <div class="enhanced-vendor-stat-card total-vendors-card group">
+            <div class="stat-card-content">
+                <div class="stat-header">
+                    <div class="stat-icon-container total-icon">
+                        <i class="fas fa-store stat-icon"></i>
+                        <div class="icon-glow"></div>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up text-xs"></i>
+                    </div>
                 </div>
-                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-store text-blue-600 text-xl"></i>
+                <div class="stat-body">
+                    <div class="stat-value">{{ total_vendors|default:0 }}</div>
+                    <div class="stat-label">Total Vendors</div>
+                    <div class="stat-description">All registered vendors</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-progress">
+                        <div class="progress-bar total-progress"></div>
+                    </div>
                 </div>
             </div>
+            <div class="card-shimmer"></div>
         </div>
 
-        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-2xl font-bold text-green-600 font-montserrat">{{ approved_vendors|default:0 }}</div>
-                    <div class="text-sm text-gray-600 font-raleway">Approved Vendors</div>
+        <!-- Approved Vendors Card -->
+        <div class="enhanced-vendor-stat-card approved-vendors-card group">
+            <div class="stat-card-content">
+                <div class="stat-header">
+                    <div class="stat-icon-container approved-icon">
+                        <i class="fas fa-check-circle stat-icon"></i>
+                        <div class="icon-glow"></div>
+                    </div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up text-xs"></i>
+                    </div>
                 </div>
-                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                <div class="stat-body">
+                    <div class="stat-value text-emerald-600">{{ approved_vendors|default:0 }}</div>
+                    <div class="stat-label">Approved Vendors</div>
+                    <div class="stat-description">Active & verified</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-progress">
+                        <div class="progress-bar approved-progress"></div>
+                    </div>
                 </div>
             </div>
+            <div class="card-shimmer"></div>
         </div>
 
-        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-2xl font-bold text-orange-600 font-montserrat">{{ pending_vendors|default:0 }}</div>
-                    <div class="text-sm text-gray-600 font-raleway">Pending Approval</div>
+        <!-- Pending Vendors Card -->
+        <div class="enhanced-vendor-stat-card pending-vendors-card group">
+            <div class="stat-card-content">
+                <div class="stat-header">
+                    <div class="stat-icon-container pending-icon">
+                        <i class="fas fa-clock stat-icon"></i>
+                        <div class="icon-glow"></div>
+                    </div>
+                    <div class="stat-trend neutral">
+                        <i class="fas fa-minus text-xs"></i>
+                    </div>
                 </div>
-                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-clock text-orange-600 text-xl"></i>
+                <div class="stat-body">
+                    <div class="stat-value text-amber-600">{{ pending_vendors|default:0 }}</div>
+                    <div class="stat-label">Pending Approval</div>
+                    <div class="stat-description">Awaiting review</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-progress">
+                        <div class="progress-bar pending-progress"></div>
+                    </div>
                 </div>
             </div>
+            <div class="card-shimmer"></div>
         </div>
 
-        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-2xl font-bold text-red-600 font-montserrat">{{ suspended_vendors|default:0 }}</div>
-                    <div class="text-sm text-gray-600 font-raleway">Suspended</div>
+        <!-- Suspended Vendors Card -->
+        <div class="enhanced-vendor-stat-card suspended-vendors-card group">
+            <div class="stat-card-content">
+                <div class="stat-header">
+                    <div class="stat-icon-container suspended-icon">
+                        <i class="fas fa-ban stat-icon"></i>
+                        <div class="icon-glow"></div>
+                    </div>
+                    <div class="stat-trend negative">
+                        <i class="fas fa-arrow-down text-xs"></i>
+                    </div>
                 </div>
-                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-ban text-red-600 text-xl"></i>
+                <div class="stat-body">
+                    <div class="stat-value text-harrier-red">{{ suspended_vendors|default:0 }}</div>
+                    <div class="stat-label">Suspended</div>
+                    <div class="stat-description">Inactive accounts</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-progress">
+                        <div class="progress-bar suspended-progress"></div>
+                    </div>
                 </div>
             </div>
+            <div class="card-shimmer"></div>
         </div>
     </div>
 
-    <!-- Filters and Search -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="flex flex-col sm:flex-row gap-4">
+    <!-- Enhanced Filters and Search -->
+    <div class="enhanced-filter-container">
+        <div class="filter-header">
+            <div class="filter-title-section">
+                <h4 class="filter-title">Filter & Search Vendors</h4>
+                <p class="filter-subtitle">Use filters to find specific vendor types and statuses</p>
+            </div>
+            <div class="filter-actions">
+                <button class="clear-filters-btn" onclick="clearAllFilters()">
+                    <i class="fas fa-times"></i>
+                    <span>Clear Filters</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-content">
+            <div class="filter-row">
                 <!-- Status Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-harrier-dark">
-                        <i class="fas fa-filter mr-1 text-blue-500"></i>Status:
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-check-circle filter-icon"></i>
+                        <span>Approval Status</span>
                     </label>
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
-                            onchange="window.location.href='?status=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
-                        <option value="">All Vendors</option>
-                        <option value="approved" {% if current_filter == 'approved' %}selected{% endif %}>✅ Approved</option>
-                        <option value="pending" {% if current_filter == 'pending' %}selected{% endif %}>⏳ Pending</option>
-                        <option value="suspended" {% if current_filter == 'suspended' %}selected{% endif %}>🚫 Suspended</option>
-                    </select>
+                    <div class="enhanced-select-wrapper">
+                        <select class="enhanced-select" id="statusFilter" onchange="applyFilters()">
+                            <option value="">All Statuses</option>
+                            <option value="approved" {% if current_filter == 'approved' %}selected{% endif %}>
+                                <span class="option-icon">✅</span> Approved Vendors
+                            </option>
+                            <option value="pending" {% if current_filter == 'pending' %}selected{% endif %}>
+                                <span class="option-icon">⏳</span> Pending Approval
+                            </option>
+                            <option value="suspended" {% if current_filter == 'suspended' %}selected{% endif %}>
+                                <span class="option-icon">🚫</span> Suspended Accounts
+                            </option>
+                        </select>
+                        <div class="select-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Business Type Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-harrier-dark">
-                        <i class="fas fa-industry mr-1 text-purple-500"></i>Type:
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-industry filter-icon"></i>
+                        <span>Business Type</span>
                     </label>
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
-                            onchange="window.location.href='?business_type=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '') + (new URLSearchParams(window.location.search).get('status') ? '&status=' + new URLSearchParams(window.location.search).get('status') : '')">
-                        <option value="">All Types</option>
-                        <option value="dealership" {% if request.GET.business_type == 'dealership' %}selected{% endif %}>Car Dealership</option>
-                        <option value="spare_parts" {% if request.GET.business_type == 'spare_parts' %}selected{% endif %}>Spare Parts</option>
-                        <option value="both" {% if request.GET.business_type == 'both' %}selected{% endif %}>Both</option>
-                        <option value="service_center" {% if request.GET.business_type == 'service_center' %}selected{% endif %}>Service Center</option>
-                        <option value="individual" {% if request.GET.business_type == 'individual' %}selected{% endif %}>Individual</option>
-                    </select>
+                    <div class="enhanced-select-wrapper">
+                        <select class="enhanced-select" id="businessTypeFilter" onchange="applyFilters()">
+                            <option value="">All Business Types</option>
+                            <option value="dealership" {% if request.GET.business_type == 'dealership' %}selected{% endif %}>
+                                Car Dealership
+                            </option>
+                            <option value="spare_parts" {% if request.GET.business_type == 'spare_parts' %}selected{% endif %}>
+                                Spare Parts Seller
+                            </option>
+                            <option value="both" {% if request.GET.business_type == 'both' %}selected{% endif %}>
+                                Cars & Spare Parts
+                            </option>
+                            <option value="service_center" {% if request.GET.business_type == 'service_center' %}selected{% endif %}>
+                                Service Center
+                            </option>
+                            <option value="individual" {% if request.GET.business_type == 'individual' %}selected{% endif %}>
+                                Individual Seller
+                            </option>
+                        </select>
+                        <div class="select-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-calendar filter-icon"></i>
+                        <span>Registration Date</span>
+                    </label>
+                    <div class="enhanced-select-wrapper">
+                        <select class="enhanced-select" id="dateRangeFilter" onchange="applyFilters()">
+                            <option value="">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="quarter">This Quarter</option>
+                            <option value="year">This Year</option>
+                        </select>
+                        <div class="select-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Search -->
-            <div class="flex items-center space-x-2">
-                <form method="GET" class="flex">
-                    <input type="text" name="search" placeholder="Search vendors..." 
-                           value="{{ request.GET.search }}"
-                           class="px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-harrier-red focus:border-harrier-red text-sm">
-                    <button type="submit" class="bg-harrier-red text-white px-4 py-2 rounded-r-lg hover:bg-red-600 transition-colors">
+            <!-- Enhanced Search -->
+            <div class="search-section">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <div class="search-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <input type="text"
+                               id="vendorSearch"
+                               placeholder="Search by company name, owner, email, or license..."
+                               value="{{ request.GET.search }}"
+                               class="enhanced-search-input"
+                               autocomplete="off">
+                        <div class="search-clear" onclick="clearSearch()" style="display: {% if request.GET.search %}block{% else %}none{% endif %};">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                    <button class="search-submit-btn" onclick="performSearch()">
                         <i class="fas fa-search"></i>
+                        <span>Search</span>
                     </button>
-                </form>
+                </div>
+
+                <!-- Active Filters Display -->
+                <div class="active-filters" id="activeFilters" style="display: {% if current_filter or request.GET.business_type or request.GET.search %}flex{% else %}none{% endif %};">
+                    <span class="active-filters-label">Active Filters:</span>
+                    <div class="filter-tags">
+                        {% if current_filter %}
+                            <span class="filter-tag status-tag">
+                                <span>Status: {{ current_filter|title }}</span>
+                                <button onclick="removeFilter('status')" class="remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </span>
+                        {% endif %}
+                        {% if request.GET.business_type %}
+                            <span class="filter-tag type-tag">
+                                <span>Type: {{ request.GET.business_type|title }}</span>
+                                <button onclick="removeFilter('business_type')" class="remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </span>
+                        {% endif %}
+                        {% if request.GET.search %}
+                            <span class="filter-tag search-tag">
+                                <span>Search: "{{ request.GET.search }}"</span>
+                                <button onclick="removeFilter('search')" class="remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Vendors Table -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
-            <h3 class="text-lg font-heading font-bold text-harrier-dark">Vendor Applications</h3>
+    <!-- Enhanced Vendors Table -->
+    <div class="enhanced-vendor-table-container">
+        <div class="table-header">
+            <div class="flex items-center justify-between">
+                <div class="table-title-section">
+                    <h3 class="table-title">Vendor Management</h3>
+                    <p class="table-subtitle">Manage vendor applications and business profiles</p>
+                </div>
+                <div class="table-actions">
+                    <button class="refresh-table-btn" onclick="refreshVendorTable()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+
+        <div class="table-wrapper">
+            <table class="enhanced-vendor-table">
+                <thead class="table-head">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Vendor Details
+                        <th class="table-header-cell vendor-details-header">
+                            <div class="header-content">
+                                <i class="fas fa-building header-icon"></i>
+                                <span>Vendor Details</span>
+                            </div>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Contact Info
+                        <th class="table-header-cell contact-info-header">
+                            <div class="header-content">
+                                <i class="fas fa-envelope header-icon"></i>
+                                <span>Contact Information</span>
+                            </div>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
+                        <th class="table-header-cell status-header">
+                            <div class="header-content">
+                                <i class="fas fa-check-circle header-icon"></i>
+                                <span>Status & Verification</span>
+                            </div>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Applied Date
+                        <th class="table-header-cell date-header">
+                            <div class="header-content">
+                                <i class="fas fa-calendar header-icon"></i>
+                                <span>Registration Date</span>
+                            </div>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
+                        <th class="table-header-cell actions-header">
+                            <div class="header-content">
+                                <i class="fas fa-cogs header-icon"></i>
+                                <span>Actions</span>
+                            </div>
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="table-body">
                     {% for vendor in vendors %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-12 w-12">
-                                        <div class="h-12 w-12 bg-harrier-red rounded-full flex items-center justify-center text-white font-semibold">
+                        <tr class="vendor-table-row" data-vendor-id="{{ vendor.id }}">
+                            <td class="vendor-details-cell">
+                                <div class="vendor-profile-section">
+                                    <div class="vendor-avatar-container">
+                                        <div class="vendor-avatar">
                                             {{ vendor.company_name|first|upper }}
                                         </div>
+                                        <div class="avatar-status-indicator {% if vendor.is_approved %}approved{% elif not vendor.user.is_active %}suspended{% else %}pending{% endif %}"></div>
                                     </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-harrier-dark">{{ vendor.company_name }}</div>
-                                        <div class="text-sm text-gray-500">{{ vendor.user.get_full_name|default:vendor.user.username }}</div>
-                                        <div class="flex items-center space-x-2 mt-1">
+                                    <div class="vendor-info">
+                                        <div class="vendor-company-name">{{ vendor.company_name }}</div>
+                                        <div class="vendor-owner-name">{{ vendor.user.get_full_name|default:vendor.user.username }}</div>
+                                        <div class="vendor-badges">
                                             {% if vendor.business_license %}
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="fas fa-certificate mr-1"></i>Licensed
+                                                <span class="vendor-badge licensed-badge">
+                                                    <i class="fas fa-certificate"></i>
+                                                    <span>Licensed</span>
                                                 </span>
                                             {% endif %}
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                {{ vendor.get_business_type_display }}
+                                            <span class="vendor-badge business-type-badge">
+                                                <i class="fas fa-industry"></i>
+                                                <span>{{ vendor.get_business_type_display }}</span>
                                             </span>
                                             {% if vendor.year_established %}
-                                                <span class="text-xs text-gray-500">Est. {{ vendor.year_established }}</span>
+                                                <span class="vendor-badge established-badge">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                    <span>Est. {{ vendor.year_established }}</span>
+                                                </span>
                                             {% endif %}
                                         </div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-harrier-dark">{{ vendor.user.email }}</div>
-                                {% if vendor.user.phone %}
-                                    <div class="text-sm text-gray-500">{{ vendor.user.phone }}</div>
-                                {% endif %}
-                                {% if vendor.business_phone %}
-                                    <div class="text-sm text-blue-600">
-                                        <i class="fas fa-building mr-1"></i>{{ vendor.business_phone }}
+                            <td class="contact-info-cell">
+                                <div class="contact-details">
+                                    <div class="contact-item primary-contact">
+                                        <i class="fas fa-envelope contact-icon"></i>
+                                        <span class="contact-text">{{ vendor.user.email }}</span>
                                     </div>
-                                {% endif %}
-                                {% if vendor.physical_address %}
-                                    <div class="text-xs text-gray-500">{{ vendor.physical_address|truncatechars:30 }}</div>
-                                {% endif %}
+                                    {% if vendor.user.phone %}
+                                        <div class="contact-item phone-contact">
+                                            <i class="fas fa-phone contact-icon"></i>
+                                            <span class="contact-text">{{ vendor.user.phone }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if vendor.business_phone %}
+                                        <div class="contact-item business-contact">
+                                            <i class="fas fa-building contact-icon"></i>
+                                            <span class="contact-text">{{ vendor.business_phone }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if vendor.physical_address %}
+                                        <div class="contact-item address-contact">
+                                            <i class="fas fa-map-marker-alt contact-icon"></i>
+                                            <span class="contact-text">{{ vendor.physical_address|truncatechars:30 }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="space-y-1">
+                            <td class="status-cell">
+                                <div class="status-container">
                                     {% if not vendor.user.is_active %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <i class="fas fa-ban mr-1"></i>Suspended
-                                        </span>
+                                        <div class="status-badge suspended-status">
+                                            <div class="status-indicator"></div>
+                                            <i class="fas fa-ban status-icon"></i>
+                                            <span class="status-text">Suspended</span>
+                                        </div>
                                     {% elif vendor.is_approved %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <i class="fas fa-check-circle mr-1"></i>Approved
-                                        </span>
+                                        <div class="status-badge approved-status">
+                                            <div class="status-indicator"></div>
+                                            <i class="fas fa-check-circle status-icon"></i>
+                                            <span class="status-text">Approved</span>
+                                        </div>
                                     {% else %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                            <i class="fas fa-clock mr-1"></i>Pending
-                                        </span>
+                                        <div class="status-badge pending-status">
+                                            <div class="status-indicator"></div>
+                                            <i class="fas fa-clock status-icon"></i>
+                                            <span class="status-text">Pending</span>
+                                        </div>
                                     {% endif %}
 
                                     {% if vendor.verification_status %}
-                                        <div class="text-xs text-gray-500">
-                                            {{ vendor.get_verification_status_display }}
+                                        <div class="verification-status">
+                                            <span class="verification-text">{{ vendor.get_verification_status_display }}</span>
                                         </div>
                                     {% endif %}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ vendor.created_at|date:"M d, Y" }}
+                            <td class="date-cell">
+                                <div class="date-container">
+                                    <div class="date-value">{{ vendor.created_at|date:"M d, Y" }}</div>
+                                    <div class="date-time">{{ vendor.created_at|date:"g:i A" }}</div>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex items-center space-x-2">
+                            <td class="actions-cell">
+                                <div class="action-buttons-container">
+                                    <!-- Primary Action Button -->
                                     {% if not vendor.is_approved %}
                                         <button onclick="approveVendor({{ vendor.id }})"
-                                                class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-xs font-medium">
-                                            <i class="fas fa-check mr-1"></i>Approve
+                                                class="pill-action-btn pill-btn-approve"
+                                                title="Approve Vendor">
+                                            <i class="fas fa-check"></i>
+                                            <span>Approve</span>
                                         </button>
                                     {% else %}
                                         <button onclick="disapproveVendor({{ vendor.id }})"
-                                                class="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs font-medium">
-                                            <i class="fas fa-times mr-1"></i>Revoke
+                                                class="pill-action-btn pill-btn-revoke"
+                                                title="Revoke Approval">
+                                            <i class="fas fa-times"></i>
+                                            <span>Revoke</span>
                                         </button>
                                     {% endif %}
 
+                                    <!-- Profile Button -->
                                     <a href="{% url 'core:admin_user_detail' vendor.user.id %}"
-                                       class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs font-medium">
-                                        <i class="fas fa-user mr-1"></i>User
+                                       class="pill-action-btn pill-btn-profile"
+                                       title="View User Profile">
+                                        <i class="fas fa-user"></i>
+                                        <span>Profile</span>
                                     </a>
 
-                                    <div class="relative inline-block text-left">
-                                        <button type="button" onclick="toggleDropdown({{ vendor.id }})"
-                                                class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs font-medium">
-                                            <i class="fas fa-ellipsis-v"></i>
+                                    <!-- Vendor Profile Button -->
+                                    <a href="{% url 'core:admin_vendor_user_detail' vendor.user.id %}"
+                                       class="pill-action-btn pill-btn-vendor-profile"
+                                       title="View Vendor Profile">
+                                        <i class="fas fa-store"></i>
+                                        <span>Vendor</span>
+                                    </a>
+
+                                    <!-- More Actions Dropdown -->
+                                    <div class="action-dropdown-container">
+                                        <button type="button"
+                                                onclick="toggleVendorDropdown({{ vendor.id }})"
+                                                class="pill-action-btn pill-btn-more"
+                                                title="More Actions">
+                                            <i class="fas fa-ellipsis-h"></i>
                                         </button>
-                                        <div id="dropdown-{{ vendor.id }}" class="hidden absolute right-0 z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200">
-                                            <div class="py-1">
-                                                <a href="#" onclick="viewVendorDetails({{ vendor.id }})"
-                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    <i class="fas fa-eye mr-2"></i>View Details
+                                        <div id="vendor-dropdown-{{ vendor.id }}" class="action-dropdown-menu">
+                                            <div class="dropdown-content">
+                                                <a href="#" onclick="viewVendorListings({{ vendor.id }})" class="dropdown-item">
+                                                    <i class="fas fa-car dropdown-icon"></i>
+                                                    <span>View Listings</span>
                                                 </a>
-                                                <a href="#" onclick="editVendor({{ vendor.id }})"
-                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    <i class="fas fa-edit mr-2"></i>Edit Profile
+                                                <a href="#" onclick="viewVendorAnalytics({{ vendor.id }})" class="dropdown-item">
+                                                    <i class="fas fa-chart-bar dropdown-icon"></i>
+                                                    <span>Analytics</span>
                                                 </a>
-                                                <a href="#" onclick="viewVendorListings({{ vendor.id }})"
-                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    <i class="fas fa-car mr-2"></i>View Listings
-                                                </a>
-                                                <div class="border-t border-gray-100"></div>
-                                                <a href="#" onclick="suspendVendor({{ vendor.id }})"
-                                                   class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                                    <i class="fas fa-ban mr-2"></i>Suspend
-                                                </a>
+                                                <div class="dropdown-divider"></div>
+                                                {% if vendor.user.is_active %}
+                                                    <a href="#" onclick="suspendVendor({{ vendor.id }})" class="dropdown-item danger">
+                                                        <i class="fas fa-ban dropdown-icon"></i>
+                                                        <span>Suspend</span>
+                                                    </a>
+                                                {% else %}
+                                                    <a href="#" onclick="activateVendor({{ vendor.id }})" class="dropdown-item success">
+                                                        <i class="fas fa-check-circle dropdown-icon"></i>
+                                                        <span>Activate</span>
+                                                    </a>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
@@ -339,35 +573,74 @@
             </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Enhanced Pagination -->
         {% if vendors.has_other_pages %}
-        <div class="px-6 py-4 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="text-sm text-gray-700">
-                    Showing {{ vendors.start_index }} to {{ vendors.end_index }} of {{ vendors.paginator.count }} vendors
+        <div class="enhanced-pagination-container">
+            <div class="pagination-content">
+                <div class="pagination-info">
+                    <div class="info-text">
+                        <span class="showing-text">Showing</span>
+                        <span class="range-numbers">{{ vendors.start_index }} - {{ vendors.end_index }}</span>
+                        <span class="of-text">of</span>
+                        <span class="total-number">{{ vendors.paginator.count }}</span>
+                        <span class="items-text">vendors</span>
+                    </div>
+                    <div class="pagination-stats">
+                        <span class="page-indicator">Page {{ vendors.number }} of {{ vendors.paginator.num_pages }}</span>
+                    </div>
                 </div>
-                <div class="flex items-center space-x-2">
+
+                <div class="pagination-controls">
+                    <!-- Previous Button -->
                     {% if vendors.has_previous %}
-                        <a href="?page={{ vendors.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
-                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-chevron-left mr-1"></i>Previous
+                        <a href="?page={{ vendors.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                           class="pagination-btn prev-btn" title="Previous Page">
+                            <i class="fas fa-chevron-left"></i>
+                            <span>Previous</span>
                         </a>
+                    {% else %}
+                        <span class="pagination-btn prev-btn disabled">
+                            <i class="fas fa-chevron-left"></i>
+                            <span>Previous</span>
+                        </span>
                     {% endif %}
 
-                    {% for num in vendors.paginator.page_range %}
-                        {% if num == vendors.number %}
-                            <span class="px-3 py-2 text-sm bg-harrier-red text-white rounded-lg">{{ num }}</span>
-                        {% elif num > vendors.number|add:'-3' and num < vendors.number|add:'3' %}
-                            <a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
-                               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ num }}</a>
-                        {% endif %}
-                    {% endfor %}
+                    <!-- Page Numbers -->
+                    <div class="page-numbers">
+                        {% for num in vendors.paginator.page_range %}
+                            {% if num == vendors.number %}
+                                <span class="page-btn current-page">{{ num }}</span>
+                            {% elif num > vendors.number|add:'-3' and num < vendors.number|add:'3' %}
+                                <a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                                   class="page-btn">{{ num }}</a>
+                            {% elif num == 1 and vendors.number > 4 %}
+                                <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                                   class="page-btn">1</a>
+                                {% if vendors.number > 5 %}
+                                    <span class="page-ellipsis">...</span>
+                                {% endif %}
+                            {% elif num == vendors.paginator.num_pages and vendors.number < vendors.paginator.num_pages|add:'-3' %}
+                                {% if vendors.number < vendors.paginator.num_pages|add:'-4' %}
+                                    <span class="page-ellipsis">...</span>
+                                {% endif %}
+                                <a href="?page={{ vendors.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                                   class="page-btn">{{ vendors.paginator.num_pages }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
 
+                    <!-- Next Button -->
                     {% if vendors.has_next %}
-                        <a href="?page={{ vendors.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
-                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Next<i class="fas fa-chevron-right ml-1"></i>
+                        <a href="?page={{ vendors.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                           class="pagination-btn next-btn" title="Next Page">
+                            <span>Next</span>
+                            <i class="fas fa-chevron-right"></i>
                         </a>
+                    {% else %}
+                        <span class="pagination-btn next-btn disabled">
+                            <span>Next</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
                     {% endif %}
                 </div>
             </div>
@@ -390,33 +663,1311 @@
     </div>
 {% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* Enhanced Vendor Management Styles with Harrier Design Patterns */
+
+/* CSS Custom Properties */
+:root {
+    --harrier-red: #DC2626;
+    --harrier-red-light: #EF4444;
+    --harrier-red-dark: #B91C1C;
+    --harrier-dark: #1F2937;
+    --harrier-blue: #1E3A8A;
+    --harrier-blue-light: #3B82F6;
+    --harrier-white: #FFFFFF;
+    --harrier-gray: #F9FAFB;
+    --harrier-gray-dark: #6B7280;
+
+    /* Animation Timing Functions */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Animation Durations */
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 350ms;
+    --duration-slower: 500ms;
+}
+
+/* Enhanced Vendor Statistics Cards */
+.enhanced-vendor-stat-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    overflow: hidden;
+    cursor: pointer;
+    animation: fadeInUp var(--duration-slower) var(--ease-out-expo) both;
+}
+
+.enhanced-vendor-stat-card:nth-child(1) { animation-delay: 100ms; }
+.enhanced-vendor-stat-card:nth-child(2) { animation-delay: 200ms; }
+.enhanced-vendor-stat-card:nth-child(3) { animation-delay: 300ms; }
+.enhanced-vendor-stat-card:nth-child(4) { animation-delay: 400ms; }
+
+.enhanced-vendor-stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border-color: var(--harrier-red);
+}
+
+.stat-card-content {
+    position: relative;
+    z-index: 2;
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.stat-icon-container {
+    position: relative;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--duration-normal) var(--ease-spring);
+}
+
+.total-icon {
+    background: linear-gradient(135deg, var(--harrier-blue), var(--harrier-blue-light));
+}
+
+.approved-icon {
+    background: linear-gradient(135deg, #10B981, #047857);
+}
+
+.pending-icon {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+}
+
+.suspended-icon {
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+}
+
+.stat-icon {
+    color: white;
+    font-size: 1.25rem;
+    transition: all var(--duration-normal) var(--ease-spring);
+}
+
+.icon-glow {
+    position: absolute;
+    inset: -2px;
+    background: inherit;
+    border-radius: inherit;
+    opacity: 0;
+    filter: blur(8px);
+    transition: opacity var(--duration-normal) ease;
+}
+
+.enhanced-vendor-stat-card:hover .icon-glow {
+    opacity: 0.6;
+}
+
+.enhanced-vendor-stat-card:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.stat-trend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.stat-trend.positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+}
+
+.stat-trend.neutral {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+}
+
+.stat-trend.negative {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--harrier-red-dark);
+}
+
+.stat-body {
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--harrier-dark);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    transition: all var(--duration-normal) ease;
+}
+
+.stat-label {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--harrier-gray-dark);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-description {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    color: #9CA3AF;
+}
+
+.stat-footer {
+    margin-top: 1rem;
+}
+
+.stat-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width var(--duration-slower) var(--ease-out-expo);
+}
+
+.total-progress {
+    background: linear-gradient(90deg, var(--harrier-blue), var(--harrier-blue-light));
+    width: 100%;
+}
+
+.approved-progress {
+    background: linear-gradient(90deg, #10B981, #047857);
+    width: 85%;
+}
+
+.pending-progress {
+    background: linear-gradient(90deg, #F59E0B, #D97706);
+    width: 60%;
+}
+
+.suspended-progress {
+    background: linear-gradient(90deg, var(--harrier-red), var(--harrier-red-dark));
+    width: 25%;
+}
+
+.card-shimmer {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left var(--duration-slower) ease;
+    pointer-events: none;
+}
+
+.enhanced-vendor-stat-card:hover .card-shimmer {
+    left: 100%;
+}
+
+/* Enhanced Table Styles */
+.enhanced-vendor-table-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    animation: fadeInUp var(--duration-slower) var(--ease-out-expo) 500ms both;
+}
+
+.table-header {
+    background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.table-title-section {
+    flex: 1;
+}
+
+.table-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--harrier-dark);
+    margin-bottom: 0.25rem;
+}
+
+.table-subtitle {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    color: var(--harrier-gray-dark);
+}
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.refresh-table-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.refresh-table-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.enhanced-vendor-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-head {
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+}
+
+.table-header-cell {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.header-icon {
+    color: var(--harrier-red);
+    font-size: 0.75rem;
+}
+
+.table-body {
+    background: white;
+}
+
+.vendor-table-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all var(--duration-normal) ease;
+}
+
+.vendor-table-row:hover {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.02), rgba(185, 28, 28, 0.01));
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.vendor-details-cell,
+.contact-info-cell,
+.status-cell,
+.date-cell,
+.actions-cell {
+    padding: 1.5rem;
+    vertical-align: top;
+}
+
+/* Vendor Profile Section */
+.vendor-profile-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.vendor-avatar-container {
+    position: relative;
+}
+
+.vendor-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.avatar-status-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.avatar-status-indicator.approved {
+    background: #10B981;
+}
+
+.avatar-status-indicator.pending {
+    background: #F59E0B;
+}
+
+.avatar-status-indicator.suspended {
+    background: var(--harrier-red);
+}
+
+.vendor-info {
+    flex: 1;
+}
+
+.vendor-company-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--harrier-dark);
+    margin-bottom: 0.25rem;
+}
+
+.vendor-owner-name {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    color: var(--harrier-gray-dark);
+    margin-bottom: 0.5rem;
+}
+
+.vendor-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.vendor-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.licensed-badge {
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+}
+
+.business-type-badge {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--harrier-blue);
+}
+
+.established-badge {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--harrier-gray-dark);
+}
+
+/* Contact Information Styles */
+.contact-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+}
+
+.contact-icon {
+    width: 1rem;
+    color: var(--harrier-gray-dark);
+    flex-shrink: 0;
+}
+
+.contact-text {
+    color: var(--harrier-dark);
+}
+
+.primary-contact .contact-icon {
+    color: var(--harrier-red);
+}
+
+.business-contact .contact-icon {
+    color: var(--harrier-blue);
+}
+
+/* Status Styles */
+.status-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.approved-status {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(4, 120, 87, 0.05));
+    color: #047857;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.approved-status .status-indicator {
+    background: #10B981;
+}
+
+.pending-status {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05));
+    color: #D97706;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.pending-status .status-indicator {
+    background: #F59E0B;
+}
+
+.suspended-status {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.05));
+    color: var(--harrier-red-dark);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.suspended-status .status-indicator {
+    background: var(--harrier-red);
+}
+
+.verification-status {
+    margin-top: 0.25rem;
+}
+
+.verification-text {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    color: var(--harrier-gray-dark);
+    font-style: italic;
+}
+
+/* Date Styles */
+.date-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.date-value {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+}
+
+.date-time {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    color: var(--harrier-gray-dark);
+}
+
+/* Pill Action Buttons */
+.action-buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pill-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.pill-action-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s var(--ease-out-expo), height 0.4s var(--ease-out-expo);
+}
+
+.pill-action-btn:active::before {
+    width: 200px;
+    height: 200px;
+}
+
+.pill-btn-approve {
+    background: linear-gradient(135deg, #10B981, #047857);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pill-btn-approve:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.pill-btn-revoke {
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.pill-btn-revoke:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.pill-btn-profile {
+    background: linear-gradient(135deg, var(--harrier-blue), var(--harrier-blue-light));
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.pill-btn-profile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.pill-btn-vendor-profile {
+    background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.pill-btn-vendor-profile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.pill-btn-more {
+    background: linear-gradient(135deg, #6B7280, #4B5563);
+    color: white;
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+.pill-btn-more:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+/* Action Dropdown Styles */
+.action-dropdown-container {
+    position: relative;
+}
+
+.action-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 50;
+    margin-top: 0.5rem;
+    width: 12rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--duration-normal) var(--ease-out-expo);
+}
+
+.action-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-content {
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--harrier-dark);
+    text-decoration: none;
+    transition: all var(--duration-fast) ease;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: rgba(220, 38, 38, 0.05);
+    color: var(--harrier-red);
+    transform: translateX(4px);
+}
+
+.dropdown-item.success:hover {
+    background: rgba(16, 185, 129, 0.05);
+    color: #047857;
+}
+
+.dropdown-item.danger:hover {
+    background: rgba(220, 38, 38, 0.05);
+    color: var(--harrier-red);
+}
+
+.dropdown-icon {
+    width: 1rem;
+    color: inherit;
+    flex-shrink: 0;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 0.5rem 0;
+}
+
+/* Enhanced Pagination Styles */
+.enhanced-pagination-container {
+    background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.pagination-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.pagination-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-text {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    color: var(--harrier-gray-dark);
+}
+
+.range-numbers,
+.total-number {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: var(--harrier-dark);
+}
+
+.pagination-stats {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    color: var(--harrier-gray-dark);
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    cursor: pointer;
+}
+
+.pagination-btn:hover:not(.disabled) {
+    background: var(--harrier-red);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.pagination-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    cursor: pointer;
+}
+
+.page-btn:hover:not(.current-page) {
+    background: var(--harrier-red);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.page-btn.current-page {
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    cursor: default;
+}
+
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: var(--harrier-gray-dark);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .enhanced-vendor-stat-card {
+        padding: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+    }
+
+    .vendor-details-cell,
+    .contact-info-cell,
+    .status-cell,
+    .date-cell,
+    .actions-cell {
+        padding: 1rem;
+    }
+
+    .pagination-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .pagination-controls {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .enhanced-vendor-stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+    }
+
+    .vendor-profile-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .vendor-avatar {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1rem;
+    }
+
+    .action-buttons-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pill-action-btn {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .page-numbers {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagination-btn span {
+        display: none;
+    }
+
+    .pagination-btn {
+        padding: 0.75rem;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Enhanced Filter and Search Styles */
+.enhanced-filter-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    animation: fadeInUp var(--duration-slower) var(--ease-out-expo) 300ms both;
+}
+
+.filter-header {
+    background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-title-section {
+    flex: 1;
+}
+
+.filter-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--harrier-dark);
+    margin-bottom: 0.25rem;
+}
+
+.filter-subtitle {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    color: var(--harrier-gray-dark);
+}
+
+.clear-filters-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #6B7280, #4B5563);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+.clear-filters-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.filter-content {
+    padding: 1.5rem;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+}
+
+.filter-icon {
+    color: var(--harrier-red);
+    font-size: 0.75rem;
+}
+
+.enhanced-select-wrapper {
+    position: relative;
+}
+
+.enhanced-select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    background: white;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+    cursor: pointer;
+    transition: all var(--duration-normal) ease;
+    appearance: none;
+}
+
+.enhanced-select:focus {
+    outline: none;
+    border-color: var(--harrier-red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.select-arrow {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--harrier-gray-dark);
+    pointer-events: none;
+    transition: all var(--duration-normal) ease;
+}
+
+.enhanced-select:focus + .select-arrow {
+    color: var(--harrier-red);
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.search-section {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 1.5rem;
+}
+
+.search-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--harrier-gray-dark);
+    z-index: 2;
+}
+
+.enhanced-search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 3rem;
+    background: white;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.75rem;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+    transition: all var(--duration-normal) ease;
+}
+
+.enhanced-search-input:focus {
+    outline: none;
+    border-color: var(--harrier-red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.enhanced-search-input:focus + .search-icon {
+    color: var(--harrier-red);
+}
+
+.search-clear {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--harrier-gray-dark);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: all var(--duration-fast) ease;
+}
+
+.search-clear:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--harrier-red);
+}
+
+.search-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-out-quart);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    white-space: nowrap;
+}
+
+.search-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.active-filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.active-filters-label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--harrier-dark);
+}
+
+.filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.05));
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--harrier-red-dark);
+}
+
+.remove-tag {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.125rem;
+    border-radius: 50%;
+    transition: all var(--duration-fast) ease;
+}
+
+.remove-tag:hover {
+    background: rgba(220, 38, 38, 0.2);
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .enhanced-vendor-stat-card,
+    .enhanced-vendor-table-container,
+    .enhanced-filter-container {
+        border: 2px solid var(--harrier-dark);
+    }
+
+    .pill-action-btn,
+    .enhanced-select,
+    .enhanced-search-input {
+        border: 2px solid currentColor;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 {{ block.super }}
 <script>
-// Dropdown functionality
-function toggleDropdown(vendorId) {
-    const dropdown = document.getElementById(`dropdown-${vendorId}`);
-    const allDropdowns = document.querySelectorAll('[id^="dropdown-"]');
+// Enhanced Dropdown functionality
+function toggleVendorDropdown(vendorId) {
+    const dropdown = document.getElementById(`vendor-dropdown-${vendorId}`);
+    const allDropdowns = document.querySelectorAll('[id^="vendor-dropdown-"]');
 
     // Close all other dropdowns
     allDropdowns.forEach(d => {
-        if (d.id !== `dropdown-${vendorId}`) {
-            d.classList.add('hidden');
+        if (d.id !== `vendor-dropdown-${vendorId}`) {
+            d.classList.remove('show');
         }
     });
 
     // Toggle current dropdown
-    dropdown.classList.toggle('hidden');
+    dropdown.classList.toggle('show');
 }
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
-    if (!event.target.closest('[onclick*="toggleDropdown"]')) {
-        document.querySelectorAll('[id^="dropdown-"]').forEach(d => {
-            d.classList.add('hidden');
+    if (!event.target.closest('[onclick*="toggleVendorDropdown"]') &&
+        !event.target.closest('.action-dropdown-menu')) {
+        document.querySelectorAll('[id^="vendor-dropdown-"]').forEach(d => {
+            d.classList.remove('show');
         });
     }
 });
+
+// Refresh table functionality
+function refreshVendorTable() {
+    const refreshBtn = document.querySelector('.refresh-table-btn');
+    const icon = refreshBtn.querySelector('i');
+
+    // Add loading state
+    refreshBtn.disabled = true;
+    icon.classList.add('fa-spin');
+
+    // Simulate refresh (in real implementation, this would reload the table data)
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
 
 // Vendor approval functions
 function approveVendor(vendorId) {
@@ -507,6 +2058,139 @@ function suspendVendor(vendorId) {
             console.error('Error:', error);
             showToast('An error occurred while suspending the vendor.', 'error');
         });
+    }
+}
+
+function activateVendor(vendorId) {
+    if (confirm('Are you sure you want to activate this vendor account?')) {
+        fetch(`/dashboard/admin/activate-vendor/${vendorId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'activated') {
+                showToast('Vendor activated successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Failed to activate vendor.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while activating the vendor.', 'error');
+        });
+    }
+}
+
+function viewVendorAnalytics(vendorId) {
+    // Redirect to vendor analytics page
+    window.location.href = `/dashboard/admin/vendors/${vendorId}/analytics/`;
+}
+
+// Enhanced Filter and Search Functions
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const businessTypeFilter = document.getElementById('businessTypeFilter').value;
+    const dateRangeFilter = document.getElementById('dateRangeFilter').value;
+    const searchValue = document.getElementById('vendorSearch').value;
+
+    const params = new URLSearchParams();
+
+    if (statusFilter) params.set('status', statusFilter);
+    if (businessTypeFilter) params.set('business_type', businessTypeFilter);
+    if (dateRangeFilter) params.set('date_range', dateRangeFilter);
+    if (searchValue) params.set('search', searchValue);
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+
+    window.location.href = newUrl;
+}
+
+function performSearch() {
+    const searchValue = document.getElementById('vendorSearch').value.trim();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const businessTypeFilter = document.getElementById('businessTypeFilter').value;
+
+    const params = new URLSearchParams();
+
+    if (searchValue) params.set('search', searchValue);
+    if (statusFilter) params.set('status', statusFilter);
+    if (businessTypeFilter) params.set('business_type', businessTypeFilter);
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+
+    window.location.href = newUrl;
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('vendorSearch');
+    const clearBtn = document.querySelector('.search-clear');
+
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+
+    // Apply filters without search
+    applyFilters();
+}
+
+function clearAllFilters() {
+    if (confirm('Are you sure you want to clear all filters and search criteria?')) {
+        window.location.href = window.location.pathname;
+    }
+}
+
+function removeFilter(filterType) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete(filterType);
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+
+    window.location.href = newUrl;
+}
+
+// Real-time search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('vendorSearch');
+    const clearBtn = document.querySelector('.search-clear');
+
+    if (searchInput) {
+        // Show/hide clear button based on input value
+        searchInput.addEventListener('input', function() {
+            if (this.value.trim()) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+        });
+
+        // Handle Enter key for search
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+    }
+
+    // Update active filters display
+    updateActiveFiltersDisplay();
+});
+
+function updateActiveFiltersDisplay() {
+    const activeFiltersContainer = document.getElementById('activeFilters');
+    const params = new URLSearchParams(window.location.search);
+
+    const hasFilters = params.has('status') || params.has('business_type') || params.has('search') || params.has('date_range');
+
+    if (activeFiltersContainer) {
+        activeFiltersContainer.style.display = hasFilters ? 'flex' : 'none';
     }
 }
 

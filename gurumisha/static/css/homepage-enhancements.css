@@ -1,0 +1,287 @@
+/* Homepage Enhancements with Harrier Design Patterns */
+
+/* Enhanced Typography System */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Raleway:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Root Variables for Consistent Design */
+:root {
+    --harrier-red: #DC2626;
+    --harrier-red-dark: #B91C1C;
+    --harrier-blue: #1E3A8A;
+    --harrier-blue-dark: #1E40AF;
+    --harrier-black: #111827;
+    --harrier-white: #FFFFFF;
+    --harrier-gray: #F3F4F6;
+    
+    --animation-duration-fast: 0.2s;
+    --animation-duration-normal: 0.3s;
+    --animation-duration-slow: 0.6s;
+    --animation-easing-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --animation-easing-elegant: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced Global Typography */
+.font-montserrat { 
+    font-family: 'Montserrat', 'Inter', sans-serif !important; 
+    font-display: swap;
+}
+
+.font-raleway { 
+    font-family: 'Raleway', 'Inter', sans-serif !important; 
+    font-display: swap;
+}
+
+.font-inter { 
+    font-family: 'Inter', system-ui, sans-serif !important; 
+    font-display: swap;
+}
+
+/* Enhanced Entrance Animations */
+.animate-entrance {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all var(--animation-duration-slow) var(--animation-easing-elegant);
+}
+
+.animate-entrance.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.animate-slide-in-left {
+    opacity: 0;
+    transform: translateX(-60px);
+    transition: all var(--animation-duration-slow) var(--animation-easing-elegant);
+}
+
+.animate-slide-in-left.in-view {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.animate-slide-in-right {
+    opacity: 0;
+    transform: translateX(60px);
+    transition: all var(--animation-duration-slow) var(--animation-easing-elegant);
+}
+
+.animate-slide-in-right.in-view {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.animate-scale-in {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all var(--animation-duration-slow) var(--animation-easing-bounce);
+}
+
+.animate-scale-in.in-view {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Enhanced Glassmorphism Effects */
+.glassmorphism {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.glassmorphism-dark {
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Enhanced Button Styles */
+.btn-harrier-enhanced {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark));
+    color: var(--harrier-white);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all var(--animation-duration-normal) var(--animation-easing-elegant);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.btn-harrier-enhanced:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+    color: var(--harrier-white);
+    text-decoration: none;
+}
+
+.btn-harrier-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--animation-duration-slow) var(--animation-easing-elegant);
+}
+
+.btn-harrier-enhanced:hover::before {
+    left: 100%;
+}
+
+/* Enhanced Card Styles */
+.card-harrier {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all var(--animation-duration-normal) var(--animation-easing-elegant);
+    overflow: hidden;
+}
+
+.card-harrier:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced Micro-interactions */
+.hover-lift {
+    transition: all var(--animation-duration-normal) var(--animation-easing-elegant);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.hover-scale {
+    transition: all var(--animation-duration-normal) var(--animation-easing-elegant);
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+.hover-rotate {
+    transition: all var(--animation-duration-normal) var(--animation-easing-elegant);
+}
+
+.hover-rotate:hover {
+    transform: rotate(6deg);
+}
+
+/* Enhanced Loading States */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Enhanced Pulse Animation */
+.pulse-enhanced {
+    animation: pulse-enhanced 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-enhanced {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* Enhanced Gradient Text */
+.gradient-text-harrier {
+    background: linear-gradient(135deg, var(--harrier-red), var(--harrier-red-dark), var(--harrier-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+/* Enhanced Focus States for Accessibility */
+.focus-harrier:focus {
+    outline: 2px solid var(--harrier-red);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+/* Enhanced Mobile Optimizations */
+@media (max-width: 768px) {
+    .animate-entrance {
+        transform: translateY(20px);
+    }
+    
+    .card-harrier:hover {
+        transform: translateY(-4px) scale(1.01);
+    }
+    
+    .btn-harrier-enhanced:hover {
+        transform: translateY(-1px) scale(1.02);
+    }
+}
+
+/* Enhanced Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .animate-entrance,
+    .animate-slide-in-left,
+    .animate-slide-in-right,
+    .animate-scale-in,
+    .hover-lift,
+    .hover-scale,
+    .hover-rotate,
+    .btn-harrier-enhanced,
+    .card-harrier {
+        transition: none;
+        animation: none;
+        transform: none;
+    }
+}
+
+/* Enhanced Performance Optimizations */
+.will-change-transform {
+    will-change: transform;
+}
+
+.will-change-opacity {
+    will-change: opacity;
+}
+
+/* Enhanced Typography Utilities */
+.letter-spacing-wider {
+    letter-spacing: 0.1em;
+}
+
+.letter-spacing-widest {
+    letter-spacing: 0.2em;
+}
+
+/* Enhanced Border Utilities */
+.border-3 {
+    border-width: 3px;
+}
+
+.border-4 {
+    border-width: 4px;
+}

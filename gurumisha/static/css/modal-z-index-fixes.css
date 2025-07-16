@@ -1,0 +1,226 @@
+/* Modal Z-Index Hierarchy Fixes */
+/* This file ensures all modals appear with the correct z-index layering */
+
+/* Z-Index Hierarchy:
+ * Base content: 1-10
+ * Interactive elements: 10-99  
+ * Overlays/dropdowns: 100-999
+ * Profile modals: 1000-1299
+ * Admin modals: 1400-1599
+ * Notifications/toasts: 9000-9999
+ * Emergency/mobile menu: 99999
+ */
+
+/* Admin Modal Base Classes */
+.admin-modal-container {
+    z-index: 1500 !important;
+}
+
+.admin-modal-backdrop {
+    z-index: 1400 !important;
+}
+
+/* Specific Modal Overrides */
+.fixed.inset-0.z-50,
+.fixed.inset-0.z-\[50\] {
+    z-index: 1500 !important;
+}
+
+/* Modal backdrop overrides */
+.fixed.inset-0.bg-black.bg-opacity-50 {
+    z-index: 1400 !important;
+}
+
+/* Spare Parts Modal Specific Fixes */
+#add-spare-part-modal,
+#edit-spare-part-modal,
+#view-spare-part-modal,
+#restock-spare-part-modal {
+    z-index: 1500 !important;
+}
+
+/* Import Modal Fixes */
+#add-import-order-modal,
+#edit-import-order-modal,
+#edit-import-request-modal {
+    z-index: 1500 !important;
+}
+
+/* Content Management Modal Fixes */
+#message-create-modal,
+#resource-create-modal {
+    z-index: 1500 !important;
+}
+
+/* Vendor Modal Fixes */
+.vendor-modal {
+    z-index: 1500 !important;
+}
+
+/* Toast and Notification Fixes */
+.toast-container,
+.notification-container {
+    z-index: 9000 !important;
+}
+
+/* Tooltip Fixes */
+.admin-tooltip,
+.tooltip {
+    z-index: 9000 !important;
+}
+
+/* Dropdown and Overlay Fixes */
+.dropdown-menu,
+.overlay-element {
+    z-index: 999 !important;
+}
+
+/* Ensure modal panels are above backdrops */
+.modal-panel {
+    position: relative;
+    z-index: 1501 !important;
+}
+
+/* Fix for dynamically created modals */
+div[class*="fixed"][class*="inset-0"]:not([class*="z-"]) {
+    z-index: 1500 !important;
+}
+
+/* Specific Tailwind class overrides */
+.z-50 {
+    z-index: 1500 !important;
+}
+
+/* AlpineJS modal fixes */
+[x-data*="modal"] {
+    z-index: 1500 !important;
+}
+
+/* HTMX modal fixes */
+[hx-target*="modal"] {
+    z-index: 1500 !important;
+}
+
+/* Ensure proper stacking context */
+.modal-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1500 !important;
+}
+
+/* Mobile menu exception */
+#mobile-menu,
+.mobile-sidebar {
+    z-index: 99999 !important;
+}
+
+/* Loading overlays */
+.loading-overlay {
+    z-index: 8000 !important;
+}
+
+/* Error and success message overlays */
+.message-overlay {
+    z-index: 9000 !important;
+}
+
+/* Confirmation dialogs */
+.confirm-dialog {
+    z-index: 9500 !important;
+}
+
+/* Print media - hide all modals */
+@media print {
+    .fixed[class*="z-"],
+    .modal-overlay,
+    .admin-modal-container,
+    .toast-container {
+        display: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .admin-modal-container {
+        border: 3px solid #000 !important;
+    }
+    
+    .admin-modal-backdrop {
+        background: rgba(0, 0, 0, 0.8) !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .modal-panel,
+    .admin-modal-container {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* Focus management for modals */
+.modal-panel:focus-within {
+    z-index: 1502 !important;
+}
+
+/* Ensure interactive elements within modals are clickable */
+.modal-panel button,
+.modal-panel input,
+.modal-panel select,
+.modal-panel textarea,
+.modal-panel a {
+    position: relative;
+    z-index: 1503 !important;
+}
+
+/* Fix for nested modals (if any) */
+.modal-panel .modal-panel {
+    z-index: 1600 !important;
+}
+
+/* Accessibility improvements */
+.modal-panel[aria-modal="true"] {
+    z-index: 1500 !important;
+}
+
+/* Fix for any remaining z-50 classes */
+*[class*="z-50"] {
+    z-index: 1500 !important;
+}
+
+/* Specific fix for inquiry modal */
+#partInquiryModal {
+    z-index: 1500 !important;
+}
+
+/* Fix for export modal */
+.export-modal {
+    z-index: 1500 !important;
+}
+
+/* Ensure backdrop clicks work properly */
+.admin-modal-backdrop {
+    pointer-events: auto !important;
+}
+
+.modal-panel {
+    pointer-events: auto !important;
+}
+
+/* Fix for any CSS specificity issues */
+body .fixed.inset-0[class*="modal"] {
+    z-index: 1500 !important;
+}
+
+body .fixed.inset-0[class*="backdrop"] {
+    z-index: 1400 !important;
+}
+
+/* Final catch-all for any missed modals */
+.fixed.inset-0:not(.z-\[1500\]):not(.z-\[1400\]):not(.z-\[9000\]):not(.z-\[99999\]) {
+    z-index: 1500 !important;
+}

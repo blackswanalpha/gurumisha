@@ -1,0 +1,351 @@
+{% extends 'base_admin_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Sales Management{% endblock %}
+{% block page_description %}Comprehensive sales tracking and revenue management for spare parts{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-8">
+    <!-- Enhanced Header -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div>
+            <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Sales Management</h2>
+            <p class="text-gray-600 mt-1 font-raleway">Track sales performance, revenue, and customer analytics</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <button onclick="exportSalesData()" class="enhanced-btn enhanced-btn-secondary text-sm">
+                <i class="fas fa-download mr-2"></i>Export Report
+            </button>
+            <button onclick="generateSalesReport()" class="enhanced-btn enhanced-btn-primary text-sm">
+                <i class="fas fa-chart-bar mr-2"></i>Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Sales Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="stat-value text-green-600 font-montserrat">KSh 2,450,000</div>
+                    <div class="stat-label font-raleway">Total Revenue</div>
+                    <div class="stat-trend text-xs text-green-600 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>+18% this month
+                    </div>
+                </div>
+                <div class="stat-icon bg-gradient-to-br from-green-500 to-green-600">
+                    <i class="fas fa-money-bill-wave text-white"></i>
+                </div>
+            </div>
+            <div class="stat-progress-bar">
+                <div class="stat-progress bg-green-500" style="width: 85%"></div>
+            </div>
+        </div>
+        
+        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="stat-value text-blue-600 font-montserrat">1,247</div>
+                    <div class="stat-label font-raleway">Total Orders</div>
+                    <div class="stat-trend text-xs text-blue-600 mt-1">
+                        <i class="fas fa-shopping-cart mr-1"></i>+12% this month
+                    </div>
+                </div>
+                <div class="stat-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                    <i class="fas fa-shopping-cart text-white"></i>
+                </div>
+            </div>
+            <div class="stat-progress-bar">
+                <div class="stat-progress bg-blue-500" style="width: 78%"></div>
+            </div>
+        </div>
+        
+        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="stat-value text-purple-600 font-montserrat">KSh 1,965</div>
+                    <div class="stat-label font-raleway">Average Order</div>
+                    <div class="stat-trend text-xs text-purple-600 mt-1">
+                        <i class="fas fa-calculator mr-1"></i>+5% this month
+                    </div>
+                </div>
+                <div class="stat-icon bg-gradient-to-br from-purple-500 to-purple-600">
+                    <i class="fas fa-calculator text-white"></i>
+                </div>
+            </div>
+            <div class="stat-progress-bar">
+                <div class="stat-progress bg-purple-500" style="width: 65%"></div>
+            </div>
+        </div>
+        
+        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="stat-value text-orange-600 font-montserrat">342</div>
+                    <div class="stat-label font-raleway">New Customers</div>
+                    <div class="stat-trend text-xs text-orange-600 mt-1">
+                        <i class="fas fa-users mr-1"></i>+25% this month
+                    </div>
+                </div>
+                <div class="stat-icon bg-gradient-to-br from-orange-500 to-orange-600">
+                    <i class="fas fa-users text-white"></i>
+                </div>
+            </div>
+            <div class="stat-progress-bar">
+                <div class="stat-progress bg-orange-500" style="width: 92%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Charts and Analytics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <!-- Revenue Chart -->
+        <div class="glassmorphism-card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chart-line text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Revenue Trends</h3>
+                    </div>
+                    <select class="enhanced-select text-sm">
+                        <option>Last 7 days</option>
+                        <option>Last 30 days</option>
+                        <option>Last 3 months</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-chart-line text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-600 font-raleway">Revenue chart will be displayed here</p>
+                        <p class="text-sm text-gray-500">Integration with Chart.js or similar library</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Products -->
+        <div class="glassmorphism-card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-trophy text-white"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Top Selling Products</h3>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-white font-bold text-sm">1</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900">Brake Pads - Toyota</div>
+                                <div class="text-sm text-gray-600">245 units sold</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-green-600">KSh 147,000</div>
+                            <div class="text-sm text-gray-600">Revenue</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-white font-bold text-sm">2</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900">Oil Filter - Honda</div>
+                                <div class="text-sm text-gray-600">189 units sold</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-green-600">KSh 94,500</div>
+                            <div class="text-sm text-gray-600">Revenue</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-white font-bold text-sm">3</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900">Spark Plugs - Nissan</div>
+                                <div class="text-sm text-gray-600">156 units sold</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-green-600">KSh 78,000</div>
+                            <div class="text-sm text-gray-600">Revenue</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sales Table -->
+    <div class="glassmorphism-card animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-list text-white"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Sales</h3>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="refreshSalesData()" class="enhanced-btn enhanced-btn-secondary text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>Refresh
+                    </button>
+                    <button onclick="viewAllSales()" class="enhanced-btn enhanced-btn-secondary text-sm">
+                        <i class="fas fa-eye mr-1"></i>View All
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Order ID
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Customer
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Products
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Amount
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Status
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Date
+                        </th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-harrier-dark">#SP-2024-001</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">John Doe</div>
+                            <div class="text-sm text-gray-500">john@example.com</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">Brake Pads, Oil Filter</div>
+                            <div class="text-sm text-gray-500">2 items</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-green-600">KSh 4,500</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Completed
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">Dec 15, 2024</div>
+                            <div class="text-sm text-gray-500">2:30 PM</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex justify-center gap-2">
+                                <button class="pill-action-btn pill-btn-view">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </button>
+                                <button class="pill-action-btn pill-btn-edit">
+                                    <i class="fas fa-receipt mr-1"></i>Invoice
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- More rows would be dynamically generated -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+// Sales Management JavaScript Functions
+function exportSalesData() {
+    showToast('Exporting sales data...', 'info');
+    // Implementation for export functionality
+}
+
+function generateSalesReport() {
+    showToast('Generating sales report...', 'info');
+    // Implementation for report generation
+}
+
+function refreshSalesData() {
+    showToast('Refreshing sales data...', 'info');
+    // Implementation for data refresh
+}
+
+function viewAllSales() {
+    showToast('Loading all sales...', 'info');
+    // Implementation for viewing all sales
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    switch(type) {
+        case 'success':
+            toast.className += ' bg-green-500 text-white';
+            break;
+        case 'error':
+            toast.className += ' bg-red-500 text-white';
+            break;
+        case 'warning':
+            toast.className += ' bg-orange-500 text-white';
+            break;
+        default:
+            toast.className += ' bg-blue-500 text-white';
+    }
+    
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-info-circle mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

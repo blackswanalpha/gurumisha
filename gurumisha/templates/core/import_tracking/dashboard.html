@@ -48,6 +48,115 @@
             </div>
         </div>
 
+        <!-- Live Tracking Overview -->
+        {% if orders %}
+        <div class="mb-12">
+            {% include 'core/import_tracking/partials/live_dashboard.html' %}
+        </div>
+        {% endif %}
+
+        <!-- Legacy Live Tracking Overview (Fallback) -->
+        {% if orders and not use_live_dashboard %}
+        <div class="mb-12">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-red-900 to-black text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold font-montserrat">Live Tracking Overview</h2>
+                            <p class="text-red-200 text-sm">Real-time location updates for your active orders</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-green-200 text-sm">Live</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {% for order in orders %}
+                        {% if order.has_tracking_enabled and order.status not in 'delivered,cancelled' %}
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">{{ order.order_number }}</h4>
+                                    <p class="text-sm text-gray-600">{{ order.vehicle_details }}</p>
+                                </div>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                    {% if order.status == 'in_transit' %}bg-blue-100 text-blue-800
+                                    {% elif order.status == 'shipped' %}bg-purple-100 text-purple-800
+                                    {% elif order.status == 'arrived_docked' %}bg-green-100 text-green-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </div>
+
+                            <!-- Location Info -->
+                            <div class="mb-3">
+                                {% if order.current_latitude and order.current_longitude %}
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {{ order.current_location_name|default:"Location Available" }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 ml-4">
+                                    Updated {{ order.last_location_update|timesince }} ago
+                                </p>
+                                {% else %}
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                    <span class="text-sm text-gray-500">Awaiting location update</span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="mb-3">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>Progress</span>
+                                    <span>{{ order.progress_percentage }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-red-600 to-red-800 h-2 rounded-full transition-all duration-500"
+                                         style="width: {{ order.progress_percentage }}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex space-x-2">
+                                {% if order.order_number %}
+                                <a href="{% url 'core:import_order_detail' order.order_number %}"
+                                   class="flex-1 bg-red-600 text-white text-center py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                    <i class="fas fa-map mr-1"></i>Live Map
+                                </a>
+                                <button onclick="refreshOrderLocation('{{ order.order_number }}')"
+                                        class="px-3 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                {% else %}
+                                <span class="flex-1 bg-gray-400 text-white text-center py-2 px-3 rounded-lg text-sm font-medium cursor-not-allowed">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>Invalid Order
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if not orders or not orders|length %}
+                    <div class="text-center py-12">
+                        <i class="fas fa-map-marked-alt text-gray-300 text-4xl mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2">No Active Tracking</h4>
+                        <p class="text-gray-600">Your orders with live tracking will appear here</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Search and Filter Section -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
             <div class="flex flex-col lg:flex-row gap-4">
@@ -157,10 +266,16 @@
 
                         <!-- Action buttons - Mobile optimized -->
                         <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            {% if order.order_number %}
                             <a href="{% url 'core:import_order_detail' order.order_number %}"
                                class="flex-1 btn-harrier-primary text-center py-3 text-sm font-medium">
                                 <i class="fas fa-eye mr-2"></i>View Details
                             </a>
+                            {% else %}
+                            <span class="flex-1 btn-harrier-secondary text-center py-3 text-sm font-medium cursor-not-allowed opacity-50">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>Invalid Order
+                            </span>
+                            {% endif %}
                             {% if order.chassis_number %}
                             <button onclick="copyToClipboard('{{ order.chassis_number }}')"
                                     class="sm:w-auto btn-harrier-secondary py-3 text-sm font-medium">
@@ -546,4 +661,138 @@ a:focus {
     outline-offset: 2px;
 }
 </style>
+
+<script>
+// Live tracking functionality
+function refreshOrderLocation(orderNumber) {
+    const button = event.target;
+    const originalIcon = button.innerHTML;
+
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+
+    // Fetch updated location data
+    fetch(`/import/tracking/${orderNumber}/location/`, {
+        headers: {
+            'HX-Request': 'true',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.current_latitude && data.current_longitude) {
+            // Find the order card and update location info
+            const orderCard = button.closest('.bg-gray-50');
+            const locationElement = orderCard.querySelector('.text-sm.font-medium');
+            const updateElement = orderCard.querySelector('.text-xs.text-gray-500');
+
+            if (locationElement) {
+                locationElement.textContent = data.current_location_name || 'Location Available';
+            }
+            if (updateElement) {
+                updateElement.textContent = 'Updated just now';
+            }
+
+            // Show success feedback
+            showToast('Location updated successfully', 'success');
+        } else {
+            showToast('No location data available', 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching location:', error);
+        showToast('Failed to update location', 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        button.innerHTML = originalIcon;
+        button.disabled = false;
+    });
+}
+
+// Auto-refresh live tracking data every 60 seconds
+function startLiveTracking() {
+    setInterval(() => {
+        const trackingCards = document.querySelectorAll('.bg-gray-50');
+        trackingCards.forEach(card => {
+            const refreshButton = card.querySelector('button[onclick*="refreshOrderLocation"]');
+            if (refreshButton) {
+                const orderNumber = refreshButton.getAttribute('onclick').match(/'([^']+)'/)[1];
+                refreshOrderLocationSilent(orderNumber, card);
+            }
+        });
+    }, 60000); // 60 seconds
+}
+
+// Silent refresh without user feedback
+function refreshOrderLocationSilent(orderNumber, cardElement) {
+    fetch(`/import/tracking/${orderNumber}/location/`, {
+        headers: {
+            'HX-Request': 'true',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.current_latitude && data.current_longitude) {
+            // Update location info silently
+            const locationElement = cardElement.querySelector('.text-sm.font-medium');
+            const updateElement = cardElement.querySelector('.text-xs.text-gray-500');
+
+            if (locationElement && data.current_location_name) {
+                locationElement.textContent = data.current_location_name;
+            }
+            if (updateElement) {
+                updateElement.textContent = 'Updated just now';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Silent location update failed:', error);
+    });
+}
+
+// Simple toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium transform transition-all duration-300 translate-x-full`;
+
+    // Set color based on type
+    switch(type) {
+        case 'success':
+            toast.classList.add('bg-green-600');
+            break;
+        case 'error':
+            toast.classList.add('bg-red-600');
+            break;
+        case 'warning':
+            toast.classList.add('bg-yellow-600');
+            break;
+        default:
+            toast.classList.add('bg-blue-600');
+    }
+
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Initialize live tracking when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startLiveTracking();
+});
+</script>
 {% endblock %}

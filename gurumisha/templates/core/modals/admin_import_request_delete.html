@@ -144,17 +144,22 @@
                     <i class="fas fa-times mr-2"></i>
                     <span>Cancel</span>
                 </button>
-                <button type="button"
-                        x-ref="deleteBtn"
-                        disabled
-                        class="enhanced-btn enhanced-btn-danger"
-                        hx-delete="{% url 'core:admin_import_request_delete' import_request.id %}"
-                        hx-target="#import-requests-table"
-                        hx-swap="outerHTML"
-                        hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }">
-                    <i class="fas fa-trash mr-2"></i>
-                    <span>Delete Request</span>
-                </button>
+                <form style="display: inline;" method="post" action="{% url 'core:admin_import_request_delete' import_request.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit"
+                            x-ref="deleteBtn"
+                            disabled
+                            class="enhanced-btn enhanced-btn-danger"
+                            hx-post="{% url 'core:admin_import_request_delete' import_request.id %}"
+                            hx-include="closest form"
+                            hx-target="#import-requests-table"
+                            hx-swap="outerHTML"
+                            hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }">
+                        <i class="fas fa-trash mr-2"></i>
+                        <span>Delete Request</span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>

@@ -1,0 +1,175 @@
+{% load static %}
+
+<!-- Opinion Poll Component -->
+{% if poll %}
+<div class="opinion-poll-container mb-8 animate-fade-in-up" id="poll-{{ poll.id }}">
+    <div class="glassmorphism-card p-6">
+        <div class="poll-header mb-6">
+            <h3 class="text-xl font-bold text-harrier-dark font-montserrat mb-2">
+                <i class="fas fa-poll text-harrier-red mr-2"></i>
+                {{ poll.question }}
+            </h3>
+            <div class="flex items-center justify-between text-sm text-gray-600 font-raleway">
+                <span>{{ poll.total_votes }} vote{{ poll.total_votes|pluralize }}</span>
+                {% if poll.end_date %}
+                <span>Ends: {{ poll.end_date|date:"M d, Y" }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if poll.is_open and not user_has_voted %}
+        <!-- Voting Form -->
+        <form hx-post="{% url 'core:poll_vote' poll.id %}"
+              hx-target="#poll-{{ poll.id }}"
+              hx-swap="innerHTML"
+              class="poll-voting-form">
+            {% csrf_token %}
+            
+            <div class="poll-options space-y-3 mb-6">
+                {% for option in poll.options.all %}
+                <label class="poll-option-label flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-harrier-red transition-all duration-300 cursor-pointer">
+                    {% if poll.poll_type == 'multiple_choice' %}
+                    <input type="checkbox" 
+                           name="option_id" 
+                           value="{{ option.id }}" 
+                           class="mr-3 text-harrier-red focus:ring-harrier-red">
+                    {% else %}
+                    <input type="radio" 
+                           name="option_id" 
+                           value="{{ option.id }}" 
+                           class="mr-3 text-harrier-red focus:ring-harrier-red">
+                    {% endif %}
+                    <span class="font-medium text-gray-700 font-raleway">{{ option.text }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="flex justify-between items-center">
+                {% if poll.show_results_before_voting %}
+                <button type="button" 
+                        class="text-harrier-red hover:text-harrier-dark transition-colors duration-200 font-raleway"
+                        onclick="toggleResults()">
+                    <i class="fas fa-chart-bar mr-1"></i>
+                    View Results
+                </button>
+                {% else %}
+                <div></div>
+                {% endif %}
+                
+                <button type="submit" 
+                        class="admin-request-add-btn"
+                        id="vote-submit-btn"
+                        disabled>
+                    <i class="fas fa-vote-yea mr-2"></i>
+                    Cast Vote
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <!-- Poll Results -->
+        <div class="poll-results">
+            {% if not poll.is_open %}
+            <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-clock text-yellow-500 mr-2"></i>
+                    <span class="text-yellow-700 font-medium font-raleway">This poll has ended</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="poll-options space-y-4">
+                {% for option in poll.options.all %}
+                {% with percentage=option.vote_count|floatformat:1 %}
+                <div class="poll-option-result p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-harrier-dark font-raleway">{{ option.text }}</span>
+                        <div class="flex items-center space-x-2">
+                            {% if poll.total_votes > 0 %}
+                            <span class="text-sm font-bold text-harrier-red">
+                                {{ option.vote_count|mul:100|div:poll.total_votes|floatformat:1 }}%
+                            </span>
+                            {% endif %}
+                            <span class="text-xs text-gray-500">({{ option.vote_count }} vote{{ option.vote_count|pluralize }})</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    {% if poll.total_votes > 0 %}
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div class="bg-gradient-to-r from-harrier-red to-harrier-dark h-3 rounded-full transition-all duration-1000 ease-out"
+                             style="width: {{ option.vote_count|mul:100|div:poll.total_votes|floatformat:1 }}%;">
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endwith %}
+                {% endfor %}
+            </div>
+
+            {% if user_has_voted %}
+            <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    <span class="text-green-700 font-medium font-raleway">You have voted in this poll</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Enable vote button when option is selected
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'option_id') {
+        const submitBtn = document.getElementById('vote-submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+});
+
+// Toggle results visibility
+function toggleResults() {
+    // This would be implemented to show/hide results
+    console.log('Toggle results functionality');
+}
+
+// Add hover effects to poll options
+document.addEventListener('DOMContentLoaded', function() {
+    const pollOptions = document.querySelectorAll('.poll-option-label');
+    pollOptions.forEach(option => {
+        option.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(4px)';
+        });
+        
+        option.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+});
+</script>
+
+<style>
+.glassmorphism-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.poll-option-label:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.admin-request-add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.poll-option-result {
+    background: rgba(248, 250, 252, 0.8);
+}
+</style>
+{% endif %}

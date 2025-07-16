@@ -1,0 +1,175 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Import Requests{% endblock %}
+{% block page_title %}Import Requests{% endblock %}
+{% block page_description %}Manage your car import requests and track their progress{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">Import Requests</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Enhanced Import Request Stats with Modern Design -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up">
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-import text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-harrier-dark font-montserrat">{{ total_requests }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Total Requests</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-harrier-red rounded-full mr-2"></div>
+                <span class="text-gray-600 font-medium">All import requests</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-clock text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-yellow-600 font-montserrat">{{ pending_requests }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Pending</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                <span class="text-yellow-600 font-medium">Awaiting response</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-cogs text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-blue-600 font-montserrat">{{ in_progress_requests }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">In Progress</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                <span class="text-blue-600 font-medium">Being processed</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-check-circle text-white"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600 font-montserrat">{{ completed_requests }}</div>
+                    <div class="text-sm text-gray-600 font-raleway">Completed</div>
+                </div>
+            </div>
+            <div class="flex items-center text-sm">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-green-600 font-medium">Successfully fulfilled</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Search and Filter Section -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200/50 mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-2">My Import Requests</h3>
+                    <p class="text-gray-600 font-raleway">Track and manage your car import requests</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <input type="text"
+                               id="searchInput"
+                               placeholder="Search requests..."
+                               value="{{ search_query }}"
+                               class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200 font-raleway">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <select id="statusFilter"
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200 font-raleway">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="on_quotation" {% if status_filter == 'on_quotation' %}selected{% endif %}>On Quotation</option>
+                        <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Processing</option>
+                        <option value="fee_paid" {% if status_filter == 'fee_paid' %}selected{% endif %}>Fee Paid</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+
+                    <!-- New Import Request Button -->
+                    <a href="{% url 'core:import_request' %}"
+                       class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-semibold text-sm hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-montserrat">
+                        <i class="fas fa-plus mr-2"></i>New Request
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Requests Table -->
+        <div class="overflow-x-auto">
+            <div id="import-requests-container">
+                {% include 'core/dashboard/partials/vendor_import_requests_table.html' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+// Enhanced search and filter functionality
+let searchTimeout;
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilters();
+    }, 300);
+});
+
+document.getElementById('statusFilter').addEventListener('change', function() {
+    applyFilters();
+});
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    
+    const url = '{% url "core:vendor_import_requests" %}?' + params.toString();
+    
+    htmx.ajax('GET', url, {
+        target: '#import-requests-container',
+        swap: 'innerHTML'
+    });
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    applyFilters();
+}, 30000);
+</script>
+{% endblock %}

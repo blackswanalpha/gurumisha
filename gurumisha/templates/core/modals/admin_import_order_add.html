@@ -1,7 +1,7 @@
 {% load static %}
 
 <!-- Add Import Order Modal -->
-<div class="fixed inset-0 z-50 overflow-y-auto" 
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
      id="add-import-order-modal"
      x-data="{ show: false }"
      x-init="show = true"
@@ -12,9 +12,9 @@
      x-transition:leave="ease-in duration-200"
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0">
-    
+
     <!-- Modal Backdrop -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity modal-backdrop"
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity modal-backdrop z-[1400]"
          @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
     
     <!-- Modal Panel -->

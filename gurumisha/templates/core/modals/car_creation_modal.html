@@ -1,0 +1,614 @@
+{% load static %}
+
+<!-- Car Creation Modal -->
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
+     id="car-creation-modal"
+     x-data="{ show: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1400]"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+
+    <!-- Modal Container -->
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 relative z-[1600]">
+        <div class="relative transform overflow-hidden rounded-2xl bg-gradient-to-br from-white via-gray-50 to-white shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-4xl z-[1700]"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-harrier-red to-black px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-plus text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">Add New Car Listing</h3>
+                            <p class="text-white text-opacity-80 text-sm font-raleway">Create a new car listing quickly</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <i class="fas fa-times text-white text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-[70vh] overflow-y-auto modal-body">
+                <form id="car-creation-form"
+                      hx-post="{% url 'core:sell_car' %}"
+                      hx-target="body"
+                      hx-swap="none"
+                      class="space-y-6"
+                      x-data="{ isSubmitting: false }"
+                      @submit="isSubmitting = true"
+                      hx-on::before-request="handleBeforeSubmit(event)"
+                      hx-on::after-request="handleAfterSubmit(event)"
+                      hx-on::response-error="handleSubmitError(event)">
+                    {% csrf_token %}
+
+                    <!-- Basic Information -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-info-circle text-harrier-red mr-2"></i>
+                            Basic Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="id_title" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-tag text-harrier-red mr-1"></i>
+                                    Car Title *
+                                </label>
+                                <input type="text" name="title" id="id_title" required class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="Enter car title">
+                            </div>
+                            <div class="form-group">
+                                <label for="id_price" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-money-bill-wave text-harrier-red mr-1"></i>
+                                    Price (KES) *
+                                </label>
+                                <input type="number" name="price" id="id_price" required class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="Enter price in KES">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Details -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-car text-harrier-red mr-2"></i>
+                            Vehicle Details
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-group">
+                                <label for="id_brand" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-industry text-harrier-red mr-1"></i>
+                                    Brand *
+                                </label>
+                                <select name="brand" id="id_brand" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select a brand</option>
+                                    {% for brand in car_brands %}
+                                        <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_model" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-car-side text-harrier-red mr-1"></i>
+                                    Model *
+                                </label>
+                                <select name="model" id="id_model" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select a model</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_year" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-calendar-alt text-harrier-red mr-1"></i>
+                                    Year *
+                                </label>
+                                <input type="number" name="year" id="id_year" required min="1990" max="2026" class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="Enter year">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div class="form-group">
+                                <label for="id_condition" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-star text-harrier-red mr-1"></i>
+                                    Condition *
+                                </label>
+                                <select name="condition" id="id_condition" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select condition</option>
+                                    {% for condition in vehicle_conditions %}
+                                        <option value="{{ condition.id }}">{{ condition.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_mileage" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-road text-harrier-red mr-1"></i>
+                                    Mileage (km)
+                                </label>
+                                <input type="number" name="mileage" id="id_mileage" class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="Enter mileage">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div class="form-group">
+                                <label for="id_engine_size" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-cog text-harrier-red mr-1"></i>
+                                    Engine Size
+                                </label>
+                                <input type="text" name="engine_size" id="id_engine_size" class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="e.g., 2.0L">
+                            </div>
+                            <div class="form-group">
+                                <label for="id_fuel_type" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-gas-pump text-harrier-red mr-1"></i>
+                                    Fuel Type
+                                </label>
+                                <select name="fuel_type" id="id_fuel_type" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select fuel type</option>
+                                    <option value="petrol">Petrol</option>
+                                    <option value="diesel">Diesel</option>
+                                    <option value="hybrid">Hybrid</option>
+                                    <option value="electric">Electric</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_transmission" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-exchange-alt text-harrier-red mr-1"></i>
+                                    Transmission
+                                </label>
+                                <select name="transmission" id="id_transmission" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select transmission</option>
+                                    <option value="manual">Manual</option>
+                                    <option value="automatic">Automatic</option>
+                                    <option value="cvt">CVT</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+                            <div class="form-group">
+                                <label for="id_color" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-palette text-harrier-red mr-1"></i>
+                                    Color
+                                </label>
+                                <input type="text" name="color" id="id_color" class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="e.g., White, Black, Silver">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Information -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-map-marker-alt text-harrier-red mr-2"></i>
+                            Location Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-group">
+                                <label for="id_area" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-map-pin text-harrier-red mr-1"></i>
+                                    Area/Neighborhood
+                                </label>
+                                <input type="text" name="area" id="id_area" class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="e.g., Westlands, Karen, Kilimani">
+                            </div>
+                            <div class="form-group">
+                                <label for="id_city" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-city text-harrier-red mr-1"></i>
+                                    City
+                                </label>
+                                <input type="text" name="city" id="id_city" class="enhanced-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="e.g., Nairobi, Mombasa, Kisumu">
+                            </div>
+                            <div class="form-group">
+                                <label for="id_country" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    <i class="fas fa-globe text-harrier-red mr-1"></i>
+                                    Country
+                                </label>
+                                <select name="country" id="id_country" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select a country</option>
+                                    <!-- Primary Market - Kenya -->
+                                    <option value="Kenya">Kenya</option>
+                                    <!-- East African Community -->
+                                    <option value="Uganda">Uganda</option>
+                                    <option value="Tanzania">Tanzania</option>
+                                    <option value="Rwanda">Rwanda</option>
+                                    <option value="Burundi">Burundi</option>
+                                    <option value="South Sudan">South Sudan</option>
+                                    <!-- Other East African Countries -->
+                                    <option value="Ethiopia">Ethiopia</option>
+                                    <option value="Somalia">Somalia</option>
+                                    <option value="Djibouti">Djibouti</option>
+                                    <option value="Eritrea">Eritrea</option>
+                                    <!-- Major African Markets -->
+                                    <option value="South Africa">South Africa</option>
+                                    <option value="Nigeria">Nigeria</option>
+                                    <option value="Egypt">Egypt</option>
+                                    <option value="Morocco">Morocco</option>
+                                    <option value="Ghana">Ghana</option>
+                                    <option value="Algeria">Algeria</option>
+                                    <option value="Tunisia">Tunisia</option>
+                                    <option value="Libya">Libya</option>
+                                    <!-- Other African Countries -->
+                                    <option value="Angola">Angola</option>
+                                    <option value="Benin">Benin</option>
+                                    <option value="Botswana">Botswana</option>
+                                    <option value="Burkina Faso">Burkina Faso</option>
+                                    <option value="Cameroon">Cameroon</option>
+                                    <option value="Cape Verde">Cape Verde</option>
+                                    <option value="Central African Republic">Central African Republic</option>
+                                    <option value="Chad">Chad</option>
+                                    <option value="Comoros">Comoros</option>
+                                    <option value="Democratic Republic of Congo">Democratic Republic of Congo</option>
+                                    <option value="Equatorial Guinea">Equatorial Guinea</option>
+                                    <option value="Gabon">Gabon</option>
+                                    <option value="Gambia">Gambia</option>
+                                    <option value="Guinea">Guinea</option>
+                                    <option value="Guinea-Bissau">Guinea-Bissau</option>
+                                    <option value="Ivory Coast">Ivory Coast</option>
+                                    <option value="Lesotho">Lesotho</option>
+                                    <option value="Liberia">Liberia</option>
+                                    <option value="Madagascar">Madagascar</option>
+                                    <option value="Malawi">Malawi</option>
+                                    <option value="Mali">Mali</option>
+                                    <option value="Mauritius">Mauritius</option>
+                                    <option value="Mozambique">Mozambique</option>
+                                    <option value="Namibia">Namibia</option>
+                                    <option value="Niger">Niger</option>
+                                    <option value="Republic of Congo">Republic of Congo</option>
+                                    <option value="Sao Tome and Principe">Sao Tome and Principe</option>
+                                    <option value="Senegal">Senegal</option>
+                                    <option value="Seychelles">Seychelles</option>
+                                    <option value="Sierra Leone">Sierra Leone</option>
+                                    <option value="Sudan">Sudan</option>
+                                    <option value="Swaziland">Swaziland</option>
+                                    <option value="Togo">Togo</option>
+                                    <option value="Zambia">Zambia</option>
+                                    <option value="Zimbabwe">Zimbabwe</option>
+                                    <!-- Major Global Markets -->
+                                    <option value="United States">United States</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                    <option value="Germany">Germany</option>
+                                    <option value="Japan">Japan</option>
+                                    <option value="China">China</option>
+                                    <option value="India">India</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="France">France</option>
+                                    <option value="Italy">Italy</option>
+                                    <option value="Spain">Spain</option>
+                                    <option value="Brazil">Brazil</option>
+                                    <option value="Mexico">Mexico</option>
+                                    <option value="South Korea">South Korea</option>
+                                    <option value="Netherlands">Netherlands</option>
+                                    <option value="Belgium">Belgium</option>
+                                    <option value="Switzerland">Switzerland</option>
+                                    <option value="Austria">Austria</option>
+                                    <option value="Sweden">Sweden</option>
+                                    <option value="Norway">Norway</option>
+                                    <option value="Denmark">Denmark</option>
+                                    <option value="Finland">Finland</option>
+                                    <option value="Poland">Poland</option>
+                                    <option value="Czech Republic">Czech Republic</option>
+                                    <option value="Hungary">Hungary</option>
+                                    <option value="Romania">Romania</option>
+                                    <option value="Bulgaria">Bulgaria</option>
+                                    <option value="Greece">Greece</option>
+                                    <option value="Portugal">Portugal</option>
+                                    <option value="Ireland">Ireland</option>
+                                    <option value="Luxembourg">Luxembourg</option>
+                                    <option value="Malta">Malta</option>
+                                    <option value="Cyprus">Cyprus</option>
+                                    <option value="Estonia">Estonia</option>
+                                    <option value="Latvia">Latvia</option>
+                                    <option value="Lithuania">Lithuania</option>
+                                    <option value="Slovenia">Slovenia</option>
+                                    <option value="Slovakia">Slovakia</option>
+                                    <option value="Croatia">Croatia</option>
+                                    <option value="Serbia">Serbia</option>
+                                    <option value="Montenegro">Montenegro</option>
+                                    <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+                                    <option value="North Macedonia">North Macedonia</option>
+                                    <option value="Albania">Albania</option>
+                                    <option value="Moldova">Moldova</option>
+                                    <option value="Ukraine">Ukraine</option>
+                                    <option value="Belarus">Belarus</option>
+                                    <option value="Russia">Russia</option>
+                                    <option value="Turkey">Turkey</option>
+                                    <option value="Israel">Israel</option>
+                                    <option value="Saudi Arabia">Saudi Arabia</option>
+                                    <option value="United Arab Emirates">United Arab Emirates</option>
+                                    <option value="Qatar">Qatar</option>
+                                    <option value="Kuwait">Kuwait</option>
+                                    <option value="Bahrain">Bahrain</option>
+                                    <option value="Oman">Oman</option>
+                                    <option value="Jordan">Jordan</option>
+                                    <option value="Lebanon">Lebanon</option>
+                                    <option value="Syria">Syria</option>
+                                    <option value="Iraq">Iraq</option>
+                                    <option value="Iran">Iran</option>
+                                    <option value="Afghanistan">Afghanistan</option>
+                                    <option value="Pakistan">Pakistan</option>
+                                    <option value="Bangladesh">Bangladesh</option>
+                                    <option value="Sri Lanka">Sri Lanka</option>
+                                    <option value="Nepal">Nepal</option>
+                                    <option value="Bhutan">Bhutan</option>
+                                    <option value="Maldives">Maldives</option>
+                                    <option value="Thailand">Thailand</option>
+                                    <option value="Vietnam">Vietnam</option>
+                                    <option value="Malaysia">Malaysia</option>
+                                    <option value="Singapore">Singapore</option>
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="Philippines">Philippines</option>
+                                    <option value="Brunei">Brunei</option>
+                                    <option value="Myanmar">Myanmar</option>
+                                    <option value="Cambodia">Cambodia</option>
+                                    <option value="Laos">Laos</option>
+                                    <option value="New Zealand">New Zealand</option>
+                                    <option value="Papua New Guinea">Papua New Guinea</option>
+                                    <option value="Fiji">Fiji</option>
+                                    <option value="Argentina">Argentina</option>
+                                    <option value="Chile">Chile</option>
+                                    <option value="Peru">Peru</option>
+                                    <option value="Colombia">Colombia</option>
+                                    <option value="Venezuela">Venezuela</option>
+                                    <option value="Ecuador">Ecuador</option>
+                                    <option value="Bolivia">Bolivia</option>
+                                    <option value="Paraguay">Paraguay</option>
+                                    <option value="Uruguay">Uruguay</option>
+                                    <option value="Guyana">Guyana</option>
+                                    <option value="Suriname">Suriname</option>
+                                    <option value="Guatemala">Guatemala</option>
+                                    <option value="Belize">Belize</option>
+                                    <option value="El Salvador">El Salvador</option>
+                                    <option value="Honduras">Honduras</option>
+                                    <option value="Nicaragua">Nicaragua</option>
+                                    <option value="Costa Rica">Costa Rica</option>
+                                    <option value="Panama">Panama</option>
+                                    <option value="Cuba">Cuba</option>
+                                    <option value="Jamaica">Jamaica</option>
+                                    <option value="Haiti">Haiti</option>
+                                    <option value="Dominican Republic">Dominican Republic</option>
+                                    <option value="Trinidad and Tobago">Trinidad and Tobago</option>
+                                    <option value="Barbados">Barbados</option>
+                                    <option value="Saint Lucia">Saint Lucia</option>
+                                    <option value="Grenada">Grenada</option>
+                                    <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+                                    <option value="Antigua and Barbuda">Antigua and Barbuda</option>
+                                    <option value="Dominica">Dominica</option>
+                                    <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+                                    <option value="Bahamas">Bahamas</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-align-left text-harrier-red mr-2"></i>
+                            Description & Features
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="form-group">
+                                <label for="id_description" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    Description *
+                                </label>
+                                <textarea name="description" id="id_description" required rows="4" class="enhanced-textarea w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="Describe your car in detail..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_features" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    Features
+                                </label>
+                                <textarea name="features" id="id_features" rows="3" class="enhanced-textarea w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm" placeholder="List key features (e.g., Air conditioning, Power steering, etc.)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-camera text-harrier-red mr-2"></i>
+                            Main Image
+                        </h4>
+                        <div class="form-group">
+                            <label for="id_main_image" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                Upload Main Image
+                            </label>
+                            <input type="file" name="main_image" id="id_main_image" accept="image/*" class="enhanced-file-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Listing Options -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-cog text-harrier-red mr-2"></i>
+                            Listing Options
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="id_listing_type" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                    Listing Type
+                                </label>
+                                <select name="listing_type" id="id_listing_type" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="local">Local Listing</option>
+                                    <option value="imported">Imported Car</option>
+                                    <option value="sell_behalf">Sell on Behalf</option>
+                                    <option value="auction">Auctioned</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" name="negotiable" id="id_negotiable" class="enhanced-checkbox w-4 h-4 text-harrier-red bg-white border-2 border-gray-200 rounded focus:ring-harrier-red focus:ring-2 transition-all duration-300">
+                                    <label for="id_negotiable" class="text-sm font-semibold text-harrier-dark font-montserrat">
+                                        Price is negotiable
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                    <button type="button" 
+                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold font-montserrat"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="submit" 
+                            form="car-creation-form"
+                            class="px-6 py-3 bg-gradient-to-r from-harrier-red to-black text-white rounded-lg hover:from-harrier-red-dark hover:to-gray-900 transition-all duration-200 font-semibold font-montserrat shadow-lg"
+                            x-bind:disabled="isSubmitting"
+                            x-bind:class="{ 'opacity-50 cursor-not-allowed': isSubmitting }">
+                        <i class="fas fa-plus mr-2" x-show="!isSubmitting"></i>
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                        <span x-text="isSubmitting ? 'Creating...' : 'Create Listing'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal specific styles */
+.modal-body {
+    /* Custom scrollbar for modal */
+    scrollbar-width: thin;
+    scrollbar-color: #dc2626 #f1f5f9;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #dc2626;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #b91c1c;
+}
+
+/* Enhanced form inputs for modal */
+#car-creation-modal .enhanced-input,
+#car-creation-modal .enhanced-select,
+#car-creation-modal .enhanced-textarea {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm;
+}
+
+#car-creation-modal .enhanced-file-input {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-harrier-red file:text-white hover:file:bg-harrier-red-dark;
+}
+
+#car-creation-modal .enhanced-checkbox {
+    @apply w-4 h-4 text-harrier-red bg-white border-2 border-gray-200 rounded focus:ring-harrier-red focus:ring-2 transition-all duration-300;
+}
+</style>
+
+<script>
+function handleBeforeSubmit(event) {
+    console.log('Car creation form submitting...');
+    // Add any pre-submit validation here
+}
+
+function handleAfterSubmit(event) {
+    console.log('Car creation form submitted');
+    if (event.detail.xhr.status === 200) {
+        try {
+            const response = JSON.parse(event.detail.xhr.responseText);
+            if (response.status === 'success') {
+                // Show success message
+                if (typeof showToast === 'function') {
+                    showToast(response.message, 'success');
+                } else {
+                    alert(response.message);
+                }
+
+                // Close modal
+                document.getElementById('car-creation-modal').remove();
+
+                // Redirect to appropriate page
+                if (response.redirect) {
+                    window.location.href = response.redirect;
+                } else {
+                    location.reload(); // Fallback to refresh
+                }
+            } else {
+                // Handle error response
+                if (typeof showToast === 'function') {
+                    showToast(response.message || 'An error occurred', 'error');
+                } else {
+                    alert(response.message || 'An error occurred');
+                }
+            }
+        } catch (e) {
+            // Fallback for non-JSON responses
+            document.getElementById('car-creation-modal').remove();
+            location.reload();
+        }
+    }
+}
+
+function handleSubmitError(event) {
+    console.error('Car creation form error:', event.detail);
+    try {
+        const response = JSON.parse(event.detail.xhr.responseText);
+        if (response.errors) {
+            // Display field-specific errors
+            Object.keys(response.errors).forEach(field => {
+                const fieldElement = document.querySelector(`[name="${field}"]`);
+                if (fieldElement) {
+                    // Add error styling
+                    fieldElement.classList.add('border-red-500');
+
+                    // Show error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'text-red-500 text-sm mt-1';
+                    errorDiv.textContent = response.errors[field].join(', ');
+
+                    // Remove existing error messages
+                    const existingError = fieldElement.parentNode.querySelector('.text-red-500');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+
+                    fieldElement.parentNode.appendChild(errorDiv);
+                }
+            });
+        }
+
+        // Show general error message
+        if (typeof showToast === 'function') {
+            showToast(response.message || 'Please correct the errors and try again.', 'error');
+        } else {
+            alert(response.message || 'Please correct the errors and try again.');
+        }
+    } catch (e) {
+        // Fallback error handling
+        if (typeof showToast === 'function') {
+            showToast('An error occurred. Please try again.', 'error');
+        } else {
+            alert('An error occurred. Please try again.');
+        }
+    }
+}
+</script>

@@ -371,10 +371,8 @@
 {% block extra_js %}
 <script>
 function viewOrderDetails(orderId) {
-    // This would typically open a modal or navigate to order details page
-    console.log('Viewing order details:', orderId);
-    // For demo purposes, show an alert
-    alert('Order details functionality would be implemented here');
+    // Navigate to order details page
+    window.location.href = `/orders/${orderId}/`;
 }
 
 function leaveReview(orderId) {
@@ -384,19 +382,49 @@ function leaveReview(orderId) {
 }
 
 function cancelOrder(orderId) {
-    if (confirm('Are you sure you want to cancel this order?')) {
-        // This would typically make an AJAX request to cancel the order
-        console.log('Cancelling order:', orderId);
+    if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+        // Get CSRF token
+        const csrfToken = getCookie('csrftoken');
 
-        // Show success message
-        const orderElement = event.target.closest('.group');
-        if (orderElement) {
-            const statusBadge = orderElement.querySelector('.rounded-full');
-            if (statusBadge) {
-                statusBadge.className = 'px-3 py-1 text-sm font-bold rounded-full bg-red-100 text-red-800 border border-red-200';
-                statusBadge.textContent = 'Cancelled';
+        // Make AJAX request to cancel the order
+        fetch(`/orders/${orderId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the order status in the UI
+                const orderElement = event.target.closest('.group');
+                if (orderElement) {
+                    const statusBadge = orderElement.querySelector('.rounded-full');
+                    if (statusBadge) {
+                        statusBadge.className = 'px-3 py-1 text-sm font-bold rounded-full bg-red-100 text-red-800 border border-red-200';
+                        statusBadge.textContent = 'Cancelled';
+                    }
+
+                    // Hide the cancel button
+                    const cancelButton = orderElement.querySelector('button[onclick*="cancelOrder"]');
+                    if (cancelButton) {
+                        cancelButton.style.display = 'none';
+                    }
+                }
+
+                // Show success message
+                showToast('success', data.message || 'Order cancelled successfully');
+            } else {
+                // Show error message
+                showToast('error', data.message || 'Failed to cancel order');
             }
-        }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'An error occurred while cancelling the order');
+        });
     }
 }
 
@@ -441,6 +469,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Toast notification function
+function showToast(type, message) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full`;
+
+    // Set background color based on type
+    if (type === 'success') {
+        toast.classList.add('bg-green-500');
+    } else if (type === 'error') {
+        toast.classList.add('bg-red-500');
+    } else {
+        toast.classList.add('bg-blue-500');
+    }
+
+    toast.textContent = message;
+
+    // Add to page
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
 </script>
 
 <style>

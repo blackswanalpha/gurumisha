@@ -1,0 +1,322 @@
+<!-- Edit Spare Part Modal -->
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
+     id="edit-spare-part-modal"
+     x-data="{ show: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1400]"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Container -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-panel bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="modal-header bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-edit text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">Edit Spare Part</h3>
+                            <p class="text-white text-opacity-80 text-sm font-raleway">Update spare part information</p>
+                        </div>
+                    </div>
+
+                    <!-- Close Button -->
+                    <button type="button"
+                            class="text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-all duration-200"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <span class="sr-only">Close</span>
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-96 overflow-y-auto modal-body">
+                <form id="edit-spare-part-form"
+                      hx-post="{% url 'core:admin_spare_part_edit' part_id=spare_part.id %}"
+                      hx-target="#inventory-table-container"
+                      hx-swap="outerHTML"
+                      hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }"
+                      class="space-y-6"
+                      x-data="{ isSubmitting: false }"
+                      @submit="isSubmitting = true">
+                    {% csrf_token %}
+
+                    <!-- Basic Information Section -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-info-circle mr-2"></i>Basic Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-tag"></i>Part Name *
+                                </label>
+                                <input type="text" name="name" required
+                                       class="form-input"
+                                       value="{{ spare_part.name }}"
+                                       placeholder="Enter part name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-hashtag"></i>Part Number
+                                </label>
+                                <input type="text" name="part_number"
+                                       class="form-input"
+                                       value="{{ spare_part.part_number }}"
+                                       placeholder="Manufacturer part number">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-barcode"></i>SKU *
+                                </label>
+                                <input type="text" name="sku" required
+                                       class="form-input"
+                                       value="{{ spare_part.sku }}"
+                                       placeholder="Stock Keeping Unit">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-qrcode"></i>Barcode
+                                </label>
+                                <input type="text" name="barcode"
+                                       class="form-input"
+                                       value="{{ spare_part.barcode }}"
+                                       placeholder="Barcode (optional)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category and Classification -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-tags mr-2"></i>Category & Classification
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-folder"></i>Primary Category *
+                                </label>
+                                <select name="category_new" required class="form-select">
+                                    <option value="">Select Primary Category</option>
+                                    {% for category in categories %}
+                                        {% if not category.parent %}
+                                            {% if spare_part.category_new.parent %}
+                                                <option value="{{ category.id }}" {% if category.id == spare_part.category_new.parent.id %}selected{% endif %}>
+                                                    {{ category.name }}
+                                                </option>
+                                            {% else %}
+                                                <option value="{{ category.id }}" {% if category.id == spare_part.category_new.id %}selected{% endif %}>
+                                                    {{ category.name }}
+                                                </option>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-folder-open"></i>Sub-Category
+                                </label>
+                                <select name="sub_category" class="form-select">
+                                    <option value="">Select Sub-Category (Optional)</option>
+                                    {% for category in categories %}
+                                        {% if category.parent %}
+                                            {% if spare_part.category_new.parent and category.id == spare_part.category_new.id %}
+                                                <option value="{{ category.id }}" selected>{{ category.parent.name }} > {{ category.name }}</option>
+                                            {% else %}
+                                                <option value="{{ category.id }}">{{ category.parent.name }} > {{ category.name }}</option>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-star"></i>Condition
+                                </label>
+                                <select name="condition" class="form-select">
+                                    <option value="new" {% if spare_part.condition == 'new' %}selected{% endif %}>New</option>
+                                    <option value="used" {% if spare_part.condition == 'used' %}selected{% endif %}>Used</option>
+                                    <option value="refurbished" {% if spare_part.condition == 'refurbished' %}selected{% endif %}>Refurbished</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-truck"></i>Supplier
+                                </label>
+                                <select name="supplier" class="form-select">
+                                    <option value="">Select Supplier</option>
+                                    {% for supplier in suppliers %}
+                                        <option value="{{ supplier.id }}" {% if supplier.id == spare_part.supplier.id %}selected{% endif %}>
+                                            {{ supplier.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Information -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-dollar-sign mr-2"></i>Pricing Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-money-bill"></i>Selling Price (KSh) *
+                                </label>
+                                <input type="number" name="price" required step="0.01" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.price }}"
+                                       placeholder="0.00">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-receipt"></i>Cost Price (KSh)
+                                </label>
+                                <input type="number" name="cost_price" step="0.01" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.cost_price }}"
+                                       placeholder="0.00">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-percentage"></i>Discount Price (KSh)
+                                </label>
+                                <input type="number" name="discount_price" step="0.01" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.discount_price }}"
+                                       placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Information -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-boxes mr-2"></i>Stock Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-box"></i>Stock Quantity *
+                                </label>
+                                <input type="number" name="stock_quantity" required min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.stock_quantity }}"
+                                       placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-exclamation-triangle"></i>Minimum Stock
+                                </label>
+                                <input type="number" name="minimum_stock" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.minimum_stock }}"
+                                       placeholder="5">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-arrow-up"></i>Maximum Stock
+                                </label>
+                                <input type="number" name="maximum_stock" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.maximum_stock }}"
+                                       placeholder="100">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-redo"></i>Reorder Point
+                                </label>
+                                <input type="number" name="reorder_point" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.reorder_point }}"
+                                       placeholder="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-align-left mr-2"></i>Description & Specifications
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-file-text"></i>Description
+                                </label>
+                                <textarea name="description" rows="4"
+                                          class="form-textarea"
+                                          placeholder="Detailed description of the spare part">{{ spare_part.description }}</textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-cogs"></i>Specifications
+                                </label>
+                                <textarea name="specifications" rows="4"
+                                          class="form-textarea"
+                                          placeholder="Technical specifications">{{ spare_part.specifications }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6 pt-6 border-t border-gray-200">
+                        <!-- Cancel Button -->
+                        <button type="button"
+                                class="enhanced-btn enhanced-btn-cancel"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                            <i class="fas fa-times mr-2"></i>
+                            <span>Cancel</span>
+                        </button>
+
+                        <!-- Submit Button -->
+                        <button type="submit"
+                                class="enhanced-btn enhanced-btn-submit"
+                                :disabled="isSubmitting">
+                            <i class="fas fa-save mr-2" x-show="!isSubmitting"></i>
+                            <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                            <span x-text="isSubmitting ? 'Updating Part...' : 'Update Part'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sub-categories are now hardcoded in the template - no dynamic loading needed -->

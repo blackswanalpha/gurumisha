@@ -3,6 +3,16 @@
  * Provides interactive features for login and register pages
  */
 
+// Prevent multiple script executions
+(function() {
+    'use strict';
+
+    if (window.authEnhancementsLoaded) {
+        console.log('Auth enhancements already loaded');
+        return;
+    }
+    window.authEnhancementsLoaded = true;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize authentication page enhancements
     initPasswordVisibilityToggle();
@@ -665,3 +675,5 @@ slideDownStyle.textContent = `
     }
 `;
 document.head.appendChild(slideDownStyle);
+
+})(); // End of IIFE

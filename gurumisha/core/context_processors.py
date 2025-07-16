@@ -4,10 +4,42 @@ Context processors for providing global template variables
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Q
 from .models import (
     Notification, ImportRequest, ImportOrder, Inquiry,
     Order, Car, Vendor, User, SparePart, InventoryAlert
 )
+
+
+def get_user_message_count(user):
+    """Get count of new messages for a user"""
+    try:
+        from .models import Message, MessageRead
+
+        # Get active messages for this user's role
+        user_role = getattr(user, 'role', 'customer')
+        messages_qs = Message.objects.filter(
+            Q(status='active') & (Q(target_audience='all') | Q(target_audience=user_role))
+        )
+
+        # Apply publication/expiration filters
+        now = timezone.now()
+        messages_qs = messages_qs.filter(
+            (Q(publication_date__isnull=True) | Q(publication_date__lte=now)) &
+            (Q(expiration_date__isnull=True) | Q(expiration_date__gte=now))
+        )
+
+        # Count messages not yet seen by user
+        seen_message_ids = MessageRead.objects.filter(
+            user=user,
+            message__in=messages_qs
+        ).values_list('message_id', flat=True)
+
+        return messages_qs.exclude(id__in=seen_message_ids).count()
+
+    except Exception:
+        # Handle case where Message model doesn't exist yet (during migrations)
+        return 0
 
 
 def notification_badges(request):
@@ -127,8 +159,8 @@ def notification_badges(request):
                     updated_at__gte=timezone.now() - timedelta(days=7)
                 ).count(),
 
-                # Messages/communications
-                'new_messages': 0,  # Placeholder for future messaging system
+                # Messages/communications - now implemented
+                'new_messages': get_user_message_count(user),
             })
 
         # Calculate total badge count for main notification indicator

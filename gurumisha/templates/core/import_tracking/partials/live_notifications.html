@@ -1,0 +1,246 @@
+<!-- Live Tracking Notifications Component -->
+<div class="live-notifications" 
+     x-data="liveNotifications()"
+     x-init="initializeNotifications()"
+     hx-get="{% url 'core:import_tracking_notifications_htmx' %}"
+     hx-trigger="every 120s"
+     hx-swap="none"
+     hx-on:htmx:after-request="updateNotifications(event)">
+    
+    <!-- Notifications Bell Icon -->
+    <div class="relative">
+        <button @click="toggleNotifications()" 
+                class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg transition-colors">
+            <i class="fas fa-bell text-xl"></i>
+            
+            <!-- Notification Badge -->
+            <span x-show="unreadCount > 0" 
+                  x-text="unreadCount > 99 ? '99+' : unreadCount"
+                  x-transition:enter="ease-out duration-200"
+                  x-transition:enter-start="opacity-0 scale-50"
+                  x-transition:enter-end="opacity-100 scale-100"
+                  class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+            </span>
+            
+            <!-- Live Indicator -->
+            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+        </button>
+        
+        <!-- Notifications Dropdown -->
+        <div x-show="showNotifications" 
+             x-transition:enter="ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             @click.away="showNotifications = false"
+             class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden">
+            
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-900 to-black text-white px-4 py-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold font-montserrat">Live Tracking Updates</h3>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-xs text-green-200">Live</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications List -->
+            <div class="max-h-80 overflow-y-auto">
+                <template x-if="notifications.length === 0">
+                    <div class="p-6 text-center">
+                        <i class="fas fa-bell-slash text-gray-300 text-3xl mb-3"></i>
+                        <p class="text-gray-500">No recent updates</p>
+                        <p class="text-sm text-gray-400">Tracking notifications will appear here</p>
+                    </div>
+                </template>
+                
+                <template x-for="notification in notifications" :key="notification.id">
+                    <div class="border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                         @click="viewOrder(notification.order_number)">
+                        <div class="flex items-start space-x-3">
+                            <!-- Icon -->
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-map-pin text-blue-600 text-sm"></i>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-medium text-gray-900" x-text="notification.order_number"></p>
+                                    <span class="text-xs text-gray-500" x-text="formatTimeAgo(notification.time_ago)"></span>
+                                </div>
+                                <p class="text-sm text-gray-600 truncate" x-text="notification.message"></p>
+                                <div class="flex items-center justify-between mt-1">
+                                    <p class="text-xs text-gray-500" x-text="notification.vehicle_details"></p>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                          :class="{
+                                              'bg-blue-100 text-blue-800': notification.status === 'in_transit',
+                                              'bg-green-100 text-green-800': notification.status === 'arrived_docked',
+                                              'bg-yellow-100 text-yellow-800': !['in_transit', 'arrived_docked'].includes(notification.status)
+                                          }"
+                                          x-text="notification.tracking_source">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Footer -->
+            <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <button @click="markAllRead()" 
+                            class="text-sm text-red-600 hover:text-red-800 font-medium">
+                        Mark all read
+                    </button>
+                    <a href="{% url 'core:import_tracking_dashboard' %}" 
+                       class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        View all orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function liveNotifications() {
+    return {
+        showNotifications: false,
+        notifications: [],
+        unreadCount: 0,
+        lastCheck: null,
+        eventSource: null,
+        
+        initializeNotifications() {
+            this.loadInitialNotifications();
+            this.setupSSE();
+        },
+        
+        loadInitialNotifications() {
+            // Load initial notifications via HTMX
+            fetch('{% url "core:import_tracking_notifications_htmx" %}', {
+                headers: {
+                    'HX-Request': 'true',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.notifications = data.notifications || [];
+                this.updateUnreadCount();
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+            });
+        },
+        
+        setupSSE() {
+            // Setup Server-Sent Events for real-time updates
+            // Note: This would connect to a general SSE endpoint for all user orders
+            // For now, we'll use periodic HTMX updates
+            console.log('SSE setup for notifications (using HTMX polling)');
+        },
+        
+        toggleNotifications() {
+            this.showNotifications = !this.showNotifications;
+            if (this.showNotifications) {
+                this.markAllRead();
+            }
+        },
+        
+        updateNotifications(event) {
+            // Handle HTMX response
+            try {
+                const data = JSON.parse(event.detail.xhr.responseText);
+                if (data.notifications) {
+                    // Check for new notifications
+                    const newNotifications = data.notifications.filter(n => 
+                        !this.notifications.find(existing => existing.id === n.id)
+                    );
+                    
+                    if (newNotifications.length > 0) {
+                        // Add new notifications to the beginning
+                        this.notifications = [...newNotifications, ...this.notifications];
+                        this.updateUnreadCount();
+                        
+                        // Show browser notification if permission granted
+                        this.showBrowserNotification(newNotifications[0]);
+                    }
+                }
+            } catch (e) {
+                console.log('Notifications response is not JSON');
+            }
+        },
+        
+        updateUnreadCount() {
+            // Count notifications from the last hour as unread
+            const oneHourAgo = Date.now() - (60 * 60 * 1000);
+            this.unreadCount = this.notifications.filter(n => {
+                const notificationTime = new Date(n.timestamp).getTime();
+                return notificationTime > oneHourAgo;
+            }).length;
+        },
+        
+        markAllRead() {
+            this.unreadCount = 0;
+        },
+        
+        viewOrder(orderNumber) {
+            window.location.href = `/import/tracking/${orderNumber}/`;
+        },
+        
+        formatTimeAgo(minutes) {
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${Math.floor(minutes)}m ago`;
+            
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
+        },
+        
+        showBrowserNotification(notification) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(`Tracking Update - ${notification.order_number}`, {
+                    body: notification.message,
+                    icon: '/static/images/logo.png',
+                    tag: `tracking-${notification.order_number}`,
+                });
+            }
+        }
+    }
+}
+
+// Request notification permission on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+});
+</script>
+
+<style>
+.live-notifications {
+    @apply relative;
+}
+
+.live-notifications .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+}
+</style>

@@ -1,0 +1,246 @@
+<!-- Enhanced Car Edit Modal -->
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="editCarModal">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white p-6 rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold font-montserrat">Edit Car Listing</h2>
+                    <p class="text-red-100 mt-1">Update your vehicle information</p>
+                </div>
+                <button onclick="closeEditModal()" class="text-white hover:text-red-200 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Content -->
+        <form method="post" action="{% url 'core:vendor_car_edit' car.id %}" class="p-6" 
+              hx-post="{% url 'core:vendor_car_edit' car.id %}"
+              hx-target="#listings-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            
+            <!-- Basic Information Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-harrier-red mr-2"></i>
+                    Basic Information
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Car Title -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Car Title *</label>
+                        <input type="text" name="title" value="{{ car.title }}" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"
+                               placeholder="e.g., Toyota Camry 2020 - Excellent Condition" required>
+                    </div>
+                    
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (KSH) *</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500">KSH</span>
+                            <input type="number" name="price" value="{{ car.price }}" 
+                                   class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"
+                                   placeholder="2500000" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Year -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+                        <input type="number" name="year" value="{{ car.year }}" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"
+                               placeholder="2020" min="1990" max="2025" required>
+                    </div>
+                    
+                    <!-- Mileage -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mileage (KM)</label>
+                        <div class="relative">
+                            <input type="number" name="mileage" value="{{ car.mileage|default:'' }}" 
+                                   class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"
+                                   placeholder="50000">
+                            <span class="absolute right-3 top-3 text-gray-500">KM</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Fuel Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type *</label>
+                        <select name="fuel_type" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200" required>
+                            <option value="petrol" {% if car.fuel_type == 'petrol' %}selected{% endif %}>Petrol</option>
+                            <option value="diesel" {% if car.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                            <option value="hybrid" {% if car.fuel_type == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                            <option value="electric" {% if car.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Transmission -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Transmission *</label>
+                        <select name="transmission" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200" required>
+                            <option value="manual" {% if car.transmission == 'manual' %}selected{% endif %}>Manual</option>
+                            <option value="automatic" {% if car.transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+                            <option value="cvt" {% if car.transmission == 'cvt' %}selected{% endif %}>CVT</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Brand -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                        <select name="brand" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                            <option value="">Select Brand</option>
+                            {% for brand in car_brands %}
+                                <option value="{{ brand.id }}" {% if car.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Condition -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+                        <select name="condition" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200">
+                            <option value="">Select Condition</option>
+                            {% for condition in vehicle_conditions %}
+                                <option value="{{ condition.id }}" {% if car.condition_id == condition.id %}selected{% endif %}>{{ condition.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4 flex items-center">
+                    <i class="fas fa-align-left text-harrier-red mr-2"></i>
+                    Description
+                </h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Car Description</label>
+                    <textarea name="description" rows="6" 
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-200"
+                              placeholder="Describe your car's features, condition, service history, and any additional information that would help potential buyers...">{{ car.description }}</textarea>
+                    <p class="text-sm text-gray-500 mt-2">Provide detailed information to attract more buyers</p>
+                </div>
+            </div>
+
+            <!-- Current Status Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4 flex items-center">
+                    <i class="fas fa-chart-bar text-harrier-red mr-2"></i>
+                    Current Status
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">Approval Status</div>
+                        <div class="font-bold">
+                            {% if car.is_approved %}
+                                <span class="text-green-600 flex items-center">
+                                    <i class="fas fa-check-circle mr-1"></i>Approved
+                                </span>
+                            {% else %}
+                                <span class="text-yellow-600 flex items-center">
+                                    <i class="fas fa-clock mr-1"></i>Pending Review
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">Featured Status</div>
+                        <div class="font-bold">
+                            {% if car.is_featured %}
+                                <span class="text-purple-600 flex items-center">
+                                    <i class="fas fa-star mr-1"></i>Featured
+                                </span>
+                            {% else %}
+                                <span class="text-gray-600 flex items-center">
+                                    <i class="far fa-star mr-1"></i>Not Featured
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">Views</div>
+                        <div class="font-bold text-blue-600">{{ car.views_count|default:0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between items-center pt-6 border-t border-gray-200">
+                <button type="button" onclick="closeEditModal()" 
+                        class="inline-flex items-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-300 font-medium">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </button>
+                
+                <div class="flex space-x-3">
+                    <button type="button" onclick="previewChanges()" 
+                            class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium">
+                        <i class="fas fa-eye mr-2"></i>
+                        Preview
+                    </button>
+                    
+                    <button type="submit" 
+                            class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-medium shadow-lg hover:from-harrier-red-dark hover:to-harrier-red transform hover:scale-105 transition-all duration-200">
+                        <i class="fas fa-save mr-2"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function closeEditModal() {
+    document.getElementById('editCarModal').remove();
+}
+
+function previewChanges() {
+    // Get form data
+    const form = document.querySelector('#editCarModal form');
+    const formData = new FormData(form);
+    
+    // Show preview (could open car detail page in new tab)
+    const carId = {{ car.id }};
+    window.open(`/cars/${carId}/`, '_blank');
+}
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#editCarModal form');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    form.addEventListener('submit', function(e) {
+        // Add loading state
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        submitButton.disabled = true;
+    });
+    
+    // Real-time validation
+    const requiredFields = form.querySelectorAll('input[required], select[required]');
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                this.classList.add('border-red-500');
+                this.classList.remove('border-gray-300');
+            } else {
+                this.classList.remove('border-red-500');
+                this.classList.add('border-gray-300');
+            }
+        });
+    });
+});
+</script>

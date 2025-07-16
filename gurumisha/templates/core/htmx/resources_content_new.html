@@ -1,0 +1,739 @@
+<!-- Revolutionary HTMX Resources Content Template -->
+{% load static %}
+
+<style>
+    /* Enhanced Content Styling */
+    .content-grid {
+        display: grid;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .featured-grid {
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    }
+
+    .regular-grid {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+
+    .content-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+    }
+
+    .content-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        border-color: rgba(220, 38, 38, 0.2);
+    }
+
+    .featured-card {
+        min-height: 400px;
+    }
+
+    .regular-card {
+        min-height: 320px;
+    }
+
+    .card-image {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .featured-card .card-image {
+        height: 250px;
+    }
+
+    .regular-card .card-image {
+        height: 200px;
+    }
+
+    .card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+
+    .content-card:hover .card-image img {
+        transform: scale(1.1);
+    }
+
+    .image-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .content-card:hover .image-overlay {
+        opacity: 1;
+    }
+
+    .content-badges {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        right: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        z-index: 2;
+    }
+
+    .content-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .badge-article {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-guide {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-infographic {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-opinion {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(124, 58, 237, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-news {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-review {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.9) 0%, rgba(147, 51, 234, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-featured {
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(245, 158, 11, 0.95) 100%);
+        color: white;
+    }
+
+    .badge-difficulty {
+        background: rgba(255, 255, 255, 0.9);
+        color: #374151;
+    }
+
+    .card-content {
+        padding: 1.5rem;
+        position: relative;
+    }
+
+    .featured-card .card-content {
+        padding: 2rem;
+    }
+
+    .content-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 1rem;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    .content-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.75rem;
+        font-family: 'Montserrat', sans-serif;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .featured-card .content-title {
+        font-size: 1.5rem;
+        -webkit-line-clamp: 3;
+    }
+
+    .content-title a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .content-card:hover .content-title a {
+        color: #dc2626;
+    }
+
+    .content-excerpt {
+        color: #6b7280;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        font-family: 'Raleway', sans-serif;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .featured-card .content-excerpt {
+        font-size: 1rem;
+        -webkit-line-clamp: 4;
+    }
+
+    .content-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .content-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        background: rgba(243, 244, 246, 0.8);
+        color: #374151;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .content-tag:hover {
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+    }
+
+    .content-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: auto;
+    }
+
+    .read-more-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #dc2626;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .read-more-btn:hover {
+        color: #b91c1c;
+        transform: translateX(4px);
+    }
+
+    .content-stats {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: #9ca3af;
+        font-size: 0.75rem;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: color 0.2s ease;
+    }
+
+    .stat-item:hover {
+        color: #dc2626;
+    }
+
+    /* Section Headers */
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .section-subtitle {
+        font-size: 1.125rem;
+        color: #6b7280;
+        font-family: 'Raleway', sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .empty-icon {
+        width: 5rem;
+        height: 5rem;
+        background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(185, 28, 28, 0.05) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .empty-description {
+        color: #6b7280;
+        margin-bottom: 2rem;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    .empty-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+    }
+
+    .empty-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .featured-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .regular-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+        }
+        
+        .content-title {
+            font-size: 1.125rem;
+        }
+        
+        .featured-card .content-title {
+            font-size: 1.25rem;
+        }
+    }
+
+    /* Animation Classes */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    {% if posts %}
+        <!-- Featured Content Section -->
+        {% if featured_posts %}
+        <div class="animate-fade-in-up" style="animation-delay: 0.1s;">
+            <div class="section-header">
+                <h2 class="section-title">Featured Content</h2>
+                <p class="section-subtitle">Handpicked articles and guides that showcase the best automotive insights</p>
+            </div>
+            
+            <div class="content-grid featured-grid">
+                {% for post in featured_posts %}
+                <article class="content-card featured-card">
+                    <div class="card-image">
+                        {% if post.featured_image %}
+                            <img src="{{ post.featured_image.url }}" alt="{{ post.featured_image_alt|default:post.title }}">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                <i class="fas fa-{{ post.content_type|default:'newspaper' }} text-gray-400 text-5xl"></i>
+                            </div>
+                        {% endif %}
+                        <div class="image-overlay"></div>
+                        
+                        <div class="content-badges">
+                            <div class="flex gap-2">
+                                <span class="content-badge badge-{{ post.content_type|default:'article' }}">
+                                    <i class="fas fa-{{ post.content_type|default:'newspaper' }}"></i>
+                                    <span>{{ post.get_content_type_display|default:'Article' }}</span>
+                                </span>
+                                {% if post.difficulty_level %}
+                                <span class="content-badge badge-difficulty">
+                                    {{ post.get_difficulty_level_display }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <span class="content-badge badge-featured">
+                                <i class="fas fa-star"></i>
+                                <span>Featured</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-content">
+                        <div class="content-meta">
+                            <span class="flex items-center">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ post.published_at|date:"M d, Y" }}
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-clock mr-1"></i>
+                                {{ post.estimated_read_time|default:5 }} min
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-user mr-1"></i>
+                                {{ post.author.get_full_name|default:post.author.username }}
+                            </span>
+                        </div>
+                        
+                        <h3 class="content-title">
+                            <a href="{% url 'core:resource_detail' post.slug %}">
+                                {{ post.title }}
+                            </a>
+                        </h3>
+                        
+                        {% if post.excerpt %}
+                            <p class="content-excerpt">{{ post.excerpt }}</p>
+                        {% endif %}
+                        
+                        {% if post.tags.all %}
+                        <div class="content-tags">
+                            {% for tag in post.tags.all|slice:":3" %}
+                                <span class="content-tag">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="content-actions">
+                            <a href="{% url 'core:resource_detail' post.slug %}" class="read-more-btn">
+                                <span>Read Full Article</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                            
+                            <div class="content-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-eye"></i>
+                                    <span>{{ post.views_count|default:0 }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-heart"></i>
+                                    <span>{{ post.likes_count|default:0 }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-share"></i>
+                                    <span>{{ post.shares_count|default:0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Regular Content Section -->
+        <div class="animate-fade-in-up" style="animation-delay: 0.3s;">
+            {% if not featured_posts %}
+            <div class="section-header">
+                <h2 class="section-title">
+                    {% if search_query %}
+                        Search Results for "{{ search_query }}"
+                    {% elif current_category %}
+                        {{ category_name|default:'Category' }} Content
+                    {% elif current_tag %}
+                        {{ tag_name|default:'Tag' }} Content
+                    {% elif current_content_type %}
+                        {{ current_content_type|title }} Content
+                    {% else %}
+                        Latest Resources
+                    {% endif %}
+                </h2>
+                <p class="section-subtitle">Explore our comprehensive collection of automotive insights and expertise</p>
+            </div>
+            {% else %}
+            <div class="section-header">
+                <h2 class="section-title">More Resources</h2>
+                <p class="section-subtitle">Continue exploring our extensive library of automotive content</p>
+            </div>
+            {% endif %}
+
+            <div class="content-grid regular-grid">
+                {% for post in posts %}
+                {% if not post.is_featured %}
+                <article class="content-card regular-card">
+                    <div class="card-image">
+                        {% if post.featured_image %}
+                            <img src="{{ post.featured_image.url }}" alt="{{ post.featured_image_alt|default:post.title }}">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                <i class="fas fa-{{ post.content_type|default:'newspaper' }} text-gray-400 text-4xl"></i>
+                            </div>
+                        {% endif %}
+                        <div class="image-overlay"></div>
+
+                        <div class="content-badges">
+                            <div class="flex gap-2">
+                                <span class="content-badge badge-{{ post.content_type|default:'article' }}">
+                                    <i class="fas fa-{{ post.content_type|default:'newspaper' }}"></i>
+                                    <span>{{ post.get_content_type_display|default:'Article' }}</span>
+                                </span>
+                                {% if post.difficulty_level %}
+                                <span class="content-badge badge-difficulty">
+                                    {{ post.get_difficulty_level_display }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="flex gap-1">
+                                <span class="content-badge badge-difficulty">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ post.estimated_read_time|default:5 }}m</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-content">
+                        <div class="content-meta">
+                            <span class="flex items-center">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ post.published_at|date:"M d, Y" }}
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-clock mr-1"></i>
+                                {{ post.estimated_read_time|default:5 }} min
+                            </span>
+                            {% if post.author %}
+                            <span class="flex items-center">
+                                <i class="fas fa-user mr-1"></i>
+                                {{ post.author.get_full_name|default:post.author.username }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <h3 class="content-title">
+                            <a href="{% url 'core:resource_detail' post.slug %}">
+                                {{ post.title }}
+                            </a>
+                        </h3>
+
+                        {% if post.excerpt %}
+                            <p class="content-excerpt">{{ post.excerpt }}</p>
+                        {% else %}
+                            <p class="content-excerpt">{{ post.content|truncatewords:20 }}</p>
+                        {% endif %}
+
+                        {% if post.tags.all %}
+                        <div class="content-tags">
+                            {% for tag in post.tags.all|slice:":3" %}
+                                <span class="content-tag">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="content-actions">
+                            <a href="{% url 'core:resource_detail' post.slug %}" class="read-more-btn">
+                                <span>Read More</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+
+                            <div class="content-stats">
+                                <div class="stat-item" title="Views">
+                                    <i class="fas fa-eye"></i>
+                                    <span>{{ post.views_count|default:0 }}</span>
+                                </div>
+                                <div class="stat-item" title="Likes">
+                                    <i class="fas fa-heart"></i>
+                                    <span>{{ post.likes_count|default:0 }}</span>
+                                </div>
+                                <div class="stat-item" title="Bookmarks">
+                                    <i class="fas fa-bookmark"></i>
+                                    <span>{{ post.bookmarks_count|default:0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <!-- Enhanced Empty State -->
+        <div class="empty-state animate-fade-in-up">
+            <div class="empty-icon">
+                <i class="fas fa-newspaper text-harrier-red text-3xl"></i>
+            </div>
+            <h3 class="empty-title">No Content Found</h3>
+            <p class="empty-description">
+                {% if search_query %}
+                    No results found for "{{ search_query }}". Try different keywords or browse all content.
+                {% elif current_content_type %}
+                    No {{ current_content_type }} content available yet. Check back soon for updates.
+                {% elif current_category %}
+                    No content in this category yet. Check back soon for updates.
+                {% elif current_tag %}
+                    No content with this tag yet. Check back soon for updates.
+                {% else %}
+                    Check back soon for automotive news, guides, and insights.
+                {% endif %}
+            </p>
+            <a href="{% url 'core:resources' %}" class="empty-action">
+                <i class="fas fa-arrow-left"></i>
+                <span>View All Content</span>
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Enhanced JavaScript for Content Interactions -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add staggered animations to content cards
+    const contentCards = document.querySelectorAll('.content-card');
+    contentCards.forEach((card, index) => {
+        card.style.animationDelay = `${0.1 + (index * 0.05)}s`;
+        card.classList.add('animate-fade-in-up');
+    });
+
+    // Enhanced hover effects
+    contentCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+
+    // Lazy loading for images
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.src) {
+                        img.src = img.dataset.src;
+                        img.classList.remove('loading');
+                        imageObserver.unobserve(img);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            imageObserver.observe(img);
+        });
+    }
+
+    // Enhanced bookmark functionality
+    const bookmarkButtons = document.querySelectorAll('[data-bookmark]');
+    bookmarkButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const postId = this.dataset.bookmark;
+
+            // Add visual feedback
+            this.style.transform = 'scale(1.2)';
+            this.style.color = '#dc2626';
+
+            setTimeout(() => {
+                this.style.transform = '';
+                this.style.color = '';
+            }, 200);
+
+            // HTMX request would handle the actual bookmarking
+            console.log('Bookmarking post:', postId);
+        });
+    });
+
+    // Enhanced share functionality
+    const shareButtons = document.querySelectorAll('[data-share]');
+    shareButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.dataset.share;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: document.title,
+                    url: url
+                });
+            } else {
+                // Fallback to clipboard
+                navigator.clipboard.writeText(url).then(() => {
+                    // Show toast notification
+                    if (window.showToast) {
+                        showToast('Link copied to clipboard!', 'success');
+                    }
+                });
+            }
+        });
+    });
+});
+</script>

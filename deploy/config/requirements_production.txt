@@ -1,0 +1,198 @@
+# Gurumisha Motors - Production Requirements
+# Frozen dependencies for stable production deployment
+
+# =============================================================================
+# CORE DJANGO FRAMEWORK
+# =============================================================================
+Django==4.2.7
+djangorestframework==3.14.0
+
+# =============================================================================
+# DATABASE & ORM
+# =============================================================================
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+dj-database-url==2.1.0  # Database URL parsing
+django-environ==0.11.2  # Environment variables
+
+# =============================================================================
+# WEB SERVER & DEPLOYMENT
+# =============================================================================
+gunicorn==21.2.0  # WSGI HTTP Server
+whitenoise==6.6.0  # Static file serving
+gevent==23.9.1  # Async worker support
+
+# =============================================================================
+# CACHING & PERFORMANCE
+# =============================================================================
+django-redis==5.4.0  # Redis cache backend
+redis==5.0.1  # Redis client
+django-cachalot==2.6.1  # ORM cache
+
+# =============================================================================
+# AUTHENTICATION & SECURITY
+# =============================================================================
+django-allauth==0.57.0  # Authentication
+django-cors-headers==4.3.1  # CORS handling
+cryptography==41.0.7  # Security utilities
+
+# =============================================================================
+# FORMS & UI
+# =============================================================================
+django-crispy-forms==2.1  # Form rendering
+crispy-tailwind==0.5.0  # Tailwind integration
+django-widget-tweaks==1.5.0  # Form widgets
+django-htmx==1.17.0  # HTMX integration
+
+# =============================================================================
+# FILE HANDLING & MEDIA
+# =============================================================================
+Pillow==10.1.0  # Image processing
+django-storages==1.14.2  # File storage backends
+boto3==1.34.0  # AWS SDK (for S3 storage)
+
+# =============================================================================
+# EMAIL & NOTIFICATIONS
+# =============================================================================
+django-ses==3.5.0  # AWS SES email backend
+
+# =============================================================================
+# BACKGROUND TASKS
+# =============================================================================
+celery==5.3.4  # Task queue
+django-rq==2.8.1  # Redis Queue integration
+rq==1.15.1  # Redis Queue
+
+# =============================================================================
+# API & SERIALIZATION
+# =============================================================================
+djangorestframework-simplejwt==5.3.0  # JWT authentication
+django-filter==23.5  # API filtering
+
+# =============================================================================
+# MONITORING & LOGGING
+# =============================================================================
+sentry-sdk==1.38.0  # Error tracking
+psutil==5.9.6  # System monitoring
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+python-decouple==3.8  # Configuration management
+requests==2.31.0  # HTTP library
+python-dateutil==2.8.2  # Date utilities
+schedule==1.2.0  # Task scheduling
+
+# =============================================================================
+# VALIDATION & FORMATTING
+# =============================================================================
+django-phonenumber-field==7.2.0  # Phone number validation
+phonenumbers==8.13.25  # Phone number utilities
+
+# =============================================================================
+# PAYMENT INTEGRATION
+# =============================================================================
+python-mpesa==1.2.0  # M-Pesa integration
+
+# =============================================================================
+# DATA EXPORT & IMPORT
+# =============================================================================
+openpyxl==3.1.2  # Excel file handling
+django-import-export==3.3.5  # Data import/export
+
+# =============================================================================
+# SEARCH & INDEXING
+# =============================================================================
+django-haystack==3.2.1  # Search framework
+whoosh==2.7.4  # Search engine
+
+# =============================================================================
+# SOCIAL AUTHENTICATION
+# =============================================================================
+social-auth-app-django==5.4.0  # Social authentication
+
+# =============================================================================
+# ADMIN INTERFACE
+# =============================================================================
+django-admin-interface==0.21.0  # Enhanced admin
+django-colorfield==0.10.1  # Color field widget
+
+# =============================================================================
+# INTERNATIONALIZATION
+# =============================================================================
+django-modeltranslation==0.18.11  # Model translation
+
+# =============================================================================
+# API DOCUMENTATION
+# =============================================================================
+drf-spectacular==0.27.0  # API documentation
+
+# =============================================================================
+# SITES FRAMEWORK
+# =============================================================================
+django-sites==0.11  # Sites framework utilities
+
+# =============================================================================
+# CONTENT MANAGEMENT
+# =============================================================================
+django-ckeditor==6.7.0  # Rich text editor
+django-taggit==4.0.0  # Tagging system
+
+# =============================================================================
+# SECURITY ENHANCEMENTS
+# =============================================================================
+django-security==0.17.0  # Security utilities
+django-ratelimit==4.1.0  # Rate limiting
+
+# =============================================================================
+# COMPRESSION & OPTIMIZATION
+# =============================================================================
+django-compressor==4.4  # Asset compression
+django-htmlmin==0.11.0  # HTML minification
+
+# =============================================================================
+# HEALTH CHECKS
+# =============================================================================
+django-health-check==3.17.0  # Health monitoring
+
+# =============================================================================
+# BACKUP & MAINTENANCE
+# =============================================================================
+django-dbbackup==4.0.2  # Database backup
+
+# =============================================================================
+# PRODUCTION UTILITIES
+# =============================================================================
+setuptools==69.0.2  # Package management
+wheel==0.42.0  # Package building
+
+# =============================================================================
+# SYSTEM DEPENDENCIES
+# =============================================================================
+# Note: These may need to be installed at system level on cPanel VPS
+# - Python 3.10+
+# - PostgreSQL client libraries
+# - Redis server
+# - Node.js (for frontend build)
+# - Git (for deployment)
+
+# =============================================================================
+# OPTIONAL DEPENDENCIES
+# =============================================================================
+# Uncomment if needed:
+
+# django-debug-toolbar==4.2.0  # Debug toolbar (development only)
+# django-extensions==3.2.3  # Development utilities
+# factory-boy==3.3.0  # Test factories
+# pytest-django==4.7.0  # Testing framework
+# coverage==7.3.2  # Code coverage
+
+# =============================================================================
+# NOTES FOR PRODUCTION DEPLOYMENT
+# =============================================================================
+# 1. Install with: pip install -r requirements_production.txt
+# 2. Ensure all system dependencies are installed
+# 3. Configure environment variables before installation
+# 4. Run collectstatic after installation
+# 5. Run migrations after database setup
+# 6. Create superuser account
+# 7. Test all functionality before going live

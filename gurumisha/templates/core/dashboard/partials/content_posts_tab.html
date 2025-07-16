@@ -1,0 +1,298 @@
+<!-- Enhanced Content Posts Tab with Harrier Design -->
+<div class="glassmorphism-card">
+    <!-- Tab Header -->
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-gradient-to-br from-harrier-red to-harrier-red-dark rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-newspaper text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Content Posts</h3>
+                    <p class="text-sm text-gray-600 font-raleway">Manage all your content posts</p>
+                </div>
+            </div>
+
+            <!-- Enhanced Action Bar -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Search Bar -->
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Search content..." 
+                           id="content-search"
+                           value="{{ current_search }}"
+                           hx-get="{% url 'core:admin_content_posts_tab' %}"
+                           hx-target="#tab-content"
+                           hx-swap="innerHTML"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="[name='content_type'], [name='status'], [name='category']"
+                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent text-sm w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <!-- Content Type Filter -->
+                <select name="content_type" 
+                        hx-get="{% url 'core:admin_content_posts_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML"
+                        hx-include="[name='search'], [name='status'], [name='category']"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red">
+                    <option value="">All Types</option>
+                    {% for value, label in content_types %}
+                    <option value="{{ value }}" {% if current_content_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Status Filter -->
+                <select name="status"
+                        hx-get="{% url 'core:admin_content_posts_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML"
+                        hx-include="[name='search'], [name='content_type'], [name='category']"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red">
+                    <option value="">All Status</option>
+                    <option value="published" {% if current_status == 'published' %}selected{% endif %}>Published</option>
+                    <option value="draft" {% if current_status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="featured" {% if current_status == 'featured' %}selected{% endif %}>Featured</option>
+                </select>
+
+                <!-- Category Filter -->
+                <select name="category"
+                        hx-get="{% url 'core:admin_content_posts_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML"
+                        hx-include="[name='search'], [name='content_type'], [name='status']"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if current_category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Export Button -->
+                <button class="enhanced-btn enhanced-btn-secondary text-sm">
+                    <i class="fas fa-download mr-1"></i>Export
+                </button>
+
+                <!-- Add New Button -->
+                <button class="enhanced-btn enhanced-btn-primary text-sm"
+                        hx-get="{% url 'core:admin_content_create_modal' %}"
+                        hx-target="body"
+                        hx-swap="beforeend">
+                    <i class="fas fa-plus mr-1"></i>New Content
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content List -->
+    <div class="p-6">
+        {% if posts %}
+            <!-- Results Info -->
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 font-raleway">
+                    Showing {{ posts|length }} of {{ posts.paginator.count }} content posts
+                </p>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {% for post in posts %}
+                <div class="content-item bg-white border border-gray-200 rounded-xl p-6 hover:border-harrier-red hover:shadow-lg transition-all duration-300">
+                    <!-- Post Header -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-semibold text-harrier-dark font-montserrat mb-2 line-clamp-2">
+                                {{ post.title }}
+                            </h4>
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {{ post.get_content_type_display }}
+                                </span>
+                                {% if post.is_published %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Published
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    Draft
+                                </span>
+                                {% endif %}
+                                {% if post.is_featured %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-star mr-1"></i>Featured
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Excerpt -->
+                    {% if post.excerpt %}
+                    <p class="text-sm text-gray-600 mb-4 line-clamp-3 font-raleway">
+                        {{ post.excerpt }}
+                    </p>
+                    {% endif %}
+
+                    <!-- Post Meta -->
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-user mr-1"></i>
+                            <span>{{ post.author.get_full_name|default:post.author.username }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar mr-1"></i>
+                            <span>{{ post.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Post Stats -->
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                        <div class="flex items-center space-x-3">
+                            <span><i class="fas fa-eye mr-1"></i>{{ post.views_count }}</span>
+                            <span><i class="fas fa-heart mr-1"></i>{{ post.likes_count }}</span>
+                            <span><i class="fas fa-comment mr-1"></i>{{ post.comments.count }}</span>
+                        </div>
+                        {% if post.category %}
+                        <span class="text-purple-600">
+                            <i class="fas fa-folder mr-1"></i>{{ post.category.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-2">
+                        <button class="action-btn action-btn-edit flex-1"
+                                title="Edit Post">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <a href="{% url 'core:resource_detail' post.slug %}" 
+                           target="_blank"
+                           class="action-btn action-btn-view flex-1 text-center"
+                           title="View Post">
+                            <i class="fas fa-eye mr-1"></i>View
+                        </a>
+                        {% if post.is_published %}
+                        <button class="action-btn action-btn-warning"
+                                title="Unpublish">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        {% else %}
+                        <button class="action-btn action-btn-success"
+                                title="Publish">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {% endif %}
+                        <button class="action-btn action-btn-danger"
+                                title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if posts.has_other_pages %}
+            <div class="mt-8 flex justify-center">
+                <nav class="flex items-center space-x-2">
+                    {% if posts.has_previous %}
+                    <a href="?page={{ posts.previous_page_number }}"
+                       hx-get="{% url 'core:admin_content_posts_tab' %}?page={{ posts.previous_page_number }}"
+                       hx-target="#tab-content"
+                       hx-swap="innerHTML"
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Previous
+                    </a>
+                    {% endif %}
+
+                    {% for num in posts.paginator.page_range %}
+                        {% if posts.number == num %}
+                        <span class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-md">
+                            {{ num }}
+                        </span>
+                        {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
+                        <a href="?page={{ num }}"
+                           hx-get="{% url 'core:admin_content_posts_tab' %}?page={{ num }}"
+                           hx-target="#tab-content"
+                           hx-swap="innerHTML"
+                           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            {{ num }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if posts.has_next %}
+                    <a href="?page={{ posts.next_page_number }}"
+                       hx-get="{% url 'core:admin_content_posts_tab' %}?page={{ posts.next_page_number }}"
+                       hx-target="#tab-content"
+                       hx-swap="innerHTML"
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Next
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-newspaper text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 font-montserrat mb-2">No content posts found</h3>
+                <p class="text-gray-600 font-raleway mb-6">Get started by creating your first content post.</p>
+                <button class="enhanced-btn enhanced-btn-primary"
+                        hx-get="{% url 'core:admin_content_create_modal' %}"
+                        hx-target="body"
+                        hx-swap="beforeend">
+                    <i class="fas fa-plus mr-2"></i>Create First Post
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Action Button Styles */
+    .action-btn {
+        @apply inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .action-btn-edit {
+        @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
+    }
+
+    .action-btn-view {
+        @apply bg-green-100 text-green-700 hover:bg-green-200 no-underline;
+    }
+
+    .action-btn-success {
+        @apply bg-green-100 text-green-700 hover:bg-green-200;
+    }
+
+    .action-btn-warning {
+        @apply bg-orange-100 text-orange-700 hover:bg-orange-200;
+    }
+
+    .action-btn-danger {
+        @apply bg-red-100 text-red-700 hover:bg-red-200;
+    }
+
+    /* Line clamp utilities */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>

@@ -137,6 +137,9 @@
         }
     </script>
 
+    <!-- Error Suppressor (load before HTMX) -->
+    <script src="{% static 'js/error-suppressor.js' %}"></script>
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
@@ -156,6 +159,9 @@
 
     <!-- Toast Notification System -->
     <link rel="stylesheet" href="{% static 'css/toast-animations.css' %}">
+
+    <!-- Logo Enhancement Styles -->
+    <link rel="stylesheet" href="{% static 'css/logo-enhancements.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
@@ -180,129 +186,165 @@
                     </div>
                 </div>
 
-                <!-- Main Header -->
-                <div class="bg-primary-white shadow-modern-lg border-b border-gray-100">
-                    <div class="flex justify-between items-center py-5 px-4">
-                        <!-- Logo -->
+                <!-- Enhanced Main Header with Glassmorphism -->
+                <div class="bg-white/95 backdrop-blur-md shadow-xl border-b border-gray-200/50 sticky top-0 z-50">
+                    <div class="flex justify-between items-center py-4 px-4 max-w-7xl mx-auto">
+                        <!-- Enhanced Logo with Larger Size Options -->
                         <div class="flex-shrink-0">
                             <a href="{% url 'core:homepage' %}" class="flex items-center group">
-                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="h-10 sm:h-12 md:h-14 w-auto transition-transform group-hover:scale-105">
+                                <!-- Primary Logo - Enhanced Responsive Sizing for Better Visibility -->
+                                <img src="{% static 'images/loga.png' %}" alt="Gurumisha Motors"
+                                     class="logo-primary h-16 sm:h-14 md:h-16 lg:h-18 xl:h-20 2xl:h-24 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 filter drop-shadow-sm">
+
+                                <!-- Alternative: Compact Logo for smaller screens (uncomment if needed) -->
+                                <!-- <img src="{% static 'images/logo-compact.png' %}" alt="Gurumisha"
+                                     class="logo-compact h-8 w-auto md:hidden transition-all duration-300 group-hover:scale-105">
+                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors"
+                                     class="logo-full hidden md:block h-12 lg:h-14 xl:h-16 w-auto transition-all duration-300 group-hover:scale-105"> -->
                             </a>
                         </div>
 
-                        <!-- Search Bar -->
+                        <!-- Enhanced Search Bar with Glassmorphism -->
                         <div class="hidden md:flex flex-1 max-w-lg mx-8">
                             <form class="w-full flex" action="{% url 'core:car_list' %}" method="GET">
                                 <input type="text" name="search" placeholder="Search for cars, brands, models..."
-                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-harrier-red focus:border-transparent">
-                                <button type="submit" class="bg-harrier-red text-white px-6 py-2 rounded-r-md hover:bg-red-600 transition-colors">
+                                       class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 bg-white/90 backdrop-blur-sm text-gray-900 placeholder-gray-500 hover:border-gray-300 font-inter">
+                                <button type="submit" class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-r-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 border-2 border-red-600 hover:border-red-700 transform hover:scale-105 shadow-lg hover:shadow-xl">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </form>
                         </div>
 
-                        <!-- User Actions -->
+                        <!-- Enhanced User Actions -->
                         <div class="flex items-center space-x-4">
                             {% if user.is_authenticated %}
                                 <div class="hidden md:flex items-center space-x-4">
-                                    <!-- Cart Icon -->
-                                    <a href="{% url 'core:cart' %}" class="relative text-harrier-dark hover:text-harrier-red transition-colors">
+                                    <!-- Enhanced Cart Icon -->
+                                    <a href="{% url 'core:cart' %}" class="relative text-gray-700 hover:text-red-600 transition-all duration-300 p-2 rounded-xl hover:bg-red-50">
                                         <i class="fas fa-shopping-cart text-xl"></i>
-                                        <span id="cart-badge" class="absolute -top-2 -right-2 bg-harrier-red text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold" style="display: none;">0</span>
+                                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-gradient-to-r from-red-600 to-red-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-md" style="display: none;">0</span>
                                     </a>
 
+                                    <!-- Enhanced User Dropdown -->
                                     <div class="relative group">
-                                        <button class="flex items-center space-x-2 text-sm text-harrier-dark hover:text-harrier-red">
-                                            <i class="fas fa-user-circle text-xl"></i>
-                                            <span>{{ user.first_name|default:user.username }}</span>
-                                            <i class="fas fa-chevron-down text-xs"></i>
+                                        <button class="flex items-center space-x-3 text-gray-700 hover:text-red-600 transition-all duration-300 font-medium bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200 hover:border-red-300 hover:shadow-lg">
+                                            <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-md">
+                                                {{ user.first_name|first|default:user.username|first|upper }}
+                                            </div>
+                                            <span class="hidden lg:block font-montserrat">{{ user.first_name|default:user.username }}</span>
+                                            <i class="fas fa-chevron-down text-xs transition-transform duration-300 group-hover:rotate-180"></i>
                                         </button>
-                                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                            <a href="{% url 'core:dashboard' %}" class="block px-4 py-2 text-sm text-harrier-dark hover:bg-harrier-gray transition-colors">
-                                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                        <div class="absolute right-0 mt-2 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden">
+                                            <a href="{% url 'core:dashboard' %}" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">
+                                                <i class="fas fa-tachometer-alt mr-3 text-red-500"></i>Dashboard
                                             </a>
-                                            <a href="{% url 'core:profile' %}" class="block px-4 py-2 text-sm text-harrier-dark hover:bg-harrier-gray transition-colors">
-                                                <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                                            <a href="{% url 'core:profile' %}" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">
+                                                <i class="fas fa-user-edit mr-3 text-red-500"></i>Edit Profile
                                             </a>
-                                            <div class="border-t border-gray-200 my-1"></div>
-                                            <a href="{% url 'core:logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                            <div class="border-t border-gray-100 my-1"></div>
+                                            <a href="{% url 'core:logout' %}" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">
+                                                <i class="fas fa-sign-out-alt mr-3 text-red-500"></i>Logout
                                             </a>
                                         </div>
                                     </div>
                                 </div>
                             {% else %}
-                                <div class="hidden md:flex items-center space-x-2">
-                                    <a href="{% url 'core:login' %}" class="text-sm text-harrier-dark hover:text-harrier-red">Login</a>
-                                    <span class="text-gray-400">|</span>
-                                    <a href="{% url 'core:register' %}" class="text-sm text-harrier-dark hover:text-harrier-red">Register</a>
+                                <div class="hidden md:flex items-center space-x-3">
+                                    <a href="{% url 'core:login' %}" class="text-gray-700 hover:text-red-600 transition-all duration-300 font-medium font-montserrat px-4 py-2 rounded-xl hover:bg-gray-50">Login</a>
+                                    <a href="{% url 'core:register' %}" class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-2 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 font-medium font-montserrat shadow-lg hover:shadow-xl transform hover:scale-105">Register</a>
                                 </div>
                             {% endif %}
 
-                            <!-- Mobile menu button -->
-                            <button type="button" class="md:hidden p-2 text-harrier-dark hover:text-harrier-red" id="mobile-menu-btn">
+                            <!-- Enhanced Mobile menu button -->
+                            <button type="button" class="md:hidden p-3 text-gray-700 hover:text-red-600 transition-all duration-300 rounded-xl hover:bg-gray-50 border border-gray-200 hover:border-red-300" id="mobile-menu-btn">
                                 <i class="fas fa-bars text-xl"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Navigation Menu -->
-                    <nav class="bg-primary-black shadow-modern">
-                        <div class="hidden md:flex items-center justify-center py-4">
-                            <ul class="flex items-center space-x-1 text-primary-white">
-                                <li><a href="{% url 'core:homepage' %}" class="nav-link-modern {% if request.resolver_match.url_name == 'homepage' %}active{% endif %}">HOME</a></li>
+                    <!-- Enhanced Navigation Menu with Glassmorphism -->
+                    <nav class="bg-gradient-to-r from-gray-900 via-black to-gray-900 shadow-2xl border-t border-gray-700/50">
+                        <div class="hidden md:flex items-center justify-center py-4 max-w-7xl mx-auto">
+                            <ul class="flex items-center space-x-2 text-white">
+                                <li><a href="{% url 'core:homepage' %}" class="nav-link-harrier {% if request.resolver_match.url_name == 'homepage' %}active{% endif %}">HOME</a></li>
                                 <li class="relative group">
-                                    <a href="{% url 'core:car_list' %}" class="nav-link-modern {% if 'car' in request.resolver_match.url_name %}active{% endif %}">CARS <i class="fas fa-chevron-down ml-1 text-xs"></i></a>
-                                    <div class="absolute top-full left-0 bg-primary-white shadow-modern-lg rounded-lg py-3 w-52 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border border-gray-100">
-                                        <a href="{% url 'core:car_list' %}" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">All Cars</a>
-                                        <a href="{% url 'core:car_list' %}?condition=new" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">New Cars</a>
-                                        <a href="{% url 'core:car_list' %}?condition=used" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">Used Cars</a>
-                                        <a href="{% url 'core:car_list' %}?status=featured" class="block px-4 py-3 text-text-dark hover:bg-accent-gray hover:text-primary-red transition-colors font-medium">Featured Cars</a>
+                                    <a href="{% url 'core:car_list' %}" class="nav-link-harrier {% if 'car' in request.resolver_match.url_name %}active{% endif %}">CARS <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300 group-hover:rotate-180"></i></a>
+                                    <div class="absolute top-full left-0 bg-white/95 backdrop-blur-md shadow-2xl rounded-xl py-3 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border border-gray-200/50 overflow-hidden">
+                                        <a href="{% url 'core:car_list' %}" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">All Cars</a>
+                                        <a href="{% url 'core:car_list' %}?condition=new" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">New Cars</a>
+                                        <a href="{% url 'core:car_list' %}?condition=used" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">Used Cars</a>
+                                        <a href="{% url 'core:car_list' %}?status=featured" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">Featured Cars</a>
                                     </div>
                                 </li>
-                                <li><a href="{% url 'core:spare_parts' %}" class="nav-link-modern {% if 'spare' in request.resolver_match.url_name %}active{% endif %}">SPARE PARTS</a></li>
-                                <li><a href="{% url 'core:import_listings' %}" class="nav-link-modern {% if 'import' in request.resolver_match.url_name %}active{% endif %}">IMPORT CAR</a></li>
-                                <li><a href="{% url 'core:sell_car' %}" class="nav-link-modern {% if 'sell' in request.resolver_match.url_name %}active{% endif %}">SELL CAR</a></li>
-                                <li><a href="{% url 'core:resources' %}" class="nav-link-modern {% if 'resources' in request.resolver_match.url_name %}active{% endif %}">RESOURCES</a></li>
-                                <li><a href="{% url 'core:about_us' %}" class="nav-link-modern {% if request.resolver_match.url_name == 'about_us' %}active{% endif %}">ABOUT</a></li>
-                                <li><a href="{% url 'core:contact_us' %}" class="nav-link-modern {% if request.resolver_match.url_name == 'contact_us' %}active{% endif %}">CONTACT</a></li>
+
+                                <li><a href="{% url 'core:import_listings' %}" class="nav-link-harrier {% if 'import' in request.resolver_match.url_name %}active{% endif %}">IMPORT CAR</a></li>
+                                {% if not user.is_authenticated or user.role != 'admin' %}
+                                <li><a href="{% url 'core:sell_car' %}" class="nav-link-harrier {% if 'sell' in request.resolver_match.url_name %}active{% endif %}">SELL ON BEHALF</a></li>
+                                {% endif %}
+                                <li><a href="{% url 'core:spare_parts' %}" class="nav-link-harrier {% if 'spare' in request.resolver_match.url_name %}active{% endif %}">SPARE PARTS</a></li>
+                                <li><a href="{% url 'core:resources' %}" class="nav-link-harrier {% if 'resources' in request.resolver_match.url_name %}active{% endif %}">RESOURCES</a></li>
+ 
+                                <li><a href="{% url 'core:about_us' %}" class="nav-link-harrier {% if request.resolver_match.url_name == 'about_us' %}active{% endif %}">ABOUT</a></li>
+                                <li><a href="{% url 'core:contact_us' %}" class="nav-link-harrier {% if request.resolver_match.url_name == 'contact_us' %}active{% endif %}">CONTACT</a></li>
                             </ul>
                         </div>
 
-                        <!-- Mobile Navigation -->
+                        <!-- Enhanced Mobile Navigation -->
                         <div class="md:hidden hidden" id="mobile-menu">
-                            <div class="bg-white border-t">
-                                <div class="px-4 py-2">
+                            <div class="bg-white/95 backdrop-blur-md border-t border-gray-200/50 shadow-xl">
+                                <div class="px-4 py-4">
                                     <form class="flex mb-4" action="{% url 'core:car_list' %}" method="GET">
                                         <input type="text" name="search" placeholder="Search cars..."
-                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md text-sm">
-                                        <button type="submit" class="bg-harrier-red text-white px-4 py-2 rounded-r-md">
+                                               class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 bg-white/90 backdrop-blur-sm font-inter text-sm">
+                                        <button type="submit" class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-r-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </form>
                                 </div>
-                                <div class="space-y-1">
-                                    <a href="{% url 'core:homepage' %}" class="mobile-nav-link-harrier">Home</a>
-                                    <a href="{% url 'core:car_list' %}" class="mobile-nav-link-harrier">Cars</a>
-                                    <a href="{% url 'core:spare_parts' %}" class="mobile-nav-link-harrier">Spare Parts</a>
-                                    <a href="{% url 'core:import_listings' %}" class="mobile-nav-link-harrier">Import Car</a>
-                                    <a href="{% url 'core:sell_car' %}" class="mobile-nav-link-harrier">Sell Car</a>
-                                    <a href="{% url 'core:resources' %}" class="mobile-nav-link-harrier">Resources</a>
-                                    <a href="{% url 'core:about_us' %}" class="mobile-nav-link-harrier">About</a>
-                                    <a href="{% url 'core:contact_us' %}" class="mobile-nav-link-harrier">Contact</a>
+                                <div class="space-y-1 pb-4">
+                                    <a href="{% url 'core:homepage' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-home mr-3 text-red-500"></i>Home
+                                    </a>
+                                    <a href="{% url 'core:car_list' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-car mr-3 text-red-500"></i>Cars
+                                    </a>
+                                    <a href="{% url 'core:spare_parts' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-cog mr-3 text-red-500"></i>Spare Parts
+                                    </a>
+                                    <a href="{% url 'core:import_listings' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-shipping-fast mr-3 text-red-500"></i>Import Car
+                                    </a>
+                                    {% if not user.is_authenticated or user.role != 'admin' %}
+                                    <a href="{% url 'core:sell_car' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-dollar-sign mr-3 text-red-500"></i>Sell Car
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'core:resources' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-newspaper mr-3 text-red-500"></i>Resources
+                                    </a>
+                                    <a href="{% url 'core:about_us' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-info-circle mr-3 text-red-500"></i>About
+                                    </a>
+                                    <a href="{% url 'core:contact_us' %}" class="mobile-nav-link-harrier">
+                                        <i class="fas fa-envelope mr-3 text-red-500"></i>Contact
+                                    </a>
                                     {% if user.is_authenticated %}
-                                        <div class="border-t pt-2">
+                                        <div class="border-t border-gray-200 pt-3 mt-3">
                                             <a href="{% url 'core:dashboard' %}" class="mobile-nav-link-harrier">
-                                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                                <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>Dashboard
                                             </a>
                                             <a href="{% url 'core:logout' %}" class="mobile-nav-link-harrier text-red-600">
-                                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                                <i class="fas fa-sign-out-alt mr-3"></i>Logout
                                             </a>
                                         </div>
                                     {% else %}
-                                        <div class="border-t pt-2">
-                                            <a href="{% url 'core:login' %}" class="mobile-nav-link-harrier">Login</a>
-                                            <a href="{% url 'core:register' %}" class="mobile-nav-link-harrier">Register</a>
+                                        <div class="border-t border-gray-200 pt-3 mt-3">
+                                            <a href="{% url 'core:login' %}" class="mobile-nav-link-harrier">
+                                                <i class="fas fa-sign-in-alt mr-3 text-blue-600"></i>Login
+                                            </a>
+                                            <a href="{% url 'core:register' %}" class="mobile-nav-link-harrier">
+                                                <i class="fas fa-user-plus mr-3 text-green-600"></i>Register
+                                            </a>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -321,52 +363,118 @@
         <!-- Enhanced Footer with Harrier Design Patterns -->
         <footer class="mt-12">
             <!-- Features Section -->
-            <div class="bg-gradient-to-r from-primary-black via-primary-blue to-primary-red py-16">
+            <!-- Enhanced Features Section with White Background -->
+            <div class="bg-white py-20">
                 <div class="container mx-auto px-4">
+                    <!-- Section Header -->
+                    <div class="text-center mb-16">
+                        <h2 class="text-3xl md:text-4xl font-montserrat font-bold text-gray-900 mb-4">
+                            Why Choose
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Gurumisha?</span>
+                        </h2>
+                        <p class="text-lg text-gray-600 max-w-2xl mx-auto font-raleway">
+                            Experience the difference with Kenya's most trusted automotive marketplace
+                        </p>
+                        <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+                    </div>
+
+                    <!-- Features Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <!-- Feature 1: World's #1 -->
-                        <div class="text-center group">
-                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
-                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <!-- Feature 1: Kenya's #1 -->
+                        <div class="group">
+                            <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-gray-100 hover:border-red-200 relative overflow-hidden">
+                                <!-- Background Pattern -->
+                                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-50 to-red-100 rounded-full -translate-y-10 translate-x-10 opacity-50"></div>
+
+                                <!-- Icon -->
+                                <div class="relative z-10 w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
                                     <i class="fas fa-globe text-white text-2xl"></i>
                                 </div>
-                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Kenya's #1</h6>
-                                <p class="text-gray-200 text-sm">Largest Auto Portal</p>
+
+                                <!-- Content -->
+                                <div class="relative z-10 text-center">
+                                    <h6 class="text-xl font-bold text-gray-900 mb-3 font-montserrat">Kenya's #1</h6>
+                                    <p class="text-gray-600 text-sm font-raleway leading-relaxed">Largest Auto Portal</p>
+                                </div>
+
+                                <!-- Hover Effect -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-red-50/50 to-red-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
                             </div>
                         </div>
 
                         <!-- Feature 2: Car Sold -->
-                        <div class="text-center group">
-                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
-                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <div class="group">
+                            <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-gray-100 hover:border-green-200 relative overflow-hidden">
+                                <!-- Background Pattern -->
+                                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-50 to-green-100 rounded-full -translate-y-10 translate-x-10 opacity-50"></div>
+
+                                <!-- Icon -->
+                                <div class="relative z-10 w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
                                     <i class="fas fa-car text-white text-2xl"></i>
                                 </div>
-                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Car Sold</h6>
-                                <p class="text-gray-200 text-sm">Every 4 Minutes</p>
+
+                                <!-- Content -->
+                                <div class="relative z-10 text-center">
+                                    <h6 class="text-xl font-bold text-gray-900 mb-3 font-montserrat">Car Sold</h6>
+                                    <p class="text-gray-600 text-sm font-raleway leading-relaxed">Every 4 Minutes</p>
+                                </div>
+
+                                <!-- Hover Effect -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-green-50/50 to-green-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
                             </div>
                         </div>
 
-                        <!-- Feature 3: Offers -->
-                        <div class="text-center group">
-                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
-                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <!-- Feature 3: Best Offers -->
+                        <div class="group">
+                            <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-gray-100 hover:border-orange-200 relative overflow-hidden">
+                                <!-- Background Pattern -->
+                                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-50 to-orange-100 rounded-full -translate-y-10 translate-x-10 opacity-50"></div>
+
+                                <!-- Icon -->
+                                <div class="relative z-10 w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
                                     <i class="fas fa-tags text-white text-2xl"></i>
                                 </div>
-                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Best Offers</h6>
-                                <p class="text-gray-200 text-sm">Stay Updated Pay Less</p>
+
+                                <!-- Content -->
+                                <div class="relative z-10 text-center">
+                                    <h6 class="text-xl font-bold text-gray-900 mb-3 font-montserrat">Best Offers</h6>
+                                    <p class="text-gray-600 text-sm font-raleway leading-relaxed">Stay Updated Pay Less</p>
+                                </div>
+
+                                <!-- Hover Effect -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-orange-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
                             </div>
                         </div>
 
                         <!-- Feature 4: Compare -->
-                        <div class="text-center group">
-                            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
-                                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <div class="group">
+                            <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-gray-100 hover:border-purple-200 relative overflow-hidden">
+                                <!-- Background Pattern -->
+                                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-50 to-purple-100 rounded-full -translate-y-10 translate-x-10 opacity-50"></div>
+
+                                <!-- Icon -->
+                                <div class="relative z-10 w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
                                     <i class="fas fa-balance-scale text-white text-2xl"></i>
                                 </div>
-                                <h6 class="text-xl font-bold text-white mb-2 font-heading" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase;">Compare</h6>
-                                <p class="text-gray-200 text-sm">Decode The Right Car</p>
+
+                                <!-- Content -->
+                                <div class="relative z-10 text-center">
+                                    <h6 class="text-xl font-bold text-gray-900 mb-3 font-montserrat">Compare</h6>
+                                    <p class="text-gray-600 text-sm font-raleway leading-relaxed">Decode The Right Car</p>
+                                </div>
+
+                                <!-- Hover Effect -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-purple-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Bottom CTA -->
+                    <div class="text-center mt-16">
+                        <a href="{% url 'core:car_list' %}" class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-red-600 to-red-800 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-montserrat">
+                            <i class="fas fa-search mr-3"></i>
+                            Explore All Cars
+                        </a>
                     </div>
                 </div>
             </div>
@@ -374,13 +482,13 @@
             
 
             <!-- Main Footer Content -->
-            <div class="bg-primary-black text-white py-16">
+            <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-red-900 text-white py-16">
                 <div class="container mx-auto px-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                         <!-- Company Info -->
                         <div class="lg:col-span-1">
                             <div class="flex items-center mb-6">
-                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="h-8 sm:h-10 md:h-12 w-auto">
+                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors" class="logo-footer h-10 sm:h-12 md:h-14 w-auto filter brightness-110 transition-all duration-300 hover:scale-105">
                             </div>
                             <p class="text-gray-300 mb-6 leading-relaxed">Your trusted automotive marketplace for buying, selling, and importing quality vehicles. We connect car enthusiasts with their dream cars.</p>
 
@@ -396,7 +504,7 @@
                                     <i class="fab fa-instagram text-white"></i>
                                 </a>
                                 <a href="#" class="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-                                    <i class="fab fa-linkedin-in text-white"></i>
+                                    <i class="fab fa-tiktok text-white"></i>
                                 </a>
                                 <a href="#" class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
                                     <i class="fab fa-youtube text-white"></i>
@@ -464,7 +572,7 @@
                                     </div>
                                     <div>
                                         <p class="font-semibold text-white">Showroom Address</p>
-                                        <p class="text-sm">Westlands, Nairobi</p>
+                                        <p class="text-sm">Watermark Business Park,Karen  Nairobi</p>
                                         <p class="text-sm">Kenya</p>
                                     </div>
                                 </li>
@@ -507,7 +615,7 @@
                     <div class="flex flex-col lg:flex-row justify-between items-center space-y-6 lg:space-y-0">
                         <!-- Copyright -->
                         <div class="text-center lg:text-left">
-                            <p class="text-gray-300 text-sm">&copy; 2024 <span class="text-white font-semibold">Gurumisha Motors</span>. All rights reserved.</p>
+                            <p class="text-gray-300 text-sm">&copy; 2025 <span class="text-white font-semibold">Gurumisha Motors</span>. All rights reserved.</p>
                             <p class="text-gray-400 text-xs mt-1">Designed with <i class="fas fa-heart text-primary-red"></i> for automotive enthusiasts</p>
                         </div>
 
@@ -625,6 +733,59 @@
             color: #DC2626;
             padding-left: 24px;
             text-decoration: none;
+        }
+
+        /* Enhanced Harrier Navigation Styles */
+        .nav-link-harrier {
+            font-size: 15px;
+            text-transform: uppercase;
+            font-family: 'Montserrat', 'Inter', sans-serif;
+            font-weight: 600;
+            position: relative;
+            padding: 12px 20px;
+            color: #FFFFFF;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-link-harrier:hover {
+            color: #FFFFFF;
+            background: linear-gradient(135deg, #DC2626, #B91C1C);
+            transform: translateY(-2px);
+            text-decoration: none;
+            box-shadow: 0 8px 25px -5px rgba(220, 38, 38, 0.4);
+        }
+
+        .nav-link-harrier.active {
+            color: #FFFFFF;
+            background: linear-gradient(135deg, #1E3A8A, #1E40AF);
+            box-shadow: 0 8px 25px -5px rgba(30, 58, 138, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .mobile-nav-link-harrier {
+            display: block;
+            padding: 16px 20px;
+            color: #374151;
+            font-size: 15px;
+            font-family: 'Montserrat', 'Inter', sans-serif;
+            font-weight: 500;
+            border-bottom: 1px solid #E5E7EB;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 2px 8px;
+        }
+
+        .mobile-nav-link-harrier:hover {
+            background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+            color: #DC2626;
+            padding-left: 28px;
+            text-decoration: none;
+            transform: translateX(4px);
+            border-color: #FECACA;
         }
 
         /* Modern Button Styles */
@@ -986,7 +1147,7 @@
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #F97316, #DC2626);
+            background: linear-gradient(135deg, #DC2626, #B91C1C, #1F2937);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1274,10 +1435,79 @@
         }
     </script>
 
-    <!-- Toast Manager -->
-    {% load core_extras %}
-    {% toast_script %}
-    {% render_toast_messages %}
+    <!-- Toast Manager - DISABLED DUE TO RECURSION ERROR -->
+    <!-- {% load core_extras %} -->
+    <!-- {% toast_script %} -->
+    <!-- {% render_toast_messages %} -->
+
+    <!-- Logo Manager -->
+    <script src="{% static 'js/logo-manager.js' %}"></script>
+
+    <!-- Message Integration -->
+    <script src="{% static 'js/message-integration.js' %}"></script>
+
+    <!-- Global Message Functions -->
+    <script>
+    // Global dismissMessage function for all pages
+    if (!window.dismissMessage) {
+        function dismissMessage(messageId) {
+            const popup = document.getElementById(`user-message-popup-${messageId}`);
+            if (!popup) {
+                // Try alternative selectors for different message types
+                const messageCard = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageCard) {
+                    messageCard.classList.add('animate-slide-out');
+                    setTimeout(() => messageCard.remove(), 300);
+                }
+                return;
+            }
+
+            // Add exit animations
+            const overlay = popup.querySelector('.bg-black');
+            const panel = popup.querySelector('.message-panel');
+
+            if (overlay) overlay.classList.add('animate-fade-out');
+            if (panel) panel.classList.add('animate-slide-down');
+
+            // Record dismiss action
+            fetch(`/messages/action/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: 'action=dismissed'
+            }).catch(error => {
+                console.error('Error recording message dismissal:', error);
+            });
+
+            // Remove popup after animation
+            setTimeout(() => {
+                popup.remove();
+            }, 300);
+        }
+
+        // Global getCookie function
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Make functions globally available
+        window.dismissMessage = dismissMessage;
+        window.getCookie = getCookie;
+    }
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

@@ -1,0 +1,328 @@
+<!-- M-Pesa Integration Configuration Modal -->
+<div class="fixed inset-0 z-50 overflow-y-auto" 
+     id="mpesa-config-modal"
+     x-data="{ show: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+    
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Container -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-panel bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="modal-header bg-gradient-to-r from-green-600 to-green-800 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-mobile-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">M-Pesa Integration Configuration</h3>
+                            <p class="text-white text-opacity-80 text-sm font-raleway">Configure M-Pesa payment settings for spare parts</p>
+                        </div>
+                    </div>
+
+                    <!-- Close Button -->
+                    <button type="button"
+                            class="text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-all duration-200"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <span class="sr-only">Close</span>
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-96 overflow-y-auto modal-body">
+                <!-- Current Status -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-6 border border-green-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-green-900 font-montserrat">M-Pesa Integration Status</h4>
+                                <p class="text-sm text-green-700 font-raleway">Active and configured for spare parts payments</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-semibold text-green-600">ACTIVE</div>
+                            <div class="text-xs text-green-600">Last sync: 2 mins ago</div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="mpesa-config-form"
+                      hx-post="/dashboard/admin/spare-shop/mpesa-config/"
+                      hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }"
+                      class="space-y-6"
+                      x-data="{ isSubmitting: false }"
+                      @submit="isSubmitting = true">
+                    {% csrf_token %}
+
+                    <!-- API Configuration -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-cog mr-2"></i>API Configuration
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-key"></i>Consumer Key
+                                </label>
+                                <input type="text" name="consumer_key"
+                                       class="form-input"
+                                       value="dHByc2RmZ2hqazEyMzQ1"
+                                       placeholder="Enter M-Pesa consumer key">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-lock"></i>Consumer Secret
+                                </label>
+                                <input type="password" name="consumer_secret"
+                                       class="form-input"
+                                       value="••••••••••••••••"
+                                       placeholder="Enter M-Pesa consumer secret">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-building"></i>Business Short Code
+                                </label>
+                                <input type="text" name="shortcode"
+                                       class="form-input"
+                                       value="174379"
+                                       placeholder="Enter business short code">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-shield-alt"></i>Passkey
+                                </label>
+                                <input type="password" name="passkey"
+                                       class="form-input"
+                                       value="••••••••••••••••••••••••••••••••••••••••"
+                                       placeholder="Enter M-Pesa passkey">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Environment Settings -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-server mr-2"></i>Environment Settings
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-globe"></i>Environment
+                                </label>
+                                <select name="environment" class="form-select">
+                                    <option value="sandbox" selected>Sandbox (Testing)</option>
+                                    <option value="production">Production (Live)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-link"></i>Callback URL
+                                </label>
+                                <input type="url" name="callback_url"
+                                       class="form-input"
+                                       value="https://gurumisha.com/payments/mpesa/callback/"
+                                       placeholder="Enter callback URL">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Settings -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-money-bill-wave mr-2"></i>Payment Settings
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-coins"></i>Minimum Amount (KSh)
+                                </label>
+                                <input type="number" name="min_amount" min="1"
+                                       class="form-input"
+                                       value="10"
+                                       placeholder="10">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-money-check"></i>Maximum Amount (KSh)
+                                </label>
+                                <input type="number" name="max_amount" min="1"
+                                       class="form-input"
+                                       value="150000"
+                                       placeholder="150000">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-clock"></i>Timeout (seconds)
+                                </label>
+                                <input type="number" name="timeout" min="30" max="300"
+                                       class="form-input"
+                                       value="120"
+                                       placeholder="120">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-bell mr-2"></i>Notification Settings
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <h5 class="font-semibold text-gray-900 font-montserrat">Email Notifications</h5>
+                                    <p class="text-sm text-gray-600 font-raleway">Send email alerts for payment events</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="email_notifications" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <h5 class="font-semibold text-gray-900 font-montserrat">SMS Notifications</h5>
+                                    <p class="text-sm text-gray-600 font-raleway">Send SMS confirmations to customers</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="sms_notifications" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <h5 class="font-semibold text-gray-900 font-montserrat">Auto-fulfill Orders</h5>
+                                    <p class="text-sm text-gray-600 font-raleway">Automatically process orders on successful payment</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="auto_fulfill" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test Connection -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-plug mr-2"></i>Connection Test
+                        </h4>
+                        <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div>
+                                <h5 class="font-semibold text-blue-900 font-montserrat">Test M-Pesa Connection</h5>
+                                <p class="text-sm text-blue-700 font-raleway">Verify your M-Pesa configuration is working correctly</p>
+                            </div>
+                            <button type="button" onclick="testMpesaConnection()"
+                                    class="enhanced-btn enhanced-btn-secondary">
+                                <i class="fas fa-play mr-2"></i>Test Connection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6 pt-6 border-t border-gray-200">
+                        <!-- Cancel Button -->
+                        <button type="button"
+                                class="enhanced-btn enhanced-btn-cancel"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                            <i class="fas fa-times mr-2"></i>
+                            <span>Cancel</span>
+                        </button>
+
+                        <!-- Submit Button -->
+                        <button type="submit"
+                                class="enhanced-btn enhanced-btn-submit"
+                                :disabled="isSubmitting">
+                            <i class="fas fa-save mr-2" x-show="!isSubmitting"></i>
+                            <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                            <span x-text="isSubmitting ? 'Saving Configuration...' : 'Save Configuration'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Toggle Switch Styles */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--harrier-red);
+    }
+
+    input:focus + .toggle-slider {
+        box-shadow: 0 0 1px var(--harrier-red);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+</style>

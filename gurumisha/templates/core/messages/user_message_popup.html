@@ -1,0 +1,375 @@
+{% load static %}
+
+<!-- Enhanced User Message Popup with Harrier Design -->
+<div id="user-message-popup-{{ message.id }}" class="fixed inset-0 z-50 overflow-y-auto message-popup" aria-labelledby="message-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-black bg-opacity-40 transition-opacity backdrop-blur-sm animate-fade-in" aria-hidden="true"></div>
+
+        <!-- Message panel -->
+        <div class="inline-block align-bottom rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full message-panel animate-slide-up"
+             style="background-color: {{ message.background_color|default:'#ffffff' }}; color: {{ message.text_color|default:'#000000' }};">
+            
+            <!-- Message Header -->
+            <div class="px-6 py-4 border-b border-gray-200/20">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        {% if message.icon_class %}
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3 message-icon"
+                                 style="background-color: {{ message.action_button_color|default:'#dc2626' }};">
+                                <i class="{{ message.icon_class }} text-white text-lg"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h3 class="text-lg font-bold font-montserrat" id="message-title">
+                                {{ message.title }}
+                            </h3>
+                            <p class="text-sm opacity-80 font-raleway">
+                                {{ message.get_message_type_display }}
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 hover:bg-gray-100/20 rounded-lg dismiss-btn"
+                            onclick="dismissMessage({{ message.id }})">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Message Body -->
+            <div class="px-6 py-6">
+                {% if message.featured_image %}
+                    <div class="mb-4">
+                        <img src="{{ message.featured_image.url }}" 
+                             alt="{{ message.featured_image_alt }}" 
+                             class="w-full h-48 object-cover rounded-lg shadow-sm">
+                    </div>
+                {% endif %}
+                
+                <div class="message-content font-raleway text-base leading-relaxed">
+                    {{ message.content|safe }}
+                </div>
+            </div>
+
+            <!-- Message Footer -->
+            <div class="px-6 py-4 bg-gray-50/50 flex flex-col sm:flex-row sm:justify-between gap-3">
+                <div class="flex items-center text-xs text-gray-500">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span>{{ message.created_at|date:"M d, Y" }}</span>
+                    {% if message.expiration_date %}
+                        <span class="ml-3">
+                            <i class="fas fa-hourglass-end mr-1"></i>
+                            Expires {{ message.expiration_date|date:"M d" }}
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    {% if message.action_button_text and message.action_button_url %}
+                        <a href="{{ message.action_button_url }}" 
+                           target="_blank"
+                           class="message-action-btn"
+                           style="background-color: {{ message.action_button_color|default:'#dc2626' }};"
+                           onclick="handleMessageClick({{ message.id }})">
+                            {{ message.action_button_text }}
+                            <i class="fas fa-external-link-alt ml-2 text-sm"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <button type="button" 
+                            class="message-dismiss-btn"
+                            onclick="dismissMessage({{ message.id }})">
+                        <i class="fas fa-check mr-2"></i>
+                        Got it
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Enhanced Message Popup Styles with Harrier Design */
+    .message-popup {
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+    }
+
+    .message-panel {
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 
+            0 25px 50px -12px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    }
+
+    .message-icon {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .message-icon:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .message-content {
+        line-height: 1.7;
+    }
+
+    .message-content h1, .message-content h2, .message-content h3 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .message-content p {
+        margin-bottom: 1rem;
+    }
+
+    .message-content a {
+        color: var(--harrier-red);
+        text-decoration: underline;
+        font-weight: 600;
+    }
+
+    .message-content a:hover {
+        color: var(--harrier-dark);
+    }
+
+    .message-action-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .message-action-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        text-decoration: none;
+        color: white;
+    }
+
+    .message-dismiss-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #374151;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        font-family: 'Montserrat', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .message-dismiss-btn:hover {
+        background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .dismiss-btn {
+        transition: all 0.3s ease;
+    }
+
+    .dismiss-btn:hover {
+        transform: scale(1.1);
+        background-color: rgba(239, 68, 68, 0.1) !important;
+        color: #ef4444 !important;
+    }
+
+    /* Animation Classes */
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+        opacity: 0;
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    @keyframes fadeIn {
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideUp {
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Exit animations */
+    .animate-fade-out {
+        animation: fadeOut 0.3s ease-in forwards;
+    }
+
+    .animate-slide-down {
+        animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes fadeOut {
+        to {
+            opacity: 0;
+        }
+    }
+
+    @keyframes slideDown {
+        to {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+    }
+
+    /* Auto-dismiss countdown */
+    .countdown-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--harrier-red), var(--harrier-dark));
+        border-radius: 0 0 16px 16px;
+        transition: width linear;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 640px) {
+        .message-panel {
+            margin: 1rem;
+            max-width: calc(100vw - 2rem);
+        }
+        
+        .message-action-btn,
+        .message-dismiss-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+    }
+
+    /* CSS Variables */
+    :root {
+        --harrier-red: #dc2626;
+        --harrier-dark: #1f2937;
+    }
+</style>
+
+<script>
+// Message interaction functions
+function handleMessageClick(messageId) {
+    // Record click action
+    fetch(`/messages/action/${messageId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=clicked'
+    }).catch(error => {
+        console.error('Error recording message click:', error);
+    });
+}
+
+function dismissMessage(messageId) {
+    const popup = document.getElementById(`user-message-popup-${messageId}`);
+    if (!popup) return;
+    
+    // Add exit animations
+    const overlay = popup.querySelector('.bg-black');
+    const panel = popup.querySelector('.message-panel');
+    
+    if (overlay) overlay.classList.add('animate-fade-out');
+    if (panel) panel.classList.add('animate-slide-down');
+    
+    // Record dismiss action
+    fetch(`/messages/action/${messageId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=dismissed'
+    }).catch(error => {
+        console.error('Error recording message dismissal:', error);
+    });
+    
+    // Remove popup after animation
+    setTimeout(() => {
+        popup.remove();
+    }, 300);
+}
+
+// Auto-dismiss functionality
+{% if message.auto_dismiss_seconds %}
+(function() {
+    const messageId = {{ message.id }};
+    const autoDismissSeconds = {{ message.auto_dismiss_seconds }};
+    
+    if (autoDismissSeconds > 0) {
+        // Create countdown bar
+        const popup = document.getElementById(`user-message-popup-${messageId}`);
+        const panel = popup.querySelector('.message-panel');
+        
+        const countdownBar = document.createElement('div');
+        countdownBar.className = 'countdown-bar';
+        countdownBar.style.width = '100%';
+        panel.style.position = 'relative';
+        panel.appendChild(countdownBar);
+        
+        // Animate countdown
+        setTimeout(() => {
+            countdownBar.style.width = '0%';
+            countdownBar.style.transition = `width ${autoDismissSeconds}s linear`;
+        }, 100);
+        
+        // Auto-dismiss after specified time
+        setTimeout(() => {
+            dismissMessage(messageId);
+        }, autoDismissSeconds * 1000);
+    }
+})();
+{% endif %}
+
+// Utility function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Prevent multiple popups from showing simultaneously
+document.addEventListener('DOMContentLoaded', function() {
+    const existingPopups = document.querySelectorAll('.message-popup');
+    if (existingPopups.length > 1) {
+        // Keep only the most recent popup
+        for (let i = 0; i < existingPopups.length - 1; i++) {
+            existingPopups[i].remove();
+        }
+    }
+});
+</script>

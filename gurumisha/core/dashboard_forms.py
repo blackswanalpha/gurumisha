@@ -822,10 +822,9 @@ class AdminCarEditForm(forms.ModelForm):
             'condition': forms.Select(attrs={
                 'class': 'form-input'
             }),
-            'engine_size': forms.NumberInput(attrs={
+            'engine_size': forms.TextInput(attrs={
                 'class': 'form-input',
-                'step': '0.1',
-                'min': '0.1'
+                'placeholder': 'e.g., 2.0L, 1.8L'
             }),
             'fuel_type': forms.Select(attrs={
                 'class': 'form-input'
@@ -891,3 +890,38 @@ class AdminCarEditForm(forms.ModelForm):
             self.fields['model'].queryset = CarModel.objects.filter(brand=self.instance.brand, is_active=True)
         else:
             self.fields['model'].queryset = CarModel.objects.none()
+
+    def clean(self):
+        """Enhanced validation for hot deal fields"""
+        cleaned_data = super().clean()
+        is_hot_deal = cleaned_data.get('is_hot_deal')
+        price = cleaned_data.get('price')
+
+        # If hot deal is enabled, we'll validate the hot deal fields in the view
+        # since they're not part of the form fields but are POST parameters
+
+        return cleaned_data
+
+    def clean_price(self):
+        """Validate price field"""
+        price = self.cleaned_data.get('price')
+        if price is not None and price <= 0:
+            raise forms.ValidationError("Price must be greater than zero.")
+        return price
+
+    def clean_year(self):
+        """Validate year field"""
+        year = self.cleaned_data.get('year')
+        from datetime import datetime
+        current_year = datetime.now().year
+
+        if year and (year < 1900 or year > current_year + 1):
+            raise forms.ValidationError(f"Year must be between 1900 and {current_year + 1}.")
+        return year
+
+    def clean_mileage(self):
+        """Validate mileage field"""
+        mileage = self.cleaned_data.get('mileage')
+        if mileage is not None and mileage < 0:
+            raise forms.ValidationError("Mileage cannot be negative.")
+        return mileage

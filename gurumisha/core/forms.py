@@ -6,7 +6,11 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
-from .models import User, Vendor, Car, ImportRequest, Inquiry, VerificationCode
+from .models import (
+    User, Vendor, Car, ImportRequest, Inquiry, VerificationCode,
+    SparePart, SparePartCategory, Supplier, PurchaseOrder, PurchaseOrderItem,
+    CarBrand, CarModel, VehicleCondition
+)
 from .email_notifications import send_verification_code_email
 
 
@@ -98,11 +102,15 @@ class CustomUserRegistrationForm(UserCreationForm):
             token = user.generate_email_verification_token()
 
             # Prepare email context
+            from urllib.parse import urlparse
+            site_url = getattr(settings, 'SITE_URL', 'https://gurumishamotors.com')
+            parsed_url = urlparse(site_url)
+
             context = {
                 'user': user,
                 'token': token,
-                'domain': 'localhost:8000',  # Update this for production
-                'protocol': 'http',  # Update to https for production
+                'domain': parsed_url.netloc,
+                'protocol': parsed_url.scheme,
             }
 
             # Render email content
@@ -153,80 +161,442 @@ class CustomLoginForm(AuthenticationForm):
                 return user.username
             except User.DoesNotExist:
                 pass
+            except User.MultipleObjectsReturned:
+                raise ValidationError(
+                    "Multiple accounts found with this email address. Please contact support for assistance."
+                )
         return username
 
 
 class SellCarForm(forms.ModelForm):
-    """Form for selling a car"""
+    """Enhanced form for selling a car with improved styling and validation"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Create independent hardcoded choice fields
+        # Brand selector (independent)
+        self.fields['brand'] = forms.ChoiceField(
+            choices=[
+                ('', 'Select a brand'),
+                ('toyota', 'Toyota'),
+                ('honda', 'Honda'),
+                ('nissan', 'Nissan'),
+                ('mazda', 'Mazda'),
+                ('subaru', 'Subaru'),
+                ('mitsubishi', 'Mitsubishi'),
+                ('bmw', 'BMW'),
+                ('mercedes', 'Mercedes-Benz'),
+                ('audi', 'Audi'),
+                ('volkswagen', 'Volkswagen'),
+                ('hyundai', 'Hyundai'),
+                ('kia', 'KIA'),
+                ('ford', 'Ford'),
+                ('chevrolet', 'Chevrolet'),
+                ('peugeot', 'Peugeot'),
+                ('renault', 'Renault'),
+                ('land_rover', 'Land Rover'),
+                ('jeep', 'Jeep'),
+                ('volvo', 'Volvo'),
+                ('lexus', 'Lexus'),
+                ('infiniti', 'Infiniti'),
+                ('acura', 'Acura'),
+                ('other', 'Other'),
+            ],
+            required=True,
+            widget=forms.Select(attrs={
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
+            })
+        )
+
+        # Model selector (independent)
+        self.fields['model'] = forms.ChoiceField(
+            choices=[
+                ('', 'Select a model'),
+                # Popular models across all brands (alphabetical)
+                ('3_series', '3 Series'),
+                ('5_series', '5 Series'),
+                ('7_series', '7 Series'),
+                ('accord', 'Accord'),
+                ('altima', 'Altima'),
+                ('camry', 'Camry'),
+                ('civic', 'Civic'),
+                ('corolla', 'Corolla'),
+                ('cr_v', 'CR-V'),
+                ('crown', 'Crown'),
+                ('e_class', 'E-Class'),
+                ('fit', 'Fit'),
+                ('forester', 'Forester'),
+                ('gla', 'GLA'),
+                ('glc', 'GLC'),
+                ('gle', 'GLE'),
+                ('harrier', 'Harrier'),
+                ('highlander', 'Highlander'),
+                ('hilux', 'Hilux'),
+                ('impreza', 'Impreza'),
+                ('land_cruiser', 'Land Cruiser'),
+                ('mark_x', 'Mark X'),
+                ('navara', 'Navara'),
+                ('noah', 'Noah'),
+                ('note', 'Note'),
+                ('outback', 'Outback'),
+                ('pathfinder', 'Pathfinder'),
+                ('pilot', 'Pilot'),
+                ('prius', 'Prius'),
+                ('rav4', 'RAV4'),
+                ('rogue', 'Rogue'),
+                ('s_class', 'S-Class'),
+                ('sentra', 'Sentra'),
+                ('stepwgn', 'StepWGN'),
+                ('stream', 'Stream'),
+                ('tiida', 'Tiida'),
+                ('vezel', 'Vezel'),
+                ('vitz', 'Vitz'),
+                ('voxy', 'Voxy'),
+                ('x1', 'X1'),
+                ('x3', 'X3'),
+                ('x5', 'X5'),
+                ('x6', 'X6'),
+                ('x_trail', 'X-Trail'),
+                ('other', 'Other (specify in description)'),
+            ],
+            required=True,
+            widget=forms.Select(attrs={
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
+            })
+        )
+
+        # Condition selector (independent)
+        self.fields['condition'] = forms.ChoiceField(
+            choices=[
+                ('', 'Select condition'),
+                ('new', 'New'),
+                ('used', 'Used'),
+                ('certified', 'Certified Pre-Owned'),
+                ('excellent', 'Excellent'),
+                ('good', 'Good'),
+                ('fair', 'Fair'),
+                ('needs_work', 'Needs Work'),
+            ],
+            required=True,
+            widget=forms.Select(attrs={
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
+            })
+        )
+
+        # Remove HTMX attributes since we're using independent selectors
+        # No dynamic loading needed for independent brand/model selection
+
+        # Add country choices with Kenya at top and East African countries prominently featured
+        self.fields['country'].choices = [
+            ('', 'Select a country'),
+            # Primary Market - Kenya
+            ('Kenya', 'Kenya'),
+            # East African Community
+            ('Uganda', 'Uganda'),
+            ('Tanzania', 'Tanzania'),
+            ('Rwanda', 'Rwanda'),
+            ('Burundi', 'Burundi'),
+            ('South Sudan', 'South Sudan'),
+            # Other East African Countries
+            ('Ethiopia', 'Ethiopia'),
+            ('Somalia', 'Somalia'),
+            ('Djibouti', 'Djibouti'),
+            ('Eritrea', 'Eritrea'),
+            # Major African Markets
+            ('South Africa', 'South Africa'),
+            ('Nigeria', 'Nigeria'),
+            ('Egypt', 'Egypt'),
+            ('Morocco', 'Morocco'),
+            ('Ghana', 'Ghana'),
+            ('Algeria', 'Algeria'),
+            ('Tunisia', 'Tunisia'),
+            ('Libya', 'Libya'),
+            # Other African Countries (Alphabetical)
+            ('Angola', 'Angola'),
+            ('Benin', 'Benin'),
+            ('Botswana', 'Botswana'),
+            ('Burkina Faso', 'Burkina Faso'),
+            ('Cameroon', 'Cameroon'),
+            ('Cape Verde', 'Cape Verde'),
+            ('Central African Republic', 'Central African Republic'),
+            ('Chad', 'Chad'),
+            ('Comoros', 'Comoros'),
+            ('Democratic Republic of Congo', 'Democratic Republic of Congo'),
+            ('Equatorial Guinea', 'Equatorial Guinea'),
+            ('Gabon', 'Gabon'),
+            ('Gambia', 'Gambia'),
+            ('Guinea', 'Guinea'),
+            ('Guinea-Bissau', 'Guinea-Bissau'),
+            ('Ivory Coast', 'Ivory Coast'),
+            ('Lesotho', 'Lesotho'),
+            ('Liberia', 'Liberia'),
+            ('Madagascar', 'Madagascar'),
+            ('Malawi', 'Malawi'),
+            ('Mali', 'Mali'),
+            ('Mauritius', 'Mauritius'),
+            ('Mozambique', 'Mozambique'),
+            ('Namibia', 'Namibia'),
+            ('Niger', 'Niger'),
+            ('Republic of Congo', 'Republic of Congo'),
+            ('Sao Tome and Principe', 'Sao Tome and Principe'),
+            ('Senegal', 'Senegal'),
+            ('Seychelles', 'Seychelles'),
+            ('Sierra Leone', 'Sierra Leone'),
+            ('Sudan', 'Sudan'),
+            ('Swaziland', 'Swaziland'),
+            ('Togo', 'Togo'),
+            ('Zambia', 'Zambia'),
+            ('Zimbabwe', 'Zimbabwe'),
+            # Major Global Markets
+            ('United States', 'United States'),
+            ('United Kingdom', 'United Kingdom'),
+            ('Germany', 'Germany'),
+            ('Japan', 'Japan'),
+            ('China', 'China'),
+            ('India', 'India'),
+            ('Canada', 'Canada'),
+            ('Australia', 'Australia'),
+            ('France', 'France'),
+            ('Italy', 'Italy'),
+            ('Spain', 'Spain'),
+            ('Brazil', 'Brazil'),
+            ('Mexico', 'Mexico'),
+            ('South Korea', 'South Korea'),
+            ('Netherlands', 'Netherlands'),
+            ('Belgium', 'Belgium'),
+            ('Switzerland', 'Switzerland'),
+            ('Austria', 'Austria'),
+            ('Sweden', 'Sweden'),
+            ('Norway', 'Norway'),
+            ('Denmark', 'Denmark'),
+            ('Finland', 'Finland'),
+            # Other Countries (Alphabetical)
+            ('Afghanistan', 'Afghanistan'),
+            ('Albania', 'Albania'),
+            ('Argentina', 'Argentina'),
+            ('Armenia', 'Armenia'),
+            ('Azerbaijan', 'Azerbaijan'),
+            ('Bahamas', 'Bahamas'),
+            ('Bahrain', 'Bahrain'),
+            ('Bangladesh', 'Bangladesh'),
+            ('Barbados', 'Barbados'),
+            ('Belarus', 'Belarus'),
+            ('Belize', 'Belize'),
+            ('Bhutan', 'Bhutan'),
+            ('Bolivia', 'Bolivia'),
+            ('Bosnia and Herzegovina', 'Bosnia and Herzegovina'),
+            ('Brunei', 'Brunei'),
+            ('Bulgaria', 'Bulgaria'),
+            ('Cambodia', 'Cambodia'),
+            ('Chile', 'Chile'),
+            ('Colombia', 'Colombia'),
+            ('Costa Rica', 'Costa Rica'),
+            ('Croatia', 'Croatia'),
+            ('Cuba', 'Cuba'),
+            ('Cyprus', 'Cyprus'),
+            ('Czech Republic', 'Czech Republic'),
+            ('Dominica', 'Dominica'),
+            ('Dominican Republic', 'Dominican Republic'),
+            ('Ecuador', 'Ecuador'),
+            ('El Salvador', 'El Salvador'),
+            ('Estonia', 'Estonia'),
+            ('Fiji', 'Fiji'),
+            ('Georgia', 'Georgia'),
+            ('Greece', 'Greece'),
+            ('Grenada', 'Grenada'),
+            ('Guatemala', 'Guatemala'),
+            ('Guyana', 'Guyana'),
+            ('Haiti', 'Haiti'),
+            ('Honduras', 'Honduras'),
+            ('Hungary', 'Hungary'),
+            ('Iceland', 'Iceland'),
+            ('Indonesia', 'Indonesia'),
+            ('Iran', 'Iran'),
+            ('Iraq', 'Iraq'),
+            ('Ireland', 'Ireland'),
+            ('Israel', 'Israel'),
+            ('Jamaica', 'Jamaica'),
+            ('Jordan', 'Jordan'),
+            ('Kazakhstan', 'Kazakhstan'),
+            ('Kuwait', 'Kuwait'),
+            ('Kyrgyzstan', 'Kyrgyzstan'),
+            ('Laos', 'Laos'),
+            ('Latvia', 'Latvia'),
+            ('Lebanon', 'Lebanon'),
+            ('Lithuania', 'Lithuania'),
+            ('Luxembourg', 'Luxembourg'),
+            ('Malaysia', 'Malaysia'),
+            ('Maldives', 'Maldives'),
+            ('Malta', 'Malta'),
+            ('Moldova', 'Moldova'),
+            ('Mongolia', 'Mongolia'),
+            ('Montenegro', 'Montenegro'),
+            ('Myanmar', 'Myanmar'),
+            ('Nepal', 'Nepal'),
+            ('New Zealand', 'New Zealand'),
+            ('Nicaragua', 'Nicaragua'),
+            ('North Macedonia', 'North Macedonia'),
+            ('Oman', 'Oman'),
+            ('Pakistan', 'Pakistan'),
+            ('Panama', 'Panama'),
+            ('Paraguay', 'Paraguay'),
+            ('Peru', 'Peru'),
+            ('Philippines', 'Philippines'),
+            ('Poland', 'Poland'),
+            ('Portugal', 'Portugal'),
+            ('Qatar', 'Qatar'),
+            ('Romania', 'Romania'),
+            ('Russia', 'Russia'),
+            ('Saint Kitts and Nevis', 'Saint Kitts and Nevis'),
+            ('Saint Lucia', 'Saint Lucia'),
+            ('Saint Vincent and the Grenadines', 'Saint Vincent and the Grenadines'),
+            ('Saudi Arabia', 'Saudi Arabia'),
+            ('Serbia', 'Serbia'),
+            ('Singapore', 'Singapore'),
+            ('Slovakia', 'Slovakia'),
+            ('Slovenia', 'Slovenia'),
+            ('Sri Lanka', 'Sri Lanka'),
+            ('Suriname', 'Suriname'),
+            ('Syria', 'Syria'),
+            ('Tajikistan', 'Tajikistan'),
+            ('Thailand', 'Thailand'),
+            ('Trinidad and Tobago', 'Trinidad and Tobago'),
+            ('Turkey', 'Turkey'),
+            ('Turkmenistan', 'Turkmenistan'),
+            ('Ukraine', 'Ukraine'),
+            ('United Arab Emirates', 'United Arab Emirates'),
+            ('Uruguay', 'Uruguay'),
+            ('Uzbekistan', 'Uzbekistan'),
+            ('Venezuela', 'Venezuela'),
+            ('Vietnam', 'Vietnam'),
+            ('Yemen', 'Yemen'),
+        ]
+
     class Meta:
         model = Car
         fields = [
-            'brand', 'model', 'year', 'condition', 'engine_size', 'fuel_type',
-            'transmission', 'mileage', 'color', 'price', 'title', 'description',
-            'features', 'main_image', 'listing_type', 'negotiable'
+            'year', 'engine_size', 'fuel_type', 'transmission', 'mileage',
+            'color', 'price', 'title', 'description', 'features', 'main_image',
+            'listing_type', 'negotiable', 'area', 'city', 'country'
         ]
         widgets = {
-            'brand': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
-            }),
-            'model': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
-            }),
             'year': forms.NumberInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
                 'min': '1990',
-                'max': '2025'
-            }),
-            'condition': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
+                'max': '2025',
+                'placeholder': 'e.g., 2020'
             }),
             'engine_size': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
-                'placeholder': 'e.g., 2.0L, 1800cc'
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+                'placeholder': 'e.g., 2.0L, 1800cc, 2500cc'
             }),
             'fuel_type': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
             }),
             'transmission': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
             }),
             'mileage': forms.NumberInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
-                'placeholder': 'Mileage in kilometers'
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+                'placeholder': 'Mileage in kilometers (e.g., 50000)'
             }),
             'color': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
-                'placeholder': 'e.g., White, Black, Silver'
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+                'placeholder': 'e.g., Pearl White, Metallic Black, Silver'
             }),
             'price': forms.NumberInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
-                'placeholder': 'Price in KES'
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+                'placeholder': 'Price in KES (e.g., 2500000)'
             }),
             'title': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
                 'placeholder': 'e.g., 2020 Toyota Camry - Excellent Condition'
             }),
             'description': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
-                'rows': 5,
-                'placeholder': 'Describe your car in detail...'
+                'class': 'enhanced-textarea w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base resize-none',
+                'rows': 6,
+                'placeholder': 'Describe your car in detail... Include any unique features, maintenance history, or special characteristics that make your vehicle stand out.'
             }),
             'features': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
-                'rows': 3,
-                'placeholder': 'List features separated by commas (e.g., Air Conditioning, Power Steering, ABS)'
+                'class': 'enhanced-textarea w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base resize-none',
+                'rows': 4,
+                'placeholder': 'List key features separated by commas (e.g., Air Conditioning, Power Steering, ABS, Leather Seats, Sunroof, Navigation System)'
             }),
             'main_image': forms.FileInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
+                'class': 'enhanced-file-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-harrier-red file:text-white hover:file:bg-harrier-red-dark',
                 'accept': 'image/*'
             }),
             'listing_type': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200'
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
             }),
             'negotiable': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
+                'class': 'enhanced-checkbox w-5 h-5 text-harrier-red bg-white/80 border-2 border-gray-200 rounded-lg focus:ring-harrier-red focus:ring-2 transition-all duration-300'
+            }),
+            'area': forms.TextInput(attrs={
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+                'placeholder': 'e.g., Westlands, Karen, Kilimani'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+                'placeholder': 'e.g., Nairobi, Mombasa, Kisumu'
+            }),
+            'country': forms.Select(attrs={
+                'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
             })
         }
+
+    def clean_year(self):
+        """Validate year field"""
+        year = self.cleaned_data.get('year')
+        from datetime import datetime
+        current_year = datetime.now().year
+
+        if year and (year < 1990 or year > current_year + 1):
+            raise forms.ValidationError(f'Year must be between 1990 and {current_year + 1}')
+        return year
+
+    def clean_price(self):
+        """Validate price field"""
+        price = self.cleaned_data.get('price')
+        if price and price < 0:
+            raise forms.ValidationError('Price cannot be negative')
+        if price and price > 100000000:  # 100 million KES
+            raise forms.ValidationError('Price seems too high. Please check your input.')
+        return price
+
+    def clean_mileage(self):
+        """Validate mileage field"""
+        mileage = self.cleaned_data.get('mileage')
+        if mileage and mileage < 0:
+            raise forms.ValidationError('Mileage cannot be negative')
+        if mileage and mileage > 1000000:  # 1 million km
+            raise forms.ValidationError('Mileage seems too high. Please check your input.')
+        return mileage
+
+    def save(self, commit=True):
+        """Custom save method to handle independent hardcoded choices"""
+        instance = super().save(commit=False)
+
+        # Since we're using independent hardcoded choices, always save as strings
+        brand_value = self.cleaned_data.get('brand')
+        if brand_value:
+            instance.brand_name = brand_value
+            instance.brand = None
+
+        model_value = self.cleaned_data.get('model')
+        if model_value:
+            instance.model_name = model_value
+            instance.model = None
+
+        condition_value = self.cleaned_data.get('condition')
+        if condition_value:
+            instance.condition_name = condition_value
+            instance.condition = None
+
+        if commit:
+            instance.save()
+        return instance
 
 
 class ImportRequestForm(forms.ModelForm):
@@ -443,6 +813,11 @@ class CustomAuthenticationForm(AuthenticationForm):
 
             except User.DoesNotExist:
                 raise ValidationError("No account found with this email address.")
+            except User.MultipleObjectsReturned:
+                # Handle case where multiple users have the same email (should not happen after migration)
+                raise ValidationError(
+                    "Multiple accounts found with this email address. Please contact support for assistance."
+                )
 
         return self.cleaned_data
 
@@ -475,23 +850,37 @@ class ResendVerificationEmailForm(forms.Form):
                     raise ValidationError("This email address is already verified.")
             except User.DoesNotExist:
                 raise ValidationError("No account found with this email address.")
+            except User.MultipleObjectsReturned:
+                raise ValidationError(
+                    "Multiple accounts found with this email address. Please contact support for assistance."
+                )
         return email
 
     def send_verification_email(self):
         """Send verification email to the user"""
         email = self.cleaned_data['email']
-        user = User.objects.get(email=email)
+        try:
+            user = User.objects.get(email=email)
+        except User.MultipleObjectsReturned:
+            # If multiple users exist, we can't proceed safely
+            raise ValidationError(
+                "Multiple accounts found with this email address. Please contact support for assistance."
+            )
 
         try:
             # Generate new verification token
             token = user.generate_email_verification_token()
 
             # Prepare email context
+            from urllib.parse import urlparse
+            site_url = getattr(settings, 'SITE_URL', 'https://gurumishamotors.com')
+            parsed_url = urlparse(site_url)
+
             context = {
                 'user': user,
                 'token': token,
-                'domain': 'localhost:8000',  # Update this for production
-                'protocol': 'http',  # Update to https for production
+                'domain': parsed_url.netloc,
+                'protocol': parsed_url.scheme,
             }
 
             # Render email content
@@ -605,7 +994,13 @@ class RequestVerificationCodeForm(forms.Form):
         email = self.cleaned_data.get('email')
         try:
             user = User.objects.get(email=email)
+        except User.MultipleObjectsReturned:
+            # If multiple users exist, we can't proceed safely
+            raise ValidationError(
+                "Multiple accounts found with this email address. Please contact support for assistance."
+            )
 
+        try:
             # Create verification code
             verification_code = VerificationCode.create_verification_code(
                 user=user,
@@ -619,3 +1014,575 @@ class RequestVerificationCodeForm(forms.Form):
         except Exception as e:
             print(f"Failed to send verification code: {e}")
             return False
+
+
+# ============================================================================
+# SPARE PARTS MANAGEMENT FORMS
+# ============================================================================
+
+class SparePartForm(forms.ModelForm):
+    """Enhanced form for creating and editing spare parts with two-tier category support"""
+
+    # Add sub-category field for two-tier hierarchy (hardcoded options)
+    sub_category = forms.ModelChoiceField(
+        queryset=SparePartCategory.objects.filter(parent__isnull=False, is_active=True).order_by('parent__name', 'name'),
+        required=False,
+        empty_label="Select Sub-Category (Optional)",
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+            'id': 'id_sub_category'
+        })
+    )
+
+    class Meta:
+        model = SparePart
+        fields = [
+            'name', 'part_number', 'sku', 'barcode', 'category_new', 'supplier',
+            'description', 'specifications', 'condition', 'unit', 'price', 'cost_price',
+            'discount_price', 'stock_quantity', 'minimum_stock', 'maximum_stock',
+            'reorder_point', 'reorder_quantity', 'warehouse_location', 'storage_conditions',
+            'weight', 'dimensions', 'year_from', 'year_to', 'compatible_brands',
+            'compatible_models', 'main_image', 'is_available', 'is_featured'
+        ]
+
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Enter spare part name'
+            }),
+            'part_number': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Manufacturer part number'
+            }),
+            'sku': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Stock Keeping Unit'
+            }),
+            'barcode': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Barcode (optional)'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'rows': 4,
+                'placeholder': 'Detailed description of the spare part'
+            }),
+            'specifications': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'rows': 3,
+                'placeholder': 'Technical specifications'
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Selling price in KSh',
+                'step': '0.01'
+            }),
+            'cost_price': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Cost price in KSh',
+                'step': '0.01'
+            }),
+            'discount_price': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Discounted price (optional)',
+                'step': '0.01'
+            }),
+            'stock_quantity': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Current stock quantity'
+            }),
+            'minimum_stock': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Minimum stock level'
+            }),
+            'maximum_stock': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Maximum stock level'
+            }),
+            'reorder_point': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Reorder trigger point'
+            }),
+            'reorder_quantity': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Quantity to reorder'
+            }),
+            'warehouse_location': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Warehouse/shelf location'
+            }),
+            'storage_conditions': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Special storage requirements'
+            }),
+            'weight': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Weight in kg',
+                'step': '0.01'
+            }),
+            'dimensions': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Dimensions (L x W x H in cm)'
+            }),
+            'year_from': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Compatible from year'
+            }),
+            'year_to': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Compatible to year'
+            }),
+            'compatible_brands': forms.CheckboxSelectMultiple(attrs={
+                'class': 'grid grid-cols-2 gap-2'
+            }),
+            'compatible_models': forms.CheckboxSelectMultiple(attrs={
+                'class': 'grid grid-cols-2 gap-2'
+            }),
+            'main_image': forms.FileInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'accept': 'image/*'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.vendor = kwargs.pop('vendor', None)
+        super().__init__(*args, **kwargs)
+
+        # Set vendor if provided
+        if self.vendor:
+            self.instance.vendor = self.vendor
+
+        # Customize category choices - only show parent categories (no parent)
+        self.fields['category_new'].queryset = SparePartCategory.objects.filter(
+            is_active=True,
+            parent__isnull=True
+        ).order_by('name')
+        self.fields['category_new'].empty_label = "Select Primary Category"
+
+        # Set widget class for category field
+        self.fields['category_new'].widget.attrs.update({
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent'
+        })
+
+        # Customize supplier choices
+        self.fields['supplier'].queryset = Supplier.objects.filter(is_active=True)
+        self.fields['supplier'].empty_label = "Select Supplier (Optional)"
+
+        # Handle existing spare part with category (simplified for hardcoded sub-categories)
+        if self.instance.pk and self.instance.category_new:
+            if self.instance.category_new.parent:
+                # This is a sub-category, set the parent as main category and this as sub-category
+                self.fields['category_new'].initial = self.instance.category_new.parent
+                self.fields['sub_category'].initial = self.instance.category_new
+
+    def clean_sku(self):
+        """Ensure SKU is unique"""
+        sku = self.cleaned_data.get('sku')
+        if sku:
+            existing = SparePart.objects.filter(sku=sku)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError("A spare part with this SKU already exists.")
+        return sku
+
+    def clean_barcode(self):
+        """Ensure barcode is unique if provided"""
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            existing = SparePart.objects.filter(barcode=barcode)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError("A spare part with this barcode already exists.")
+        return barcode
+
+    def clean(self):
+        """Additional validation"""
+        cleaned_data = super().clean()
+
+        # Validate price relationships
+        price = cleaned_data.get('price')
+        cost_price = cleaned_data.get('cost_price')
+        discount_price = cleaned_data.get('discount_price')
+
+        if cost_price and price and cost_price > price:
+            raise ValidationError("Cost price cannot be higher than selling price.")
+
+        if discount_price and price and discount_price >= price:
+            raise ValidationError("Discount price must be lower than regular price.")
+
+        # Validate stock levels
+        minimum_stock = cleaned_data.get('minimum_stock')
+        maximum_stock = cleaned_data.get('maximum_stock')
+        reorder_point = cleaned_data.get('reorder_point')
+
+        if minimum_stock and maximum_stock and minimum_stock >= maximum_stock:
+            raise ValidationError("Minimum stock must be less than maximum stock.")
+
+        if reorder_point and minimum_stock and reorder_point < minimum_stock:
+            raise ValidationError("Reorder point should be at or above minimum stock level.")
+
+        # Validate year range
+        year_from = cleaned_data.get('year_from')
+        year_to = cleaned_data.get('year_to')
+
+        if year_from and year_to and year_from > year_to:
+            raise ValidationError("'From year' cannot be later than 'To year'.")
+
+        return cleaned_data
+
+    def clean_main_image(self):
+        """Validate image upload"""
+        image = self.cleaned_data.get('main_image')
+        if image:
+            # Check file size (max 5MB)
+            if image.size > 5 * 1024 * 1024:
+                raise ValidationError("Image file size cannot exceed 5MB.")
+
+            # Check file type
+            if not image.content_type.startswith('image/'):
+                raise ValidationError("Please upload a valid image file.")
+
+            # Check image dimensions (optional)
+            try:
+                from PIL import Image
+                img = Image.open(image)
+                if img.width < 200 or img.height < 200:
+                    raise ValidationError("Image must be at least 200x200 pixels.")
+            except ImportError:
+                # PIL not available, skip dimension check
+                pass
+            except Exception:
+                raise ValidationError("Invalid image file.")
+
+        return image
+
+    def save(self, commit=True):
+        """Override save to ensure vendor is set and handle two-tier category system"""
+        instance = super().save(commit=False)
+
+        # Ensure vendor is set
+        if self.vendor and not instance.vendor:
+            instance.vendor = self.vendor
+
+        # Handle two-tier category system
+        sub_category = self.cleaned_data.get('sub_category')
+        if sub_category:
+            # If sub-category is selected, use it as the main category
+            instance.category_new = sub_category
+            instance.category = sub_category.name
+        elif instance.category_new:
+            # If only primary category is selected, use it
+            instance.category = instance.category_new.name
+        elif not instance.category:
+            # Set a default category if none provided
+            instance.category = 'General'
+
+        # Set default values for vendor parts
+        if not instance.is_available:
+            instance.is_available = True
+
+        if commit:
+            instance.save()
+            # Save many-to-many fields
+            self.save_m2m()
+
+        return instance
+
+
+class VendorSparePartForm(SparePartForm):
+    """Specialized form for vendor spare parts management"""
+
+    class Meta(SparePartForm.Meta):
+        # Exclude admin-only fields for vendors
+        fields = [
+            'name', 'part_number', 'sku', 'barcode', 'category_new', 'supplier',
+            'description', 'specifications', 'condition', 'unit', 'price', 'cost_price',
+            'discount_price', 'stock_quantity', 'minimum_stock', 'maximum_stock',
+            'reorder_point', 'warehouse_location', 'weight', 'dimensions',
+            'year_from', 'year_to', 'main_image', 'is_available'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        # Extract vendor before calling super().__init__
+        self.vendor = kwargs.pop('vendor', None)
+        super().__init__(*args, **kwargs)
+
+        # Make certain fields required for vendors
+        self.fields['name'].required = True
+        self.fields['sku'].required = True
+        self.fields['category_new'].required = True
+        self.fields['condition'].required = True
+        self.fields['price'].required = True
+        self.fields['stock_quantity'].required = True
+
+        # Add helpful text for vendors
+        self.fields['sku'].help_text = "Unique identifier for this part in your inventory"
+        self.fields['minimum_stock'].help_text = "You'll be notified when stock falls below this level"
+        self.fields['cost_price'].help_text = "Your purchase cost (used for profit calculations)"
+
+        # Limit supplier choices to active suppliers only
+        if self.vendor:
+            # Vendors can only select from suppliers they have relationships with
+            # or create new supplier relationships through admin
+            self.fields['supplier'].queryset = Supplier.objects.filter(
+                is_active=True
+            ).order_by('name')
+
+    def clean_sku(self):
+        """Ensure SKU is unique within vendor's parts"""
+        sku = self.cleaned_data.get('sku')
+        if sku and self.vendor:
+            existing = SparePart.objects.filter(
+                sku=sku,
+                vendor=self.vendor
+            )
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError("You already have a spare part with this SKU.")
+        elif sku:
+            # Fallback to global uniqueness if no vendor
+            existing = SparePart.objects.filter(sku=sku)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError("A spare part with this SKU already exists.")
+        return sku
+
+    def clean_price(self):
+        """Validate price is reasonable"""
+        price = self.cleaned_data.get('price')
+        if price:
+            if price <= 0:
+                raise ValidationError("Price must be greater than zero.")
+            if price > 10000000:  # 10 million KSh
+                raise ValidationError("Price seems unreasonably high. Please verify.")
+        return price
+
+    def clean_stock_quantity(self):
+        """Validate stock quantity"""
+        stock_quantity = self.cleaned_data.get('stock_quantity')
+        if stock_quantity is not None:
+            if stock_quantity < 0:
+                raise ValidationError("Stock quantity cannot be negative.")
+            if stock_quantity > 1000000:  # 1 million units
+                raise ValidationError("Stock quantity seems unreasonably high. Please verify.")
+        return stock_quantity
+
+
+class SupplierForm(forms.ModelForm):
+    """Form for creating and editing suppliers"""
+
+    class Meta:
+        model = Supplier
+        fields = [
+            'name', 'contact_person', 'email', 'phone', 'address', 'website',
+            'tax_number', 'payment_terms', 'rating', 'is_active'
+        ]
+
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Supplier company name'
+            }),
+            'contact_person': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Primary contact person'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'supplier@example.com'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': '+254700000000'
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'rows': 3,
+                'placeholder': 'Physical address'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'https://supplier-website.com'
+            }),
+            'tax_number': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Tax/VAT number'
+            }),
+            'payment_terms': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'e.g., Net 30 days'
+            }),
+            'rating': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Rating out of 5',
+                'min': '1',
+                'max': '5',
+                'step': '0.1'
+            }),
+        }
+
+    def clean_email(self):
+        """Validate email uniqueness"""
+        email = self.cleaned_data.get('email')
+        if email:
+            existing = Supplier.objects.filter(email=email)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError("A supplier with this email already exists.")
+        return email
+
+    def clean_rating(self):
+        """Validate rating range"""
+        rating = self.cleaned_data.get('rating')
+        if rating and (rating < 1 or rating > 5):
+            raise ValidationError("Rating must be between 1 and 5.")
+        return rating
+
+
+class PurchaseOrderForm(forms.ModelForm):
+    """Form for creating purchase orders"""
+
+    class Meta:
+        model = PurchaseOrder
+        fields = [
+            'supplier', 'expected_delivery', 'shipping_cost', 'tax_amount',
+            'notes', 'terms_conditions'
+        ]
+
+        widgets = {
+            'expected_delivery': forms.DateInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'type': 'date'
+            }),
+            'shipping_cost': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Shipping cost in KSh',
+                'step': '0.01'
+            }),
+            'tax_amount': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Tax amount in KSh',
+                'step': '0.01'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'rows': 3,
+                'placeholder': 'Additional notes for this purchase order'
+            }),
+            'terms_conditions': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'rows': 4,
+                'placeholder': 'Terms and conditions for this purchase order'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.vendor = kwargs.pop('vendor', None)
+        super().__init__(*args, **kwargs)
+
+        # Set vendor if provided
+        if self.vendor:
+            self.instance.vendor = self.vendor
+
+        # Filter suppliers to active ones
+        self.fields['supplier'].queryset = Supplier.objects.filter(is_active=True)
+        self.fields['supplier'].empty_label = "Select Supplier"
+
+
+class PurchaseOrderItemForm(forms.ModelForm):
+    """Form for adding items to purchase orders"""
+
+    class Meta:
+        model = PurchaseOrderItem
+        fields = ['spare_part', 'quantity_ordered', 'unit_cost', 'notes']
+
+        widgets = {
+            'quantity_ordered': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Quantity to order'
+            }),
+            'unit_cost': forms.NumberInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Cost per unit in KSh',
+                'step': '0.01'
+            }),
+            'notes': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Additional notes (optional)'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.vendor = kwargs.pop('vendor', None)
+        super().__init__(*args, **kwargs)
+
+        # Filter spare parts to vendor's parts if vendor is provided
+        if self.vendor:
+            self.fields['spare_part'].queryset = SparePart.objects.filter(vendor=self.vendor)
+        else:
+            self.fields['spare_part'].queryset = SparePart.objects.all()
+
+        self.fields['spare_part'].empty_label = "Select Spare Part"
+
+    def clean_quantity_ordered(self):
+        """Validate quantity"""
+        quantity = self.cleaned_data.get('quantity_ordered')
+        if quantity and quantity <= 0:
+            raise ValidationError("Quantity must be greater than zero.")
+        return quantity
+
+    def clean_unit_cost(self):
+        """Validate unit cost"""
+        unit_cost = self.cleaned_data.get('unit_cost')
+        if unit_cost and unit_cost <= 0:
+            raise ValidationError("Unit cost must be greater than zero.")
+        return unit_cost
+
+
+class SparePartCategoryForm(forms.ModelForm):
+    """Form for creating and editing spare part categories"""
+
+    class Meta:
+        model = SparePartCategory
+        fields = ['name', 'description', 'parent', 'is_active']
+
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'placeholder': 'Category name'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
+                'rows': 3,
+                'placeholder': 'Category description'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Exclude self from parent choices to prevent circular references
+        if self.instance.pk:
+            self.fields['parent'].queryset = SparePartCategory.objects.filter(
+                is_active=True
+            ).exclude(pk=self.instance.pk)
+        else:
+            self.fields['parent'].queryset = SparePartCategory.objects.filter(is_active=True)
+
+        self.fields['parent'].empty_label = "No Parent (Top Level Category)"
+
+    def clean_name(self):
+        """Validate category name uniqueness"""
+        name = self.cleaned_data.get('name')
+        if name:
+            existing = SparePartCategory.objects.filter(name=name)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError("A category with this name already exists.")
+        return name

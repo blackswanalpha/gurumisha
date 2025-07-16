@@ -40,22 +40,22 @@
                 <span class="text-harrier-red font-semibold">Genuine parts</span> for all major car brands.
             </p>
 
-            <!-- Stats -->
+            <!-- Dynamic Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 max-w-4xl mx-auto">
                 <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">500+</div>
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">{{ total_parts_count|default:"500+" }}</div>
                     <div class="text-sm text-gray-300 uppercase tracking-wide">Parts Available</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">50+</div>
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">{{ vendors_count|default:"50+" }}</div>
                     <div class="text-sm text-gray-300 uppercase tracking-wide">Trusted Vendors</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">24/7</div>
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">{{ support_hours|default:"24/7" }}</div>
                     <div class="text-sm text-gray-300 uppercase tracking-wide">Support</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">100%</div>
+                    <div class="text-3xl md:text-4xl font-bold text-harrier-red">{{ genuine_percentage|default:"100%" }}</div>
                     <div class="text-sm text-gray-300 uppercase tracking-wide">Genuine</div>
                 </div>
             </div>
@@ -82,6 +82,86 @@
             <a href="#parts-section" class="text-white hover:text-harrier-red transition-colors">
                 <i class="fas fa-chevron-down text-2xl"></i>
             </a>
+        </div>
+    </div>
+</section>
+
+<!-- Category Showcase Section -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-4">Shop by Category</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">Browse our comprehensive selection of automotive spare parts organized by category for easy navigation</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {% for category in featured_categories %}
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('{{ category.name }}')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas {{ category.icon|default:'fa-cogs' }} text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">{{ category.name }}</h3>
+                    <p class="text-sm text-gray-500 mt-1">{{ category.parts_count }} parts</p>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Default categories if none are set -->
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('Engine Parts')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-cogs text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">Engine Parts</h3>
+                    <p class="text-sm text-gray-500 mt-1">150+ parts</p>
+                </div>
+            </div>
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('Brake System')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-stop-circle text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">Brake System</h3>
+                    <p class="text-sm text-gray-500 mt-1">80+ parts</p>
+                </div>
+            </div>
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('Suspension')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-car text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">Suspension</h3>
+                    <p class="text-sm text-gray-500 mt-1">60+ parts</p>
+                </div>
+            </div>
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('Electrical')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-bolt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">Electrical</h3>
+                    <p class="text-sm text-gray-500 mt-1">90+ parts</p>
+                </div>
+            </div>
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('Body Parts')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-car-side text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">Body Parts</h3>
+                    <p class="text-sm text-gray-500 mt-1">70+ parts</p>
+                </div>
+            </div>
+            <div class="category-card group cursor-pointer" onclick="filterByCategory('Filters')">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 hover:border-harrier-red hover:shadow-lg transition-all duration-300 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-harrier-red to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-filter text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-harrier-dark group-hover:text-harrier-red transition-colors">Filters</h3>
+                    <p class="text-sm text-gray-500 mt-1">45+ parts</p>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </section>
@@ -380,8 +460,105 @@
         transform: scale(1.02);
         box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
     }
+
+    /* Enhanced Glassmorphism Effects */
+    .filter-card {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .filter-card:hover {
+        background: rgba(255, 255, 255, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Category Card Animations */
+    .category-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Quick View Modal Animations */
+    #quick-view-modal {
+        backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
+    }
+
+    #quick-view-modal.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    #quick-view-modal:not(.hidden) {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Loading Shimmer Effect */
+    .loading-shimmer {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    /* Enhanced Mobile Responsiveness */
+    @media (max-width: 768px) {
+        .product-card-harrier:hover {
+            transform: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-card:hover {
+            transform: none;
+        }
+
+        .btn-harrier-primary:hover {
+            transform: none;
+        }
+    }
+
+    /* Toast Notification Styles */
+    .toast-notification {
+        backdrop-filter: blur(10px);
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
 </style>
 {% endblock %}
+
+<!-- Quick View Modal -->
+<div id="quick-view-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div id="quick-view-modal-content" class="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Content will be loaded here via HTMX -->
+    </div>
+</div>
+
+<!-- Cart Response Container -->
+<div id="cart-response-container" class="fixed top-4 right-4 z-50 max-w-md">
+    <!-- Cart success/error messages will appear here -->
+</div>
 
 {% block extra_js %}
 <script>
@@ -428,6 +605,29 @@
 
         // Trigger HTMX request to reload all parts
         htmx.trigger(form, 'submit');
+    }
+
+    // Filter by category from category showcase
+    function filterByCategory(categoryName) {
+        const categorySelect = document.querySelector('select[name="category"]');
+        if (categorySelect) {
+            // Find the option with matching text
+            for (let option of categorySelect.options) {
+                if (option.text === categoryName) {
+                    option.selected = true;
+                    break;
+                }
+            }
+
+            // Trigger search
+            htmx.trigger(document.getElementById('filter-form'), 'submit');
+
+            // Scroll to results
+            document.getElementById('parts-section').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
     }
 
     // Search suggestions functionality

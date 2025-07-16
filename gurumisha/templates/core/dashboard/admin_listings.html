@@ -58,10 +58,18 @@
                 </div>
             </div>
 
-            <!-- Search -->
-            <div class="flex items-center space-x-2">
+            <!-- Add Car Button and Search -->
+            <div class="flex items-center space-x-4">
+                <!-- Add Car Button -->
+                <button onclick="openAdminCarCreationModal()"
+                        class="flex items-center px-4 py-2 bg-gradient-to-r from-harrier-red to-black text-white rounded-lg hover:from-harrier-red-dark hover:to-gray-900 transition-all duration-300 font-semibold shadow-lg transform hover:scale-105 focus:ring-2 focus:ring-harrier-red focus:ring-offset-2">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add New Car
+                </button>
+
+                <!-- Search -->
                 <form method="GET" class="flex">
-                    <input type="text" name="search" placeholder="Search listings..." 
+                    <input type="text" name="search" placeholder="Search listings..."
                            value="{{ request.GET.search }}"
                            class="px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-harrier-red focus:border-harrier-red text-sm">
                     <button type="submit" class="bg-harrier-red text-white px-4 py-2 rounded-r-lg hover:bg-red-600 transition-colors">
@@ -104,7 +112,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for car in cars %}
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50" data-car-id="{{ car.id }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-16 w-16">
@@ -136,11 +144,11 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 {% if car.is_approved %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-check-circle mr-1"></i>Approved
                                     </span>
                                 {% else %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    <span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                         <i class="fas fa-clock mr-1"></i>Pending
                                     </span>
                                 {% endif %}
@@ -176,7 +184,7 @@
                                 {{ car.created_at|date:"M d, Y" }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex items-center space-x-2 flex-wrap">
+                                <div class="flex items-center space-x-2 flex-wrap action-buttons">
                                     {% if not car.is_approved %}
                                         <button onclick="approveCar({{ car.id }})"
                                                 class="text-green-600 hover:text-green-900 transition-colors">
@@ -282,44 +290,112 @@
 <script>
 function approveCar(carId) {
     if (confirm('Are you sure you want to approve this car listing?')) {
+        // Show loading state
+        const approveBtn = document.querySelector(`button[onclick="approveCar(${carId})"]`);
+        if (approveBtn) {
+            approveBtn.disabled = true;
+            approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Approving...';
+        }
+
         fetch(`/dashboard/admin/approve-car/${carId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 'Content-Type': 'application/json',
+                'HX-Request': 'true'
             },
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok');
+        })
         .then(data => {
             if (data.status === 'approved') {
-                location.reload();
+                // Show success toast
+                showToast('Car listing approved successfully!', 'success');
+                // Update the row to show approved status
+                const carRow = document.querySelector(`tr[data-car-id="${carId}"]`);
+                if (carRow) {
+                    // Update status badge
+                    const statusBadge = carRow.querySelector('.status-badge');
+                    if (statusBadge) {
+                        statusBadge.className = 'status-badge px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800';
+                        statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Approved';
+                    }
+                    // Remove approve/reject buttons
+                    const actionButtons = carRow.querySelector('.action-buttons');
+                    if (actionButtons) {
+                        actionButtons.innerHTML = '<span class="text-green-600 font-semibold"><i class="fas fa-check mr-1"></i>Approved</span>';
+                    }
+                }
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while approving the car listing.');
+            showToast('Error approving car listing. Please try again.', 'error');
+            // Reset button state
+            if (approveBtn) {
+                approveBtn.disabled = false;
+                approveBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Approve';
+            }
         });
     }
 }
 
 function rejectCar(carId) {
     if (confirm('Are you sure you want to reject this car listing? This action cannot be undone.')) {
+        // Show loading state
+        const rejectBtn = document.querySelector(`button[onclick="rejectCar(${carId})"]`);
+        if (rejectBtn) {
+            rejectBtn.disabled = true;
+            rejectBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Rejecting...';
+        }
+
         fetch(`/dashboard/admin/reject-car/${carId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 'Content-Type': 'application/json',
+                'HX-Request': 'true'
             },
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok');
+        })
         .then(data => {
             if (data.status === 'rejected') {
-                location.reload();
+                // Show success toast
+                showToast('Car listing rejected successfully!', 'success');
+                // Remove the row from the table
+                const carRow = document.querySelector(`tr[data-car-id="${carId}"]`);
+                if (carRow) {
+                    carRow.style.transition = 'opacity 0.3s ease';
+                    carRow.style.opacity = '0';
+                    setTimeout(() => {
+                        carRow.remove();
+                        // Update counts if needed
+                        updateListingCounts();
+                    }, 300);
+                }
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while rejecting the car listing.');
+            showToast('Error rejecting car listing. Please try again.', 'error');
+            // Reset button state
+            if (rejectBtn) {
+                rejectBtn.disabled = false;
+                rejectBtn.innerHTML = '<i class="fas fa-times mr-1"></i>Reject';
+            }
         });
     }
 }
@@ -564,8 +640,8 @@ function deleteCar(carId) {
     const carRow = document.querySelector(`button[onclick="deleteCar(${carId})"]`).closest('tr');
     const carTitle = carRow.querySelector('.text-harrier-dark').textContent.trim();
 
-    // Enhanced confirmation dialog
-    const confirmMessage = `Are you sure you want to permanently delete "${carTitle}"?\n\nThis action cannot be undone and will:\n• Remove the car from all listings\n• Delete all associated images\n• Remove from featured cars (if applicable)\n• Cancel any active inquiries\n\nType "DELETE" to confirm:`;
+    // Enhanced confirmation dialog with better UX
+    const confirmMessage = `⚠️ PERMANENT DELETION WARNING ⚠️\n\nYou are about to permanently delete:\n"${carTitle}"\n\nThis action CANNOT be undone and will:\n• Remove the car from all listings\n• Delete all associated images\n• Remove from featured cars (if applicable)\n• Cancel any active inquiries\n• Delete all view statistics\n\nTo confirm deletion, type "DELETE" exactly:`;
 
     const userInput = prompt(confirmMessage);
 
@@ -587,13 +663,7 @@ function deleteCar(carId) {
         .then(data => {
             if (data.status === 'success') {
                 // Show success notification
-                window.toastManager.show(
-                    `Car "${carTitle}" has been permanently deleted`,
-                    'success',
-                    {
-                        duration: 5000
-                    }
-                );
+                showToast(`Car "${carTitle}" has been permanently deleted`, 'success');
 
                 // Remove row from table with animation
                 carRow.style.transition = 'all 0.3s ease-out';
@@ -626,7 +696,7 @@ function deleteCar(carId) {
                 }, 300);
 
             } else {
-                window.showError(data.message || 'Failed to delete car listing');
+                showToast(data.message || 'Failed to delete car listing', 'error');
                 // Reset button
                 button.disabled = false;
                 button.innerHTML = '<i class="fas fa-trash mr-1"></i>Delete';
@@ -634,12 +704,78 @@ function deleteCar(carId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            window.showError('An error occurred while deleting the car listing.');
+            showToast('An error occurred while deleting the car listing.', 'error');
             // Reset button
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-trash mr-1"></i>Delete';
         });
     }
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold transform transition-all duration-300 translate-x-full`;
+
+    // Set color based on type
+    if (type === 'success') {
+        toast.classList.add('bg-green-600');
+    } else if (type === 'error') {
+        toast.classList.add('bg-red-600');
+    } else {
+        toast.classList.add('bg-blue-600');
+    }
+
+    toast.innerHTML = `
+        <div class="flex items-center space-x-3">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Update listing counts after actions
+function updateListingCounts() {
+    // This could be enhanced to update the counts dynamically
+    // For now, we'll just reload the page after a short delay
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+
+// Admin Car Creation Modal Functions
+function openAdminCarCreationModal() {
+    // Load the modal via HTMX
+    fetch('{% url "core:sell_car" %}?modal=true&admin=true')
+        .then(response => response.text())
+        .then(html => {
+            // Create modal container
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = html;
+            document.body.appendChild(modalContainer);
+        })
+        .catch(error => {
+            console.error('Error loading admin car creation modal:', error);
+            showToast('Error loading car creation form. Please try again.', 'error');
+        });
 }
 </script>
 {% endblock %}

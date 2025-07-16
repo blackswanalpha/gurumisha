@@ -29,6 +29,9 @@ class User(AbstractUser):
         ('fr', 'French'),
     ]
 
+    # Override email field to make it unique
+    email = models.EmailField(unique=True, help_text="Email address must be unique")
+
     # Basic Information
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     phone = models.CharField(max_length=20, blank=True)
@@ -401,24 +404,77 @@ class Vendor(models.Model):
             self.save(update_fields=['average_rating'])
 
 
+
 class CarBrand(models.Model):
-    """Car brands like Toyota, Honda, etc."""
+    """Enhanced car brands with additional metadata"""
     name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, help_text="Brand description and history")
+    country_of_origin = models.CharField(max_length=100, blank=True, help_text="Country where brand originated")
     logo = models.ImageField(upload_to='brands/', blank=True)
+    logo_url = models.URLField(blank=True, help_text="Alternative logo URL if not uploaded")
+    website = models.URLField(blank=True, help_text="Official brand website")
     is_active = models.BooleanField(default=True)
+    is_premium = models.BooleanField(default=False, help_text="Mark as premium/luxury brand")
+    display_order = models.PositiveIntegerField(default=0, help_text="Order for display in lists")
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        ordering = ['name']
+        ordering = ['display_order', 'name']
+
+
+class VehicleCondition(models.Model):
+    """Vehicle condition types with flexible management"""
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, help_text="Detailed description of this condition")
+    display_order = models.PositiveIntegerField(default=0, help_text="Order for display in forms")
+    is_active = models.BooleanField(default=True)
+    color_code = models.CharField(max_length=7, blank=True, help_text="Hex color code for UI display")
+    icon_class = models.CharField(max_length=50, blank=True, help_text="CSS icon class for display")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        verbose_name = "Vehicle Condition"
+        verbose_name_plural = "Vehicle Conditions"
 
 
 class CarModel(models.Model):
-    """Car models like Camry, Civic, etc."""
+    """Enhanced car models with additional specifications"""
+    BODY_TYPE_CHOICES = [
+        ('sedan', 'Sedan'),
+        ('suv', 'SUV'),
+        ('hatchback', 'Hatchback'),
+        ('coupe', 'Coupe'),
+        ('convertible', 'Convertible'),
+        ('wagon', 'Wagon'),
+        ('pickup', 'Pickup Truck'),
+        ('van', 'Van'),
+        ('crossover', 'Crossover'),
+        ('sports', 'Sports Car'),
+        ('luxury', 'Luxury'),
+        ('compact', 'Compact'),
+        ('other', 'Other'),
+    ]
+
     brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, related_name='models')
     name = models.CharField(max_length=100)
+    body_type = models.CharField(max_length=20, choices=BODY_TYPE_CHOICES, blank=True)
+    engine_options = models.TextField(blank=True, help_text="Available engine options (comma-separated)")
+    model_year_start = models.PositiveIntegerField(null=True, blank=True, help_text="First year this model was produced")
+    model_year_end = models.PositiveIntegerField(null=True, blank=True, help_text="Last year this model was produced (blank if still in production)")
+    description = models.TextField(blank=True, help_text="Model description and key features")
     is_active = models.BooleanField(default=True)
+    is_popular = models.BooleanField(default=False, help_text="Mark as popular model for featured display")
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return f"{self.brand.name} {self.name}"
@@ -426,6 +482,20 @@ class CarModel(models.Model):
     class Meta:
         ordering = ['brand__name', 'name']
         unique_together = ['brand', 'name']
+
+    def get_production_years(self):
+        """Get production year range as string"""
+        if self.model_year_start:
+            if self.model_year_end:
+                return f"{self.model_year_start}-{self.model_year_end}"
+            else:
+                return f"{self.model_year_start}-Present"
+        return "Unknown"
+
+
+# Aliases for consistency
+VehicleBrand = CarBrand
+VehicleModel = CarModel
 
 
 class Car(models.Model):
@@ -444,11 +514,7 @@ class Car(models.Model):
         ('auction', 'Auctioned'),
     ]
 
-    CONDITION_CHOICES = [
-        ('new', 'New'),
-        ('used', 'Used'),
-        ('certified', 'Certified Pre-Owned'),
-    ]
+    # CONDITION_CHOICES moved to VehicleCondition model
 
     FUEL_TYPE_CHOICES = [
         ('petrol', 'Petrol'),
@@ -465,10 +531,15 @@ class Car(models.Model):
 
     # Basic Information
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='cars')
-    brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE)
-    model = models.ForeignKey(CarModel, on_delete=models.CASCADE)
+    brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, null=True, blank=True)
+    model = models.ForeignKey(CarModel, on_delete=models.CASCADE, null=True, blank=True)
     year = models.PositiveIntegerField()
-    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES)
+    condition = models.ForeignKey(VehicleCondition, on_delete=models.CASCADE, null=True, blank=True)
+
+    # Fallback string fields for when using hardcoded choices
+    brand_name = models.CharField(max_length=100, blank=True, help_text="Brand name when not using database brands")
+    model_name = models.CharField(max_length=100, blank=True, help_text="Model name when not using database models")
+    condition_name = models.CharField(max_length=50, blank=True, help_text="Condition when not using database conditions")
 
     # Technical Specifications
     engine_size = models.CharField(max_length=50, blank=True)
@@ -482,6 +553,11 @@ class Car(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     listing_type = models.CharField(max_length=20, choices=LISTING_TYPE_CHOICES, default='local')
     negotiable = models.BooleanField(default=False)
+
+    # Location Information
+    area = models.CharField(max_length=200, blank=True, help_text="Specific area/neighborhood where the car is located")
+    city = models.CharField(max_length=100, blank=True, help_text="City where the car is located")
+    country = models.CharField(max_length=100, blank=True, help_text="Country where the car is located")
 
     # Description and Features
     title = models.CharField(max_length=200)
@@ -518,7 +594,21 @@ class Car(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.year} {self.brand.name} {self.model.name}"
+        brand_name = self.brand.name if self.brand else self.brand_name
+        model_name = self.model.name if self.model else self.model_name
+        return f"{self.year} {brand_name} {model_name}"
+
+    def get_brand_name(self):
+        """Get brand name from either database model or string field"""
+        return self.brand.name if self.brand else self.brand_name
+
+    def get_model_name(self):
+        """Get model name from either database model or string field"""
+        return self.model.name if self.model else self.model_name
+
+    def get_condition_name(self):
+        """Get condition name from either database model or string field"""
+        return self.condition.name if self.condition else self.condition_name
 
     def get_absolute_url(self):
         return reverse('car_detail', kwargs={'pk': self.pk})
@@ -782,14 +872,18 @@ class HotDeal(models.Model):
 
     def calculate_discounted_price(self):
         """Calculate and update discounted price"""
+        from decimal import Decimal
+
         if self.discount_type == 'percentage':
-            discount_amount = (self.original_price * self.discount_value) / 100
+            # Convert to Decimal to avoid float/Decimal multiplication issues
+            discount_value_decimal = Decimal(str(self.discount_value))
+            discount_amount = (self.original_price * discount_value_decimal) / Decimal('100')
             self.discounted_price = self.original_price - discount_amount
         else:  # fixed
             self.discounted_price = self.original_price - self.discount_value
 
         # Ensure discounted price is not negative
-        self.discounted_price = max(0, self.discounted_price)
+        self.discounted_price = max(Decimal('0'), self.discounted_price)
 
     def save(self, *args, **kwargs):
         """Override save to calculate discounted price"""
@@ -1006,7 +1100,7 @@ class ImportOrder(models.Model):
     winning_bid_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
     # Vehicle Identification
-    chassis_number = models.CharField(max_length=100, blank=True, unique=True, null=True)
+    chassis_number = models.CharField(max_length=100, blank=True, null=True)
     engine_number = models.CharField(max_length=100, blank=True)
 
     # Shipping Information
@@ -1030,6 +1124,13 @@ class ImportOrder(models.Model):
     delivery_date = models.DateField(null=True, blank=True)
     delivery_contact_person = models.CharField(max_length=200, blank=True)
     delivery_contact_phone = models.CharField(max_length=20, blank=True)
+
+    # GPS Tracking Information
+    current_latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True, help_text="Current latitude coordinate")
+    current_longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True, help_text="Current longitude coordinate")
+    current_location_name = models.CharField(max_length=200, blank=True, help_text="Human-readable current location")
+    last_location_update = models.DateTimeField(null=True, blank=True, help_text="When location was last updated")
+    tracking_enabled = models.BooleanField(default=True, help_text="Enable GPS tracking for this order")
 
     # Additional Information
     special_requirements = models.TextField(blank=True)
@@ -1173,6 +1274,195 @@ class ImportOrder(models.Model):
         }
         return payment_colors.get(self.payment_status, 'gray')
 
+    # GPS Tracking Methods
+    @property
+    def current_coordinates(self):
+        """Get current coordinates as a tuple"""
+        if self.current_latitude and self.current_longitude:
+            return (float(self.current_latitude), float(self.current_longitude))
+        return None
+
+    @property
+    def current_coordinates_string(self):
+        """Get current coordinates as a formatted string"""
+        if self.current_latitude and self.current_longitude:
+            return f"{self.current_latitude}, {self.current_longitude}"
+        return "Location not available"
+
+    @property
+    def google_maps_url(self):
+        """Generate Google Maps URL for current location"""
+        if self.current_latitude and self.current_longitude:
+            return f"https://maps.google.com/?q={self.current_latitude},{self.current_longitude}"
+        return None
+
+    def update_current_location(self, latitude, longitude, location_name='', user=None):
+        """Update the current GPS location"""
+        try:
+            # Use update() to avoid model validation and unique constraint issues
+            from django.db import transaction
+            with transaction.atomic():
+                ImportOrder.objects.filter(id=self.id).update(
+                    current_latitude=latitude,
+                    current_longitude=longitude,
+                    current_location_name=location_name,
+                    last_location_update=timezone.now()
+                )
+                # Refresh the instance to get updated values
+                self.refresh_from_db(fields=[
+                    'current_latitude', 'current_longitude',
+                    'current_location_name', 'last_location_update'
+                ])
+        except Exception as e:
+            print(f"Error updating location for order {self.order_number}: {e}")
+            return
+
+        # Create tracking history entry
+        if user:
+            from .models import LocationTrackingHistory
+            LocationTrackingHistory.objects.create(
+                import_order=self,
+                latitude=latitude,
+                longitude=longitude,
+                tracking_source='manual',
+                status_at_time=self.status,
+                recorded_at=timezone.now(),
+                created_by=user,
+                notes=f"Location updated to: {location_name}" if location_name else "Location updated"
+            )
+
+    def get_current_location(self):
+        """Get the current location object if it exists"""
+        return self.locations.filter(is_current_location=True).first()
+
+    def has_tracking_enabled(self):
+        """Check if tracking is enabled for this order"""
+        return self.tracking_enabled and self.status not in ['delivered', 'cancelled']
+
+    def get_import_stages_timeline(self):
+        """Get timeline data for import stages with status and progress"""
+        stages = [
+            {
+                'id': 'import_request',
+                'name': 'Import Request',
+                'description': 'Initial import request submitted and being processed',
+                'icon': 'file-alt',
+                'status': 'import_request',
+            },
+            {
+                'id': 'auction_won',
+                'name': 'Auction Won',
+                'description': 'Vehicle successfully purchased at auction',
+                'icon': 'gavel',
+                'status': 'auction_won',
+            },
+            {
+                'id': 'shipped',
+                'name': 'Shipped',
+                'description': 'Vehicle loaded and shipped from origin port',
+                'icon': 'ship',
+                'status': 'shipped',
+            },
+            {
+                'id': 'in_transit',
+                'name': 'In Transit',
+                'description': 'Vehicle is currently being transported',
+                'icon': 'route',
+                'status': 'in_transit',
+            },
+            {
+                'id': 'arrived_docked',
+                'name': 'Arrived & Docked',
+                'description': 'Vehicle has arrived at destination port',
+                'icon': 'anchor',
+                'status': 'arrived_docked',
+            },
+            {
+                'id': 'under_clearance',
+                'name': 'Under Clearance',
+                'description': 'Vehicle is going through customs clearance',
+                'icon': 'clipboard-check',
+                'status': 'under_clearance',
+            },
+            {
+                'id': 'registered',
+                'name': 'Registered',
+                'description': 'Vehicle has been registered with local authorities',
+                'icon': 'certificate',
+                'status': 'registered',
+            },
+            {
+                'id': 'ready_for_dispatch',
+                'name': 'Ready for Dispatch',
+                'description': 'Vehicle is ready for final delivery',
+                'icon': 'truck',
+                'status': 'ready_for_dispatch',
+            },
+            {
+                'id': 'delivered',
+                'name': 'Delivered',
+                'description': 'Vehicle has been delivered to customer',
+                'icon': 'check-circle',
+                'status': 'delivered',
+            },
+        ]
+
+        # Get status order for comparison
+        status_order = [choice[0] for choice in self.STATUS_CHOICES if choice[0] != 'cancelled']
+        current_status_index = status_order.index(self.status) if self.status in status_order else -1
+
+        # Mark stages as completed, current, or pending
+        for i, stage in enumerate(stages):
+            stage_index = status_order.index(stage['status']) if stage['status'] in status_order else -1
+
+            if stage_index < current_status_index:
+                stage['is_completed'] = True
+                stage['is_current'] = False
+            elif stage_index == current_status_index:
+                stage['is_completed'] = False
+                stage['is_current'] = True
+            else:
+                stage['is_completed'] = False
+                stage['is_current'] = False
+
+            # Add location information if available
+            stage['location'] = None
+            stage['estimated_date'] = None
+            stage['documents'] = []
+
+            # Try to find related location for this stage
+            if hasattr(self, 'locations'):
+                location_types = {
+                    'import_request': 'origin',
+                    'auction_won': 'auction_house',
+                    'shipped': 'departure_port',
+                    'in_transit': 'current_position',
+                    'arrived_docked': 'arrival_port',
+                    'under_clearance': 'customs_facility',
+                    'registered': 'registration_office',
+                    'ready_for_dispatch': 'dispatch_center',
+                    'delivered': 'delivery_address',
+                }
+
+                location_type = location_types.get(stage['status'])
+                if location_type:
+                    stage['location'] = self.locations.filter(location_type=location_type).first()
+
+        return stages
+
+    def save(self, *args, **kwargs):
+        """Custom save method"""
+        # Generate order number if empty
+        if not self.order_number:
+            import uuid
+            self.order_number = f"IMP{timezone.now().year}{str(uuid.uuid4())[:8].upper()}"
+
+        # Handle empty chassis_number to avoid issues
+        if self.chassis_number == '':
+            self.chassis_number = None
+
+        super().save(*args, **kwargs)
+
     class Meta:
         ordering = ['-created_at']
         indexes = [
@@ -1180,6 +1470,8 @@ class ImportOrder(models.Model):
             models.Index(fields=['chassis_number']),
             models.Index(fields=['status']),
             models.Index(fields=['customer', 'status']),
+            models.Index(fields=['current_latitude', 'current_longitude']),
+            models.Index(fields=['tracking_enabled', 'status']),
         ]
 
 
@@ -1293,7 +1585,7 @@ class ImportOrderDocument(models.Model):
 
 class SparePartCategory(models.Model):
     """Spare parts categories for better organization"""
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
     is_active = models.BooleanField(default=True)
@@ -1307,6 +1599,7 @@ class SparePartCategory(models.Model):
     class Meta:
         ordering = ['name']
         verbose_name_plural = "Spare Part Categories"
+        unique_together = [['name', 'parent']]  # Allow same name with different parents
 
 
 class Supplier(models.Model):
@@ -1354,7 +1647,7 @@ class SparePart(models.Model):
         ('meter', 'Meter'),
     ]
 
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='spare_parts')
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='spare_parts', null=True, blank=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name='spare_parts')
 
     # Part Information
@@ -1409,7 +1702,8 @@ class SparePart(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} - {self.vendor.company_name}"
+        vendor_name = self.vendor.company_name if self.vendor else "Admin"
+        return f"{self.name} - {vendor_name}"
 
     def is_in_stock(self):
         return self.available_quantity > 0 and self.is_available
@@ -1754,7 +2048,7 @@ class OrderItem(models.Model):
     """Line items for orders"""
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     spare_part = models.ForeignKey(SparePart, on_delete=models.CASCADE)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)  # Track which vendor supplied the part
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, null=True, blank=True)  # Track which vendor supplied the part
 
     # Product details at time of order
     part_name = models.CharField(max_length=200)
@@ -1774,7 +2068,7 @@ class OrderItem(models.Model):
             self.part_sku = self.spare_part.sku
         if not self.part_description:
             self.part_description = self.spare_part.description
-        if not self.vendor_id:
+        if not self.vendor_id and self.spare_part.vendor:
             self.vendor = self.spare_part.vendor
 
         self.total_price = self.quantity * self.unit_price
@@ -1804,7 +2098,8 @@ class Payment(models.Model):
 
     # Payment Information
     payment_id = models.CharField(max_length=100, unique=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
+    import_order = models.ForeignKey(ImportOrder, on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
@@ -1828,7 +2123,12 @@ class Payment(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"Payment {self.payment_id} - {self.order.order_number}"
+        if self.order:
+            return f"Payment {self.payment_id} - Order {self.order.order_number}"
+        elif self.import_order:
+            return f"Payment {self.payment_id} - Import Order {self.import_order.order_number}"
+        else:
+            return f"Payment {self.payment_id}"
 
     class Meta:
         ordering = ['-created_at']
@@ -1953,25 +2253,119 @@ class Testimonial(models.Model):
         ordering = ['-created_at']
 
 
+# Enhanced Content Management Models
+
+class ContentCategory(models.Model):
+    """Categories for organizing content"""
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
+    icon = models.CharField(max_length=50, blank=True, help_text="Font Awesome icon class")
+    color = models.CharField(max_length=7, default='#3B82F6', help_text="Hex color code for category")
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} > {self.name}"
+        return self.name
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+        verbose_name_plural = "Content Categories"
+
+
+class ContentTag(models.Model):
+    """Tags for content organization"""
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=7, default='#6B7280', help_text="Hex color code for tag")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
 class BlogPost(models.Model):
-    """Blog posts for content marketing"""
+    """Enhanced blog posts for content marketing"""
+    CONTENT_TYPE_CHOICES = [
+        ('article', 'Article'),
+        ('guide', 'Guide'),
+        ('infographic', 'Infographic'),
+        ('opinion', 'Opinion'),
+        ('news', 'News'),
+        ('review', 'Review'),
+    ]
+
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
+
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
 
+    # Basic Information
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     content = models.TextField()
-    excerpt = models.TextField(blank=True)
+    excerpt = models.TextField(blank=True, help_text="Brief summary of the content")
+
+    # Content Classification
+    content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES, default='article')
+    category = models.ForeignKey(ContentCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    tags = models.ManyToManyField(ContentTag, blank=True, related_name='posts')
+
+    # Content Attributes
+    difficulty_level = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, blank=True)
+    estimated_read_time = models.PositiveIntegerField(default=5, help_text="Estimated reading time in minutes")
 
     # SEO
     meta_description = models.CharField(max_length=160, blank=True)
     meta_keywords = models.CharField(max_length=200, blank=True)
 
-    # Images
-    featured_image = models.ImageField(upload_to='blog/', blank=True)
+    # Media
+    featured_image = models.ImageField(upload_to='content/featured/', blank=True)
+    featured_image_alt = models.CharField(max_length=200, blank=True, help_text="Alt text for featured image")
+    video_url = models.URLField(blank=True, help_text="YouTube or Vimeo URL")
 
-    # Status
+    # Guide-specific fields
+    pdf_file = models.FileField(upload_to='content/guides/pdfs/%Y/%m/', blank=True,
+                               help_text="PDF file for guides (max 10MB)")
+    pdf_file_size = models.PositiveIntegerField(null=True, blank=True, help_text="PDF file size in bytes")
+    pdf_download_count = models.PositiveIntegerField(default=0, help_text="Number of PDF downloads")
+
+    # Infographic-specific fields
+    chart_data = models.JSONField(blank=True, null=True, help_text="Chart configuration and data for infographics")
+    chart_type = models.CharField(max_length=20, blank=True,
+                                 choices=[
+                                     ('bar', 'Bar Chart'),
+                                     ('line', 'Line Chart'),
+                                     ('pie', 'Pie Chart'),
+                                     ('doughnut', 'Doughnut Chart'),
+                                     ('radar', 'Radar Chart'),
+                                     ('scatter', 'Scatter Plot'),
+                                     ('bubble', 'Bubble Chart'),
+                                     ('polar', 'Polar Area Chart'),
+                                 ], help_text="Primary chart type for infographics")
+
+    # Status and Publishing
     is_published = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False, help_text="Show in featured content sections")
     published_at = models.DateTimeField(null=True, blank=True)
+
+    # Engagement Metrics
+    views_count = models.PositiveIntegerField(default=0)
+    likes_count = models.PositiveIntegerField(default=0)
+    shares_count = models.PositiveIntegerField(default=0)
 
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1981,10 +2375,338 @@ class BlogPost(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('blog_detail', kwargs={'slug': self.slug})
+        return reverse('core:resource_detail', kwargs={'slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        if self.is_published and not self.published_at:
+            self.published_at = timezone.now()
+
+        # Update PDF file size if PDF file exists
+        if self.pdf_file:
+            self.pdf_file_size = self.pdf_file.size
+
+        super().save(*args, **kwargs)
+
+    @property
+    def content_type_display(self):
+        """Get display name for content type"""
+        return dict(self.CONTENT_TYPE_CHOICES).get(self.content_type, self.content_type)
+
+    @property
+    def pdf_file_size_formatted(self):
+        """Return formatted PDF file size"""
+        if not self.pdf_file_size:
+            return "Unknown"
+
+        size = self.pdf_file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
+    @property
+    def has_pdf(self):
+        """Check if this guide has a PDF file"""
+        return bool(self.pdf_file and self.content_type == 'guide')
+
+    def increment_pdf_download(self):
+        """Increment PDF download counter"""
+        if self.has_pdf:
+            self.pdf_download_count += 1
+            self.save(update_fields=['pdf_download_count'])
+
+    @property
+    def has_chart_data(self):
+        """Check if this infographic has chart data"""
+        return bool(self.chart_data and self.content_type == 'infographic')
+
+    def get_chart_config(self):
+        """Get Chart.js configuration for this infographic"""
+        if not self.has_chart_data:
+            return None
+
+        # Default configuration
+        config = {
+            'type': self.chart_type or 'bar',
+            'data': self.chart_data.get('data', {}),
+            'options': {
+                'responsive': True,
+                'maintainAspectRatio': False,
+                'plugins': {
+                    'title': {
+                        'display': True,
+                        'text': self.title,
+                        'font': {
+                            'size': 16,
+                            'weight': 'bold'
+                        }
+                    },
+                    'legend': {
+                        'display': True,
+                        'position': 'bottom'
+                    }
+                }
+            }
+        }
+
+        # Merge with custom options if provided
+        if 'options' in self.chart_data:
+            config['options'].update(self.chart_data['options'])
+
+        return config
+
+    def set_chart_data(self, chart_type, data, options=None):
+        """Set chart data for infographic"""
+        self.chart_type = chart_type
+        self.chart_data = {
+            'data': data,
+            'options': options or {}
+        }
+        self.save(update_fields=['chart_type', 'chart_data'])
 
     class Meta:
         ordering = ['-published_at', '-created_at']
+        verbose_name = "Content Post"
+        verbose_name_plural = "Content Posts"
+
+
+class ContentSeries(models.Model):
+    """Series for organizing related content"""
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    featured_image = models.ImageField(upload_to='content/series/', blank=True)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['sort_order', 'title']
+        verbose_name_plural = "Content Series"
+
+
+class ContentSeriesItem(models.Model):
+    """Items in a content series"""
+    series = models.ForeignKey(ContentSeries, on_delete=models.CASCADE, related_name='items')
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='series_items')
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.series.title} - {self.post.title}"
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ['series', 'post']
+
+
+class ContentView(models.Model):
+    """Track content views for analytics"""
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='content_views')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField(blank=True)
+    referrer = models.URLField(blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"View of {self.post.title} at {self.viewed_at}"
+
+    class Meta:
+        ordering = ['-viewed_at']
+
+
+class ContentLike(models.Model):
+    """Track content likes"""
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='content_likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.post.title}"
+
+    class Meta:
+        unique_together = ['post', 'user']
+        ordering = ['-created_at']
+
+
+class ContentComment(models.Model):
+    """Comments on content posts"""
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    content = models.TextField()
+    is_approved = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.post.title}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ContentBookmark(models.Model):
+    """User bookmarks for content"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked {self.post.title}"
+
+    class Meta:
+        unique_together = ['user', 'post']
+        ordering = ['-created_at']
+
+
+# Static Pages Management Models
+
+class StaticPage(models.Model):
+    """Static pages for website content management"""
+    PAGE_TYPE_CHOICES = [
+        ('about', 'About Us'),
+        ('contact', 'Contact Us'),
+        ('privacy', 'Privacy Policy'),
+        ('terms', 'Terms of Service'),
+        ('faq', 'FAQ'),
+        ('help', 'Help Center'),
+        ('custom', 'Custom Page'),
+    ]
+
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+        ('archived', 'Archived'),
+    ]
+
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    page_type = models.CharField(max_length=20, choices=PAGE_TYPE_CHOICES, default='custom')
+    content = models.TextField()
+    excerpt = models.TextField(blank=True, help_text="Brief description of the page")
+
+    # SEO Fields
+    meta_title = models.CharField(max_length=60, blank=True, help_text="SEO title (60 chars max)")
+    meta_description = models.CharField(max_length=160, blank=True, help_text="SEO description (160 chars max)")
+    meta_keywords = models.CharField(max_length=200, blank=True)
+
+    # Media
+    featured_image = models.ImageField(upload_to='static_pages/', blank=True)
+    featured_image_alt = models.CharField(max_length=200, blank=True)
+
+    # Status and Publishing
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    is_featured = models.BooleanField(default=False, help_text="Show in featured sections")
+    show_in_menu = models.BooleanField(default=False, help_text="Show in navigation menu")
+    menu_order = models.PositiveIntegerField(default=0, help_text="Order in navigation menu")
+
+    # Author and Timestamps
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='static_pages')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    # Analytics
+    views_count = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('core:static_page', kwargs={'slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        if self.status == 'published' and not self.published_at:
+            self.published_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['menu_order', 'title']
+        verbose_name = "Static Page"
+        verbose_name_plural = "Static Pages"
+
+
+# Enhanced Content Analytics Models
+
+class ContentAnalytics(models.Model):
+    """Daily analytics for content performance"""
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='analytics')
+    date = models.DateField()
+
+    # Engagement Metrics
+    views = models.PositiveIntegerField(default=0)
+    unique_views = models.PositiveIntegerField(default=0)
+    likes = models.PositiveIntegerField(default=0)
+    shares = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+    bookmarks = models.PositiveIntegerField(default=0)
+
+    # Time Metrics
+    avg_time_on_page = models.DurationField(null=True, blank=True)
+    bounce_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+
+    # Traffic Sources
+    direct_traffic = models.PositiveIntegerField(default=0)
+    search_traffic = models.PositiveIntegerField(default=0)
+    social_traffic = models.PositiveIntegerField(default=0)
+    referral_traffic = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Analytics for {self.post.title} on {self.date}"
+
+    class Meta:
+        unique_together = ['post', 'date']
+        ordering = ['-date']
+        verbose_name = "Content Analytics"
+        verbose_name_plural = "Content Analytics"
+
+
+class ContentPerformanceReport(models.Model):
+    """Monthly/Weekly performance reports for content"""
+    REPORT_TYPE_CHOICES = [
+        ('weekly', 'Weekly Report'),
+        ('monthly', 'Monthly Report'),
+        ('quarterly', 'Quarterly Report'),
+    ]
+
+    title = models.CharField(max_length=200)
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    # Summary Metrics
+    total_views = models.PositiveIntegerField(default=0)
+    total_unique_views = models.PositiveIntegerField(default=0)
+    total_engagement = models.PositiveIntegerField(default=0)
+    top_performing_posts = models.JSONField(default=list, blank=True)
+
+    # Report Data
+    report_data = models.JSONField(default=dict, blank=True)
+
+    # Status
+    is_generated = models.BooleanField(default=False)
+    generated_at = models.DateTimeField(null=True, blank=True)
+    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.start_date} - {self.end_date})"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Performance Report"
+        verbose_name_plural = "Performance Reports"
 
 
 class Notification(models.Model):
@@ -2404,6 +3126,32 @@ class ProfileView(models.Model):
             models.Index(fields=['viewer_ip', 'viewed_at']),
         ]
 
+
+class RecentlyViewedCar(models.Model):
+    """Track recently viewed cars for users"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='recently_viewed_cars')
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='recent_views')
+    session_key = models.CharField(max_length=40, blank=True, help_text="For anonymous users")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-viewed_at']
+        indexes = [
+            models.Index(fields=['user', '-viewed_at']),
+            models.Index(fields=['session_key', '-viewed_at']),
+            models.Index(fields=['car', '-viewed_at']),
+        ]
+        unique_together = [
+            ['user', 'car'],
+            ['session_key', 'car'],
+        ]
+
+    def __str__(self):
+        if self.user:
+            return f"{self.user.username} viewed {self.car.title}"
+        return f"Anonymous user viewed {self.car.title}"
+
     def __str__(self):
         viewer_name = self.viewer.username if self.viewer else f"Anonymous ({self.viewer_ip})"
         return f"{viewer_name} viewed {self.profile_user.username}'s profile"
@@ -2566,3 +3314,1151 @@ class UserActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_action_display()} at {self.timestamp}"
+
+
+# Messaging System Models
+
+class Message(models.Model):
+    """Admin-created messages and announcements for users"""
+
+    MESSAGE_TYPE_CHOICES = [
+        ('announcement', 'Announcement'),
+        ('newsletter', 'Newsletter'),
+        ('alert', 'Alert'),
+        ('promotion', 'Promotion'),
+        ('maintenance', 'Maintenance Notice'),
+        ('feature', 'Feature Update'),
+        ('policy', 'Policy Update'),
+        ('welcome', 'Welcome Message'),
+    ]
+
+    TARGET_AUDIENCE_CHOICES = [
+        ('all', 'All Users'),
+        ('customers', 'Customers Only'),
+        ('vendors', 'Vendors Only'),
+        ('admins', 'Admins Only'),
+        ('new_users', 'New Users (< 30 days)'),
+        ('active_users', 'Active Users'),
+        ('inactive_users', 'Inactive Users'),
+    ]
+
+    PRIORITY_CHOICES = [
+        (1, 'Low'),
+        (2, 'Normal'),
+        (3, 'High'),
+        (4, 'Critical'),
+    ]
+
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('scheduled', 'Scheduled'),
+        ('active', 'Active'),
+        ('paused', 'Paused'),
+        ('expired', 'Expired'),
+        ('archived', 'Archived'),
+    ]
+
+    # Basic Information
+    title = models.CharField(max_length=200, help_text="Message title/headline")
+    content = models.TextField(help_text="Message content (HTML supported)")
+    excerpt = models.TextField(blank=True, help_text="Brief summary for previews")
+
+    # Classification
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES, default='announcement')
+    target_audience = models.CharField(max_length=20, choices=TARGET_AUDIENCE_CHOICES, default='all')
+    priority = models.IntegerField(choices=PRIORITY_CHOICES, default=2)
+
+    # Display Settings
+    show_as_popup = models.BooleanField(default=True, help_text="Show as popup modal")
+    show_as_banner = models.BooleanField(default=False, help_text="Show as banner notification")
+    show_in_dashboard = models.BooleanField(default=True, help_text="Show in user dashboard")
+
+    # Styling Options
+    background_color = models.CharField(max_length=7, default='#ffffff', help_text="Hex color code")
+    text_color = models.CharField(max_length=7, default='#000000', help_text="Hex color code")
+    icon_class = models.CharField(max_length=50, blank=True, help_text="Font Awesome icon class")
+
+    # Media
+    featured_image = models.ImageField(upload_to='messages/images/', blank=True)
+    featured_image_alt = models.CharField(max_length=200, blank=True)
+
+    # Action Button
+    action_button_text = models.CharField(max_length=50, blank=True, help_text="Call-to-action button text")
+    action_button_url = models.URLField(blank=True, help_text="URL for action button")
+    action_button_color = models.CharField(max_length=7, default='#dc2626', help_text="Button color (hex)")
+
+    # Scheduling and Lifecycle
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    publication_date = models.DateTimeField(null=True, blank=True, help_text="When to start showing")
+    expiration_date = models.DateTimeField(null=True, blank=True, help_text="When to stop showing")
+
+    # Targeting Rules
+    min_user_age_days = models.PositiveIntegerField(null=True, blank=True, help_text="Minimum user account age in days")
+    max_user_age_days = models.PositiveIntegerField(null=True, blank=True, help_text="Maximum user account age in days")
+    require_email_verified = models.BooleanField(default=False)
+
+    # Display Rules
+    max_displays_per_user = models.PositiveIntegerField(default=1, help_text="Maximum times to show to each user")
+    display_frequency_hours = models.PositiveIntegerField(default=24, help_text="Minimum hours between displays")
+    auto_dismiss_seconds = models.PositiveIntegerField(null=True, blank=True, help_text="Auto-dismiss after X seconds")
+
+    # Analytics
+    total_views = models.PositiveIntegerField(default=0)
+    total_clicks = models.PositiveIntegerField(default=0)
+    total_dismissals = models.PositiveIntegerField(default=0)
+
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_messages')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.get_message_type_display()})"
+
+    @property
+    def is_active(self):
+        """Check if message is currently active"""
+        now = timezone.now()
+
+        if self.status != 'active':
+            return False
+
+        if self.publication_date and now < self.publication_date:
+            return False
+
+        if self.expiration_date and now > self.expiration_date:
+            return False
+
+        return True
+
+    @property
+    def click_through_rate(self):
+        """Calculate click-through rate"""
+        if self.total_views == 0:
+            return 0
+        return (self.total_clicks / self.total_views) * 100
+
+    def get_absolute_url(self):
+        return reverse('core:admin_message_detail', kwargs={'pk': self.pk})
+
+    def save(self, *args, **kwargs):
+        # Auto-update status based on dates
+        now = timezone.now()
+
+        if self.status == 'scheduled' and self.publication_date and now >= self.publication_date:
+            self.status = 'active'
+        elif self.status == 'active' and self.expiration_date and now >= self.expiration_date:
+            self.status = 'expired'
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['-priority', '-created_at']
+        indexes = [
+            models.Index(fields=['status', 'target_audience']),
+            models.Index(fields=['publication_date', 'expiration_date']),
+            models.Index(fields=['message_type', 'status']),
+            models.Index(fields=['-priority', '-created_at']),
+        ]
+        verbose_name = "Message"
+        verbose_name_plural = "Messages"
+
+
+class MessageRead(models.Model):
+    """Track which users have read/seen which messages"""
+
+    ACTION_CHOICES = [
+        ('viewed', 'Viewed'),
+        ('clicked', 'Clicked'),
+        ('dismissed', 'Dismissed'),
+        ('ignored', 'Ignored'),
+    ]
+
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='read_records')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_reads')
+
+    # Interaction Details
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, default='viewed')
+    display_count = models.PositiveIntegerField(default=1, help_text="Number of times shown to user")
+
+    # Context Information
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    referrer_url = models.URLField(blank=True)
+
+    # Timing
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    action_taken_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} {self.action} '{self.message.title}'"
+
+    def mark_action(self, action_type):
+        """Mark a specific action taken by user"""
+        self.action = action_type
+        self.action_taken_at = timezone.now()
+        self.save()
+
+        # Update message analytics
+        if action_type == 'clicked':
+            self.message.total_clicks += 1
+        elif action_type == 'dismissed':
+            self.message.total_dismissals += 1
+
+        self.message.save()
+
+    class Meta:
+        unique_together = ['message', 'user']
+        ordering = ['-last_seen_at']
+        indexes = [
+            models.Index(fields=['message', 'action']),
+            models.Index(fields=['user', '-last_seen_at']),
+            models.Index(fields=['action', '-action_taken_at']),
+        ]
+        verbose_name = "Message Read Record"
+        verbose_name_plural = "Message Read Records"
+
+
+class MessageSchedule(models.Model):
+    """Advanced scheduling options for messages"""
+
+    FREQUENCY_CHOICES = [
+        ('once', 'One Time'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('quarterly', 'Quarterly'),
+        ('yearly', 'Yearly'),
+    ]
+
+    WEEKDAY_CHOICES = [
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
+    ]
+
+    message = models.OneToOneField(Message, on_delete=models.CASCADE, related_name='schedule')
+
+    # Frequency Settings
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='once')
+
+    # Time Settings
+    send_time = models.TimeField(help_text="Time of day to send")
+    timezone = models.CharField(max_length=50, default='UTC', help_text="Timezone for scheduling")
+
+    # Weekly Settings
+    weekdays = models.JSONField(default=list, blank=True, help_text="List of weekday numbers (0=Monday)")
+
+    # Monthly Settings
+    day_of_month = models.PositiveIntegerField(null=True, blank=True, help_text="Day of month (1-31)")
+
+    # Recurrence Limits
+    max_occurrences = models.PositiveIntegerField(null=True, blank=True, help_text="Maximum number of times to send")
+    end_date = models.DateField(null=True, blank=True, help_text="Stop recurring after this date")
+
+    # Status
+    is_active = models.BooleanField(default=True)
+    occurrences_sent = models.PositiveIntegerField(default=0)
+    last_sent_at = models.DateTimeField(null=True, blank=True)
+    next_send_at = models.DateTimeField(null=True, blank=True)
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Schedule for '{self.message.title}' - {self.get_frequency_display()}"
+
+    def calculate_next_send_time(self):
+        """Calculate the next time this message should be sent"""
+        from datetime import datetime, timedelta
+        import pytz
+
+        if not self.is_active:
+            return None
+
+        # Check if we've reached max occurrences
+        if self.max_occurrences and self.occurrences_sent >= self.max_occurrences:
+            return None
+
+        # Check if we've passed the end date
+        if self.end_date and timezone.now().date() > self.end_date:
+            return None
+
+        tz = pytz.timezone(self.timezone)
+        now = timezone.now().astimezone(tz)
+
+        if self.frequency == 'once':
+            if self.occurrences_sent > 0:
+                return None
+            return self.message.publication_date
+
+        elif self.frequency == 'daily':
+            next_date = now.date() + timedelta(days=1)
+
+        elif self.frequency == 'weekly':
+            # Find next occurrence based on weekdays
+            days_ahead = 7  # Default to next week
+            current_weekday = now.weekday()
+
+            for weekday in sorted(self.weekdays):
+                days_until = (weekday - current_weekday) % 7
+                if days_until == 0:  # Today
+                    if now.time() < self.send_time:
+                        days_until = 0
+                    else:
+                        continue
+                if days_until < days_ahead:
+                    days_ahead = days_until
+                    break
+
+            next_date = now.date() + timedelta(days=days_ahead)
+
+        elif self.frequency == 'monthly':
+            if self.day_of_month:
+                next_month = now.replace(day=1) + timedelta(days=32)
+                next_month = next_month.replace(day=1)
+                try:
+                    next_date = next_month.replace(day=self.day_of_month).date()
+                except ValueError:
+                    # Handle months with fewer days
+                    next_date = next_month.replace(day=28).date()
+            else:
+                next_date = now.date() + timedelta(days=30)
+
+        else:
+            return None
+
+        # Combine date and time
+        next_datetime = tz.localize(datetime.combine(next_date, self.send_time))
+        return next_datetime.astimezone(pytz.UTC)
+
+    def mark_sent(self):
+        """Mark this schedule as having sent a message"""
+        self.occurrences_sent += 1
+        self.last_sent_at = timezone.now()
+        self.next_send_at = self.calculate_next_send_time()
+        self.save()
+
+    class Meta:
+        ordering = ['next_send_at']
+        indexes = [
+            models.Index(fields=['is_active', 'next_send_at']),
+            models.Index(fields=['frequency', 'is_active']),
+        ]
+        verbose_name = "Message Schedule"
+        verbose_name_plural = "Message Schedules"
+
+
+class MessageTarget(models.Model):
+    """Advanced targeting rules for messages"""
+
+    CONDITION_CHOICES = [
+        ('equals', 'Equals'),
+        ('not_equals', 'Not Equals'),
+        ('contains', 'Contains'),
+        ('not_contains', 'Does Not Contain'),
+        ('greater_than', 'Greater Than'),
+        ('less_than', 'Less Than'),
+        ('in_list', 'In List'),
+        ('not_in_list', 'Not In List'),
+    ]
+
+    FIELD_CHOICES = [
+        ('user.role', 'User Role'),
+        ('user.date_joined', 'Registration Date'),
+        ('user.last_login', 'Last Login Date'),
+        ('user.is_email_verified', 'Email Verified'),
+        ('user.city', 'City'),
+        ('user.country', 'Country'),
+        ('user.language', 'Language'),
+        ('vendor.is_verified', 'Vendor Verified'),
+        ('vendor.company_name', 'Company Name'),
+        ('car_count', 'Number of Cars Listed'),
+        ('order_count', 'Number of Orders'),
+        ('login_count', 'Login Count'),
+    ]
+
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='targeting_rules')
+
+    # Targeting Rule
+    field_name = models.CharField(max_length=50, choices=FIELD_CHOICES)
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES)
+    value = models.TextField(help_text="Value to compare against")
+
+    # Logic
+    is_required = models.BooleanField(default=True, help_text="Must match for user to see message")
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.message.title}: {self.field_name} {self.condition} {self.value}"
+
+    def evaluate_for_user(self, user):
+        """Evaluate if this targeting rule matches for a given user"""
+        try:
+            # Get the actual value from the user
+            if self.field_name.startswith('user.'):
+                field_path = self.field_name[5:]  # Remove 'user.' prefix
+                actual_value = getattr(user, field_path, None)
+            elif self.field_name.startswith('vendor.') and hasattr(user, 'vendor'):
+                field_path = self.field_name[7:]  # Remove 'vendor.' prefix
+                actual_value = getattr(user.vendor, field_path, None)
+            elif self.field_name == 'car_count':
+                actual_value = user.cars.count() if hasattr(user, 'cars') else 0
+            elif self.field_name == 'order_count':
+                actual_value = user.orders.count() if hasattr(user, 'orders') else 0
+            elif self.field_name == 'login_count':
+                actual_value = user.activity_logs.filter(action='login').count()
+            else:
+                return False
+
+            # Convert values for comparison
+            target_value = self.value
+
+            # Handle different data types
+            if isinstance(actual_value, bool):
+                target_value = target_value.lower() in ['true', '1', 'yes']
+            elif isinstance(actual_value, int):
+                try:
+                    target_value = int(target_value)
+                except ValueError:
+                    return False
+            elif hasattr(actual_value, 'date'):  # DateTime field
+                from datetime import datetime
+                try:
+                    target_value = datetime.strptime(target_value, '%Y-%m-%d').date()
+                    actual_value = actual_value.date() if hasattr(actual_value, 'date') else actual_value
+                except ValueError:
+                    return False
+
+            # Perform comparison based on condition
+            if self.condition == 'equals':
+                return actual_value == target_value
+            elif self.condition == 'not_equals':
+                return actual_value != target_value
+            elif self.condition == 'contains':
+                return target_value in str(actual_value)
+            elif self.condition == 'not_contains':
+                return target_value not in str(actual_value)
+            elif self.condition == 'greater_than':
+                return actual_value > target_value
+            elif self.condition == 'less_than':
+                return actual_value < target_value
+            elif self.condition == 'in_list':
+                target_list = [item.strip() for item in target_value.split(',')]
+                return str(actual_value) in target_list
+            elif self.condition == 'not_in_list':
+                target_list = [item.strip() for item in target_value.split(',')]
+                return str(actual_value) not in target_list
+
+        except Exception as e:
+            # Log error and return False for safety
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error evaluating targeting rule {self.id}: {e}")
+            return False
+
+        return False
+
+    class Meta:
+        ordering = ['message', 'field_name']
+        indexes = [
+            models.Index(fields=['message', 'is_required']),
+        ]
+        verbose_name = "Message Target Rule"
+        verbose_name_plural = "Message Target Rules"
+
+
+class MessageAnalytics(models.Model):
+    """Daily analytics for message performance"""
+
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='daily_analytics')
+    date = models.DateField()
+
+    # Display Metrics
+    total_displays = models.PositiveIntegerField(default=0)
+    unique_users_shown = models.PositiveIntegerField(default=0)
+
+    # Interaction Metrics
+    total_clicks = models.PositiveIntegerField(default=0)
+    unique_users_clicked = models.PositiveIntegerField(default=0)
+    total_dismissals = models.PositiveIntegerField(default=0)
+    unique_users_dismissed = models.PositiveIntegerField(default=0)
+
+    # Audience Breakdown
+    customers_shown = models.PositiveIntegerField(default=0)
+    vendors_shown = models.PositiveIntegerField(default=0)
+    admins_shown = models.PositiveIntegerField(default=0)
+
+    # Device/Platform Breakdown
+    desktop_displays = models.PositiveIntegerField(default=0)
+    mobile_displays = models.PositiveIntegerField(default=0)
+    tablet_displays = models.PositiveIntegerField(default=0)
+
+    # Engagement Quality
+    avg_time_to_action = models.DurationField(null=True, blank=True)
+    bounce_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Analytics for '{self.message.title}' on {self.date}"
+
+    @property
+    def click_through_rate(self):
+        """Calculate click-through rate for this day"""
+        if self.total_displays == 0:
+            return 0
+        return (self.total_clicks / self.total_displays) * 100
+
+    @property
+    def dismissal_rate(self):
+        """Calculate dismissal rate for this day"""
+        if self.total_displays == 0:
+            return 0
+        return (self.total_dismissals / self.total_displays) * 100
+
+    class Meta:
+        unique_together = ['message', 'date']
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['message', '-date']),
+            models.Index(fields=['-date']),
+        ]
+        verbose_name = "Message Analytics"
+        verbose_name_plural = "Message Analytics"
+
+
+class MessageTemplate(models.Model):
+    """Reusable message templates for common message types"""
+
+    TEMPLATE_CATEGORY_CHOICES = [
+        ('announcement', 'Announcements'),
+        ('promotion', 'Promotions'),
+        ('maintenance', 'Maintenance'),
+        ('welcome', 'Welcome Messages'),
+        ('feature', 'Feature Updates'),
+        ('policy', 'Policy Updates'),
+        ('seasonal', 'Seasonal Messages'),
+    ]
+
+    name = models.CharField(max_length=100, unique=True)
+    category = models.CharField(max_length=20, choices=TEMPLATE_CATEGORY_CHOICES)
+    description = models.TextField(blank=True)
+
+    # Template Content
+    title_template = models.CharField(max_length=200, help_text="Use {{variable}} for dynamic content")
+    content_template = models.TextField(help_text="Use {{variable}} for dynamic content")
+
+    # Default Settings
+    default_message_type = models.CharField(max_length=20, choices=Message.MESSAGE_TYPE_CHOICES)
+    default_target_audience = models.CharField(max_length=20, choices=Message.TARGET_AUDIENCE_CHOICES)
+    default_priority = models.IntegerField(choices=Message.PRIORITY_CHOICES, default=2)
+
+    # Styling Defaults
+    default_background_color = models.CharField(max_length=7, default='#ffffff')
+    default_text_color = models.CharField(max_length=7, default='#000000')
+    default_icon_class = models.CharField(max_length=50, blank=True)
+
+    # Template Variables
+    available_variables = models.JSONField(default=list, help_text="List of available template variables")
+
+    # Usage Statistics
+    usage_count = models.PositiveIntegerField(default=0)
+
+    # Status
+    is_active = models.BooleanField(default=True)
+
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_templates')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+    def render_template(self, context=None):
+        """Render template with provided context variables"""
+        if context is None:
+            context = {}
+
+        title = self.title_template
+        content = self.content_template
+
+        # Simple template variable replacement
+        for key, value in context.items():
+            placeholder = f"{{{{{key}}}}}"
+            title = title.replace(placeholder, str(value))
+            content = content.replace(placeholder, str(value))
+
+        return {
+            'title': title,
+            'content': content
+        }
+
+    def increment_usage(self):
+        """Increment usage counter"""
+        self.usage_count += 1
+        self.save(update_fields=['usage_count'])
+
+    class Meta:
+        ordering = ['category', 'name']
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['-usage_count']),
+        ]
+        verbose_name = "Message Template"
+        verbose_name_plural = "Message Templates"
+
+
+# ===== GPS TRACKING AND LOCATION MODELS =====
+
+class ImportOrderLocation(models.Model):
+    """GPS coordinate tracking for import orders with comprehensive location data"""
+
+    LOCATION_TYPE_CHOICES = [
+        ('origin', 'Origin Location'),
+        ('auction_house', 'Auction House'),
+        ('departure_port', 'Departure Port'),
+        ('transit_port', 'Transit Port'),
+        ('arrival_port', 'Arrival Port'),
+        ('customs_facility', 'Customs Facility'),
+        ('registration_office', 'Registration Office'),
+        ('dispatch_center', 'Dispatch Center'),
+        ('delivery_address', 'Delivery Address'),
+        ('current_position', 'Current Position'),
+    ]
+
+    ACCURACY_LEVEL_CHOICES = [
+        ('high', 'High (GPS)'),
+        ('medium', 'Medium (Network)'),
+        ('low', 'Low (Estimated)'),
+        ('manual', 'Manual Entry'),
+    ]
+
+    # Relationships
+    import_order = models.ForeignKey(ImportOrder, on_delete=models.CASCADE, related_name='locations')
+
+    # Location Information
+    location_type = models.CharField(max_length=20, choices=LOCATION_TYPE_CHOICES)
+    name = models.CharField(max_length=200, help_text="Human-readable location name")
+    description = models.TextField(blank=True, help_text="Additional location details")
+
+    # GPS Coordinates
+    latitude = models.DecimalField(max_digits=10, decimal_places=7, help_text="Latitude coordinate")
+    longitude = models.DecimalField(max_digits=10, decimal_places=7, help_text="Longitude coordinate")
+    altitude = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Altitude in meters")
+    accuracy = models.CharField(max_length=10, choices=ACCURACY_LEVEL_CHOICES, default='manual')
+
+    # Address Information
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state_province = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+
+    # Timing Information
+    estimated_arrival_time = models.DateTimeField(null=True, blank=True)
+    actual_arrival_time = models.DateTimeField(null=True, blank=True)
+    estimated_departure_time = models.DateTimeField(null=True, blank=True)
+    actual_departure_time = models.DateTimeField(null=True, blank=True)
+
+    # Status and Visibility
+    is_current_location = models.BooleanField(default=False, help_text="Is this the current location?")
+    is_waypoint = models.BooleanField(default=False, help_text="Is this a route waypoint?")
+    is_customer_visible = models.BooleanField(default=True, help_text="Show to customer?")
+
+    # Additional Data
+    contact_person = models.CharField(max_length=200, blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    contact_email = models.EmailField(blank=True)
+    facility_hours = models.CharField(max_length=200, blank=True)
+    special_instructions = models.TextField(blank=True)
+
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_locations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.import_order.order_number} - {self.get_location_type_display()}: {self.name}"
+
+    @property
+    def coordinates_string(self):
+        """Return formatted coordinates string"""
+        return f"{self.latitude}, {self.longitude}"
+
+    @property
+    def google_maps_url(self):
+        """Generate Google Maps URL for this location"""
+        return f"https://maps.google.com/?q={self.latitude},{self.longitude}"
+
+    def save(self, *args, **kwargs):
+        # Ensure only one current location per import order
+        if self.is_current_location:
+            ImportOrderLocation.objects.filter(
+                import_order=self.import_order,
+                is_current_location=True
+            ).exclude(pk=self.pk).update(is_current_location=False)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['import_order', 'location_type']),
+            models.Index(fields=['import_order', 'is_current_location']),
+            models.Index(fields=['latitude', 'longitude']),
+        ]
+        verbose_name = "Import Order Location"
+        verbose_name_plural = "Import Order Locations"
+
+
+class LocationTrackingHistory(models.Model):
+    """Historical tracking data for import order movements"""
+
+    TRACKING_SOURCE_CHOICES = [
+        ('gps', 'GPS Device'),
+        ('manual', 'Manual Entry'),
+        ('api', 'External API'),
+        ('estimated', 'Estimated Position'),
+        ('vessel_tracking', 'Vessel Tracking'),
+        ('customs_update', 'Customs Update'),
+    ]
+
+    # Relationships
+    import_order = models.ForeignKey(ImportOrder, on_delete=models.CASCADE, related_name='tracking_history')
+    location = models.ForeignKey(ImportOrderLocation, on_delete=models.CASCADE, related_name='tracking_entries', null=True, blank=True)
+
+    # Position Data
+    latitude = models.DecimalField(max_digits=10, decimal_places=7)
+    longitude = models.DecimalField(max_digits=10, decimal_places=7)
+    altitude = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+
+    # Tracking Information
+    tracking_source = models.CharField(max_length=20, choices=TRACKING_SOURCE_CHOICES)
+    speed = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Speed in km/h")
+    heading = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Direction in degrees")
+    accuracy_radius = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Accuracy radius in meters")
+
+    # Status Information
+    status_at_time = models.CharField(max_length=30, choices=ImportOrder.STATUS_CHOICES)
+    notes = models.TextField(blank=True)
+
+    # Metadata
+    recorded_at = models.DateTimeField(help_text="When this position was recorded")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tracking_entries', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.import_order.order_number} - {self.recorded_at.strftime('%Y-%m-%d %H:%M')}"
+
+    @property
+    def coordinates_string(self):
+        """Return formatted coordinates string"""
+        return f"{self.latitude}, {self.longitude}"
+
+    class Meta:
+        ordering = ['-recorded_at']
+        indexes = [
+            models.Index(fields=['import_order', '-recorded_at']),
+            models.Index(fields=['status_at_time', '-recorded_at']),
+            models.Index(fields=['tracking_source', '-recorded_at']),
+        ]
+        verbose_name = "Location Tracking History"
+        verbose_name_plural = "Location Tracking Histories"
+
+
+class ImportOrderRoute(models.Model):
+    """Planned route information for import orders"""
+
+    ROUTE_TYPE_CHOICES = [
+        ('sea_freight', 'Sea Freight'),
+        ('air_freight', 'Air Freight'),
+        ('land_transport', 'Land Transport'),
+        ('multimodal', 'Multimodal Transport'),
+    ]
+
+    ROUTE_STATUS_CHOICES = [
+        ('planned', 'Planned'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('delayed', 'Delayed'),
+    ]
+
+    # Relationships
+    import_order = models.OneToOneField(ImportOrder, on_delete=models.CASCADE, related_name='route')
+
+    # Route Information
+    route_name = models.CharField(max_length=200, help_text="Descriptive name for the route")
+    route_type = models.CharField(max_length=20, choices=ROUTE_TYPE_CHOICES)
+    route_status = models.CharField(max_length=20, choices=ROUTE_STATUS_CHOICES, default='planned')
+
+    # Origin and Destination
+    origin_location = models.ForeignKey(ImportOrderLocation, on_delete=models.CASCADE, related_name='routes_as_origin')
+    destination_location = models.ForeignKey(ImportOrderLocation, on_delete=models.CASCADE, related_name='routes_as_destination')
+
+    # Route Details
+    total_distance_km = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    estimated_duration_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    actual_duration_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+
+    # Timing
+    planned_start_time = models.DateTimeField(null=True, blank=True)
+    actual_start_time = models.DateTimeField(null=True, blank=True)
+    planned_end_time = models.DateTimeField(null=True, blank=True)
+    actual_end_time = models.DateTimeField(null=True, blank=True)
+
+    # Transport Details
+    vessel_name = models.CharField(max_length=200, blank=True)
+    vessel_imo = models.CharField(max_length=20, blank=True, help_text="International Maritime Organization number")
+    transport_company = models.CharField(max_length=200, blank=True)
+    transport_reference = models.CharField(max_length=100, blank=True)
+
+    # Route Configuration
+    auto_update_enabled = models.BooleanField(default=True, help_text="Enable automatic position updates")
+    tracking_interval_minutes = models.PositiveIntegerField(default=60, help_text="How often to update position")
+
+    # Additional Information
+    route_notes = models.TextField(blank=True)
+    special_handling_requirements = models.TextField(blank=True)
+
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_routes')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.import_order.order_number} - {self.route_name}"
+
+    @property
+    def progress_percentage(self):
+        """Calculate route progress based on current location and waypoints"""
+        if self.route_status == 'completed':
+            return 100
+        elif self.route_status in ['planned', 'cancelled']:
+            return 0
+
+        # Calculate based on completed waypoints
+        total_waypoints = self.waypoints.count()
+        if total_waypoints == 0:
+            return 0
+
+        completed_waypoints = self.waypoints.filter(is_completed=True).count()
+        return int((completed_waypoints / total_waypoints) * 100)
+
+    @property
+    def current_waypoint(self):
+        """Get the current active waypoint"""
+        return self.waypoints.filter(is_current=True).first()
+
+    @property
+    def next_waypoint(self):
+        """Get the next waypoint in sequence"""
+        current = self.current_waypoint
+        if current:
+            return self.waypoints.filter(sequence_order__gt=current.sequence_order).first()
+        return self.waypoints.filter(is_completed=False).first()
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['import_order']),
+            models.Index(fields=['route_status']),
+        ]
+        verbose_name = "Import Order Route"
+        verbose_name_plural = "Import Order Routes"
+
+
+class RouteWaypoint(models.Model):
+    """Individual waypoints along an import order route"""
+
+    WAYPOINT_TYPE_CHOICES = [
+        ('departure', 'Departure Point'),
+        ('transit', 'Transit Point'),
+        ('checkpoint', 'Checkpoint'),
+        ('customs', 'Customs Point'),
+        ('arrival', 'Arrival Point'),
+        ('delivery', 'Delivery Point'),
+    ]
+
+    # Relationships
+    route = models.ForeignKey(ImportOrderRoute, on_delete=models.CASCADE, related_name='waypoints')
+    location = models.ForeignKey(ImportOrderLocation, on_delete=models.CASCADE, related_name='waypoints')
+
+    # Waypoint Information
+    waypoint_type = models.CharField(max_length=20, choices=WAYPOINT_TYPE_CHOICES)
+    sequence_order = models.PositiveIntegerField(help_text="Order in the route sequence")
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+
+    # Status
+    is_current = models.BooleanField(default=False, help_text="Is this the current waypoint?")
+    is_completed = models.BooleanField(default=False, help_text="Has this waypoint been reached?")
+    is_mandatory = models.BooleanField(default=True, help_text="Is this waypoint mandatory?")
+
+    # Timing
+    estimated_arrival = models.DateTimeField(null=True, blank=True)
+    actual_arrival = models.DateTimeField(null=True, blank=True)
+    estimated_departure = models.DateTimeField(null=True, blank=True)
+    actual_departure = models.DateTimeField(null=True, blank=True)
+
+    # Distance and Duration
+    distance_from_previous_km = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    estimated_duration_from_previous_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+
+    # Additional Information
+    waypoint_notes = models.TextField(blank=True)
+    completion_notes = models.TextField(blank=True)
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.route.import_order.order_number} - Waypoint {self.sequence_order}: {self.name}"
+
+    def mark_completed(self, completion_notes=''):
+        """Mark this waypoint as completed"""
+        self.is_completed = True
+        self.is_current = False
+        self.actual_arrival = timezone.now()
+        self.completed_at = timezone.now()
+        self.completion_notes = completion_notes
+        self.save()
+
+        # Set next waypoint as current
+        next_waypoint = self.route.waypoints.filter(
+            sequence_order__gt=self.sequence_order,
+            is_completed=False
+        ).first()
+        if next_waypoint:
+            next_waypoint.is_current = True
+            next_waypoint.save()
+
+    def save(self, *args, **kwargs):
+        # Ensure only one current waypoint per route
+        if self.is_current:
+            RouteWaypoint.objects.filter(
+                route=self.route,
+                is_current=True
+            ).exclude(pk=self.pk).update(is_current=False)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['route', 'sequence_order']
+        unique_together = ['route', 'sequence_order']
+        indexes = [
+            models.Index(fields=['route', 'sequence_order']),
+            models.Index(fields=['route', 'is_current']),
+            models.Index(fields=['route', 'is_completed']),
+        ]
+        verbose_name = "Route Waypoint"
+        verbose_name_plural = "Route Waypoints"
+
+
+# Opinion Polling and Review Models
+
+class OpinionPoll(models.Model):
+    """Polls associated with opinion posts"""
+
+    POLL_TYPE_CHOICES = [
+        ('single_choice', 'Single Choice'),
+        ('multiple_choice', 'Multiple Choice'),
+        ('rating', 'Rating Scale'),
+        ('yes_no', 'Yes/No'),
+    ]
+
+    opinion_post = models.OneToOneField(BlogPost, on_delete=models.CASCADE, related_name='poll',
+                                       limit_choices_to={'content_type': 'opinion'})
+    question = models.CharField(max_length=300, help_text="The poll question")
+    poll_type = models.CharField(max_length=20, choices=POLL_TYPE_CHOICES, default='single_choice')
+
+    # Poll Settings
+    is_active = models.BooleanField(default=True)
+    allow_anonymous_voting = models.BooleanField(default=False)
+    show_results_before_voting = models.BooleanField(default=False)
+    multiple_votes_per_user = models.BooleanField(default=False)
+
+    # Timing
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True, help_text="Leave blank for no end date")
+
+    # Analytics
+    total_votes = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Poll: {self.question[:50]}..."
+
+    @property
+    def is_open(self):
+        """Check if poll is currently open for voting"""
+        if not self.is_active:
+            return False
+
+        now = timezone.now()
+        if self.end_date and now > self.end_date:
+            return False
+
+        return True
+
+    def get_results(self):
+        """Get poll results with percentages"""
+        if self.total_votes == 0:
+            return []
+
+        results = []
+        for option in self.options.all():
+            percentage = (option.vote_count / self.total_votes) * 100
+            results.append({
+                'option': option,
+                'percentage': round(percentage, 1),
+                'votes': option.vote_count
+            })
+
+        return sorted(results, key=lambda x: x['votes'], reverse=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Opinion Poll"
+        verbose_name_plural = "Opinion Polls"
+
+
+class PollOption(models.Model):
+    """Options for opinion polls"""
+
+    poll = models.ForeignKey(OpinionPoll, on_delete=models.CASCADE, related_name='options')
+    text = models.CharField(max_length=200)
+    order = models.PositiveIntegerField(default=0)
+    vote_count = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.poll.question[:30]}... - {self.text}"
+
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = ['poll', 'order']
+        verbose_name = "Poll Option"
+        verbose_name_plural = "Poll Options"
+
+
+class PollVote(models.Model):
+    """Individual votes on opinion polls"""
+
+    poll = models.ForeignKey(OpinionPoll, on_delete=models.CASCADE, related_name='votes')
+    option = models.ForeignKey(PollOption, on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='poll_votes')
+
+    # Anonymous voting support
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    # Metadata
+    user_agent = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        voter = self.user.username if self.user else f"Anonymous ({self.ip_address})"
+        return f"{voter} voted for {self.option.text}"
+
+    class Meta:
+        ordering = ['-created_at']
+        # Prevent duplicate votes (either by user or session)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['poll', 'user'],
+                condition=models.Q(user__isnull=False),
+                name='unique_user_poll_vote'
+            ),
+            models.UniqueConstraint(
+                fields=['poll', 'session_key'],
+                condition=models.Q(session_key__isnull=False),
+                name='unique_session_poll_vote'
+            ),
+        ]
+        verbose_name = "Poll Vote"
+        verbose_name_plural = "Poll Votes"
+
+
+class OpinionReview(models.Model):
+    """Reviews and ratings for opinion posts"""
+
+    RATING_CHOICES = [
+        (1, '1 - Strongly Disagree'),
+        (2, '2 - Disagree'),
+        (3, '3 - Neutral'),
+        (4, '4 - Agree'),
+        (5, '5 - Strongly Agree'),
+    ]
+
+    opinion_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='opinion_reviews',
+                                    limit_choices_to={'content_type': 'opinion'})
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opinion_reviews')
+
+    # Review Content
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    review_text = models.TextField(blank=True, help_text="Optional review text")
+
+    # Moderation
+    is_approved = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
+
+    # Engagement
+    helpful_votes = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.reviewer.username} - {self.rating}/5 on {self.opinion_post.title[:30]}..."
+
+    @property
+    def rating_percentage(self):
+        """Convert rating to percentage for display"""
+        return (self.rating / 5) * 100
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['opinion_post', 'reviewer']
+        indexes = [
+            models.Index(fields=['opinion_post', 'is_approved']),
+            models.Index(fields=['reviewer', '-created_at']),
+            models.Index(fields=['rating', 'is_approved']),
+        ]
+        verbose_name = "Opinion Review"
+        verbose_name_plural = "Opinion Reviews"
+
+
+class ReviewHelpfulVote(models.Model):
+    """Track helpful votes on opinion reviews"""
+
+    review = models.ForeignKey(OpinionReview, on_delete=models.CASCADE, related_name='helpful_vote_records')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review_helpful_votes')
+    is_helpful = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        vote_type = "helpful" if self.is_helpful else "not helpful"
+        return f"{self.user.username} found review {vote_type}"
+
+    class Meta:
+        unique_together = ['review', 'user']
+        ordering = ['-created_at']
+        verbose_name = "Review Helpful Vote"
+        verbose_name_plural = "Review Helpful Votes"

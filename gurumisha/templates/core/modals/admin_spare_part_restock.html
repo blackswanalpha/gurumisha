@@ -1,0 +1,269 @@
+<!-- Restock Spare Part Modal -->
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
+     id="restock-spare-part-modal"
+     x-data="{ show: false }"
+     x-init="show = true"
+     x-show="show"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <!-- Modal Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1400]"
+         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+    
+    <!-- Modal Container -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-panel bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+             x-show="show"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="modal-header bg-gradient-to-r from-green-600 to-green-800 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-plus-circle text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white font-montserrat">Restock Spare Part</h3>
+                            <p class="text-white text-opacity-80 text-sm font-raleway">Add stock to {{ spare_part.name }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Close Button -->
+                    <button type="button"
+                            class="text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-all duration-200"
+                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                        <span class="sr-only">Close</span>
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 modal-body">
+                <!-- Current Stock Info -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6 border border-blue-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-semibold text-gray-900 font-montserrat">{{ spare_part.name }}</h4>
+                            <p class="text-sm text-gray-600 font-raleway">SKU: {{ spare_part.sku }}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-blue-600 font-montserrat">{{ spare_part.stock_quantity }}</div>
+                            <div class="text-sm text-gray-600">Current Stock</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-blue-200">
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-orange-600">{{ spare_part.minimum_stock|default:0 }}</div>
+                            <div class="text-xs text-gray-600">Min Stock</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-green-600">{{ spare_part.maximum_stock|default:0 }}</div>
+                            <div class="text-xs text-gray-600">Max Stock</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-red-600">{{ spare_part.reorder_point|default:0 }}</div>
+                            <div class="text-xs text-gray-600">Reorder Point</div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="restock-spare-part-form"
+                      hx-post="{% url 'core:admin_spare_part_restock' part_id=spare_part.id %}"
+                      hx-target="#inventory-table-container"
+                      hx-swap="outerHTML"
+                      hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }"
+                      class="space-y-6"
+                      x-data="{ isSubmitting: false, quantity: 0, newTotal: {{ spare_part.stock_quantity }} }"
+                      @submit="isSubmitting = true">
+                    {% csrf_token %}
+
+                    <!-- Restock Information -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-boxes mr-2"></i>Restock Information
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-plus"></i>Quantity to Add *
+                                </label>
+                                <input type="number" name="quantity" required min="1"
+                                       class="form-input"
+                                       x-model="quantity"
+                                       @input="newTotal = {{ spare_part.stock_quantity }} + parseInt($event.target.value || 0)"
+                                       placeholder="Enter quantity to add">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-calculator"></i>New Total Stock
+                                </label>
+                                <div class="form-input bg-gray-100 flex items-center">
+                                    <span class="text-lg font-semibold text-green-600" x-text="newTotal"></span>
+                                    <span class="ml-2 text-gray-600">units</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-dollar-sign"></i>Unit Cost (KSh)
+                                </label>
+                                <input type="number" name="unit_cost" step="0.01" min="0"
+                                       class="form-input"
+                                       value="{{ spare_part.cost_price }}"
+                                       placeholder="Cost per unit">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-truck"></i>Supplier
+                                </label>
+                                <select name="supplier" class="form-select">
+                                    <option value="">Select Supplier</option>
+                                    {% for supplier in suppliers %}
+                                        <option value="{{ supplier.id }}" {% if supplier.id == spare_part.supplier.id %}selected{% endif %}>
+                                            {{ supplier.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Movement Details -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-clipboard-list mr-2"></i>Movement Details
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-tag"></i>Movement Type
+                                </label>
+                                <select name="movement_type" class="form-select">
+                                    <option value="purchase">Purchase</option>
+                                    <option value="transfer">Transfer</option>
+                                    <option value="adjustment">Adjustment</option>
+                                    <option value="return">Return</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar"></i>Date
+                                </label>
+                                <input type="date" name="movement_date"
+                                       class="form-input"
+                                       value="{% now 'Y-m-d' %}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-sticky-note"></i>Notes
+                            </label>
+                            <textarea name="notes" rows="3"
+                                      class="form-textarea"
+                                      placeholder="Additional notes about this restock operation"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Quick Restock Options -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-bolt mr-2"></i>Quick Restock Options
+                        </h4>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button type="button" 
+                                    class="quick-restock-btn"
+                                    @click="quantity = 10; newTotal = {{ spare_part.stock_quantity }} + 10">
+                                +10 Units
+                            </button>
+                            <button type="button" 
+                                    class="quick-restock-btn"
+                                    @click="quantity = 25; newTotal = {{ spare_part.stock_quantity }} + 25">
+                                +25 Units
+                            </button>
+                            <button type="button" 
+                                    class="quick-restock-btn"
+                                    @click="quantity = 50; newTotal = {{ spare_part.stock_quantity }} + 50">
+                                +50 Units
+                            </button>
+                            <button type="button" 
+                                    class="quick-restock-btn"
+                                    @click="quantity = 100; newTotal = {{ spare_part.stock_quantity }} + 100">
+                                +100 Units
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6 pt-6 border-t border-gray-200">
+                        <!-- Cancel Button -->
+                        <button type="button"
+                                class="enhanced-btn enhanced-btn-cancel"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
+                            <i class="fas fa-times mr-2"></i>
+                            <span>Cancel</span>
+                        </button>
+
+                        <!-- Submit Button -->
+                        <button type="submit"
+                                class="enhanced-btn enhanced-btn-submit"
+                                :disabled="isSubmitting || quantity <= 0">
+                            <i class="fas fa-plus-circle mr-2" x-show="!isSubmitting"></i>
+                            <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                            <span x-text="isSubmitting ? 'Adding Stock...' : 'Add Stock'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Quick Restock Button Styles */
+    .quick-restock-btn {
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #10B981, #047857);
+        color: white;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .quick-restock-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        background: linear-gradient(135deg, #059669, #065f46);
+    }
+
+    .quick-restock-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+</style>

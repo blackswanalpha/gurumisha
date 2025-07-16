@@ -221,7 +221,7 @@ function initializeTooltips() {
  */
 function showTooltip(element) {
     const tooltip = document.createElement('div');
-    tooltip.className = 'admin-tooltip fixed z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none';
+    tooltip.className = 'admin-tooltip fixed z-[9000] px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none';
     tooltip.textContent = element.dataset.tooltip;
     tooltip.id = 'active-tooltip';
     
@@ -269,9 +269,16 @@ function initializeStatusWorkflow() {
     // Animate status changes
     document.addEventListener('htmx:afterRequest', function(event) {
         if (event.detail.xhr.responseURL && event.detail.xhr.responseURL.includes('status-update')) {
-            const response = JSON.parse(event.detail.xhr.responseText);
-            if (response.success) {
-                animateStatusChange(response.new_status);
+            try {
+                const responseText = event.detail.xhr.responseText.trim();
+                if (responseText.startsWith('{') && responseText.endsWith('}')) {
+                    const response = JSON.parse(responseText);
+                    if (response.success) {
+                        animateStatusChange(response.new_status);
+                    }
+                }
+            } catch (e) {
+                console.debug('Non-JSON response for status update:', e.message);
             }
         }
     });
@@ -336,9 +343,9 @@ function initializeTableEnhancements() {
  */
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white max-w-sm transform translate-x-full transition-transform duration-300 ${
-        type === 'success' ? 'bg-green-500' : 
-        type === 'error' ? 'bg-red-500' : 
+    notification.className = `fixed top-4 right-4 z-[9000] px-4 py-3 rounded-lg shadow-lg text-white max-w-sm transform translate-x-full transition-transform duration-300 ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
         type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
     }`;
     

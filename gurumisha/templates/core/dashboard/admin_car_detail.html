@@ -36,12 +36,35 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="mt-6 flex space-x-4">
-            <button onclick="editCar({{ car.id }})" class="bg-harrier-red text-white px-4 py-2 rounded-lg hover:bg-harrier-dark">
-                Edit Car
+        <div class="mt-6 flex flex-wrap gap-4">
+            <!-- Hot Deals Button -->
+            {% if car.is_hot_deal and car.hot_deal_details %}
+                <button onclick="manageHotDeal({{ car.id }})"
+                        class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg flex items-center space-x-2 font-semibold">
+                    <i class="fas fa-fire"></i>
+                    <span>Manage Hot Deal</span>
+                    <span class="bg-white bg-opacity-20 px-2 py-1 rounded text-xs">
+                        {{ car.hot_deal_details.discount_value }}% OFF
+                    </span>
+                </button>
+            {% else %}
+                <button onclick="createHotDeal({{ car.id }})"
+                        class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 shadow-lg flex items-center space-x-2 font-semibold">
+                    <i class="fas fa-fire"></i>
+                    <span>Create Hot Deal</span>
+                </button>
+            {% endif %}
+
+            <button onclick="editCar({{ car.id }})"
+                    class="bg-gradient-to-r from-harrier-red to-harrier-dark text-white px-6 py-3 rounded-lg hover:from-harrier-dark hover:to-black transition-all duration-300 shadow-lg flex items-center space-x-2 font-semibold">
+                <i class="fas fa-edit"></i>
+                <span>Edit Details</span>
             </button>
-            <a href="{% url 'core:admin_listings' %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
-                Back to Listings
+
+            <a href="{% url 'core:admin_listings' %}"
+               class="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 py-3 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-300 shadow-lg flex items-center space-x-2 font-semibold">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Listings</span>
             </a>
         </div>
     </div>
@@ -51,10 +74,10 @@
         <!-- Left Column - Car Details -->
         <div class="lg:col-span-2 space-y-8">
             <!-- Car Images -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat flex items-center">
-                        <i class="fas fa-images text-harrier-red mr-3"></i>Car Images
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden admin-card glassmorphism">
+                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-harrier-red to-harrier-dark">
+                    <h2 class="text-xl font-bold text-white font-montserrat flex items-center">
+                        <i class="fas fa-images text-yellow-300 mr-3"></i>Car Images
                     </h2>
                 </div>
                 <div class="p-6">
@@ -84,6 +107,116 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Comprehensive Vehicle Location Information -->
+            {% if car.area or car.city or car.country %}
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden admin-card glassmorphism">
+                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-red-600 via-red-700 to-gray-900">
+                    <h2 class="text-xl font-bold text-white font-montserrat flex items-center">
+                        <i class="fas fa-map-marker-alt text-yellow-300 mr-3"></i>Vehicle Location
+                    </h2>
+                    <p class="text-red-100 font-raleway text-sm mt-1">Geographical details and proximity information</p>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <!-- Area/Neighborhood -->
+                        {% if car.area %}
+                        <div class="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-building text-white text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">Area/Neighborhood</div>
+                                    <div class="text-lg font-bold text-gray-900 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.area }}</div>
+                                    <div class="text-sm text-gray-600 font-raleway mt-1">Local vicinity</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- City -->
+                        {% if car.city %}
+                        <div class="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-gray-800 rounded-xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-city text-white text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">City</div>
+                                    <div class="text-lg font-bold text-gray-900 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.city }}</div>
+                                    <div class="text-sm text-gray-600 font-raleway mt-1">Metropolitan area</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Country -->
+                        {% if car.country %}
+                        <div class="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-gradient-to-br from-red-700 to-black rounded-xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-globe-africa text-white text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">Country</div>
+                                    <div class="text-lg font-bold text-gray-900 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.country }}</div>
+                                    <div class="text-sm text-gray-600 font-raleway mt-1">National territory</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Complete Address Display -->
+                    <div class="bg-gradient-to-r from-red-50 via-gray-50 to-red-50 rounded-xl p-6 border border-red-100/50 shadow-inner">
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-gray-900 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                <i class="fas fa-map-pin text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-2">Complete Address</div>
+                                <div class="text-xl font-bold text-gray-900 font-montserrat leading-relaxed">
+                                    {% if car.area %}{{ car.area }}{% if car.city %}, {% endif %}{% endif %}
+                                    {% if car.city %}{{ car.city }}{% if car.country %}, {% endif %}{% endif %}
+                                    {% if car.country %}{{ car.country }}{% endif %}
+                                </div>
+                                <div class="flex items-center mt-3 text-sm text-gray-600 font-raleway">
+                                    <i class="fas fa-info-circle text-red-500 mr-2"></i>
+                                    <span>This location information helps customers understand proximity and logistics for viewing or purchasing this vehicle.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Location Features -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-route text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900 font-montserrat">Location Analytics</div>
+                                    <div class="text-xs text-gray-600 font-raleway">Track location-based inquiries</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-edit text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900 font-montserrat">Edit Location</div>
+                                    <div class="text-xs text-gray-600 font-raleway">Update geographical details</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Car Specifications -->
             <div class="bg-white rounded-xl shadow-lg border border-gray-200">
@@ -251,6 +384,45 @@
                 </div>
             </div>
 
+            <!-- Hot Deal Status -->
+            {% if car.is_hot_deal and car.hot_deal_details %}
+                <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-lg border-2 border-red-200 overflow-hidden">
+                    <div class="p-6 border-b border-red-200 bg-gradient-to-r from-red-600 to-red-700">
+                        <h2 class="text-xl font-bold text-white font-montserrat flex items-center">
+                            <i class="fas fa-fire text-yellow-300 mr-3 animate-pulse"></i>Active Hot Deal
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold text-red-600">{{ car.hot_deal_details.discount_value }}%</div>
+                                <div class="text-sm text-gray-600">Discount</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-lg font-bold text-green-600">KSh {{ car.hot_deal_details.discounted_price|floatformat:0 }}</div>
+                                <div class="text-sm text-gray-600">Sale Price</div>
+                            </div>
+                        </div>
+
+                        <!-- Countdown Timer -->
+                        <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+                            <div class="text-sm text-gray-600 mb-2">Time Remaining</div>
+                            <div class="countdown-timer text-lg font-bold text-red-600"
+                                 data-countdown-end="{{ car.hot_deal_details.end_date|date:'c' }}">
+                                <span id="countdown-{{ car.id }}">Loading...</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button onclick="manageHotDeal({{ car.id }})"
+                                    class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2 px-4 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 font-semibold">
+                                <i class="fas fa-cog mr-2"></i>Manage Deal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
             <!-- Admin Actions -->
             <div class="bg-white rounded-xl shadow-lg border border-gray-200">
                 <div class="p-6 border-b border-gray-200">
@@ -260,37 +432,45 @@
                 </div>
                 <div class="p-6 space-y-4">
                     {% if not car.is_approved %}
-                        <button onclick="approveCar({{ car.id }})" 
-                                class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        <button onclick="approveCar({{ car.id }})"
+                                class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg transform hover:scale-105">
                             <i class="fas fa-check mr-2"></i>Approve Listing
                         </button>
-                        <button onclick="rejectCar({{ car.id }})" 
-                                class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        <button onclick="rejectCar({{ car.id }})"
+                                class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg transform hover:scale-105">
                             <i class="fas fa-times mr-2"></i>Reject Listing
                         </button>
+                    {% else %}
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-6 text-center shadow-lg">
+                            <div class="bg-green-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-check-circle text-white text-2xl"></i>
+                            </div>
+                            <p class="text-green-800 font-bold text-lg mb-1">Listing Approved</p>
+                            <p class="text-green-600 text-sm">{{ car.approval_date|date:"M d, Y" }}</p>
+                        </div>
                     {% endif %}
                     
-                    <button onclick="editCar({{ car.id }})" 
-                            class="w-full bg-harrier-red hover:bg-harrier-dark text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                    <button onclick="editCar({{ car.id }})"
+                            class="w-full bg-gradient-to-r from-harrier-red to-harrier-dark hover:from-harrier-dark hover:to-black text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg transform hover:scale-105">
                         <i class="fas fa-edit mr-2"></i>Edit Details
                     </button>
                     
                     {% if not car.is_currently_featured %}
                         <button onclick="featureCar({{ car.id }})"
                                 id="feature-btn-{{ car.id }}"
-                                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                                class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg transform hover:scale-105">
                             <i class="fas fa-star mr-2"></i>Mark as Featured
                         </button>
                     {% else %}
                         <button onclick="unfeatureCar({{ car.id }})"
                                 id="feature-btn-{{ car.id }}"
-                                class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                                class="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg">
                             <i class="fas fa-star mr-2"></i>Remove Featured
                         </button>
                     {% endif %}
-                    
+
                     <button onclick="deleteCar({{ car.id }})"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg transform hover:scale-105">
                         <i class="fas fa-trash mr-2"></i>Delete Car Listing
                     </button>
 
@@ -504,5 +684,460 @@ function deleteCar(carId) {
         });
     }
 }
+
+// Hot Deal Management Functions
+function createHotDeal(carId) {
+    // Show hot deal creation modal
+    const modalHtml = `
+        <div class="fixed inset-0 z-[1500] overflow-y-auto" id="hot-deal-modal">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full">
+                    <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-red-600 to-red-700">
+                        <h3 class="text-xl font-bold text-white flex items-center">
+                            <i class="fas fa-fire mr-3"></i>Create Hot Deal
+                        </h3>
+                    </div>
+                    <form id="hot-deal-form" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-percentage mr-1"></i>Discount Percentage
+                            </label>
+                            <input type="number" id="discount-value" min="5" max="50" value="10"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-calendar mr-1"></i>Duration (Days)
+                            </label>
+                            <input type="number" id="deal-days" min="1" max="30" value="7"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <div class="flex space-x-3 pt-4">
+                            <button type="button" onclick="submitHotDeal(${carId})"
+                                    class="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-2 px-4 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 font-semibold">
+                                <i class="fas fa-fire mr-2"></i>Create Deal
+                            </button>
+                            <button type="button" onclick="closeHotDealModal()"
+                                    class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function manageHotDeal(carId) {
+    // Show hot deal management options
+    const modalHtml = `
+        <div class="fixed inset-0 z-[1500] overflow-y-auto" id="hot-deal-modal">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full">
+                    <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-red-600 to-red-700">
+                        <h3 class="text-xl font-bold text-white flex items-center">
+                            <i class="fas fa-fire mr-3"></i>Manage Hot Deal
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <button onclick="extendHotDeal(${carId})"
+                                class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-semibold">
+                            <i class="fas fa-clock mr-2"></i>Extend Deal
+                        </button>
+                        <button onclick="editHotDeal(${carId})"
+                                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold">
+                            <i class="fas fa-edit mr-2"></i>Edit Deal
+                        </button>
+                        <button onclick="endHotDeal(${carId})"
+                                class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-4 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 font-semibold">
+                            <i class="fas fa-stop mr-2"></i>End Deal
+                        </button>
+                        <button onclick="closeHotDealModal()"
+                                class="w-full bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function submitHotDeal(carId) {
+    const discountValue = document.getElementById('discount-value').value;
+    const dealDays = document.getElementById('deal-days').value;
+
+    if (!discountValue || !dealDays) {
+        window.showError('Please fill in all fields.');
+        return;
+    }
+
+    fetch(`/dashboard/admin/car/${carId}/hot-deal/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'create',
+            discount_value: discountValue,
+            days: dealDays
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.showSuccess(data.message);
+            closeHotDealModal();
+            location.reload(); // Refresh to show hot deal status
+        } else {
+            window.showError(data.message || 'Failed to create hot deal.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        window.showError('An error occurred while creating the hot deal.');
+    });
+}
+
+function endHotDeal(carId) {
+    if (confirm('Are you sure you want to end this hot deal?')) {
+        fetch(`/dashboard/admin/car/${carId}/hot-deal/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'end'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.showSuccess(data.message);
+                closeHotDealModal();
+                location.reload();
+            } else {
+                window.showError(data.message || 'Failed to end hot deal.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showError('An error occurred while ending the hot deal.');
+        });
+    }
+}
+
+function closeHotDealModal() {
+    const modal = document.getElementById('hot-deal-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Countdown Timer Function
+function initCountdownTimer() {
+    const timers = document.querySelectorAll('.countdown-timer');
+    timers.forEach(timer => {
+        const endDate = timer.getAttribute('data-countdown-end');
+        if (endDate) {
+            updateCountdown(timer, endDate);
+            setInterval(() => updateCountdown(timer, endDate), 1000);
+        }
+    });
+}
+
+function updateCountdown(element, endDate) {
+    const now = new Date().getTime();
+    const end = new Date(endDate).getTime();
+    const distance = end - now;
+
+    if (distance > 0) {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        element.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+        if (distance < 86400000) { // Less than 24 hours
+            element.classList.add('text-red-600', 'animate-pulse');
+        }
+    } else {
+        element.innerHTML = "EXPIRED";
+        element.classList.add('text-red-600', 'font-bold');
+    }
+}
+
+// Initialize countdown timers when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initCountdownTimer();
+});
+
+// Enhanced approve/reject functions with toast notifications
+function approveCar(carId) {
+    if (confirm('Are you sure you want to approve this car listing?')) {
+        // Show loading state
+        const approveBtn = document.querySelector(`button[onclick="approveCar(${carId})"]`);
+        if (approveBtn) {
+            approveBtn.disabled = true;
+            approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Approving...';
+        }
+
+        fetch(`/dashboard/admin/approve-car/${carId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+                'HX-Request': 'true'
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok');
+        })
+        .then(data => {
+            if (data.status === 'approved') {
+                // Show success toast
+                showToast('Car listing approved successfully!', 'success');
+                // Reload page to show updated status
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error approving car listing. Please try again.', 'error');
+            // Reset button state
+            if (approveBtn) {
+                approveBtn.disabled = false;
+                approveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Approve Listing';
+            }
+        });
+    }
+}
+
+function rejectCar(carId) {
+    if (confirm('Are you sure you want to reject this car listing? This action cannot be undone.')) {
+        // Show loading state
+        const rejectBtn = document.querySelector(`button[onclick="rejectCar(${carId})"]`);
+        if (rejectBtn) {
+            rejectBtn.disabled = true;
+            rejectBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Rejecting...';
+        }
+
+        fetch(`/dashboard/admin/reject-car/${carId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+                'HX-Request': 'true'
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok');
+        })
+        .then(data => {
+            if (data.status === 'rejected') {
+                // Show success toast
+                showToast('Car listing rejected successfully!', 'success');
+                // Redirect to listings page
+                setTimeout(() => window.location.href = '/dashboard/admin/listings/', 1000);
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error rejecting car listing. Please try again.', 'error');
+            // Reset button state
+            if (rejectBtn) {
+                rejectBtn.disabled = false;
+                rejectBtn.innerHTML = '<i class="fas fa-times mr-2"></i>Reject Listing';
+            }
+        });
+    }
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold transform transition-all duration-300 translate-x-full`;
+
+    // Set color based on type
+    if (type === 'success') {
+        toast.classList.add('bg-green-600');
+    } else if (type === 'error') {
+        toast.classList.add('bg-red-600');
+    } else {
+        toast.classList.add('bg-blue-600');
+    }
+
+    toast.innerHTML = `
+        <div class="flex items-center space-x-3">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
 </script>
+
+<style>
+/* Enhanced Admin Car Detail Page Styling */
+.glassmorphism {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glassmorphism-dark {
+    backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced button hover effects */
+.enhanced-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enhanced-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.enhanced-btn:hover::before {
+    left: 100%;
+}
+
+/* Hot deal animation */
+@keyframes hotDealPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+}
+
+.hot-deal-active {
+    animation: hotDealPulse 2s infinite;
+}
+
+/* Countdown timer styling */
+.countdown-timer {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+/* Card hover effects */
+.admin-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Enhanced gradient backgrounds */
+.gradient-red-black {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #1f2937 100%);
+}
+
+.gradient-orange-red {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%);
+}
+
+/* Status indicators */
+.status-indicator {
+    position: relative;
+    display: inline-block;
+}
+
+.status-indicator::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: statusPulse 2s infinite;
+}
+
+.status-approved::after {
+    background-color: #10b981;
+}
+
+.status-pending::after {
+    background-color: #f59e0b;
+}
+
+.status-hot-deal::after {
+    background-color: #ef4444;
+}
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .admin-card {
+        margin-bottom: 1rem;
+    }
+
+    .enhanced-btn {
+        transform: none !important;
+    }
+
+    .enhanced-btn:hover {
+        transform: none !important;
+    }
+}
+</style>
 {% endblock %}

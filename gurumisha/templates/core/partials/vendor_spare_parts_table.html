@@ -1,0 +1,184 @@
+<!-- Vendor Spare Parts Table Partial -->
+{% if spare_parts %}
+    <!-- Table View -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+            <thead class="bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white">
+                <tr>
+                    <th class="px-6 py-4 text-left text-sm font-bold font-montserrat">Part Details</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold font-montserrat">Category</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold font-montserrat">Stock</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold font-montserrat">Pricing</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold font-montserrat">Status</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold font-montserrat">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for part in spare_parts %}
+                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <!-- Part Details -->
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-4">
+                            <!-- Part Image -->
+                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                {% if part.main_image %}
+                                    <img src="{{ part.main_image.url }}" alt="{{ part.name }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <i class="fas fa-cog text-gray-400 text-lg"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Part Info -->
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-sm font-bold text-harrier-dark font-montserrat truncate">{{ part.name }}</h3>
+                                <div class="text-xs text-gray-500 space-y-1 font-raleway">
+                                    <div>SKU: <span class="font-medium">{{ part.sku }}</span></div>
+                                    {% if part.part_number %}
+                                    <div>Part #: <span class="font-medium">{{ part.part_number }}</span></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <!-- Category -->
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            <div class="font-medium text-harrier-dark font-montserrat">{{ part.category_new.name|default:"Uncategorized" }}</div>
+                            <div class="text-gray-500 font-raleway">{{ part.get_condition_display }}</div>
+                        </div>
+                    </td>
+                    
+                    <!-- Stock -->
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            <div class="font-bold text-harrier-dark font-montserrat">{{ part.stock_quantity }}</div>
+                            <div class="text-gray-500 font-raleway">{{ part.get_unit_display|lower }}</div>
+                            {% if part.minimum_stock %}
+                            <div class="text-xs text-gray-400 font-raleway">Min: {{ part.minimum_stock }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    
+                    <!-- Pricing -->
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            {% if part.discount_price %}
+                                <div class="text-gray-400 line-through font-raleway">KSh {{ part.price|floatformat:0 }}</div>
+                                <div class="font-bold text-harrier-red font-montserrat">KSh {{ part.discount_price|floatformat:0 }}</div>
+                            {% else %}
+                                <div class="font-bold text-green-600 font-montserrat">KSh {{ part.price|floatformat:0 }}</div>
+                            {% endif %}
+                            {% if part.cost_price %}
+                            <div class="text-xs text-gray-500 font-raleway">Cost: KSh {{ part.cost_price|floatformat:0 }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    
+                    <!-- Status -->
+                    <td class="px-6 py-4">
+                        <div class="space-y-2">
+                            <!-- Stock Status -->
+                            {% if part.stock_quantity > 10 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i>In Stock
+                                </span>
+                            {% elif part.stock_quantity > 0 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>Low Stock
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <i class="fas fa-times-circle mr-1"></i>Out of Stock
+                                </span>
+                            {% endif %}
+                            
+                            <!-- Featured Status -->
+                            {% if part.is_featured %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-harrier-red text-white">
+                                <i class="fas fa-star mr-1"></i>Featured
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    
+                    <!-- Actions -->
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="openViewPartModal({{ part.id }})" 
+                                    class="p-2 bg-harrier-dark bg-opacity-10 text-harrier-dark rounded-lg hover:bg-harrier-dark hover:text-white transition-all duration-200" 
+                                    title="View Details">
+                                <i class="fas fa-eye text-sm"></i>
+                            </button>
+                            <button onclick="openEditPartModal({{ part.id }})" 
+                                    class="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200" 
+                                    title="Edit Part">
+                                <i class="fas fa-edit text-sm"></i>
+                            </button>
+                            <button onclick="deletePartConfirm({{ part.id }})" 
+                                    class="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200" 
+                                    title="Delete Part">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if spare_parts.has_other_pages %}
+    <div class="flex justify-center mt-6">
+        <nav class="flex items-center space-x-2">
+            {% if spare_parts.has_previous %}
+                <a href="?page=1" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+                <a href="?page={{ spare_parts.previous_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            {% endif %}
+            
+            <span class="px-4 py-2 text-sm font-medium text-harrier-dark bg-harrier-red bg-opacity-10 border border-harrier-red rounded-lg">
+                Page {{ spare_parts.number }} of {{ spare_parts.paginator.num_pages }}
+            </span>
+            
+            {% if spare_parts.has_next %}
+                <a href="?page={{ spare_parts.next_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+                <a href="?page={{ spare_parts.paginator.num_pages }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+    
+    <!-- Results Summary -->
+    <div class="text-center mt-4">
+        <p class="text-sm text-gray-500 font-raleway">
+            Showing {{ spare_parts|length }} of {{ total_results }} spare parts (10 per page)
+        </p>
+    </div>
+{% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <i class="fas fa-cogs text-gray-300 text-6xl mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-600 mb-2 font-montserrat">No spare parts found</h3>
+        <p class="text-gray-500 mb-6 font-raleway">
+            {% if request.GET.search %}
+                No parts match your search criteria. Try adjusting your filters.
+            {% else %}
+                Start building your inventory by adding spare parts.
+            {% endif %}
+        </p>
+        <button onclick="openAddPartModal()" class="btn-harrier-primary px-6 py-3 rounded-xl font-semibold">
+            <i class="fas fa-plus mr-2"></i>Add Your First Part
+        </button>
+    </div>
+{% endif %}

@@ -5,163 +5,540 @@
 
 {% block meta_description %}{{ post.meta_description|default:post.excerpt|default:post.content|truncatewords:25 }}{% endblock %}
 
-{% block content %}
-<!-- Breadcrumb -->
-<section class="bg-harrier-gray py-4">
-    <div class="container mx-auto px-4">
-        <nav class="flex" aria-label="Breadcrumb">
-            <ol class="flex items-center space-x-4">
-                <li><a href="{% url 'core:homepage' %}" class="text-gray-500 hover:text-harrier-red">Home</a></li>
-                <li><i class="fas fa-chevron-right text-gray-400"></i></li>
-                <li><a href="{% url 'core:resources' %}" class="text-gray-500 hover:text-harrier-red">Resources</a></li>
-                <li><i class="fas fa-chevron-right text-gray-400"></i></li>
-                <li class="text-harrier-dark">{{ post.title|truncatewords:5 }}</li>
-            </ol>
-        </nav>
-    </div>
-</section>
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Revolutionary Article Design System */
+    :root {
+        --gradient-primary: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+        --gradient-secondary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        --gradient-accent: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
+        --border-radius-lg: 20px;
+        --border-radius-xl: 24px;
+        --animation-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
 
-<!-- Article -->
-<article class="py-12 bg-white">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Article Header -->
-        <header class="mb-8">
-            <h1 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">{{ post.title }}</h1>
-            
-            <div class="flex items-center text-gray-600 mb-6">
-                <div class="flex items-center mr-6">
-                    <div class="w-10 h-10 bg-gradient-to-br from-crimson to-electric-red rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                        {{ post.author.first_name|first|default:post.author.username|first }}{{ post.author.last_name|first|default:"" }}
-                    </div>
-                    <div>
-                        <p class="font-medium">{{ post.author.get_full_name|default:post.author.username }}</p>
-                        <p class="text-sm text-gray-500">Author</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-4 text-sm">
-                    <span><i class="fas fa-calendar mr-1"></i> {{ post.published_at|date:"M d, Y" }}</span>
-                    <span><i class="fas fa-clock mr-1"></i> {{ post.content|wordcount|floatformat:0|add:"200"|floatformat:0|div:200 }} min read</span>
-                </div>
-            </div>
-            
-            <!-- Featured Image -->
-            {% if post.featured_image %}
-                <div class="mb-8">
-                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="w-full h-64 md:h-96 object-cover rounded-2xl">
-                </div>
-            {% endif %}
-        </header>
-        
-        <!-- Article Content -->
-        <div class="prose prose-lg prose-gray max-w-none">
-            {% if post.excerpt %}
-                <div class="text-xl text-gray-600 font-medium mb-8 p-6 bg-gray-50 rounded-xl border-l-4 border-crimson">
-                    {{ post.excerpt }}
-                </div>
-            {% endif %}
-            
-            <div class="leading-relaxed">
-                {{ post.content|linebreaks }}
-            </div>
-        </div>
-        
-        <!-- Article Footer -->
-        <footer class="mt-12 pt-8 border-t border-gray-200">
-            <!-- Tags/Keywords -->
-            {% if post.meta_keywords %}
-                <div class="mb-6">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Tags:</h3>
-                    <div class="flex flex-wrap gap-2">
-                        {% for keyword in post.meta_keywords|split:"," %}
-                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ keyword|trim }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            
-            <!-- Share Buttons -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Share this article:</h3>
-                    <div class="flex space-x-3">
-                        <a href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ request.build_absolute_uri }}" 
-                           target="_blank" class="w-10 h-10 bg-blue-400 text-white rounded-full flex items-center justify-center hover:bg-blue-500 transition-colors">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
-                           target="_blank" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" 
-                           target="_blank" class="w-10 h-10 bg-blue-700 text-white rounded-full flex items-center justify-center hover:bg-blue-800 transition-colors">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <button onclick="copyToClipboard()" class="w-10 h-10 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
-                            <i class="fas fa-link"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="text-right">
-                    <a href="{% url 'core:blog' %}" class="btn-secondary">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to Blog
-                    </a>
-                </div>
-            </div>
-        </footer>
-    </div>
-</article>
+    /* Enhanced Article Container */
+    .article-container {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        min-height: 100vh;
+    }
 
-<!-- Related Articles -->
-<section class="py-12 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-2xl font-heading font-bold text-midnight mb-8 text-center">Related Articles</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- You can add logic here to show related posts -->
-            <div class="text-center py-8">
-                <p class="text-gray-500">More articles coming soon...</p>
-            </div>
-        </div>
-    </div>
-</section>
+    /* Revolutionary Hero Section */
+    .article-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        position: relative;
+        overflow: hidden;
+        padding: 4rem 0 6rem;
+    }
 
-<!-- Newsletter Signup -->
-<section class="py-16 bg-gradient-to-r from-deep-ocean to-azure text-white">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">Stay Updated</h2>
-        <p class="text-xl mb-8 opacity-90">Get the latest automotive news and insights delivered to your inbox.</p>
-        
-        <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" id="newsletter-form">
-            <input type="email" placeholder="Enter your email address" class="flex-1 px-6 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white" required>
-            <button type="submit" class="bg-white text-deep-ocean px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Subscribe
-            </button>
-        </form>
-        
-        <p class="text-sm opacity-75 mt-4">We respect your privacy. Unsubscribe at any time.</p>
-    </div>
-</section>
+    .article-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            radial-gradient(circle at 20% 80%, rgba(220, 38, 38, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(220, 38, 38, 0.2) 0%, transparent 50%);
+        z-index: 0;
+    }
+
+    .article-hero::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(15, 23, 42, 0.9) 100%),
+            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 4xl;
+        margin: 0 auto;
+        padding: 0 2rem;
+        text-align: center;
+    }
+
+    /* Content Type Badge */
+    .content-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: rgba(220, 38, 38, 0.9);
+        color: white;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Enhanced Article Title */
+    .article-title {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 900;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #e2e8f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        font-family: 'Montserrat', sans-serif;
+        letter-spacing: -0.02em;
+    }
+
+    /* Article Meta */
+    .article-meta {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        font-family: 'Raleway', sans-serif;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    /* Author Section */
+    .author-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .author-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+    }
+
+    .author-info h4 {
+        color: white;
+        font-weight: 700;
+        font-size: 1.125rem;
+        margin: 0;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .author-info p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    /* Enhanced Content Section */
+    .content-section {
+        background: white;
+        margin: -3rem 2rem 0;
+        border-radius: 30px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 3;
+        overflow: hidden;
+    }
+
+    /* Featured Image */
+    .featured-image-container {
+        position: relative;
+        height: 400px;
+        overflow: hidden;
+        border-radius: 30px 30px 0 0;
+    }
+
+    .featured-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+
+    .featured-image-container:hover .featured-image {
+        transform: scale(1.05);
+    }
+
+    /* Content Body */
+    .content-body {
+        padding: 3rem;
+    }
+
+    /* Enhanced Typography */
+    .content-body h1,
+    .content-body h2,
+    .content-body h3,
+    .content-body h4,
+    .content-body h5,
+    .content-body h6 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 2rem 0 1rem;
+        line-height: 1.3;
+    }
+
+    .content-body h1 {
+        font-size: 2.5rem;
+        color: #dc2626;
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .content-body h1::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 4px;
+        background: linear-gradient(90deg, transparent 0%, #dc2626 50%, transparent 100%);
+        border-radius: 2px;
+    }
+
+    .content-body h2 {
+        font-size: 2rem;
+        color: #dc2626;
+        border-bottom: 3px solid #dc2626;
+        padding-bottom: 0.5rem;
+        margin-top: 3rem;
+    }
+
+    .content-body h3 {
+        font-size: 1.5rem;
+        color: #374151;
+        margin-top: 2.5rem;
+    }
+
+    .content-body h4 {
+        font-size: 1.25rem;
+        color: #4b5563;
+    }
+
+    .content-body p {
+        font-family: 'Raleway', sans-serif;
+        font-size: 1.125rem;
+        line-height: 1.8;
+        color: #374151;
+        margin: 1.5rem 0;
+        text-align: justify;
+    }
+
+    .content-body ul,
+    .content-body ol {
+        font-family: 'Raleway', sans-serif;
+        font-size: 1.125rem;
+        line-height: 1.8;
+        color: #374151;
+        margin: 2rem 0;
+        padding-left: 0;
+    }
+
+    .content-body li {
+        margin: 1rem 0;
+        position: relative;
+        padding-left: 2rem;
+        list-style: none;
+    }
+
+    .content-body ul li::before {
+        content: '▶';
+        color: #dc2626;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    .content-body ol {
+        counter-reset: item;
+    }
+
+    .content-body ol li::before {
+        content: counter(item) '.';
+        counter-increment: item;
+        color: #dc2626;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    /* Enhanced Blockquotes */
+    .content-body blockquote {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-left: 5px solid #dc2626;
+        padding: 2rem;
+        margin: 2rem 0;
+        border-radius: 0 15px 15px 0;
+        font-style: italic;
+        font-size: 1.25rem;
+        color: #92400e;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .content-body blockquote::before {
+        content: '"';
+        font-size: 4rem;
+        color: #dc2626;
+        position: absolute;
+        top: -1rem;
+        left: 1rem;
+        font-family: serif;
+        opacity: 0.7;
+    }
+
+    /* Code Blocks */
+    .content-body pre,
+    .content-body code {
+        background: #1f2937;
+        color: #f9fafb;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .content-body pre {
+        padding: 1.5rem;
+        overflow-x: auto;
+        margin: 2rem 0;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .content-body code {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Tables */
+    .content-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2rem 0;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .content-body th,
+    .content-body td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .content-body th {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        font-weight: 700;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .content-body tr:hover {
+        background: #f9fafb;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .article-hero {
+            padding: 2rem 0 4rem;
+        }
+
+        .hero-content {
+            padding: 0 1rem;
+        }
+
+        .article-title {
+            font-size: 2rem;
+        }
+
+        .article-meta {
+            gap: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .content-section {
+            margin: -2rem 1rem 0;
+        }
+
+        .content-body {
+            padding: 2rem 1.5rem;
+        }
+
+        .content-body h1 { font-size: 2rem; }
+        .content-body h2 { font-size: 1.5rem; }
+        .content-body p { font-size: 1rem; }
+    }
+</style>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    function copyToClipboard() {
-        navigator.clipboard.writeText(window.location.href).then(function() {
-            // Show a temporary success message
-            const button = event.target.closest('button');
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-check"></i>';
-            button.classList.add('bg-green-600');
-            button.classList.remove('bg-gray-600');
-            
-            setTimeout(() => {
-                button.innerHTML = originalHTML;
-                button.classList.remove('bg-green-600');
-                button.classList.add('bg-gray-600');
-            }, 2000);
-        });
-    }
-</script>
+{% block content %}
+<div class="article-container">
+    <!-- Revolutionary Hero Section -->
+    <section class="article-hero">
+        <div class="hero-content">
+            <!-- Content Type Badge -->
+            <div class="content-type-badge">
+                <i class="fas fa-{{ post.content_type|default:'newspaper' }}"></i>
+                <span>{{ post.get_content_type_display|default:'Article' }}</span>
+            </div>
+
+            <!-- Article Title -->
+            <h1 class="article-title">{{ post.title }}</h1>
+
+            <!-- Article Meta -->
+            <div class="article-meta">
+                <div class="meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>{{ post.published_at|date:"M d, Y" }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ post.estimated_read_time|default:5 }} min read</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-eye"></i>
+                    <span>{{ post.views_count|default:0 }} views</span>
+                </div>
+                {% if post.difficulty_level %}
+                <div class="meta-item">
+                    <i class="fas fa-signal"></i>
+                    <span>{{ post.get_difficulty_level_display }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Author Section -->
+            {% if post.author %}
+            <div class="author-section">
+                <div class="author-avatar">
+                    {{ post.author.first_name|first|default:post.author.username|first }}{{ post.author.last_name|first|default:"" }}
+                </div>
+                <div class="author-info">
+                    <h4>{{ post.author.get_full_name|default:post.author.username }}</h4>
+                    <p>Author & Automotive Expert</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Enhanced Content Section -->
+    <section class="content-section">
+        <!-- Featured Image -->
+        {% if post.featured_image %}
+        <div class="featured-image-container">
+            <img src="{{ post.featured_image.url }}" alt="{{ post.featured_image_alt|default:post.title }}" class="featured-image">
+        </div>
+        {% endif %}
+
+        <!-- Content Body -->
+        <div class="content-body">
+            <!-- Excerpt -->
+            {% if post.excerpt %}
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 2rem; border-radius: 15px; margin-bottom: 3rem; border-left: 5px solid #dc2626; font-size: 1.25rem; font-style: italic; color: #92400e; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+                {{ post.excerpt }}
+            </div>
+            {% endif %}
+
+            <!-- Main Content -->
+            <div class="prose-content">
+                {{ post.content|safe }}
+            </div>
+        </div>
+
+        <!-- Tags Section -->
+        {% if post.tags.all %}
+        <div style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px; border: 1px solid rgba(220, 38, 38, 0.1);">
+            <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: #374151; margin-bottom: 1rem; font-size: 1.25rem;">Related Topics</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                {% for tag in post.tags.all %}
+                <span style="display: inline-flex; align-items: center; padding: 0.5rem 1rem; background: rgba(220, 38, 38, 0.1); color: #dc2626; border-radius: 25px; font-size: 0.875rem; font-weight: 600; transition: all 0.3s ease; cursor: pointer;">
+                    <i class="fas fa-tag" style="margin-right: 0.5rem; font-size: 0.75rem;"></i>
+                    {{ tag.name }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Share Section -->
+        <div style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 20px; text-align: center;">
+            <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: white; margin-bottom: 1.5rem; font-size: 1.25rem;">Share This Article</h3>
+            <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                <a href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ request.build_absolute_uri }}"
+                   target="_blank"
+                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(29, 161, 242, 0.3);">
+                    <i class="fab fa-twitter" style="font-size: 1.25rem;"></i>
+                </a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
+                   target="_blank"
+                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #4267B2 0%, #365899 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(66, 103, 178, 0.3);">
+                    <i class="fab fa-facebook-f" style="font-size: 1.25rem;"></i>
+                </a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}"
+                   target="_blank"
+                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #0077b5 0%, #005885 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);">
+                    <i class="fab fa-linkedin-in" style="font-size: 1.25rem;"></i>
+                </a>
+                <a href="https://wa.me/?text={{ post.title|urlencode }}%20{{ request.build_absolute_uri }}"
+                   target="_blank"
+                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+                    <i class="fab fa-whatsapp" style="font-size: 1.25rem;"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div style="margin: 3rem 0; text-align: center;">
+            <a href="{% url 'core:resources' %}"
+               style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 1rem 2rem; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; border-radius: 15px; text-decoration: none; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Resources</span>
+            </a>
+        </div>
+    </section>
+</div>
 {% endblock %}

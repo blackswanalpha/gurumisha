@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block title %}{{ vendor.company_name }} - Dealer Profile - Gurumisha{% endblock %}
+{% block meta_description %}{{ vendor.company_name }} - {{ vendor.description|truncatewords:20|default:"Professional car dealer offering quality vehicles and exceptional service." }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Enhanced Dealer Profile Styles with Harrier Design */
+.dealer-hero {
+    background: linear-gradient(135deg, #DC2626 0%, #1F2937 50%, #1E3A8A 100%);
+    position: relative;
+    overflow: hidden;
+    min-height: 500px;
+}
+
+.dealer-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+}
+
+.dealer-avatar {
+    width: 120px;
+    height: 120px;
+    border: 6px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.dealer-avatar:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
+}
+
+.glassmorphism {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+.contact-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.car-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.car-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+
+.section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #DC2626, #1E3A8A, transparent);
+    margin: 3rem 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="bg-harrier-gray py-4">
+    <div class="container mx-auto px-4">
+        <nav class="text-sm">
+            <ol class="flex items-center space-x-2">
+                <li><a href="{% url 'core:homepage' %}" class="text-harrier-dark hover:text-harrier-red">Home</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li><a href="{% url 'core:dealer_list' %}" class="text-harrier-dark hover:text-harrier-red">Dealers</a></li>
+                <li class="text-gray-500">&rsaquo;</li>
+                <li class="text-harrier-red font-semibold">{{ vendor.company_name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Dealer Hero Section -->
+<section class="dealer-hero relative">
+    <!-- Cover Image Background -->
+    {% if vendor.cover_image %}
+    <div class="absolute inset-0">
+        <img src="{{ vendor.cover_image.url }}" alt="Cover" class="w-full h-full object-cover opacity-30">
+        <div class="absolute inset-0 bg-gradient-to-r from-harrier-red/80 via-harrier-dark/80 to-harrier-blue/80"></div>
+    </div>
+    {% endif %}
+    
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-8 lg:space-y-0">
+            <!-- Dealer Information -->
+            <div class="flex flex-col md:flex-row md:items-center space-y-6 md:space-y-0 md:space-x-8 animate-fade-in-up">
+                <!-- Dealer Avatar -->
+                <div class="dealer-avatar rounded-3xl overflow-hidden flex-shrink-0">
+                    {% if vendor.company_logo %}
+                        <img src="{{ vendor.company_logo.url }}" alt="{{ vendor.company_name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center text-white font-bold text-4xl backdrop-blur-sm">
+                            {{ vendor.company_name|first|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Dealer Details -->
+                <div class="text-white">
+                    <h1 class="text-4xl lg:text-5xl font-bold mb-3 font-montserrat">{{ vendor.company_name }}</h1>
+                    <div class="flex flex-wrap items-center gap-3 mb-4">
+                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500/20 text-blue-200 backdrop-blur-sm">
+                            <i class="fas fa-building mr-2"></i>{{ vendor.get_business_type_display }}
+                        </span>
+                        {% if vendor.is_approved %}
+                            <span class="inline-flex items-center px-3 py-1 bg-green-500/20 rounded-full text-green-200 text-sm backdrop-blur-sm">
+                                <i class="fas fa-shield-check mr-1"></i>Verified Business
+                            </span>
+                        {% endif %}
+                        {% if vendor.year_established %}
+                            <span class="inline-flex items-center px-3 py-1 bg-white/20 rounded-full text-white text-sm backdrop-blur-sm">
+                                <i class="fas fa-calendar mr-1"></i>Since {{ vendor.year_established }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if vendor.description %}
+                        <p class="text-blue-100 text-lg max-w-2xl font-raleway">{{ vendor.description|truncatewords:30 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 lg:grid-cols-1 gap-4 animate-fade-in-up animate-delay-200">
+                <div class="glassmorphism rounded-2xl p-6 text-center">
+                    <div class="text-3xl font-bold text-white font-montserrat">{{ total_listings }}</div>
+                    <div class="text-sm text-blue-200 font-raleway">Active Listings</div>
+                </div>
+                <div class="glassmorphism rounded-2xl p-6 text-center">
+                    <div class="text-3xl font-bold text-white font-montserrat">{{ total_views|default:0 }}</div>
+                    <div class="text-sm text-blue-200 font-raleway">Total Views</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content -->
+<section class="py-16 bg-gradient-to-br from-gray-50 to-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-12">
+                <!-- About Section -->
+                {% if vendor.description %}
+                <div class="animate-fade-in-up">
+                    <h2 class="text-3xl font-bold text-harrier-dark mb-6 font-montserrat">About {{ vendor.company_name }}</h2>
+                    <div class="stat-card rounded-2xl p-8">
+                        <p class="text-gray-700 text-lg leading-relaxed font-raleway">{{ vendor.description }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Statistics -->
+                <div class="animate-fade-in-up animate-delay-100">
+                    <h2 class="text-3xl font-bold text-harrier-dark mb-6 font-montserrat">Performance Metrics</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div class="stat-card rounded-2xl p-6 text-center">
+                            <div class="text-3xl font-bold text-harrier-red mb-2 font-montserrat">{{ total_listings }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">Total Listings</div>
+                        </div>
+                        <div class="stat-card rounded-2xl p-6 text-center">
+                            <div class="text-3xl font-bold text-harrier-blue mb-2 font-montserrat">{{ featured_cars.count }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">Featured Cars</div>
+                        </div>
+                        <div class="stat-card rounded-2xl p-6 text-center">
+                            <div class="text-3xl font-bold text-harrier-dark mb-2 font-montserrat">{{ hot_deals.count }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">Hot Deals</div>
+                        </div>
+                        <div class="stat-card rounded-2xl p-6 text-center">
+                            <div class="text-3xl font-bold text-green-600 mb-2 font-montserrat">{{ vendor.average_rating|floatformat:1|default:"5.0" }}</div>
+                            <div class="text-sm text-gray-600 font-raleway">Rating</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Listings -->
+                {% if vendor_cars %}
+                <div class="animate-fade-in-up animate-delay-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Recent Listings</h2>
+                        <a href="{% url 'core:car_list' %}?vendor={{ vendor.id }}" 
+                           class="inline-flex items-center text-harrier-red hover:text-red-600 font-semibold font-raleway">
+                            View All <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for car in vendor_cars %}
+                        <div class="car-card rounded-2xl overflow-hidden">
+                            <!-- Car Image -->
+                            <div class="relative h-48">
+                                {% if car.main_image %}
+                                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                        <i class="fas fa-car text-gray-400 text-4xl"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Badges -->
+                                <div class="absolute top-3 left-3 flex flex-wrap gap-2">
+                                    {% if car.is_featured %}
+                                        <span class="bg-harrier-red text-white px-2 py-1 text-xs font-semibold rounded">FEATURED</span>
+                                    {% endif %}
+                                    {% if car.is_hot_deal %}
+                                        <span class="bg-orange-500 text-white px-2 py-1 text-xs font-semibold rounded">HOT DEAL</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Car Details -->
+                            <div class="p-6">
+                                <h3 class="text-xl font-bold text-harrier-dark mb-2 font-montserrat">{{ car.title }}</h3>
+                                <div class="text-2xl font-bold text-harrier-red mb-4 font-montserrat">
+                                    {{ car.price|currency_ksh_no_decimals }}
+                                </div>
+                                
+                                <!-- Car Specs -->
+                                <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4 font-raleway">
+                                    <div><i class="fas fa-calendar mr-1"></i> {{ car.year }}</div>
+                                    <div><i class="fas fa-gas-pump mr-1"></i> {{ car.get_fuel_type_display }}</div>
+                                    <div><i class="fas fa-cogs mr-1"></i> {{ car.get_transmission_display }}</div>
+                                    <div><i class="fas fa-road mr-1"></i> {{ car.mileage|default:"N/A" }} km</div>
+                                </div>
+                                
+                                <!-- Action Button -->
+                                <a href="{% url 'core:car_detail' car.pk %}" 
+                                   class="block w-full bg-gradient-to-r from-harrier-red to-red-600 text-white text-center py-3 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 font-montserrat">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-8">
+                <!-- Contact Information -->
+                <div class="contact-card rounded-2xl p-8 animate-fade-in-up animate-delay-300">
+                    <h3 class="text-2xl font-bold text-harrier-dark mb-6 font-montserrat">Contact Information</h3>
+                    
+                    <div class="space-y-4">
+                        {% if vendor.business_phone %}
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-harrier-red rounded-lg flex items-center justify-center mr-4">
+                                <i class="fas fa-phone text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 font-raleway">Phone</div>
+                                <a href="tel:{{ vendor.business_phone }}" class="text-harrier-dark font-semibold hover:text-harrier-red font-montserrat">{{ vendor.business_phone }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if vendor.business_email %}
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-harrier-blue rounded-lg flex items-center justify-center mr-4">
+                                <i class="fas fa-envelope text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 font-raleway">Email</div>
+                                <a href="mailto:{{ vendor.business_email }}" class="text-harrier-dark font-semibold hover:text-harrier-red font-montserrat">{{ vendor.business_email }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if vendor.physical_address %}
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-harrier-dark rounded-lg flex items-center justify-center mr-4 mt-1">
+                                <i class="fas fa-map-marker-alt text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 font-raleway">Address</div>
+                                <div class="text-harrier-dark font-semibold font-montserrat">{{ vendor.physical_address }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if vendor.website %}
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                                <i class="fas fa-globe text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 font-raleway">Website</div>
+                                <a href="{{ vendor.website }}" target="_blank" class="text-harrier-dark font-semibold hover:text-harrier-red font-montserrat">Visit Website</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Contact Button -->
+                    <div class="mt-8">
+                        <button onclick="openInquiryModal()" 
+                                class="w-full bg-gradient-to-r from-harrier-red to-red-600 text-white py-4 rounded-xl font-bold text-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 font-montserrat">
+                            <i class="fas fa-envelope mr-2"></i>Send Message
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Business Hours (if available) -->
+                {% if vendor.business_hours %}
+                <div class="contact-card rounded-2xl p-8 animate-fade-in-up animate-delay-400">
+                    <h3 class="text-2xl font-bold text-harrier-dark mb-6 font-montserrat">Business Hours</h3>
+                    <div class="space-y-2 text-sm font-raleway">
+                        <!-- Add business hours display here -->
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Monday - Friday</span>
+                            <span class="text-harrier-dark font-semibold">9:00 AM - 6:00 PM</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Saturday</span>
+                            <span class="text-harrier-dark font-semibold">9:00 AM - 4:00 PM</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Sunday</span>
+                            <span class="text-harrier-dark font-semibold">Closed</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Inquiry Modal -->
+<div id="inquiryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold font-montserrat">Contact {{ vendor.company_name }}</h3>
+                <button onclick="closeInquiryModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form hx-post="{% url 'core:create_inquiry' %}" hx-target="#inquiry-result" hx-swap="innerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="inquiry_type" value="vendor">
+                <input type="hidden" name="vendor_id" value="{{ vendor.id }}">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Your Name</label>
+                        <input type="text" name="name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Email</label>
+                        <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Phone</label>
+                        <input type="tel" name="phone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Message</label>
+                        <textarea name="message" rows="4" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent" placeholder="Tell us how we can help you..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button type="submit" class="w-full bg-gradient-to-r from-harrier-red to-red-600 text-white py-3 rounded-lg font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 font-montserrat">
+                        Send Message
+                    </button>
+                </div>
+            </form>
+            
+            <div id="inquiry-result" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced animations and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate elements on scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe all animated elements
+    document.querySelectorAll('.animate-fade-in-up').forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(30px)';
+        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(element);
+    });
+});
+
+function openInquiryModal() {
+    document.getElementById('inquiryModal').classList.remove('hidden');
+}
+
+function closeInquiryModal() {
+    document.getElementById('inquiryModal').classList.add('hidden');
+}
+
+// Close modal on outside click
+document.getElementById('inquiryModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeInquiryModal();
+    }
+});
+</script>
+{% endblock %}

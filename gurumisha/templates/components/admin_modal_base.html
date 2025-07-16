@@ -3,7 +3,7 @@
 <!-- Base Admin Modal Component -->
 <!-- Usage: {% include 'components/admin_modal_base.html' with modal_id='unique-id' modal_title='Title' modal_size='lg' %} -->
 
-<div class="fixed inset-0 z-50 overflow-y-auto" 
+<div class="fixed inset-0 z-[1500] overflow-y-auto"
      id="{{ modal_id|default:'admin-modal' }}"
      x-data="{ show: false }"
      x-init="show = true"
@@ -14,9 +14,9 @@
      x-transition:leave="ease-in duration-200"
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0">
-    
+
     <!-- Modal Backdrop -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1400]"
          @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
     
     <!-- Modal Container -->

@@ -2,17 +2,22 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView
 from django.db.models import Q, Min, Max, Avg
 from django.db import models
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_http_methods
+from django.db import models
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.utils import timezone
+import logging
 from .models import (
-    Car, CarBrand, CarModel, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
+    Car, CarBrand, CarModel, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
     Inquiry, Testimonial, BlogPost, Vendor, User,
-    Cart, CartItem, Order, OrderItem, Payment, Invoice, StockMovement
+    Cart, CartItem, Order, OrderItem, Payment, Invoice, StockMovement,
+    OpinionPoll, PollOption, PollVote, OpinionReview, ReviewHelpfulVote
 )
 from .forms import (
     CustomUserRegistrationForm, CustomLoginForm, SellCarForm,
@@ -20,6 +25,15 @@ from .forms import (
     CustomAuthenticationForm, ResendVerificationEmailForm,
     VerificationCodeForm, RequestVerificationCodeForm
 )
+
+# Import HTMX views
+from .htmx_spare_parts_views import (
+    spare_parts_live_search, spare_parts_quick_view, add_to_cart_htmx,
+    update_cart_quantity_htmx, spare_parts_category_filter, spare_parts_stats_htmx
+)
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 
 # Authentication Views
@@ -279,6 +293,11 @@ def user_dashboard(request):
             vendor_cars = Car.objects.filter(vendor=vendor)
             total_views = sum(car.views_count for car in vendor_cars)
 
+            # Get analytics data for vendor
+            from .utils.analytics_utils import get_analytics_dashboard_data
+            analytics_data = get_analytics_dashboard_data(user)
+            monthly_growth = analytics_data.get('view_growth_rate', 0) if analytics_data else 0
+
             context.update({
                 'vendor': vendor,
                 'vendor_cars': vendor_cars.order_by('-created_at')[:5],
@@ -286,7 +305,8 @@ def user_dashboard(request):
                     car__vendor=vendor, status='open'
                 ).order_by('-created_at')[:5],
                 'total_views': total_views,
-                'monthly_growth': 15,  # This would be calculated based on actual data
+                'monthly_growth': monthly_growth,
+                'analytics_data': analytics_data,
             })
         except Vendor.DoesNotExist:
             # Vendor profile doesn't exist, redirect to create one
@@ -328,6 +348,11 @@ def homepage(request):
         is_hot_deal=True
     ).order_by('-created_at')[:4]
 
+    # Year range for search form
+    current_year = timezone.now().year
+    year_range = list(range(1990, current_year + 2))
+    year_range.reverse()  # Show newest years first
+
     context = {
         'featured_cars': featured_cars,
         'car_brands': CarBrand.objects.filter(is_active=True)[:8],
@@ -336,6 +361,7 @@ def homepage(request):
         'hot_deals': hot_deals,
         'vehicle_types': ['SUV', 'Sedan', 'Hatchback', 'Pickup', 'Coupe', 'Convertible'],
         'spare_part_categories': ['Engine Parts', 'Brake System', 'Electrical', 'Body Parts'],
+        'year_range': year_range,
     }
     return render(request, 'core/homepage.html', context)
 
@@ -397,22 +423,30 @@ class CarListView(ListView):
         if transmission:
             queryset = queryset.filter(transmission=transmission)
 
-        # Condition filter - new
+        # Condition filter - updated for VehicleCondition foreign key
         condition = self.request.GET.get('condition')
         if condition:
-            queryset = queryset.filter(condition=condition)
+            try:
+                # Filter by condition ID since it's now a foreign key
+                queryset = queryset.filter(condition__id=condition)
+            except (ValueError, TypeError):
+                # If condition is not a valid ID, skip filtering
+                pass
+
+        # Vendor filter - for dealer profile pages
+        vendor = self.request.GET.get('vendor')
+        if vendor:
+            queryset = queryset.filter(vendor__id=vendor)
 
         # Listing type filter - new pill section feature
         listing_type = self.request.GET.get('listing_type')
         if listing_type:
             queryset = queryset.filter(listing_type=listing_type)
 
-        # Featured tier filter
-        featured_tier = self.request.GET.get('featured_tier')
-        if featured_tier:
-            queryset = queryset.filter(featured_tier=featured_tier)
-        elif self.request.GET.get('featured_only'):
-            queryset = queryset.exclude(featured_tier='none')
+        # Featured filter
+        featured_only = self.request.GET.get('featured_only')
+        if featured_only:
+            queryset = queryset.filter(is_featured=True)
 
         # Star rating filter
         min_rating = self.request.GET.get('min_rating')
@@ -459,18 +493,15 @@ class CarListView(ListView):
             queryset = queryset.order_by('calculated_rating', '-views_count')
         elif sort_by == 'newest':
             queryset = queryset.order_by('-created_at')
-        else:  # featured (default) - prioritize featured cars with tier ordering
+        else:  # featured (default) - prioritize featured cars
             from django.db.models import Case, When, IntegerField
             queryset = queryset.annotate(
-                tier_priority=Case(
-                    When(featured_tier='platinum', then=1),
-                    When(featured_tier='gold', then=2),
-                    When(featured_tier='silver', then=3),
-                    When(featured_tier='bronze', then=4),
+                featured_priority=Case(
+                    When(is_featured=True, then=1),
                     default=999,
                     output_field=IntegerField()
                 )
-            ).order_by('tier_priority', '-calculated_rating', '-views_count')
+            ).order_by('featured_priority', '-calculated_rating', '-views_count')
 
         return queryset
 
@@ -481,14 +512,15 @@ class CarListView(ListView):
         context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
         context['fuel_types'] = Car.FUEL_TYPE_CHOICES
         context['transmission_types'] = Car.TRANSMISSION_CHOICES
-        context['condition_types'] = Car.CONDITION_CHOICES
+        # Get condition types from VehicleCondition model
+        from .models import VehicleCondition
+        context['condition_types'] = [(condition.id, condition.name) for condition in VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name')]
 
-        # Promotion system context
-        context['featured_tiers'] = [
-            ('platinum', 'Platinum Featured'),
-            ('gold', 'Gold Featured'),
-            ('silver', 'Silver Featured'),
-            ('bronze', 'Bronze Featured'),
+        # Promotion system context - simplified for binary featured system
+        context['featured_options'] = [
+            ('featured', 'Featured Cars'),
+            ('certified', 'Certified Cars'),
+            ('hot_deals', 'Hot Deals'),
         ]
         context['rating_options'] = [
             (4.5, '4.5+ stars'),
@@ -523,7 +555,34 @@ class CarListView(ListView):
         context['auction_count'] = base_queryset.filter(listing_type='auction').count()
         context['local_count'] = base_queryset.filter(listing_type='local').count()
 
+        # Add car brands for the brand showcase section
+        context['car_brands'] = CarBrand.objects.filter(is_active=True).prefetch_related('car_set')[:6]
+
+        # Add recently viewed cars
+        context['recently_viewed_cars'] = self.get_recently_viewed_cars()
+
         return context
+
+    def get_recently_viewed_cars(self):
+        """Get recently viewed cars for the current user/session"""
+        from .models import RecentlyViewedCar
+
+        if self.request.user.is_authenticated:
+            # For authenticated users
+            recently_viewed = RecentlyViewedCar.objects.filter(
+                user=self.request.user
+            ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+        else:
+            # For anonymous users, use session
+            session_key = self.request.session.session_key
+            if session_key:
+                recently_viewed = RecentlyViewedCar.objects.filter(
+                    session_key=session_key
+                ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+            else:
+                recently_viewed = RecentlyViewedCar.objects.none()
+
+        return [rv.car for rv in recently_viewed if rv.car.is_approved]
 
     def render_to_response(self, context, **response_kwargs):
         # Handle HTMX requests by returning only the results section
@@ -547,7 +606,53 @@ class CarDetailView(DetailView):
         # Increment view count
         obj.views_count += 1
         obj.save(update_fields=['views_count'])
+
+        # Track recently viewed car
+        self.track_recently_viewed(obj)
+
         return obj
+
+    def track_recently_viewed(self, car):
+        """Track this car as recently viewed"""
+        from .models import RecentlyViewedCar
+
+        # Get session key for anonymous users
+        if not self.request.session.session_key:
+            self.request.session.create()
+        session_key = self.request.session.session_key
+
+        # Get client IP
+        ip_address = self.request.META.get('HTTP_X_FORWARDED_FOR')
+        if ip_address:
+            ip_address = ip_address.split(',')[0]
+        else:
+            ip_address = self.request.META.get('REMOTE_ADDR')
+
+        if self.request.user.is_authenticated:
+            # For authenticated users
+            recently_viewed, created = RecentlyViewedCar.objects.update_or_create(
+                user=self.request.user,
+                car=car,
+                defaults={
+                    'ip_address': ip_address,
+                    'session_key': session_key,
+                }
+            )
+            if not created:
+                # Update the viewed_at timestamp
+                recently_viewed.save()
+        else:
+            # For anonymous users
+            recently_viewed, created = RecentlyViewedCar.objects.update_or_create(
+                session_key=session_key,
+                car=car,
+                defaults={
+                    'ip_address': ip_address,
+                }
+            )
+            if not created:
+                # Update the viewed_at timestamp
+                recently_viewed.save()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -654,13 +759,10 @@ def htmx_featured_cars_filter(request):
     # Base queryset for featured cars
     cars = Car.objects.filter(
         is_approved=True,
-        featured_tier__in=['bronze', 'silver', 'gold', 'platinum']
+        is_featured=True
     ).select_related('brand', 'model', 'vendor')
 
     # Apply filters
-    if tier:
-        cars = cars.filter(featured_tier=tier)
-
     if min_rating:
         try:
             min_rating_value = float(min_rating)
@@ -668,18 +770,8 @@ def htmx_featured_cars_filter(request):
         except ValueError:
             pass
 
-    # Order by tier priority and rating
-    from django.db.models import Case, When, IntegerField
-    cars = cars.annotate(
-        tier_priority=Case(
-            When(featured_tier='platinum', then=1),
-            When(featured_tier='gold', then=2),
-            When(featured_tier='silver', then=3),
-            When(featured_tier='bronze', then=4),
-            default=999,
-            output_field=IntegerField()
-        )
-    ).order_by('tier_priority', '-calculated_rating', '-views_count')[:12]
+    # Order by rating and views
+    cars = cars.order_by('-calculated_rating', '-views_count')[:12]
 
     context = {'cars': cars}
     return render(request, 'components/featured_cars_grid.html', context)
@@ -817,7 +909,7 @@ def htmx_car_list_filter(request):
     fuel_type = request.GET.get('fuel_type')
     transmission = request.GET.get('transmission')
     condition = request.GET.get('condition')
-    featured_tier = request.GET.get('featured_tier')
+    featured_only = request.GET.get('featured_only')
     min_rating = request.GET.get('min_rating')
     hot_deals_only = request.GET.get('hot_deals')
     sort_by = request.GET.get('sort', 'featured')
@@ -865,10 +957,8 @@ def htmx_car_list_filter(request):
     if condition:
         cars = cars.filter(condition=condition)
 
-    if featured_tier:
-        cars = cars.filter(featured_tier=featured_tier)
-    elif request.GET.get('featured_only'):
-        cars = cars.exclude(featured_tier='none')
+    if featured_only:
+        cars = cars.filter(is_featured=True)
 
     if min_rating:
         try:
@@ -900,15 +990,12 @@ def htmx_car_list_filter(request):
     else:  # featured (default)
         from django.db.models import Case, When, IntegerField
         cars = cars.annotate(
-            tier_priority=Case(
-                When(featured_tier='platinum', then=1),
-                When(featured_tier='gold', then=2),
-                When(featured_tier='silver', then=3),
-                When(featured_tier='bronze', then=4),
+            featured_priority=Case(
+                When(is_featured=True, then=1),
                 default=999,
                 output_field=IntegerField()
             )
-        ).order_by('tier_priority', '-calculated_rating', '-views_count')
+        ).order_by('featured_priority', '-calculated_rating', '-views_count')
 
     # Pagination
     from django.core.paginator import Paginator
@@ -926,35 +1013,21 @@ def htmx_car_list_filter(request):
 
 
 def featured_cars_by_tier(request, tier=None):
-    """Display featured cars by tier"""
-    valid_tiers = ['bronze', 'silver', 'gold', 'platinum']
+    """Display featured cars - simplified for binary featured system"""
+    # Redirect to general featured cars since we no longer use tiers
+    return redirect('core:car_list', featured_only=True)
 
-    if tier and tier not in valid_tiers:
-        messages.error(request, 'Invalid tier specified.')
-        return redirect('core:featured_cars_by_tier')
 
+def featured_cars_list(request):
+    """Display all featured cars"""
     # Base queryset for featured cars
     cars = Car.objects.filter(
         is_approved=True,
-        featured_tier__in=valid_tiers
+        is_featured=True
     ).select_related('brand', 'model', 'vendor')
 
-    # Filter by specific tier if provided
-    if tier:
-        cars = cars.filter(featured_tier=tier)
-
-    # Order by tier priority and rating
-    from django.db.models import Case, When, IntegerField
-    cars = cars.annotate(
-        tier_priority=Case(
-            When(featured_tier='platinum', then=1),
-            When(featured_tier='gold', then=2),
-            When(featured_tier='silver', then=3),
-            When(featured_tier='bronze', then=4),
-            default=999,
-            output_field=IntegerField()
-        )
-    ).order_by('tier_priority', '-calculated_rating', '-views_count')
+    # Order by rating and views
+    cars = cars.order_by('-calculated_rating', '-views_count')
 
     # Pagination
     from django.core.paginator import Paginator
@@ -962,29 +1035,23 @@ def featured_cars_by_tier(request, tier=None):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get tier statistics
-    tier_stats = {}
-    for tier_name in valid_tiers:
-        tier_cars = Car.objects.filter(
-            is_approved=True,
-            featured_tier=tier_name
-        )
-        tier_stats[tier_name] = {
-            'count': tier_cars.count(),
-            'avg_rating': tier_cars.aggregate(avg_rating=Avg('calculated_rating'))['avg_rating'] or 0,
-            'avg_price': tier_cars.aggregate(avg_price=Avg('price'))['avg_price'] or 0
-        }
+    # Get featured car statistics
+    featured_stats = {
+        'total_count': cars.count(),
+        'avg_rating': cars.aggregate(avg_rating=Avg('calculated_rating'))['avg_rating'] or 0,
+        'avg_price': cars.aggregate(avg_price=Avg('price'))['avg_price'] or 0,
+        'certified_count': cars.filter(is_certified=True).count(),
+        'hot_deals_count': cars.filter(is_hot_deal=True).count(),
+    }
 
     context = {
         'cars': page_obj,
-        'current_tier': tier,
-        'tier_stats': tier_stats,
-        'valid_tiers': valid_tiers,
-        'page_title': f'{tier.title()} Featured Cars' if tier else 'Featured Cars',
-        'meta_description': f'Browse our {tier} tier featured cars' if tier else 'Browse all featured cars with premium placement'
+        'featured_stats': featured_stats,
+        'page_title': 'Featured Cars',
+        'meta_description': 'Browse all featured cars with premium placement'
     }
 
-    return render(request, 'core/featured_cars_by_tier.html', context)
+    return render(request, 'core/featured_cars.html', context)
 
 
 def top_rated_vehicles(request):
@@ -1296,7 +1363,7 @@ class SparePartListView(ListView):
         # Category filter
         category = self.request.GET.get('category')
         if category:
-            queryset = queryset.filter(category=category)
+            queryset = queryset.filter(category_new__id=category)
 
         # Brand compatibility filter
         brand = self.request.GET.get('brand')
@@ -1307,7 +1374,9 @@ class SparePartListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = SparePart.objects.values_list('category', flat=True).distinct().order_by('category')
+        # Use the new SparePartCategory model instead of the old category field
+        from .models import SparePartCategory
+        context['categories'] = SparePartCategory.objects.filter(is_active=True).order_by('name')
         context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
 
         # Add price range for filters
@@ -1319,6 +1388,32 @@ class SparePartListView(ListView):
 
         # Add condition choices
         context['condition_choices'] = SparePart.CONDITION_CHOICES
+
+        # Get featured categories with counts
+        from django.db.models import Count
+        from .models import SparePartCategory
+        context['featured_categories'] = SparePartCategory.objects.filter(
+            is_active=True,
+            parts__is_available=True
+        ).annotate(
+            parts_count=Count('parts', distinct=True)
+        ).order_by('-parts_count')[:6]
+
+        # Get statistics for hero section
+        context['total_parts_count'] = SparePart.objects.filter(is_available=True).count()
+        context['vendors_count'] = Vendor.objects.filter(is_approved=True).count()
+
+        # Get system settings for hero section
+        from .models import SystemSetting
+        try:
+            context['support_hours'] = SystemSetting.objects.get(key='support_hours', is_active=True).value
+        except SystemSetting.DoesNotExist:
+            context['support_hours'] = '24/7'
+
+        try:
+            context['genuine_percentage'] = SystemSetting.objects.get(key='genuine_percentage', is_active=True).value
+        except SystemSetting.DoesNotExist:
+            context['genuine_percentage'] = '100%'
 
         return context
 
@@ -1688,7 +1783,7 @@ def process_checkout(request):
                 OrderItem.objects.create(
                     order=order,
                     spare_part=item.spare_part,
-                    vendor=item.spare_part.vendor,
+                    vendor=item.spare_part.vendor,  # Can be None if spare part has no vendor
                     part_name=item.spare_part.name,
                     part_sku=item.spare_part.sku,
                     part_description=item.spare_part.description,
@@ -1716,7 +1811,7 @@ def process_checkout(request):
             # Process payment based on method
             if payment_method == 'mpesa':
                 # Initiate M-Pesa payment
-                payment_result = initiate_mpesa_payment(order, customer_phone)
+                payment_result = initiate_mpesa_payment(order, customer_phone, request)
                 if payment_result['success']:
                     # Clear cart
                     cart.clear()
@@ -1765,34 +1860,55 @@ def process_checkout(request):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 
-def initiate_mpesa_payment(order, phone_number):
-    """Initiate M-Pesa STK Push payment"""
-    # This is a placeholder for M-Pesa integration
-    # In a real implementation, you would integrate with Safaricom's Daraja API
-
+def initiate_mpesa_payment(order, phone_number, request=None):
+    """Initiate M-Pesa payment for an order using enhanced integration"""
     try:
+        from .mpesa_integration import MPesaAPI
         import uuid
 
-        # Create payment record
+        # Create payment record first
         payment = Payment.objects.create(
             payment_id=f"MPESA-{str(uuid.uuid4())[:8].upper()}",
             order=order,
             payment_method='mpesa',
             amount=order.total_amount,
             mpesa_phone_number=phone_number,
-            mpesa_checkout_request_id=f"ws_CO_{str(uuid.uuid4())[:20]}",
-            status='processing'
+            status='pending'
         )
 
-        # Simulate M-Pesa STK push
-        # In real implementation, you would call Safaricom's API here
+        # Initialize M-Pesa API
+        mpesa_api = MPesaAPI(request)
 
-        return {
-            'success': True,
-            'message': 'M-Pesa payment initiated successfully',
-            'payment_id': payment.payment_id,
-            'checkout_request_id': payment.mpesa_checkout_request_id
-        }
+        # Initiate STK push
+        result = mpesa_api.initiate_stk_push(
+            phone_number=phone_number,
+            amount=order.total_amount,
+            account_reference=f"ORDER-{order.order_number}",
+            transaction_desc=f"Payment for Order {order.order_number}"
+        )
+
+        if result['success']:
+            # Update payment record with checkout request ID
+            payment.mpesa_checkout_request_id = result.get('checkout_request_id', '')
+            payment.status = 'processing'
+            payment.save()
+
+            return {
+                'success': True,
+                'message': result['message'],
+                'payment_id': payment.payment_id,
+                'checkout_request_id': payment.mpesa_checkout_request_id
+            }
+        else:
+            # Update payment status to failed
+            payment.status = 'failed'
+            payment.failure_reason = result['message']
+            payment.save()
+
+            return {
+                'success': False,
+                'message': result['message']
+            }
 
     except Exception as e:
         return {
@@ -1919,13 +2035,19 @@ def mpesa_callback(request):
                         payment.save()
 
                         # Update order status
-                        order = payment.order
-                        order.payment_status = 'completed'
-                        order.status = 'paid'
-                        order.save()
-
-                        # Generate invoice
-                        generate_invoice(order)
+                        if payment.order:
+                            # Spare parts order
+                            order = payment.order
+                            order.payment_status = 'completed'
+                            order.status = 'paid'
+                            order.save()
+                            # Generate invoice
+                            generate_invoice(order)
+                        elif payment.import_order:
+                            # Import order
+                            import_order = payment.import_order
+                            import_order.payment_status = 'paid'
+                            import_order.save()
 
                         # Send confirmation email (placeholder)
                         # send_order_confirmation_email(order)
@@ -1955,6 +2077,121 @@ def mpesa_callback(request):
             return JsonResponse({'ResultCode': 1, 'ResultDesc': f'Error: {str(e)}'})
 
     return JsonResponse({'ResultCode': 1, 'ResultDesc': 'Invalid request'})
+
+
+@csrf_exempt
+def mpesa_timeout(request):
+    """Handle M-Pesa payment timeout callback"""
+    if request.method == 'POST':
+        try:
+            import json
+            from django.utils import timezone
+
+            timeout_data = json.loads(request.body)
+
+            # Log timeout data for debugging
+            logger.info(f"M-Pesa timeout callback received: {timeout_data}")
+
+            # Extract timeout information
+            checkout_request_id = timeout_data.get('Body', {}).get('stkCallback', {}).get('CheckoutRequestID')
+            result_desc = timeout_data.get('Body', {}).get('stkCallback', {}).get('ResultDesc', 'Payment timeout')
+
+            if checkout_request_id:
+                try:
+                    payment = Payment.objects.get(mpesa_checkout_request_id=checkout_request_id)
+
+                    # Update payment status to failed due to timeout
+                    payment.status = 'failed'
+                    payment.failure_reason = f"Payment timeout: {result_desc}"
+                    payment.gateway_response = timeout_data
+                    payment.save()
+
+                    # Update order status
+                    if payment.order:
+                        # Spare parts order
+                        order = payment.order
+                        order.payment_status = 'failed'
+                        order.save()
+
+                        # Release reserved stock
+                        for item in order.items.all():
+                            item.spare_part.reserved_quantity -= item.quantity
+                            item.spare_part.save()
+                    elif payment.import_order:
+                        # Import order
+                        import_order = payment.import_order
+                        import_order.payment_status = 'failed'
+                        import_order.save()
+
+                    logger.warning(f"Payment timeout processed: {payment.payment_id}")
+
+                except Payment.DoesNotExist:
+                    logger.error(f"Payment not found for timeout CheckoutRequestID: {checkout_request_id}")
+
+            return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Timeout processed'})
+
+        except Exception as e:
+            logger.error(f"Error processing M-Pesa timeout: {str(e)}")
+            return JsonResponse({'ResultCode': 1, 'ResultDesc': f'Error: {str(e)}'})
+
+    return JsonResponse({'ResultCode': 1, 'ResultDesc': 'Invalid request'})
+
+
+def initiate_import_mpesa_payment(import_order, phone_number, request=None):
+    """Initiate M-Pesa payment for an import order"""
+    try:
+        from .mpesa_integration import MPesaAPI
+        import uuid
+
+        # Create payment record first
+        payment = Payment.objects.create(
+            payment_id=f"IMPORT-MPESA-{str(uuid.uuid4())[:8].upper()}",
+            import_order=import_order,
+            payment_method='mpesa',
+            amount=import_order.total_cost,
+            mpesa_phone_number=phone_number,
+            status='pending'
+        )
+
+        # Initialize M-Pesa API
+        mpesa_api = MPesaAPI(request)
+
+        # Initiate STK push
+        result = mpesa_api.initiate_stk_push(
+            phone_number=phone_number,
+            amount=import_order.total_cost,
+            account_reference=f"IMPORT-{import_order.order_number}",
+            transaction_desc=f"Import Fee - {import_order.brand} {import_order.model}"
+        )
+
+        if result['success']:
+            # Update payment record with checkout request ID
+            payment.mpesa_checkout_request_id = result.get('checkout_request_id', '')
+            payment.status = 'processing'
+            payment.save()
+
+            return {
+                'success': True,
+                'message': result['message'],
+                'payment_id': payment.payment_id,
+                'checkout_request_id': payment.mpesa_checkout_request_id
+            }
+        else:
+            # Update payment status to failed
+            payment.status = 'failed'
+            payment.failure_reason = result['message']
+            payment.save()
+
+            return {
+                'success': False,
+                'message': result['message']
+            }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Failed to initiate M-Pesa payment: {str(e)}'
+        }
 
 
 def generate_invoice(order):
@@ -2031,18 +2268,72 @@ def create_inquiry(request):
 
 
 class BlogListView(ListView):
-    """Blog listing page"""
+    """Enhanced resources listing page with filtering and search"""
     model = BlogPost
     template_name = 'core/blog.html'
     context_object_name = 'posts'
-    paginate_by = 6
+    paginate_by = 20  # Updated to match project preferences
 
     def get_queryset(self):
-        return BlogPost.objects.filter(is_published=True).order_by('-published_at')
+        queryset = BlogPost.objects.filter(is_published=True).select_related('author', 'category').prefetch_related('tags')
+
+        # Search functionality
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(content__icontains=search_query) |
+                Q(excerpt__icontains=search_query) |
+                Q(tags__name__icontains=search_query)
+            ).distinct()
+
+        # Content type filtering
+        content_type = self.request.GET.get('content_type')
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
+
+        # Category filtering
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category__slug=category)
+
+        # Tag filtering
+        tag = self.request.GET.get('tag')
+        if tag:
+            queryset = queryset.filter(tags__slug=tag)
+
+        return queryset.order_by('-is_featured', '-published_at', '-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get featured posts separately
+        featured_posts = BlogPost.objects.filter(
+            is_published=True,
+            is_featured=True
+        ).select_related('author', 'category').prefetch_related('tags')[:2]
+
+        context['featured_posts'] = featured_posts
+
+        # Add filter context
+        context['search_query'] = self.request.GET.get('search', '')
+        context['current_content_type'] = self.request.GET.get('content_type', '')
+        context['current_category'] = self.request.GET.get('category', '')
+        context['current_tag'] = self.request.GET.get('tag', '')
+
+        # Add content type choices for filters
+        context['content_types'] = BlogPost.CONTENT_TYPE_CHOICES
+
+        # Add categories and tags for filters
+        from .models import ContentCategory, ContentTag
+        context['categories'] = ContentCategory.objects.filter(is_active=True).order_by('sort_order', 'name')
+        context['popular_tags'] = ContentTag.objects.filter(is_active=True).order_by('name')[:10]
+
+        return context
 
 
 class BlogDetailView(DetailView):
-    """Blog post detail page"""
+    """Enhanced blog post detail page"""
     model = BlogPost
     template_name = 'core/blog_detail.html'
     context_object_name = 'post'
@@ -2050,7 +2341,193 @@ class BlogDetailView(DetailView):
     slug_url_kwarg = 'slug'
 
     def get_queryset(self):
-        return BlogPost.objects.filter(is_published=True)
+        return BlogPost.objects.filter(is_published=True).select_related('author', 'category').prefetch_related('tags')
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        # Increment view count
+        obj.views_count += 1
+        obj.save(update_fields=['views_count'])
+        return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get related posts
+        related_posts = BlogPost.objects.filter(
+            is_published=True,
+            category=self.object.category
+        ).exclude(id=self.object.id).select_related('author', 'category')[:3]
+
+        context['related_posts'] = related_posts
+
+        # Get posts by same author
+        author_posts = BlogPost.objects.filter(
+            is_published=True,
+            author=self.object.author
+        ).exclude(id=self.object.id).select_related('author', 'category')[:3]
+
+        context['author_posts'] = author_posts
+
+        return context
+
+
+# HTMX Views for Resources
+
+def resources_live_search(request):
+    """HTMX endpoint for live search in resources"""
+    search_query = request.GET.get('search', '')
+    content_type = request.GET.get('content_type', '')
+    category = request.GET.get('category', '')
+    tag = request.GET.get('tag', '')
+
+    queryset = BlogPost.objects.filter(is_published=True).select_related('author', 'category').prefetch_related('tags')
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) |
+            Q(content__icontains=search_query) |
+            Q(excerpt__icontains=search_query) |
+            Q(tags__name__icontains=search_query)
+        ).distinct()
+
+    if content_type:
+        queryset = queryset.filter(content_type=content_type)
+
+    if category:
+        queryset = queryset.filter(category__slug=category)
+
+    if tag:
+        queryset = queryset.filter(tags__slug=tag)
+
+    # Get featured posts first (before slicing)
+    featured_posts = queryset.filter(is_featured=True).order_by('-published_at')[:2]
+
+    # Get all posts
+    posts = queryset.order_by('-is_featured', '-published_at')[:20]
+
+    context = {
+        'posts': posts,
+        'featured_posts': featured_posts,
+        'search_query': search_query,
+        'current_content_type': content_type,
+        'current_category': category,
+        'current_tag': tag,
+    }
+
+    return render(request, 'core/htmx/resources_content_new.html', context)
+
+
+def resources_filter_by_category(request, category_slug):
+    """HTMX endpoint for filtering resources by category"""
+    from .models import ContentCategory
+
+    try:
+        category = ContentCategory.objects.get(slug=category_slug, is_active=True)
+        posts = BlogPost.objects.filter(
+            is_published=True,
+            category=category
+        ).select_related('author', 'category').prefetch_related('tags').order_by('-published_at')[:20]
+
+        context = {
+            'posts': posts,
+            'featured_posts': posts.filter(is_featured=True)[:2],
+            'current_category': category_slug,
+            'category_name': category.name,
+        }
+
+        return render(request, 'core/htmx/resources_content_new.html', context)
+
+    except ContentCategory.DoesNotExist:
+        return render(request, 'core/htmx/resources_content_new.html', {'posts': []})
+
+
+def resources_filter_by_tag(request, tag_slug):
+    """HTMX endpoint for filtering resources by tag"""
+    from .models import ContentTag
+
+    try:
+        tag = ContentTag.objects.get(slug=tag_slug, is_active=True)
+        posts = BlogPost.objects.filter(
+            is_published=True,
+            tags=tag
+        ).select_related('author', 'category').prefetch_related('tags').order_by('-published_at')[:20]
+
+        context = {
+            'posts': posts,
+            'featured_posts': posts.filter(is_featured=True)[:2],
+            'current_tag': tag_slug,
+            'tag_name': tag.name,
+        }
+
+        return render(request, 'core/htmx/resources_content_new.html', context)
+
+    except ContentTag.DoesNotExist:
+        return render(request, 'core/htmx/resources_content_new.html', {'posts': []})
+
+
+def content_like_toggle(request, post_id):
+    """HTMX endpoint for toggling content likes"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'message': 'Login required'})
+
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, is_published=True)
+        from .models import ContentLike
+
+        like, created = ContentLike.objects.get_or_create(
+            post=post,
+            user=request.user
+        )
+
+        if not created:
+            like.delete()
+            post.likes_count = max(0, post.likes_count - 1)
+            liked = False
+        else:
+            post.likes_count += 1
+            liked = True
+
+        post.save(update_fields=['likes_count'])
+
+        return JsonResponse({
+            'success': True,
+            'liked': liked,
+            'likes_count': post.likes_count
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': 'Error processing request'})
+
+
+def content_bookmark_toggle(request, post_id):
+    """HTMX endpoint for toggling content bookmarks"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'message': 'Login required'})
+
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, is_published=True)
+        from .models import ContentBookmark
+
+        bookmark, created = ContentBookmark.objects.get_or_create(
+            post=post,
+            user=request.user
+        )
+
+        if not created:
+            bookmark.delete()
+            bookmarked = False
+        else:
+            bookmarked = True
+
+        return JsonResponse({
+            'success': True,
+            'bookmarked': bookmarked,
+            'message': 'Bookmarked!' if bookmarked else 'Bookmark removed!'
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': 'Error processing request'})
 
 
 def about_us(request):
@@ -2060,6 +2537,294 @@ def about_us(request):
         'team_members': [],  # Add team members if needed
     }
     return render(request, 'core/about_us.html', context)
+
+
+def dealer_list(request):
+    """Public dealer listing page"""
+    vendors = Vendor.objects.filter(
+        is_approved=True,
+        user__is_active=True
+    ).select_related('user').prefetch_related('cars').order_by('-created_at')
+
+    # Add statistics for each vendor
+    for vendor in vendors:
+        vendor.total_listings = vendor.cars.filter(is_approved=True, status='available').count()
+        vendor.total_views = sum(car.views_count for car in vendor.cars.all())
+
+    context = {
+        'vendors': vendors,
+        'total_dealers': vendors.count(),
+    }
+    return render(request, 'core/dealer_list.html', context)
+
+
+def dealer_profile(request, vendor_id):
+    """Public dealer profile page"""
+    vendor = get_object_or_404(
+        Vendor.objects.select_related('user').prefetch_related('cars'),
+        id=vendor_id,
+        is_approved=True,
+        user__is_active=True
+    )
+
+    # Get vendor's cars
+    vendor_cars = Car.objects.filter(
+        vendor=vendor,
+        is_approved=True,
+        status='available'
+    ).order_by('-created_at')
+
+    # Calculate statistics
+    total_listings = vendor_cars.count()
+    total_views = sum(car.views_count for car in vendor_cars)
+    featured_cars = vendor_cars.filter(is_featured=True)
+    hot_deals = vendor_cars.filter(is_hot_deal=True)
+
+    # Get recent cars (last 6)
+    recent_cars = vendor_cars[:6]
+
+    # Track profile view
+    try:
+        from .utils.analytics_utils import track_profile_view
+        track_profile_view(vendor.user, request.user if request.user.is_authenticated else None)
+    except:
+        pass
+
+    # Increment profile views
+    vendor.profile_views = (vendor.profile_views or 0) + 1
+    vendor.save(update_fields=['profile_views'])
+
+    context = {
+        'vendor': vendor,
+        'vendor_cars': recent_cars,
+        'total_listings': total_listings,
+        'total_views': total_views,
+        'featured_cars': featured_cars,
+        'hot_deals': hot_deals,
+        'all_cars': vendor_cars,  # For pagination if needed
+    }
+    return render(request, 'core/dealer_profile.html', context)
+
+
+def car_compare(request):
+    """Car comparison page"""
+    # Get car IDs from session or query parameters
+    compare_ids = request.session.get('compare_list', [])
+
+    # Also check for query parameters (for direct links)
+    if 'cars' in request.GET:
+        try:
+            query_ids = [int(id) for id in request.GET.get('cars', '').split(',') if id.strip()]
+            compare_ids.extend(query_ids)
+            compare_ids = list(set(compare_ids))  # Remove duplicates
+        except ValueError:
+            pass
+
+    # Limit to 3 cars maximum
+    compare_ids = compare_ids[:3]
+
+    # Get car objects
+    cars = Car.objects.filter(
+        id__in=compare_ids,
+        is_approved=True
+    ).select_related('brand', 'model', 'vendor').prefetch_related('images')
+
+    # Ensure cars are in the same order as compare_ids
+    cars_dict = {car.id: car for car in cars}
+    ordered_cars = [cars_dict[car_id] for car_id in compare_ids if car_id in cars_dict]
+
+    context = {
+        'cars': ordered_cars,
+        'compare_count': len(ordered_cars),
+        'max_compare': 3,
+    }
+    return render(request, 'core/car_compare.html', context)
+
+
+@require_http_methods(["POST"])
+def add_to_compare(request, car_id):
+    """Add car to comparison list via HTMX"""
+    try:
+        car = get_object_or_404(Car, id=car_id, is_approved=True)
+        compare_list = request.session.get('compare_list', [])
+
+        if len(compare_list) >= 3:
+            return JsonResponse({
+                'success': False,
+                'message': 'You can only compare up to 3 cars at a time.',
+                'count': len(compare_list)
+            })
+
+        if car_id in compare_list:
+            return JsonResponse({
+                'success': False,
+                'message': 'Car is already in comparison list.',
+                'count': len(compare_list)
+            })
+
+        compare_list.append(car_id)
+        request.session['compare_list'] = compare_list
+
+        return JsonResponse({
+            'success': True,
+            'message': f'{car.title} added to comparison!',
+            'count': len(compare_list),
+            'car_title': car.title
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error adding car to comparison.',
+            'count': len(request.session.get('compare_list', []))
+        })
+
+
+@require_http_methods(["POST"])
+def remove_from_compare(request, car_id):
+    """Remove car from comparison list via HTMX"""
+    try:
+        compare_list = request.session.get('compare_list', [])
+
+        if car_id in compare_list:
+            compare_list.remove(car_id)
+            request.session['compare_list'] = compare_list
+
+            car = get_object_or_404(Car, id=car_id)
+
+            return JsonResponse({
+                'success': True,
+                'message': f'{car.title} removed from comparison.',
+                'count': len(compare_list)
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Car not found in comparison list.',
+                'count': len(compare_list)
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error removing car from comparison.',
+            'count': len(request.session.get('compare_list', []))
+        })
+
+
+@require_http_methods(["POST"])
+def clear_compare(request):
+    """Clear all cars from comparison list"""
+    request.session['compare_list'] = []
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Comparison list cleared.',
+        'count': 0
+    })
+
+
+def car_calculator(request):
+    """Car financing calculator page"""
+    # Get car details if car_id is provided
+    car = None
+    car_id = request.GET.get('car_id')
+    if car_id:
+        try:
+            car = Car.objects.get(id=car_id, is_approved=True)
+        except Car.DoesNotExist:
+            pass
+
+    context = {
+        'car': car,
+        'default_price': car.price if car else 0,
+        'default_down_payment': 0.2,  # 20% default
+        'default_loan_term': 60,  # 5 years default
+        'default_interest_rate': 12.5,  # 12.5% default for Kenya
+    }
+    return render(request, 'core/car_calculator.html', context)
+
+
+@require_http_methods(["POST"])
+def calculate_loan(request):
+    """Calculate loan payments via HTMX"""
+    try:
+        # Get form data
+        car_price = float(request.POST.get('car_price', 0))
+        down_payment_percent = float(request.POST.get('down_payment_percent', 20))
+        loan_term_months = int(request.POST.get('loan_term_months', 60))
+        interest_rate = float(request.POST.get('interest_rate', 12.5))
+        insurance_monthly = float(request.POST.get('insurance_monthly', 0))
+        other_fees_monthly = float(request.POST.get('other_fees_monthly', 0))
+
+        # Validate inputs
+        if car_price <= 0:
+            return JsonResponse({'error': 'Car price must be greater than 0'})
+
+        if down_payment_percent < 0 or down_payment_percent > 100:
+            return JsonResponse({'error': 'Down payment must be between 0% and 100%'})
+
+        if loan_term_months <= 0:
+            return JsonResponse({'error': 'Loan term must be greater than 0'})
+
+        if interest_rate < 0:
+            return JsonResponse({'error': 'Interest rate cannot be negative'})
+
+        # Calculate loan details
+        down_payment_amount = car_price * (down_payment_percent / 100)
+        loan_amount = car_price - down_payment_amount
+
+        # Calculate monthly payment using loan formula
+        if interest_rate > 0:
+            monthly_rate = interest_rate / 100 / 12
+            monthly_payment = loan_amount * (monthly_rate * (1 + monthly_rate) ** loan_term_months) / ((1 + monthly_rate) ** loan_term_months - 1)
+        else:
+            monthly_payment = loan_amount / loan_term_months
+
+        # Calculate totals
+        total_loan_payments = monthly_payment * loan_term_months
+        total_interest = total_loan_payments - loan_amount
+        total_insurance = insurance_monthly * loan_term_months
+        total_other_fees = other_fees_monthly * loan_term_months
+        total_cost = car_price + total_interest + total_insurance + total_other_fees
+        total_monthly_payment = monthly_payment + insurance_monthly + other_fees_monthly
+
+        # Prepare response data
+        calculations = {
+            'car_price': car_price,
+            'down_payment_percent': down_payment_percent,
+            'down_payment_amount': down_payment_amount,
+            'loan_amount': loan_amount,
+            'loan_term_months': loan_term_months,
+            'loan_term_years': loan_term_months / 12,
+            'interest_rate': interest_rate,
+            'monthly_payment': monthly_payment,
+            'insurance_monthly': insurance_monthly,
+            'other_fees_monthly': other_fees_monthly,
+            'total_monthly_payment': total_monthly_payment,
+            'total_loan_payments': total_loan_payments,
+            'total_interest': total_interest,
+            'total_insurance': total_insurance,
+            'total_other_fees': total_other_fees,
+            'total_cost': total_cost,
+            'savings_vs_total': car_price - total_cost,
+        }
+
+        return JsonResponse({
+            'success': True,
+            'calculations': calculations
+        })
+
+    except (ValueError, TypeError) as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid input values. Please check your entries.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred during calculation.'
+        })
 
 
 def contact_us(request):
@@ -2155,17 +2920,63 @@ def system_test(request):
     return render(request, 'core/system_test.html')
 
 
+# HTMX Views for Sell Car Form
+def htmx_models_by_brand(request):
+    """HTMX endpoint to load models by brand"""
+    brand_id = request.GET.get('brand')
+    models = []
+
+    if brand_id:
+        try:
+            brand = CarBrand.objects.get(id=brand_id, is_active=True)
+            models = CarModel.objects.filter(brand=brand, is_active=True).order_by('name')
+        except CarBrand.DoesNotExist:
+            pass
+
+    return render(request, 'core/htmx/models_by_brand.html', {
+        'models': models
+    })
+
+
 # Car Sales Views
 @login_required
 def sell_car(request):
     """Sell car form view"""
+    # Check if this is a modal request for admin
+    is_admin_modal = request.GET.get('modal') == 'true' and request.GET.get('admin') == 'true'
+
+    # Redirect admin users to admin car listings page (except for modal requests)
+    if request.user.role == 'admin' and not is_admin_modal:
+        messages.info(request, 'As an admin, please use the admin car listings page to manage cars and sell on behalf functionality.')
+        return redirect('core:admin_listings')
+
     if request.method == 'POST':
         form = SellCarForm(request.POST, request.FILES)
         if form.is_valid():
             car = form.save(commit=False)
 
-            # Get or create vendor profile for the user
-            if request.user.role == 'vendor':
+            # Handle vendor assignment based on user role
+            if request.user.role == 'admin':
+                # For admin users, check if a specific vendor is selected or create a default one
+                vendor_id = request.POST.get('vendor_id')
+                if vendor_id:
+                    try:
+                        vendor = Vendor.objects.get(id=vendor_id)
+                    except Vendor.DoesNotExist:
+                        vendor = None
+
+                if not vendor_id or not vendor:
+                    # Create or get a default admin vendor profile
+                    vendor, created = Vendor.objects.get_or_create(
+                        user=request.user,
+                        defaults={
+                            'company_name': 'Gurumisha Motors Admin',
+                            'is_approved': True
+                        }
+                    )
+
+                car.is_approved = True  # Admin cars are auto-approved
+            elif request.user.role == 'vendor':
                 try:
                     vendor = request.user.vendor
                 except Vendor.DoesNotExist:
@@ -2175,6 +2986,7 @@ def sell_car(request):
                         company_name=f"{request.user.first_name} {request.user.last_name}",
                         is_approved=False
                     )
+                car.is_approved = False  # Vendor cars require admin approval
             else:
                 # For customers, create a basic vendor profile
                 vendor = Vendor.objects.create(
@@ -2185,21 +2997,62 @@ def sell_car(request):
                 # Update user role to vendor
                 request.user.role = 'vendor'
                 request.user.save()
+                car.is_approved = False  # Customer cars require admin approval
 
             car.vendor = vendor
             car.status = 'available'
-            car.is_approved = False  # Requires admin approval
             car.save()
 
-            messages.success(request, 'Your car listing has been submitted for review. We will notify you once it\'s approved.')
-            return redirect('core:dashboard')
+            # Handle success message and redirect based on user role
+            if request.user.role == 'admin':
+                messages.success(request, 'Car listing has been created and approved successfully.')
+                # For HTMX modal requests, return JSON response
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Car listing created successfully!',
+                        'redirect': '/dashboard/admin/listings/'
+                    })
+                return redirect('core:admin_listings')
+            else:
+                messages.success(request, 'Your car listing has been submitted for review. We will notify you once it\'s approved.')
+                # For HTMX modal requests, return JSON response
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Car listing submitted for review!',
+                        'redirect': '/dashboard/'
+                    })
+                return redirect('core:dashboard')
+        else:
+            # Handle form validation errors
+            if request.headers.get('HX-Request'):
+                # Return JSON error response for HTMX
+                error_details = {}
+                for field, errors in form.errors.items():
+                    error_details[field] = [str(error) for error in errors]
+
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Please correct the validation errors below.',
+                    'errors': error_details
+                }, status=400)
     else:
         form = SellCarForm()
 
     context = {
         'form': form,
-        'car_brands': CarBrand.objects.filter(is_active=True),
+        'car_brands': CarBrand.objects.filter(is_active=True).order_by('display_order', 'name'),
+        'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name'),
     }
+
+    # Check if this is a modal request
+    if request.GET.get('modal') == 'true':
+        # Check if this is an admin modal request
+        if request.GET.get('admin') == 'true':
+            context['is_admin_modal'] = True
+        return render(request, 'core/modals/car_creation_modal.html', context)
+
     return render(request, 'core/sell_car.html', context)
 
 
@@ -2417,7 +3270,9 @@ def chassis_number_search(request):
 
 
 # HTMX Views for Import Order Tracking
-@login_required
+from .decorators import htmx_login_required
+
+@htmx_login_required
 def import_order_status_update_htmx(request, order_number):
     """HTMX endpoint for real-time status updates"""
     if not request.headers.get('HX-Request'):
@@ -2433,7 +3288,7 @@ def import_order_status_update_htmx(request, order_number):
     return render(request, 'core/import_tracking/partials/status_update.html', context)
 
 
-@login_required
+@htmx_login_required
 def import_order_timeline_htmx(request, order_number):
     """HTMX endpoint for loading order timeline"""
     if not request.headers.get('HX-Request'):
@@ -2450,9 +3305,404 @@ def import_order_timeline_htmx(request, order_number):
     return render(request, 'core/import_tracking/partials/timeline.html', context)
 
 
-# HTMX Views for Admin Sidebar Real-time Updates
+# GPS Tracking HTMX Views
 @login_required
-@user_passes_test(lambda u: u.is_staff)
+def import_order_location_update_htmx(request, order_number):
+    """HTMX endpoint for real-time location updates"""
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    order = get_object_or_404(ImportOrder, order_number=order_number, customer=request.user)
+
+    # Get current location data
+    current_location = order.get_current_location()
+    tracking_history = order.tracking_history.all().order_by('-recorded_at')[:10]
+
+    # Prepare location data for JSON response
+    location_data = {
+        'order_number': order.order_number,
+        'current_latitude': float(order.current_latitude) if order.current_latitude else None,
+        'current_longitude': float(order.current_longitude) if order.current_longitude else None,
+        'current_location_name': order.current_location_name or 'Location updating...',
+        'last_update': order.last_location_update.isoformat() if order.last_location_update else None,
+        'status': order.status,
+        'status_display': order.get_status_display(),
+        'progress_percentage': order.progress_percentage,
+        'coordinates_string': order.current_coordinates_string,
+        'google_maps_url': order.google_maps_url,
+        'tracking_enabled': order.has_tracking_enabled(),
+    }
+
+    # Add recent tracking history
+    location_data['recent_history'] = []
+    for entry in tracking_history:
+        location_data['recent_history'].append({
+            'latitude': float(entry.latitude),
+            'longitude': float(entry.longitude),
+            'recorded_at': entry.recorded_at.isoformat(),
+            'tracking_source': entry.tracking_source,
+            'notes': entry.notes,
+        })
+
+    return JsonResponse(location_data)
+
+
+@login_required
+def import_order_route_data_htmx(request, order_number):
+    """HTMX endpoint for loading route and waypoint data"""
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    order = get_object_or_404(ImportOrder, order_number=order_number, customer=request.user)
+
+    route_data = {
+        'order_number': order.order_number,
+        'waypoints': [],
+        'route_exists': False,
+    }
+
+    # Check if route exists
+    if hasattr(order, 'route') and order.route:
+        route = order.route
+        route_data['route_exists'] = True
+        route_data['route_name'] = route.route_name
+        route_data['route_type'] = route.route_type
+        route_data['route_status'] = route.route_status
+        route_data['progress_percentage'] = route.progress_percentage
+
+        # Add waypoints
+        for waypoint in route.waypoints.all().order_by('sequence_order'):
+            waypoint_data = {
+                'sequence_order': waypoint.sequence_order,
+                'name': waypoint.name,
+                'waypoint_type': waypoint.waypoint_type,
+                'latitude': float(waypoint.location.latitude),
+                'longitude': float(waypoint.location.longitude),
+                'is_current': waypoint.is_current,
+                'is_completed': waypoint.is_completed,
+                'estimated_arrival': waypoint.estimated_arrival.isoformat() if waypoint.estimated_arrival else None,
+                'actual_arrival': waypoint.actual_arrival.isoformat() if waypoint.actual_arrival else None,
+            }
+            route_data['waypoints'].append(waypoint_data)
+
+    # Add all locations for this order
+    route_data['locations'] = []
+    for location in order.locations.filter(is_customer_visible=True).order_by('created_at'):
+        location_data = {
+            'name': location.name,
+            'location_type': location.location_type,
+            'latitude': float(location.latitude),
+            'longitude': float(location.longitude),
+            'address': location.address,
+            'is_current_location': location.is_current_location,
+            'estimated_arrival_time': location.estimated_arrival_time.isoformat() if location.estimated_arrival_time else None,
+            'actual_arrival_time': location.actual_arrival_time.isoformat() if location.actual_arrival_time else None,
+        }
+        route_data['locations'].append(location_data)
+
+    return JsonResponse(route_data)
+
+
+@htmx_login_required
+def import_order_live_tracking_htmx(request, order_number):
+    """Enhanced HTMX endpoint for live tracking with real-time updates"""
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    order = get_object_or_404(ImportOrder, order_number=order_number, customer=request.user)
+
+    # Get comprehensive tracking data
+    tracking_data = {
+        'order_number': order.order_number,
+        'vehicle_details': order.vehicle_details,
+        'status': order.status,
+        'status_display': order.get_status_display(),
+        'progress_percentage': order.progress_percentage,
+        'tracking_enabled': order.has_tracking_enabled(),
+        'last_update_timestamp': timezone.now().isoformat(),
+    }
+
+    # Current location data
+    if order.current_latitude and order.current_longitude:
+        tracking_data['current_location'] = {
+            'latitude': float(order.current_latitude),
+            'longitude': float(order.current_longitude),
+            'name': order.current_location_name or 'Current Location',
+            'coordinates_string': order.current_coordinates_string,
+            'google_maps_url': order.google_maps_url,
+            'last_update': order.last_location_update.isoformat() if order.last_location_update else None,
+            'time_since_update': order.last_location_update.strftime('%Y-%m-%d %H:%M:%S') if order.last_location_update else None,
+        }
+    else:
+        tracking_data['current_location'] = None
+
+    # Route and waypoint data
+    if hasattr(order, 'route') and order.route:
+        route = order.route
+        tracking_data['route'] = {
+            'name': route.route_name,
+            'type': route.route_type,
+            'status': route.route_status,
+            'progress_percentage': route.progress_percentage,
+            'current_waypoint': None,
+            'next_waypoint': None,
+        }
+
+        # Current waypoint
+        current_waypoint = route.current_waypoint
+        if current_waypoint:
+            tracking_data['route']['current_waypoint'] = {
+                'name': current_waypoint.name,
+                'type': current_waypoint.waypoint_type,
+                'estimated_arrival': current_waypoint.estimated_arrival.isoformat() if current_waypoint.estimated_arrival else None,
+            }
+
+        # Next waypoint
+        next_waypoint = route.next_waypoint
+        if next_waypoint:
+            tracking_data['route']['next_waypoint'] = {
+                'name': next_waypoint.name,
+                'type': next_waypoint.waypoint_type,
+                'estimated_arrival': next_waypoint.estimated_arrival.isoformat() if next_waypoint.estimated_arrival else None,
+            }
+
+    # Recent tracking history (last 5 entries)
+    recent_history = order.tracking_history.all().order_by('-recorded_at')[:5]
+    tracking_data['recent_history'] = []
+    for entry in recent_history:
+        tracking_data['recent_history'].append({
+            'latitude': float(entry.latitude),
+            'longitude': float(entry.longitude),
+            'recorded_at': entry.recorded_at.isoformat(),
+            'tracking_source': entry.tracking_source,
+            'notes': entry.notes,
+            'status_at_time': entry.status_at_time,
+        })
+
+    # Estimated arrival information
+    if order.estimated_arrival_date:
+        tracking_data['estimated_arrival'] = {
+            'date': order.estimated_arrival_date.isoformat(),
+            'days_remaining': (order.estimated_arrival_date - timezone.now().date()).days,
+        }
+
+    return JsonResponse(tracking_data)
+
+
+@htmx_login_required
+def import_order_tracking_dashboard_htmx(request):
+    """HTMX endpoint for updating the tracking dashboard with live data"""
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    # Get user's orders with tracking enabled
+    orders = ImportOrder.objects.filter(
+        customer=request.user,
+        tracking_enabled=True
+    ).exclude(status__in=['delivered', 'cancelled']).order_by('-created_at')
+
+    dashboard_data = {
+        'total_tracked_orders': orders.count(),
+        'orders_with_location': orders.filter(
+            current_latitude__isnull=False,
+            current_longitude__isnull=False
+        ).count(),
+        'orders': []
+    }
+
+    for order in orders:
+        order_data = {
+            'order_number': order.order_number,
+            'vehicle_details': order.vehicle_details,
+            'status': order.status,
+            'status_display': order.get_status_display(),
+            'progress_percentage': order.progress_percentage,
+            'current_location': None,
+            'last_update': None,
+        }
+
+        if order.current_latitude and order.current_longitude:
+            order_data['current_location'] = {
+                'name': order.current_location_name or 'Location Available',
+                'coordinates': order.current_coordinates_string,
+                'google_maps_url': order.google_maps_url,
+            }
+            order_data['last_update'] = order.last_location_update.isoformat() if order.last_location_update else None
+
+        dashboard_data['orders'].append(order_data)
+
+    return JsonResponse(dashboard_data)
+
+
+@login_required
+def import_order_location_history_htmx(request, order_number):
+    """HTMX endpoint for loading location history with pagination"""
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    order = get_object_or_404(ImportOrder, order_number=order_number, customer=request.user)
+
+    # Pagination parameters
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 20))
+
+    # Get tracking history with pagination
+    history_entries = order.tracking_history.all().order_by('-recorded_at')
+    total_entries = history_entries.count()
+
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    page_entries = history_entries[start_index:end_index]
+
+    history_data = {
+        'order_number': order.order_number,
+        'total_entries': total_entries,
+        'current_page': page,
+        'per_page': per_page,
+        'total_pages': (total_entries + per_page - 1) // per_page,
+        'has_next': end_index < total_entries,
+        'has_previous': page > 1,
+        'entries': []
+    }
+
+    for entry in page_entries:
+        history_data['entries'].append({
+            'id': entry.id,
+            'latitude': float(entry.latitude),
+            'longitude': float(entry.longitude),
+            'coordinates_string': entry.coordinates_string,
+            'recorded_at': entry.recorded_at.isoformat(),
+            'tracking_source': entry.tracking_source,
+            'tracking_source_display': entry.get_tracking_source_display(),
+            'status_at_time': entry.status_at_time,
+            'status_display': entry.get_status_at_time_display(),
+            'notes': entry.notes,
+            'speed': float(entry.speed) if entry.speed else None,
+            'heading': float(entry.heading) if entry.heading else None,
+        })
+
+    return JsonResponse(history_data)
+
+
+@login_required
+def import_order_sse_tracking(request, order_number):
+    """Server-Sent Events endpoint for real-time tracking updates"""
+    from django.http import StreamingHttpResponse
+    import json
+    import time
+
+    order = get_object_or_404(ImportOrder, order_number=order_number, customer=request.user)
+
+    def event_stream():
+        """Generate SSE events for real-time tracking"""
+        last_update = None
+
+        while True:
+            try:
+                # Check if order still exists and tracking is enabled
+                current_order = ImportOrder.objects.get(id=order.id)
+                if not current_order.has_tracking_enabled():
+                    break
+
+                # Check for location updates
+                current_update = current_order.last_location_update
+                if current_update != last_update:
+                    # Location has been updated
+                    tracking_data = {
+                        'type': 'location_update',
+                        'order_number': current_order.order_number,
+                        'current_location': None,
+                        'status': current_order.status,
+                        'status_display': current_order.get_status_display(),
+                        'progress_percentage': current_order.progress_percentage,
+                        'timestamp': timezone.now().isoformat(),
+                    }
+
+                    if current_order.current_latitude and current_order.current_longitude:
+                        tracking_data['current_location'] = {
+                            'latitude': float(current_order.current_latitude),
+                            'longitude': float(current_order.current_longitude),
+                            'name': current_order.current_location_name or 'Current Location',
+                            'coordinates_string': current_order.current_coordinates_string,
+                            'last_update': current_order.last_location_update.isoformat() if current_order.last_location_update else None,
+                        }
+
+                    yield f"data: {json.dumps(tracking_data)}\n\n"
+                    last_update = current_update
+
+                # Send heartbeat every 30 seconds
+                heartbeat_data = {
+                    'type': 'heartbeat',
+                    'timestamp': timezone.now().isoformat(),
+                    'order_number': current_order.order_number,
+                    'tracking_active': current_order.has_tracking_enabled(),
+                }
+                yield f"data: {json.dumps(heartbeat_data)}\n\n"
+
+                # Wait before next check
+                time.sleep(30)
+
+            except ImportOrder.DoesNotExist:
+                # Order was deleted
+                break
+            except Exception as e:
+                # Log error and continue
+                error_data = {
+                    'type': 'error',
+                    'message': 'Tracking temporarily unavailable',
+                    'timestamp': timezone.now().isoformat(),
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+                time.sleep(60)  # Wait longer on error
+
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['Connection'] = 'keep-alive'
+    response['Access-Control-Allow-Origin'] = '*'
+    response['Access-Control-Allow-Headers'] = 'Cache-Control'
+
+    return response
+
+
+@login_required
+def import_order_tracking_notifications_htmx(request):
+    """HTMX endpoint for tracking notifications and alerts"""
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    # Get user's orders with recent updates
+    recent_cutoff = timezone.now() - timezone.timedelta(hours=1)
+    recent_updates = LocationTrackingHistory.objects.filter(
+        import_order__customer=request.user,
+        recorded_at__gte=recent_cutoff
+    ).select_related('import_order').order_by('-recorded_at')[:10]
+
+    notifications = []
+    for update in recent_updates:
+        notification = {
+            'id': update.id,
+            'order_number': update.import_order.order_number,
+            'vehicle_details': update.import_order.vehicle_details,
+            'message': update.notes or 'Location updated',
+            'timestamp': update.recorded_at.isoformat(),
+            'time_ago': (timezone.now() - update.recorded_at).total_seconds() / 60,  # minutes
+            'coordinates': update.coordinates_string,
+            'tracking_source': update.get_tracking_source_display(),
+            'status': update.import_order.status,
+        }
+        notifications.append(notification)
+
+    return JsonResponse({
+        'notifications': notifications,
+        'count': len(notifications),
+        'last_check': timezone.now().isoformat(),
+    })
+
+
+# HTMX Views for Admin Sidebar Real-time Updates
+from .decorators import htmx_staff_required, htmx_admin_required
+
+@htmx_admin_required
 def admin_tracking_stats_htmx(request):
     """HTMX endpoint for real-time tracking statistics in admin sidebar"""
     if not request.headers.get('HX-Request'):
@@ -2475,8 +3725,7 @@ def admin_tracking_stats_htmx(request):
     return JsonResponse(stats)
 
 
-@login_required
-@user_passes_test(lambda u: u.is_staff)
+@htmx_admin_required
 def admin_inquiry_stats_htmx(request):
     """HTMX endpoint for real-time inquiry statistics"""
     if not request.headers.get('HX-Request'):
@@ -2498,8 +3747,7 @@ def admin_inquiry_stats_htmx(request):
     return JsonResponse(stats)
 
 
-@login_required
-@user_passes_test(lambda u: u.is_staff)
+@htmx_admin_required
 def admin_quick_actions_htmx(request):
     """HTMX endpoint for admin sidebar quick actions and stats"""
     if not request.headers.get('HX-Request'):
@@ -2649,3 +3897,420 @@ def request_password_reset_code(request):
         form = RequestVerificationCodeForm(code_type='password_reset')
 
     return render(request, 'core/auth/request_password_reset_code.html', {'form': form})
+
+
+# Opinion Polling Views
+
+@require_http_methods(["POST"])
+def poll_vote(request, poll_id):
+    """HTMX endpoint for submitting poll votes"""
+    try:
+        poll = get_object_or_404(OpinionPoll, id=poll_id)
+
+        if not poll.is_open:
+            return JsonResponse({
+                'success': False,
+                'message': 'This poll is no longer accepting votes.'
+            })
+
+        option_id = request.POST.get('option_id')
+        if not option_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Please select an option.'
+            })
+
+        option = get_object_or_404(PollOption, id=option_id, poll=poll)
+
+        # Check for existing vote
+        existing_vote = None
+        if request.user.is_authenticated:
+            existing_vote = PollVote.objects.filter(poll=poll, user=request.user).first()
+        elif not poll.allow_anonymous_voting:
+            return JsonResponse({
+                'success': False,
+                'message': 'You must be logged in to vote on this poll.'
+            })
+        else:
+            # Check by session for anonymous users
+            session_key = request.session.session_key
+            if not session_key:
+                request.session.create()
+                session_key = request.session.session_key
+            existing_vote = PollVote.objects.filter(poll=poll, session_key=session_key).first()
+
+        # Handle existing vote
+        if existing_vote and not poll.multiple_votes_per_user:
+            if existing_vote.option == option:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'You have already voted for this option.'
+                })
+            else:
+                # Update existing vote
+                existing_vote.option.vote_count -= 1
+                existing_vote.option.save()
+                existing_vote.option = option
+                existing_vote.save()
+                option.vote_count += 1
+                option.save()
+        else:
+            # Create new vote
+            vote_data = {
+                'poll': poll,
+                'option': option,
+                'ip_address': request.META.get('REMOTE_ADDR'),
+                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            }
+
+            if request.user.is_authenticated:
+                vote_data['user'] = request.user
+            else:
+                vote_data['session_key'] = session_key
+
+            PollVote.objects.create(**vote_data)
+            option.vote_count += 1
+            option.save()
+
+            # Update poll total
+            poll.total_votes += 1
+            poll.save()
+
+        # Return updated results
+        results = poll.get_results()
+        context = {
+            'poll': poll,
+            'results': results,
+            'user_voted': True,
+        }
+
+        return render(request, 'core/htmx/poll_results.html', context)
+
+    except Exception as e:
+        logging.error(f"Error in poll_vote: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred while processing your vote.'
+        })
+
+
+@require_http_methods(["POST"])
+def opinion_review_submit(request, post_id):
+    """HTMX endpoint for submitting opinion reviews"""
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'message': 'You must be logged in to submit a review.'
+        })
+
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='opinion', is_published=True)
+
+        rating = request.POST.get('rating')
+        review_text = request.POST.get('review_text', '').strip()
+
+        if not rating:
+            return JsonResponse({
+                'success': False,
+                'message': 'Please provide a rating.'
+            })
+
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid rating value.'
+            })
+
+        # Create or update review
+        review, created = OpinionReview.objects.update_or_create(
+            opinion_post=post,
+            reviewer=request.user,
+            defaults={
+                'rating': rating,
+                'review_text': review_text,
+                'is_approved': False  # Requires moderation
+            }
+        )
+
+        action = 'submitted' if created else 'updated'
+
+        # Calculate average rating for the post
+        avg_rating = OpinionReview.objects.filter(
+            opinion_post=post,
+            is_approved=True
+        ).aggregate(avg=models.Avg('rating'))['avg'] or 0
+
+        context = {
+            'post': post,
+            'review': review,
+            'avg_rating': round(avg_rating, 1),
+            'total_reviews': post.opinion_reviews.filter(is_approved=True).count(),
+            'success_message': f'Your review has been {action} and is pending approval.'
+        }
+
+        return render(request, 'core/htmx/opinion_review_form.html', context)
+
+    except Exception as e:
+        logging.error(f"Error in opinion_review_submit: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred while submitting your review.'
+        })
+
+
+@require_http_methods(["POST"])
+def review_helpful_vote(request, review_id):
+    """HTMX endpoint for voting on review helpfulness"""
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'message': 'You must be logged in to vote.'
+        })
+
+    try:
+        review = get_object_or_404(OpinionReview, id=review_id, is_approved=True)
+        is_helpful = request.POST.get('is_helpful') == 'true'
+
+        # Create or update helpful vote
+        helpful_vote, created = ReviewHelpfulVote.objects.update_or_create(
+            review=review,
+            user=request.user,
+            defaults={'is_helpful': is_helpful}
+        )
+
+        if not created:
+            # If vote changed, update counts
+            if helpful_vote.is_helpful != is_helpful:
+                if is_helpful:
+                    review.helpful_votes += 1
+                else:
+                    review.helpful_votes = max(0, review.helpful_votes - 1)
+                review.save()
+        else:
+            # New vote
+            if is_helpful:
+                review.helpful_votes += 1
+                review.save()
+
+        return JsonResponse({
+            'success': True,
+            'helpful_votes': review.helpful_votes,
+            'user_voted_helpful': is_helpful
+        })
+
+    except Exception as e:
+        logging.error(f"Error in review_helpful_vote: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred while processing your vote.'
+        })
+
+
+# PDF Management Views
+
+def guide_pdf_download(request, post_id):
+    """Download PDF file for guide posts"""
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='guide', is_published=True)
+
+        if not post.has_pdf:
+            messages.error(request, 'PDF file not available for this guide.')
+            return redirect('core:resource_detail', slug=post.slug)
+
+        # Increment download counter
+        post.increment_pdf_download()
+
+        # Serve the file
+        response = HttpResponse(post.pdf_file.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{post.title}.pdf"'
+        response['Content-Length'] = post.pdf_file_size or post.pdf_file.size
+
+        return response
+
+    except Exception as e:
+        logging.error(f"Error in guide_pdf_download: {str(e)}")
+        messages.error(request, 'Error downloading PDF file.')
+        return redirect('core:resources')
+
+
+def guide_pdf_viewer(request, post_id):
+    """View PDF file inline for guide posts"""
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='guide', is_published=True)
+
+        if not post.has_pdf:
+            messages.error(request, 'PDF file not available for this guide.')
+            return redirect('core:resource_detail', slug=post.slug)
+
+        # Serve the file for inline viewing
+        response = HttpResponse(post.pdf_file.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{post.title}.pdf"'
+        response['Content-Length'] = post.pdf_file_size or post.pdf_file.size
+
+        return response
+
+    except Exception as e:
+        logging.error(f"Error in guide_pdf_viewer: {str(e)}")
+        messages.error(request, 'Error viewing PDF file.')
+        return redirect('core:resource_detail', slug=post.slug)
+
+
+@require_http_methods(["GET"])
+def guide_pdf_info(request, post_id):
+    """HTMX endpoint for PDF file information"""
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='guide', is_published=True)
+
+        context = {
+            'post': post,
+            'has_pdf': post.has_pdf,
+            'pdf_size': post.pdf_file_size_formatted if post.has_pdf else None,
+            'download_count': post.pdf_download_count,
+        }
+
+        return render(request, 'core/htmx/guide_pdf_info.html', context)
+
+    except Exception as e:
+        logging.error(f"Error in guide_pdf_info: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Error loading PDF information.'
+        })
+
+
+# Infographic Chart Management Views
+
+@require_http_methods(["GET"])
+def infographic_chart_data(request, post_id):
+    """HTMX endpoint for getting chart data for infographics"""
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='infographic', is_published=True)
+
+        if not post.has_chart_data:
+            return JsonResponse({
+                'success': False,
+                'message': 'No chart data available for this infographic.'
+            })
+
+        chart_config = post.get_chart_config()
+
+        return JsonResponse({
+            'success': True,
+            'chart_config': chart_config,
+            'chart_type': post.chart_type
+        })
+
+    except Exception as e:
+        logging.error(f"Error in infographic_chart_data: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Error loading chart data.'
+        })
+
+
+@require_http_methods(["POST"])
+def infographic_chart_update(request, post_id):
+    """HTMX endpoint for updating chart data (admin only)"""
+    if not (request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        return JsonResponse({
+            'success': False,
+            'message': 'Access denied.'
+        })
+
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='infographic')
+
+        chart_type = request.POST.get('chart_type')
+        chart_data_json = request.POST.get('chart_data')
+
+        if not chart_type or not chart_data_json:
+            return JsonResponse({
+                'success': False,
+                'message': 'Chart type and data are required.'
+            })
+
+        try:
+            import json
+            chart_data = json.loads(chart_data_json)
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid chart data format.'
+            })
+
+        # Update chart data
+        post.set_chart_data(chart_type, chart_data)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Chart data updated successfully.',
+            'chart_config': post.get_chart_config()
+        })
+
+    except Exception as e:
+        logging.error(f"Error in infographic_chart_update: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Error updating chart data.'
+        })
+
+
+@require_http_methods(["GET"])
+def infographic_chart_preview(request, post_id):
+    """HTMX endpoint for chart preview"""
+    try:
+        post = get_object_or_404(BlogPost, id=post_id, content_type='infographic', is_published=True)
+
+        context = {
+            'post': post,
+            'has_chart': post.has_chart_data,
+            'chart_config': post.get_chart_config() if post.has_chart_data else None,
+        }
+
+        return render(request, 'core/htmx/infographic_chart_preview.html', context)
+
+    except Exception as e:
+        logging.error(f"Error in infographic_chart_preview: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Error loading chart preview.'
+        })
+
+
+# Message System Debug View
+
+@login_required
+def message_debug_view(request):
+    """Debug view to test message system functionality"""
+    from .models import Message, MessageRead
+    from .services.message_service import MessageTargetingService
+
+    # Get active popup messages
+    popup_messages = Message.objects.filter(
+        status='active',
+        show_as_popup=True
+    ).order_by('-priority', '-created_at')
+
+    # Check which messages should show to current user
+    messages_for_user = []
+    for message in popup_messages:
+        read_status = MessageRead.objects.filter(message=message, user=request.user).first()
+        should_show = MessageTargetingService.should_show_message_to_user(message, request.user)
+
+        messages_for_user.append({
+            'message': message,
+            'read_status': read_status,
+            'should_show': should_show
+        })
+
+    context = {
+        'popup_messages': popup_messages,
+        'messages_for_user': messages_for_user,
+        'user': request.user,
+    }
+
+    return render(request, 'core/message_debug.html', context)

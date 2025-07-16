@@ -1,0 +1,213 @@
+<!-- GPS Tracking Table Partial -->
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Order Details
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Current Location
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Last Update
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for order in tracked_orders %}
+            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                <!-- Order Details -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-black rounded-lg flex items-center justify-center">
+                            <i class="fas fa-car text-white text-sm"></i>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ order.order_number }}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ order.vehicle_details }}
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                {{ order.customer.get_full_name|default:order.customer.username }}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Current Location -->
+                <td class="px-6 py-4">
+                    <div class="text-sm text-gray-900">
+                        {% if order.current_latitude and order.current_longitude %}
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                <span class="font-medium">
+                                    {{ order.current_location_name|default:"Location Available" }}
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                {{ order.current_coordinates_string }}
+                            </div>
+                            {% if order.google_maps_url %}
+                            <a href="{{ order.google_maps_url }}" 
+                               target="_blank" 
+                               class="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-flex items-center">
+                                <i class="fas fa-external-link-alt mr-1"></i>View on Maps
+                            </a>
+                            {% endif %}
+                        {% else %}
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                <span class="text-gray-500">No location data</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">
+                                Awaiting GPS update
+                            </div>
+                        {% endif %}
+                    </div>
+                </td>
+
+                <!-- Status -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex flex-col">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if order.status == 'delivered' %}bg-green-100 text-green-800
+                            {% elif order.status == 'cancelled' %}bg-red-100 text-red-800
+                            {% elif order.status in 'in_transit,shipped' %}bg-blue-100 text-blue-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            <i class="fas fa-{{ order.get_status_icon }} mr-1"></i>
+                            {{ order.get_status_display }}
+                        </span>
+                        <div class="text-xs text-gray-500 mt-1">
+                            {{ order.progress_percentage }}% Complete
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Last Update -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">
+                        {% if order.last_location_update %}
+                            {{ order.last_location_update|timesince }} ago
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        {% if order.tracking_enabled %}
+                            <span class="text-green-600">
+                                <i class="fas fa-satellite-dish mr-1"></i>Tracking Active
+                            </span>
+                        {% else %}
+                            <span class="text-gray-400">
+                                <i class="fas fa-pause mr-1"></i>Tracking Paused
+                            </span>
+                        {% endif %}
+                    </div>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div class="flex items-center space-x-2">
+                        <!-- Update Location Button -->
+                        <button onclick="updateOrderLocation({{ order.id }})"
+                                class="action-btn action-btn-edit group"
+                                title="Update Location">
+                            <i class="fas fa-map-marker-alt group-hover:scale-110 transition-transform duration-200"></i>
+                        </button>
+
+                        <!-- View Live Map Button -->
+                        <button onclick="viewLiveMap('{{ order.order_number }}')"
+                                class="action-btn action-btn-view group"
+                                title="View Live Map">
+                            <i class="fas fa-map group-hover:scale-110 transition-transform duration-200"></i>
+                        </button>
+
+                        <!-- Manage Route Button -->
+                        <button onclick="manageRoute({{ order.id }})"
+                                class="action-btn action-btn-secondary group"
+                                title="Manage Route">
+                            <i class="fas fa-route group-hover:scale-110 transition-transform duration-200"></i>
+                        </button>
+
+                        <!-- Location History Button -->
+                        <button onclick="viewLocationHistory({{ order.id }})"
+                                class="action-btn action-btn-info group"
+                                title="Location History">
+                            <i class="fas fa-history group-hover:scale-110 transition-transform duration-200"></i>
+                        </button>
+
+                        <!-- Toggle Tracking Button -->
+                        <button onclick="toggleTracking({{ order.id }}, {{ order.tracking_enabled|yesno:'true,false' }})"
+                                class="action-btn {% if order.tracking_enabled %}action-btn-warning{% else %}action-btn-success{% endif %} group"
+                                title="{% if order.tracking_enabled %}Disable Tracking{% else %}Enable Tracking{% endif %}">
+                            <i class="fas fa-{% if order.tracking_enabled %}pause{% else %}play{% endif %} group-hover:scale-110 transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-6 py-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-map-marked-alt text-gray-400 text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No tracked orders</h4>
+                    <p class="text-gray-600 font-raleway">Orders with GPS tracking enabled will appear here.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function updateOrderLocation(orderId) {
+    // Open location update modal
+    htmx.ajax('GET', `/dashboard/admin/tracking/order/${orderId}/location-modal/`, {
+        target: '#location-modal-container',
+        swap: 'innerHTML'
+    });
+}
+
+function viewLiveMap(orderNumber) {
+    // Open live map in new tab
+    window.open(`/import/tracking/${orderNumber}/`, '_blank');
+}
+
+function manageRoute(orderId) {
+    // Open route management modal
+    htmx.ajax('GET', `/dashboard/admin/tracking/order/${orderId}/route-modal/`, {
+        target: '#location-modal-container',
+        swap: 'innerHTML'
+    });
+}
+
+function viewLocationHistory(orderId) {
+    // Open location history modal
+    htmx.ajax('GET', `/dashboard/admin/tracking/order/${orderId}/history-modal/`, {
+        target: '#location-modal-container',
+        swap: 'innerHTML'
+    });
+}
+
+function toggleTracking(orderId, currentStatus) {
+    const action = currentStatus ? 'disable' : 'enable';
+    
+    if (confirm(`Are you sure you want to ${action} tracking for this order?`)) {
+        htmx.ajax('POST', `/dashboard/admin/tracking/order/${orderId}/toggle-tracking/`, {
+            values: { 'tracking_enabled': !currentStatus },
+            target: '#tracking-table-container',
+            swap: 'innerHTML'
+        });
+    }
+}
+</script>

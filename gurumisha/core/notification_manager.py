@@ -65,8 +65,16 @@ class NotificationManager:
             channels = ['in_app']
         
         context = context or {}
+        # Create serializable recipient data
+        recipient_data = {
+            'id': recipient.id,
+            'username': recipient.username,
+            'email': recipient.email,
+            'first_name': recipient.first_name,
+            'last_name': recipient.last_name,
+        }
         context.update({
-            'recipient': recipient,
+            'recipient': recipient_data,
             'title': title,
             'message': message,
         })
@@ -344,14 +352,24 @@ class NotificationShortcuts:
         """Notify user about order status change"""
         title = f"Order #{order.id} Status Update"
         message = f"Your order status has been updated to: {new_status}"
-        
+
+        # Create serializable context data
+        order_data = {
+            'id': order.id,
+            'order_number': order.order_number,
+            'total_amount': str(order.total_amount),
+            'customer_name': order.customer_name,
+            'status': order.status,
+            'payment_status': order.payment_status,
+        }
+
         NotificationManager.send_notification(
             recipient=order.customer,
             title=title,
             message=message,
             channels=['email', 'in_app'],
             template_name='order_status_change',
-            context={'order': order, 'new_status': new_status},
+            context={'order': order_data, 'new_status': new_status},
             priority=2
         )
     
@@ -360,14 +378,26 @@ class NotificationShortcuts:
         """Notify user about import status change"""
         title = f"Import Order {import_order.order_number} Update"
         message = f"Your import order status has been updated to: {new_status}"
-        
+
+        # Create serializable context data
+        import_order_data = {
+            'id': import_order.id,
+            'order_number': import_order.order_number,
+            'brand': import_order.brand,
+            'model': import_order.model,
+            'year': import_order.year,
+            'status': import_order.status,
+            'payment_status': import_order.payment_status,
+            'total_cost': str(import_order.total_cost) if import_order.total_cost else '0',
+        }
+
         NotificationManager.send_notification(
             recipient=import_order.customer,
             title=title,
             message=message,
             channels=['email', 'sms', 'in_app'],
             template_name='import_status_change',
-            context={'import_order': import_order, 'new_status': new_status},
+            context={'import_order': import_order_data, 'new_status': new_status},
             priority=3
         )
     
@@ -396,12 +426,22 @@ class NotificationShortcuts:
         car_model = car.model.name if car.model else 'Unknown'
         message = f"Your car listing '{car_brand} {car_model}' has been {status}."
 
+        # Create serializable context data
+        car_data = {
+            'id': car.id,
+            'brand': car_brand,
+            'model': car_model,
+            'year': car.year,
+            'price': str(car.price) if car.price else '0',
+            'status': car.status,
+        }
+
         NotificationManager.send_notification(
             recipient=car.vendor.user,
             title=title,
             message=message,
             channels=['email', 'in_app'],
             template_name='car_approval',
-            context={'car': car, 'approved': approved},
+            context={'car': car_data, 'approved': approved},
             priority=2
         )

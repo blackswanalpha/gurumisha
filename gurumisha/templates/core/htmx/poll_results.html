@@ -1,0 +1,65 @@
+{% load static %}
+
+<!-- Poll Results Display -->
+<div class="poll-results-container animate-fade-in-up">
+    <div class="poll-question mb-6">
+        <h3 class="text-xl font-bold text-harrier-dark font-montserrat mb-2">
+            <i class="fas fa-poll text-harrier-red mr-2"></i>
+            {{ poll.question }}
+        </h3>
+        <p class="text-sm text-gray-600 font-raleway">
+            Total votes: {{ poll.total_votes }}
+            {% if poll.end_date %}
+                • Poll ends: {{ poll.end_date|date:"M d, Y H:i" }}
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="poll-options space-y-4">
+        {% for result in results %}
+        <div class="poll-option-result glassmorphism-card p-4 hover:shadow-lg transition-all duration-300">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-medium text-harrier-dark font-raleway">{{ result.option.text }}</span>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-bold text-harrier-red">{{ result.percentage }}%</span>
+                    <span class="text-xs text-gray-500">({{ result.votes }} vote{{ result.votes|pluralize }})</span>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div class="bg-gradient-to-r from-harrier-red to-harrier-dark h-3 rounded-full transition-all duration-1000 ease-out"
+                     style="width: {{ result.percentage }}%; animation-delay: {{ forloop.counter0|add:1|floatformat:1 }}00ms;">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if user_voted %}
+    <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+            <span class="text-green-700 font-medium font-raleway">Thank you for voting!</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.poll-option-result {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.poll-option-result:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes progressFill {
+    from { width: 0%; }
+    to { width: var(--target-width); }
+}
+</style>

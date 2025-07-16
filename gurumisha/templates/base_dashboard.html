@@ -281,18 +281,15 @@
                                                         {% endif %}
                                                     </a>
                                                 </li>
+                                                {% if user.role != 'admin' %}
                                                 <li>
                                                     <a href="{% url 'core:sell_car' %}" class="dashboard-nav-link">
                                                         <i class="fas fa-plus-circle"></i>
                                                         <span>Add New Car</span>
                                                     </a>
                                                 </li>
-                                                <li>
-                                                    <a href="{% url 'core:vendor_spare_parts' %}" class="dashboard-nav-link {% if 'spare_parts' in request.resolver_match.url_name %}active{% endif %}">
-                                                        <i class="fas fa-cogs"></i>
-                                                        <span>Spare Parts</span>
-                                                    </a>
-                                                </li>
+                                                {% endif %}
+
                                             </div>
 
                                             <!-- Business & Sales Section -->
@@ -305,6 +302,18 @@
                                                         {% if pending_orders %}
                                                             <span class="ml-auto bg-blue-500 text-white text-xs rounded-full px-2 py-1">{{ pending_orders }}</span>
                                                         {% endif %}
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="{% url 'core:vendor_import_requests' %}" class="dashboard-nav-link {% if 'import_requests' in request.resolver_match.url_name %}active{% endif %}">
+                                                        <i class="fas fa-file-import"></i>
+                                                        <span>Import Requests</span>
+                                                        {% comment %}
+                                                        <!-- Future: Add notification badge for new import requests -->
+                                                        {% if new_import_requests %}
+                                                            <span class="ml-auto bg-harrier-red text-white text-xs rounded-full px-2 py-1">{{ new_import_requests }}</span>
+                                                        {% endif %}
+                                                        {% endcomment %}
                                                     </a>
                                                 </li>
                                                 <li>
@@ -511,6 +520,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Error Suppressor (load before HTMX) -->
+<script src="{% static 'js/error-suppressor.js' %}"></script>
+
 <!-- HTMX for lazy loading -->
 <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 <script>
@@ -590,9 +602,9 @@ function initializeLazyLoading() {
     });
 }
 
-<!-- Toast Manager -->
-{% load core_extras %}
-{% toast_script %}
-{% render_toast_messages %}
+<!-- Toast Manager - DISABLED DUE TO RECURSION ERROR -->
+<!-- {% load core_extras %} -->
+<!-- {% toast_script %} -->
+<!-- {% render_toast_messages %} -->
 </script>
 {% endblock %}

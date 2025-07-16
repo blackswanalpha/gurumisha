@@ -1,0 +1,178 @@
+{% load static %}
+
+<!-- Guide PDF Information Component -->
+{% if has_pdf %}
+<div class="pdf-info-container animate-fade-in-up">
+    <div class="glassmorphism-card p-6">
+        <div class="pdf-header mb-6">
+            <h3 class="text-xl font-bold text-harrier-dark font-montserrat mb-2">
+                <i class="fas fa-file-pdf text-red-600 mr-2"></i>
+                PDF Guide Available
+            </h3>
+            <p class="text-gray-600 font-raleway">Download or view the complete guide as a PDF document</p>
+        </div>
+
+        <div class="pdf-details grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- File Size -->
+            <div class="stat-item text-center p-4 bg-gray-50 rounded-lg">
+                <div class="stat-icon mb-2">
+                    <i class="fas fa-weight text-2xl text-harrier-red"></i>
+                </div>
+                <div class="stat-value text-lg font-bold text-harrier-dark font-montserrat">{{ pdf_size }}</div>
+                <div class="stat-label text-sm text-gray-600 font-raleway">File Size</div>
+            </div>
+
+            <!-- Download Count -->
+            <div class="stat-item text-center p-4 bg-gray-50 rounded-lg">
+                <div class="stat-icon mb-2">
+                    <i class="fas fa-download text-2xl text-harrier-red"></i>
+                </div>
+                <div class="stat-value text-lg font-bold text-harrier-dark font-montserrat">{{ download_count }}</div>
+                <div class="stat-label text-sm text-gray-600 font-raleway">Downloads</div>
+            </div>
+
+            <!-- Format -->
+            <div class="stat-item text-center p-4 bg-gray-50 rounded-lg">
+                <div class="stat-icon mb-2">
+                    <i class="fas fa-file-alt text-2xl text-harrier-red"></i>
+                </div>
+                <div class="stat-value text-lg font-bold text-harrier-dark font-montserrat">PDF</div>
+                <div class="stat-label text-sm text-gray-600 font-raleway">Format</div>
+            </div>
+        </div>
+
+        <div class="pdf-actions flex flex-col sm:flex-row gap-4">
+            <!-- View PDF Button -->
+            <a href="{% url 'core:guide_pdf_viewer' post.id %}" 
+               target="_blank"
+               class="flex-1 admin-request-add-btn text-center">
+                <i class="fas fa-eye mr-2"></i>
+                View PDF
+            </a>
+
+            <!-- Download PDF Button -->
+            <a href="{% url 'core:guide_pdf_download' post.id %}" 
+               class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-medium font-raleway hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 hover:shadow-lg text-center">
+                <i class="fas fa-download mr-2"></i>
+                Download PDF
+            </a>
+        </div>
+
+        <!-- PDF Preview (Optional) -->
+        <div class="pdf-preview mt-6">
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-700 font-raleway">PDF Preview</span>
+                        <button class="text-sm text-harrier-red hover:text-harrier-dark transition-colors duration-200"
+                                onclick="togglePdfPreview()">
+                            <i class="fas fa-expand-alt mr-1"></i>
+                            Full Screen
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-embed-container" style="height: 400px;">
+                    <iframe src="{% url 'core:guide_pdf_viewer' post.id %}#toolbar=0&navpanes=0&scrollbar=0" 
+                            width="100%" 
+                            height="100%" 
+                            frameborder="0"
+                            class="pdf-iframe">
+                        <p class="p-4 text-center text-gray-600 font-raleway">
+                            Your browser does not support PDF viewing. 
+                            <a href="{% url 'core:guide_pdf_download' post.id %}" class="text-harrier-red hover:underline">
+                                Download the PDF
+                            </a> instead.
+                        </p>
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="no-pdf-container animate-fade-in-up">
+    <div class="glassmorphism-card p-6 text-center">
+        <div class="no-pdf-icon mb-4">
+            <i class="fas fa-file-pdf text-4xl text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-700 font-montserrat mb-2">No PDF Available</h3>
+        <p class="text-gray-600 font-raleway">This guide doesn't have a PDF version available for download.</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function togglePdfPreview() {
+    const iframe = document.querySelector('.pdf-iframe');
+    if (iframe) {
+        if (iframe.requestFullscreen) {
+            iframe.requestFullscreen();
+        } else if (iframe.webkitRequestFullscreen) {
+            iframe.webkitRequestFullscreen();
+        } else if (iframe.msRequestFullscreen) {
+            iframe.msRequestFullscreen();
+        }
+    }
+}
+
+// Add loading state for PDF iframe
+document.addEventListener('DOMContentLoaded', function() {
+    const iframe = document.querySelector('.pdf-iframe');
+    if (iframe) {
+        iframe.addEventListener('load', function() {
+            // Remove any loading indicators
+            const loadingIndicator = document.querySelector('.pdf-loading');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.glassmorphism-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-embed-container {
+    background: #f8f9fa;
+    position: relative;
+}
+
+.pdf-iframe {
+    border: none;
+    background: white;
+}
+
+.admin-request-add-btn {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-request-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+    color: white;
+    text-decoration: none;
+}
+</style>

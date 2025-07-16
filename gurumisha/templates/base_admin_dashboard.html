@@ -160,6 +160,18 @@
                                             <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
                                         </div>
                                     </a>
+
+                                    <a href="{% url 'core:admin_gps_tracking' %}" class="modern-nav-link {% if 'admin_gps_tracking' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-satellite-dish"></i>
+                                                </div>
+                                                <span class="nav-label">GPS Tracking</span>
+                                            </div>
+                                            <div class="nav-badge bg-green-500">Live</div>
+                                        </div>
+                                    </a>
                                 </div>
                             </div>
 
@@ -307,6 +319,35 @@
                                             <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
                                         </div>
                                     </a>
+                                    <a href="{% url 'core:admin_resource_management' %}" class="modern-nav-link {% if 'admin_resource_management' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-book-open"></i>
+                                                </div>
+                                                <span class="nav-label">Resource Management</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                        </div>
+                                    </a>
+
+                                    <a href="{% url 'core:admin_message_management' %}" class="modern-nav-link {% if 'admin_message_management' in request.resolver_match.url_name %}active{% endif %}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="nav-icon">
+                                                    <i class="fas fa-envelope"></i>
+                                                </div>
+                                                <span class="nav-label">Message Management</span>
+                                            </div>
+                                            <div class="nav-badge"
+                                                 id="message-count-badge"
+                                                 hx-get="{% url 'core:admin_message_count_htmx' %}"
+                                                 hx-trigger="load, every 60s"
+                                                 hx-swap="innerHTML">
+                                                {{ active_messages|default:0 }}
+                                            </div>
+                                        </div>
+                                    </a>
 
                                     <a href="{% url 'core:admin_system_settings' %}" class="modern-nav-link {% if 'admin_system_settings' in request.resolver_match.url_name %}active{% endif %}">
                                         <div class="flex items-center justify-between">
@@ -410,6 +451,8 @@
 {% block extra_js %}
 {{ block.super }}
 <script src="{% static 'js/toast-manager.js' %}"></script>
+<script src="{% static 'js/notification-badges.js' %}"></script>
+<script src="{% static 'js/message-integration.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Mobile sidebar functionality

@@ -1,0 +1,418 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block dashboard_title %}{{ car.title }} - Car Details{% endblock %}
+{% block page_title %}{{ car.title }} - Car Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .car-detail-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+    .car-detail-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .metric-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .status-badge {
+        animation: pulse 2s infinite;
+    }
+    .action-button {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <!-- Header Section -->
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-2">
+                        <a href="{% url 'core:vendor_listings' %}" class="text-gray-500 hover:text-harrier-red transition-colors">
+                            <i class="fas fa-arrow-left text-lg"></i>
+                        </a>
+                        <h1 class="text-3xl font-bold text-harrier-dark font-montserrat">{{ car.title }}</h1>
+                        
+                        <!-- Status Badges -->
+                        {% if car.is_approved %}
+                            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                                <i class="fas fa-check-circle mr-1"></i>Approved
+                            </span>
+                        {% else %}
+                            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                <i class="fas fa-clock mr-1"></i>Pending Review
+                            </span>
+                        {% endif %}
+                        
+                        {% if car.is_featured %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                                <i class="fas fa-star mr-1"></i>Featured
+                            </span>
+                        {% endif %}
+                        
+                        {% if car.is_hot_deal %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                                <i class="fas fa-fire mr-1"></i>Hot Deal
+                            </span>
+                        {% endif %}
+                    </div>
+                    <p class="text-gray-600">Detailed view and analytics for your car listing</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-3">
+                    <a href="{% url 'core:vendor_car_edit' car.id %}" 
+                       class="action-button inline-flex items-center px-4 py-2 bg-harrier-red text-white rounded-lg hover:bg-red-700 transition-all duration-300 font-medium shadow-lg">
+                        <i class="fas fa-edit mr-2"></i>Edit Listing
+                    </a>
+                    <a href="{% url 'core:car_detail' car.id %}" target="_blank"
+                       class="action-button inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium shadow-lg">
+                        <i class="fas fa-external-link-alt mr-2"></i>View Public
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-6 py-8">
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Views -->
+            <div class="metric-card rounded-xl p-6 shadow-lg">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <i class="fas fa-eye text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Views</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ performance_data.views_this_month|default:0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inquiries -->
+            <div class="metric-card rounded-xl p-6 shadow-lg">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <i class="fas fa-envelope text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Inquiries</p>
+                        <p class="text-2xl font-bold text-green-600">{{ total_inquiries }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversion Rate -->
+            <div class="metric-card rounded-xl p-6 shadow-lg">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Conversion</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ performance_data.conversion_rate|floatformat:1 }}%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="metric-card rounded-xl p-6 shadow-lg">
+                <div class="flex items-center">
+                    <div class="p-3 bg-harrier-red/10 rounded-lg">
+                        <i class="fas fa-tag text-harrier-red text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Price</p>
+                        <p class="text-2xl font-bold text-harrier-red">KSH {{ car.price|floatformat:0 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Car Details -->
+            <div class="lg:col-span-2">
+                <div class="car-detail-card rounded-xl p-6 shadow-lg mb-6">
+                    <h2 class="text-xl font-bold text-harrier-dark font-montserrat mb-6">Car Information</h2>
+                    
+                    <!-- Car Image -->
+                    <div class="mb-6">
+                        {% if car.main_image %}
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-64 object-cover rounded-lg">
+                        {% else %}
+                            <div class="w-full h-64 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-car text-4xl text-gray-400"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Comprehensive Vehicle Location Information -->
+                    {% if car.area or car.city or car.country %}
+                    <div class="mb-6">
+                        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden hover:shadow-2xl transition-all duration-500">
+                            <!-- Location Header -->
+                            <div class="bg-gradient-to-r from-red-600 via-red-700 to-gray-900 p-4">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                                        <i class="fas fa-map-marker-alt text-white text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-white font-montserrat">Vehicle Location</h3>
+                                        <p class="text-red-100 font-raleway text-sm">Geographical details and proximity information</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Location Content -->
+                            <div class="p-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <!-- Area/Neighborhood -->
+                                    {% if car.area %}
+                                    <div class="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                                        <div class="flex items-start">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center mr-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                                <i class="fas fa-building text-white text-sm"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">Area/Neighborhood</div>
+                                                <div class="text-sm font-bold text-gray-900 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.area }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- City -->
+                                    {% if car.city %}
+                                    <div class="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                                        <div class="flex items-start">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-gray-800 rounded-xl flex items-center justify-center mr-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                                <i class="fas fa-city text-white text-sm"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">City</div>
+                                                <div class="text-sm font-bold text-gray-900 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.city }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Country -->
+                                    {% if car.country %}
+                                    <div class="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 hover:bg-red-50/50 transition-all duration-300 group">
+                                        <div class="flex items-start">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-red-700 to-black rounded-xl flex items-center justify-center mr-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                                <i class="fas fa-globe-africa text-white text-sm"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">Country</div>
+                                                <div class="text-sm font-bold text-gray-900 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.country }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Complete Address Display -->
+                                <div class="bg-gradient-to-r from-red-50 via-gray-50 to-red-50 rounded-xl p-4 border border-red-100/50 shadow-inner">
+                                    <div class="flex items-start">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-gray-900 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                                            <i class="fas fa-map-pin text-white text-xs"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-xs uppercase tracking-wider text-gray-500 font-montserrat font-semibold mb-1">Complete Address</div>
+                                            <div class="text-sm font-bold text-gray-900 font-montserrat leading-relaxed">
+                                                {% if car.area %}{{ car.area }}{% if car.city %}, {% endif %}{% endif %}
+                                                {% if car.city %}{{ car.city }}{% if car.country %}, {% endif %}{% endif %}
+                                                {% if car.country %}{{ car.country }}{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Specifications Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-1">Brand</div>
+                            <div class="font-bold text-harrier-dark">{{ car.brand.name|default:"Not specified" }}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-1">Model</div>
+                            <div class="font-bold text-harrier-dark">{{ car.model.name|default:"Not specified" }}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-1">Year</div>
+                            <div class="font-bold text-harrier-dark">{{ car.year|default:"N/A" }}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-1">Mileage</div>
+                            <div class="font-bold text-harrier-dark">{{ car.mileage|default:0|floatformat:0 }} KM</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-1">Fuel Type</div>
+                            <div class="font-bold text-harrier-dark">{{ car.fuel_type|title|default:"Not specified" }}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-1">Transmission</div>
+                            <div class="font-bold text-harrier-dark">{{ car.transmission|title|default:"Not specified" }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    {% if car.description %}
+                        <div class="mt-6">
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-3">Description</h3>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-gray-700 leading-relaxed">{{ car.description }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <!-- Recent Inquiries -->
+                <div class="car-detail-card rounded-xl p-6 shadow-lg mb-6">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4">Recent Inquiries</h3>
+                    
+                    {% if recent_inquiries %}
+                        <div class="space-y-3">
+                            {% for inquiry in recent_inquiries %}
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <div class="font-medium text-harrier-dark">{{ inquiry.user.get_full_name|default:inquiry.user.email }}</div>
+                                            <div class="text-sm text-gray-600">{{ inquiry.created_at|date:"M d, Y" }}</div>
+                                        </div>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ inquiry.status|title }}</span>
+                                    </div>
+                                    {% if inquiry.message %}
+                                        <p class="text-sm text-gray-700 mt-2 line-clamp-2">{{ inquiry.message|truncatewords:15 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <a href="{% url 'core:vendor_inquiries' %}" class="inline-flex items-center text-sm text-harrier-red hover:text-red-700 mt-4">
+                            View all inquiries <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-envelope text-3xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No inquiries yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="car-detail-card rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4">Quick Actions</h3>
+                    
+                    <div class="space-y-3">
+                        <button onclick="toggleFeatureStatus({{ car.id }})" 
+                                class="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                            <span class="flex items-center">
+                                <i class="fas fa-star text-purple-600 mr-2"></i>
+                                {% if car.is_featured %}Unfeature{% else %}Feature{% endif %} Car
+                            </span>
+                            <i class="fas fa-chevron-right text-purple-600"></i>
+                        </button>
+                        
+                        <button onclick="toggleHotDeal({{ car.id }})" 
+                                class="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                            <span class="flex items-center">
+                                <i class="fas fa-fire text-red-600 mr-2"></i>
+                                {% if car.is_hot_deal %}Remove Hot Deal{% else %}Mark as Hot Deal{% endif %}
+                            </span>
+                            <i class="fas fa-chevron-right text-red-600"></i>
+                        </button>
+                        
+                        <button onclick="duplicateCar({{ car.id }})" 
+                                class="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                            <span class="flex items-center">
+                                <i class="fas fa-copy text-blue-600 mr-2"></i>
+                                Duplicate Listing
+                            </span>
+                            <i class="fas fa-chevron-right text-blue-600"></i>
+                        </button>
+                        
+                        <button onclick="deleteCar({{ car.id }})" 
+                                class="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                            <span class="flex items-center">
+                                <i class="fas fa-trash text-red-600 mr-2"></i>
+                                Delete Listing
+                            </span>
+                            <i class="fas fa-chevron-right text-red-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+// Quick action functions
+function toggleFeatureStatus(carId) {
+    if (confirm('Toggle featured status for this car?')) {
+        htmx.ajax('POST', `/dashboard/vendor/car/toggle-feature/${carId}/`, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        }).then(() => {
+            location.reload();
+        });
+    }
+}
+
+function toggleHotDeal(carId) {
+    if (confirm('Toggle hot deal status for this car?')) {
+        // Implementation for hot deal toggle
+        console.log('Toggle hot deal for car:', carId);
+    }
+}
+
+function duplicateCar(carId) {
+    if (confirm('Create a duplicate of this car listing?')) {
+        // Implementation for car duplication
+        console.log('Duplicate car:', carId);
+    }
+}
+
+function deleteCar(carId) {
+    if (confirm('Are you sure you want to delete this car listing? This action cannot be undone.')) {
+        htmx.ajax('DELETE', `/dashboard/vendor/car/delete/${carId}/`, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        }).then(() => {
+            window.location.href = '{% url "core:vendor_listings" %}';
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,360 @@
+<!-- Enhanced Categories Tab with Harrier Design -->
+<div class="glassmorphism-card">
+    <!-- Tab Header -->
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-folder text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Content Categories</h3>
+                    <p class="text-sm text-gray-600 font-raleway">Organize your content with categories</p>
+                </div>
+            </div>
+
+            <!-- Enhanced Action Bar -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Search Bar -->
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Search categories..." 
+                           id="category-search"
+                           value="{{ current_search }}"
+                           hx-get="{% url 'core:admin_content_categories_tab' %}"
+                           hx-target="#tab-content"
+                           hx-swap="innerHTML"
+                           hx-trigger="keyup changed delay:300ms"
+                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent text-sm w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <!-- Export Button -->
+                <button class="enhanced-btn enhanced-btn-secondary text-sm">
+                    <i class="fas fa-download mr-1"></i>Export
+                </button>
+
+                <!-- Add New Button -->
+                <button class="enhanced-btn enhanced-btn-primary text-sm"
+                        onclick="openCategoryModal()">
+                    <i class="fas fa-plus mr-1"></i>New Category
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories List -->
+    <div class="p-6">
+        {% if categories %}
+            <!-- Results Info -->
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 font-raleway">
+                    Showing {{ categories|length }} of {{ categories.paginator.count }} categories
+                </p>
+            </div>
+
+            <!-- Categories Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for category in categories %}
+                <div class="category-item bg-white border border-gray-200 rounded-xl p-6 hover:border-purple-300 hover:shadow-lg transition-all duration-300">
+                    <!-- Category Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
+                                 style="background-color: {{ category.color }}20; border: 2px solid {{ category.color }}40;">
+                                {% if category.icon %}
+                                <i class="{{ category.icon }}" style="color: {{ category.color }};"></i>
+                                {% else %}
+                                <i class="fas fa-folder" style="color: {{ category.color }};"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-harrier-dark font-montserrat">
+                                    {{ category.name }}
+                                </h4>
+                                {% if category.parent %}
+                                <p class="text-xs text-gray-500">
+                                    <i class="fas fa-arrow-up mr-1"></i>{{ category.parent.name }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Status Badge -->
+                        {% if category.is_active %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Inactive
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Category Description -->
+                    {% if category.description %}
+                    <p class="text-sm text-gray-600 mb-4 line-clamp-3 font-raleway">
+                        {{ category.description }}
+                    </p>
+                    {% endif %}
+
+                    <!-- Category Stats -->
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-newspaper mr-1"></i>
+                            <span>{{ category.posts_count }} post{{ category.posts_count|pluralize }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-sort-numeric-up mr-1"></i>
+                            <span>Order: {{ category.sort_order }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Category Meta -->
+                    <div class="text-xs text-gray-500 mb-4">
+                        <div class="flex items-center justify-between">
+                            <span>
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ category.created_at|date:"M d, Y" }}
+                            </span>
+                            <span>
+                                <i class="fas fa-link mr-1"></i>
+                                /{{ category.slug }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Subcategories (if any) -->
+                    {% if category.subcategories.all %}
+                    <div class="mb-4">
+                        <p class="text-xs font-medium text-gray-700 mb-2">
+                            <i class="fas fa-sitemap mr-1"></i>
+                            Subcategories ({{ category.subcategories.count }})
+                        </p>
+                        <div class="flex flex-wrap gap-1">
+                            {% for subcategory in category.subcategories.all|slice:":3" %}
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
+                                {{ subcategory.name }}
+                            </span>
+                            {% endfor %}
+                            {% if category.subcategories.count > 3 %}
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
+                                +{{ category.subcategories.count|add:"-3" }} more
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-2">
+                        <button class="action-btn action-btn-edit flex-1"
+                                onclick="editCategory({{ category.id }})"
+                                title="Edit Category">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        
+                        <button class="action-btn action-btn-view flex-1"
+                                onclick="viewCategoryPosts({{ category.id }})"
+                                title="View Posts">
+                            <i class="fas fa-eye mr-1"></i>Posts
+                        </button>
+                        
+                        {% if category.is_active %}
+                        <button class="action-btn action-btn-warning"
+                                onclick="toggleCategoryStatus({{ category.id }}, false)"
+                                title="Deactivate">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        {% else %}
+                        <button class="action-btn action-btn-success"
+                                onclick="toggleCategoryStatus({{ category.id }}, true)"
+                                title="Activate">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        {% endif %}
+                        
+                        <button class="action-btn action-btn-danger"
+                                onclick="deleteCategory({{ category.id }})"
+                                title="Delete Category">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if categories.has_other_pages %}
+            <div class="mt-8 flex justify-center">
+                <nav class="flex items-center space-x-2">
+                    {% if categories.has_previous %}
+                    <a href="?page={{ categories.previous_page_number }}"
+                       hx-get="{% url 'core:admin_content_categories_tab' %}?page={{ categories.previous_page_number }}"
+                       hx-target="#tab-content"
+                       hx-swap="innerHTML"
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Previous
+                    </a>
+                    {% endif %}
+
+                    {% for num in categories.paginator.page_range %}
+                        {% if categories.number == num %}
+                        <span class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-md">
+                            {{ num }}
+                        </span>
+                        {% elif num > categories.number|add:'-3' and num < categories.number|add:'3' %}
+                        <a href="?page={{ num }}"
+                           hx-get="{% url 'core:admin_content_categories_tab' %}?page={{ num }}"
+                           hx-target="#tab-content"
+                           hx-swap="innerHTML"
+                           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            {{ num }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if categories.has_next %}
+                    <a href="?page={{ categories.next_page_number }}"
+                       hx-get="{% url 'core:admin_content_categories_tab' %}?page={{ categories.next_page_number }}"
+                       hx-target="#tab-content"
+                       hx-swap="innerHTML"
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Next
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-folder text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 font-montserrat mb-2">No categories found</h3>
+                <p class="text-gray-600 font-raleway mb-6">
+                    {% if current_search %}
+                    No categories match your search criteria.
+                    {% else %}
+                    Get started by creating your first content category.
+                    {% endif %}
+                </p>
+                {% if current_search %}
+                <button class="enhanced-btn enhanced-btn-secondary mr-3"
+                        hx-get="{% url 'core:admin_content_categories_tab' %}"
+                        hx-target="#tab-content"
+                        hx-swap="innerHTML">
+                    <i class="fas fa-times mr-2"></i>Clear Search
+                </button>
+                {% endif %}
+                <button class="enhanced-btn enhanced-btn-primary"
+                        onclick="openCategoryModal()">
+                    <i class="fas fa-plus mr-2"></i>Create First Category
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Category-specific styles */
+    .category-item {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .category-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--harrier-red), var(--harrier-blue), var(--harrier-dark));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .category-item:hover::before {
+        opacity: 1;
+    }
+
+    /* Action Button Styles */
+    .action-btn {
+        @apply inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .action-btn-edit {
+        @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
+    }
+
+    .action-btn-view {
+        @apply bg-green-100 text-green-700 hover:bg-green-200;
+    }
+
+    .action-btn-success {
+        @apply bg-green-100 text-green-700 hover:bg-green-200;
+    }
+
+    .action-btn-warning {
+        @apply bg-orange-100 text-orange-700 hover:bg-orange-200;
+    }
+
+    .action-btn-danger {
+        @apply bg-red-100 text-red-700 hover:bg-red-200;
+    }
+
+    /* Line clamp utility */
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
+<script>
+// Category management functions
+function openCategoryModal() {
+    // This would open a modal for creating new categories
+    console.log('Opening category creation modal...');
+    // Implementation would be similar to content creation modal
+}
+
+function editCategory(categoryId) {
+    console.log('Editing category:', categoryId);
+    // Implementation for editing categories
+}
+
+function viewCategoryPosts(categoryId) {
+    // Switch to content posts tab with category filter
+    const contentTab = document.querySelector('[data-tab="content-posts"]');
+    if (contentTab) {
+        contentTab.click();
+        // Add category filter parameter
+        setTimeout(() => {
+            const categoryFilter = document.querySelector('[name="category"]');
+            if (categoryFilter) {
+                categoryFilter.value = categoryId;
+                categoryFilter.dispatchEvent(new Event('change'));
+            }
+        }, 100);
+    }
+}
+
+function toggleCategoryStatus(categoryId, activate) {
+    console.log('Toggling category status:', categoryId, activate);
+    // Implementation for toggling category status
+}
+
+function deleteCategory(categoryId) {
+    if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+        console.log('Deleting category:', categoryId);
+        // Implementation for deleting categories
+    }
+}
+</script>

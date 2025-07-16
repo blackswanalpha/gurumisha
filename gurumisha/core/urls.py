@@ -48,14 +48,36 @@ urlpatterns = [
 
     # Vendor Dashboard URLs
     path('dashboard/vendor/listings/', dashboard_views.vendor_listings_view, name='vendor_listings'),
+    path('dashboard/vendor/car/view/<int:car_id>/', dashboard_views.vendor_car_view, name='vendor_car_view'),
+    path('dashboard/vendor/car/edit/<int:car_id>/', dashboard_views.vendor_car_edit, name='vendor_car_edit'),
+    path('dashboard/vendor/car/delete/<int:car_id>/', dashboard_views.vendor_car_delete, name='vendor_car_delete'),
+    path('dashboard/vendor/car/duplicate/<int:car_id>/', dashboard_views.vendor_car_duplicate, name='vendor_car_duplicate'),
+    path('dashboard/vendor/car/toggle-status/<int:car_id>/', dashboard_views.vendor_car_toggle_status, name='vendor_car_toggle_status'),
+    path('dashboard/vendor/car/toggle-feature/<int:car_id>/', dashboard_views.vendor_car_feature_toggle, name='vendor_car_feature_toggle'),
+    path('dashboard/vendor/bulk-actions/', dashboard_views.vendor_bulk_actions, name='vendor_bulk_actions'),
+    path('dashboard/vendor/export-listings/', dashboard_views.vendor_export_listings, name='vendor_export_listings'),
     path('dashboard/vendor/inquiries/', dashboard_views.vendor_inquiries_view, name='vendor_inquiries'),
     path('dashboard/vendor/analytics/', dashboard_views.vendor_analytics_view, name='vendor_analytics'),
     path('dashboard/vendor/spare-parts/', dashboard_views.vendor_spare_parts_view, name='vendor_spare_parts'),
+    path('dashboard/vendor/spare-parts/add/', dashboard_views.vendor_spare_part_add, name='vendor_spare_part_add'),
+    path('dashboard/vendor/spare-parts/edit/<int:part_id>/', dashboard_views.vendor_spare_part_edit, name='vendor_spare_part_edit'),
+    path('dashboard/vendor/spare-parts/view/<int:part_id>/', dashboard_views.vendor_spare_part_view, name='vendor_spare_part_view'),
+    path('dashboard/vendor/spare-parts/delete/<int:part_id>/', dashboard_views.vendor_spare_part_delete, name='vendor_spare_part_delete'),
+
+    # Vendor Spare Parts HTMX endpoints
+    path('dashboard/vendor/spare-parts/table-htmx/', dashboard_views.vendor_spare_parts_table_htmx, name='vendor_spare_parts_table_htmx'),
+    path('dashboard/vendor/spare-parts/search-htmx/', dashboard_views.vendor_spare_parts_search_htmx, name='vendor_spare_parts_search_htmx'),
+    path('dashboard/vendor/spare-parts/stats-htmx/', dashboard_views.vendor_spare_parts_stats_htmx, name='vendor_spare_parts_stats_htmx'),
+
     path('dashboard/vendor/orders/', dashboard_views.vendor_orders_view, name='vendor_orders'),
+    path('dashboard/vendor/import-requests/', dashboard_views.vendor_import_requests_view, name='vendor_import_requests'),
+    path('dashboard/vendor/import-requests/<int:request_id>/', dashboard_views.vendor_import_request_detail_view, name='vendor_import_request_detail'),
     path('dashboard/vendor/settings/', dashboard_views.vendor_settings_view, name='vendor_settings'),
 
     # Admin Dashboard URLs
     path('dashboard/admin/users/', dashboard_views.admin_users_view, name='admin_users'),
+    path('dashboard/admin/users/search/', dashboard_views.admin_users_search, name='admin_users_search'),
+    path('dashboard/admin/users/refresh/', dashboard_views.admin_users_refresh, name='admin_users_refresh'),
     path('dashboard/admin/users/<int:user_id>/', dashboard_views.admin_user_detail_view, name='admin_user_detail'),
     path('dashboard/admin/vendors/', dashboard_views.admin_vendors_view, name='admin_vendors'),
     path('dashboard/admin/vendors/user/<int:user_id>/', dashboard_views.admin_vendor_user_detail_view, name='admin_vendor_user_detail'),
@@ -63,6 +85,7 @@ urlpatterns = [
     path('dashboard/admin/car/<int:car_id>/', dashboard_views.admin_car_detail_view, name='admin_car_detail'),
     path('dashboard/admin/car/<int:car_id>/edit/', dashboard_views.admin_car_edit_view, name='admin_car_edit'),
     path('dashboard/admin/car/<int:car_id>/feature/', dashboard_views.admin_feature_car, name='admin_feature_car'),
+    path('dashboard/admin/car/<int:car_id>/hot-deal/', dashboard_views.admin_hot_deal_management, name='admin_hot_deal_management'),
     path('dashboard/admin/car/<int:car_id>/delete/', dashboard_views.admin_car_delete_view, name='admin_car_delete'),
     path('dashboard/admin/analytics/', dashboard_views.admin_analytics_view, name='admin_analytics'),
     path('dashboard/admin/analytics/api/', dashboard_views.promotion_analytics_api, name='promotion_analytics_api'),
@@ -97,6 +120,81 @@ urlpatterns = [
     path('dashboard/admin/queries/', dashboard_views.admin_queries_view, name='admin_queries'),
     path('dashboard/admin/content-management/', dashboard_views.admin_content_management_view, name='admin_content_management'),
     path('dashboard/admin/system-settings/', dashboard_views.admin_system_settings_view, name='admin_system_settings'),
+
+    # Enhanced Content Management HTMX Endpoints
+    path('dashboard/admin/content/posts-tab/', dashboard_views.admin_content_posts_tab, name='admin_content_posts_tab'),
+    path('dashboard/admin/content/categories-tab/', dashboard_views.admin_content_categories_tab, name='admin_content_categories_tab'),
+    path('dashboard/admin/content/testimonials-tab/', dashboard_views.admin_content_testimonials_tab, name='admin_content_testimonials_tab'),
+    path('dashboard/admin/content/static-pages-tab/', dashboard_views.admin_content_static_pages_tab, name='admin_content_static_pages_tab'),
+    path('dashboard/admin/content/analytics-tab/', dashboard_views.admin_content_analytics_tab, name='admin_content_analytics_tab'),
+
+    # Content CRUD Operations
+    path('dashboard/admin/content/create-modal/', dashboard_views.admin_content_create_modal, name='admin_content_create_modal'),
+    path('dashboard/admin/content/create/', dashboard_views.admin_content_create, name='admin_content_create'),
+
+    # Spare Parts Modal HTMX Endpoints
+    path('dashboard/admin/spare-parts/add-modal/', dashboard_views.admin_spare_part_add_modal_view, name='admin_spare_part_add_modal'),
+    path('dashboard/admin/spare-parts/add/', dashboard_views.admin_spare_part_add_view, name='admin_spare_part_add'),
+    path('dashboard/admin/spare-parts/edit/<int:part_id>/modal/', dashboard_views.admin_spare_part_edit_modal_view, name='admin_spare_part_edit_modal'),
+    path('dashboard/admin/spare-parts/edit/<int:part_id>/', dashboard_views.admin_spare_part_edit_view, name='admin_spare_part_edit'),
+    path('dashboard/admin/spare-parts/restock/<int:part_id>/modal/', dashboard_views.admin_spare_part_restock_modal_view, name='admin_spare_part_restock_modal'),
+    path('dashboard/admin/spare-parts/restock/<int:part_id>/', dashboard_views.admin_spare_part_restock_view, name='admin_spare_part_restock'),
+    path('dashboard/admin/spare-parts/view/<int:part_id>/modal/', dashboard_views.admin_spare_part_view_modal_view, name='admin_spare_part_view_modal'),
+    path('dashboard/admin/spare-parts/delete/<int:part_id>/', dashboard_views.admin_spare_part_delete_view, name='admin_spare_part_delete'),
+
+    # Sales and Order Management Pages
+    path('dashboard/admin/sales-management/', dashboard_views.admin_sales_management_view, name='admin_sales_management'),
+    path('dashboard/admin/order-management/', dashboard_views.admin_order_management_view, name='admin_order_management'),
+    path('dashboard/admin/spare-shop/mpesa-config-modal/', dashboard_views.admin_mpesa_config_modal_view, name='admin_mpesa_config_modal'),
+
+    # Admin Spare Shop Statistics HTMX Endpoints
+    path('dashboard/admin/spare-shop/stats/total/', dashboard_views.admin_spare_shop_stats_total, name='admin_spare_shop_stats_total'),
+    path('dashboard/admin/spare-shop/stats/in-stock/', dashboard_views.admin_spare_shop_stats_in_stock, name='admin_spare_shop_stats_in_stock'),
+    path('dashboard/admin/spare-shop/stats/out-of-stock/', dashboard_views.admin_spare_shop_stats_out_of_stock, name='admin_spare_shop_stats_out_of_stock'),
+    path('dashboard/admin/spare-shop/stats/low-stock/', dashboard_views.admin_spare_shop_stats_low_stock, name='admin_spare_shop_stats_low_stock'),
+
+    # Resource Management URLs
+    path('dashboard/admin/resource-management/', dashboard_views.admin_resource_management_view, name='admin_resource_management'),
+
+    # Resource Management Tab URLs
+    path('dashboard/admin/resource-management/all-content/', dashboard_views.admin_resource_all_content_tab, name='admin_resource_all_content_tab'),
+    path('dashboard/admin/resource-management/articles/', dashboard_views.admin_resource_articles_tab, name='admin_resource_articles_tab'),
+    path('dashboard/admin/resource-management/guides/', dashboard_views.admin_resource_guides_tab, name='admin_resource_guides_tab'),
+    path('dashboard/admin/resource-management/infographics/', dashboard_views.admin_resource_infographics_tab, name='admin_resource_infographics_tab'),
+    path('dashboard/admin/resource-management/opinions/', dashboard_views.admin_resource_opinions_tab, name='admin_resource_opinions_tab'),
+    path('dashboard/admin/resource-management/news/', dashboard_views.admin_resource_news_tab, name='admin_resource_news_tab'),
+
+    # Resource CRUD URLs
+    path('dashboard/admin/resource-management/create-modal/', dashboard_views.admin_resource_create_modal, name='admin_resource_create_modal'),
+    path('dashboard/admin/resource-management/create/', dashboard_views.admin_resource_create, name='admin_resource_create'),
+    path('dashboard/admin/resource-management/<int:post_id>/edit-modal/', dashboard_views.admin_resource_edit_modal, name='admin_resource_edit_modal'),
+    path('dashboard/admin/resource-management/<int:post_id>/edit/', dashboard_views.admin_resource_edit, name='admin_resource_edit'),
+    path('dashboard/admin/resource-management/<int:post_id>/delete/', dashboard_views.admin_resource_delete, name='admin_resource_delete'),
+    path('dashboard/admin/resource-management/<int:post_id>/toggle-featured/', dashboard_views.admin_resource_toggle_featured, name='admin_resource_toggle_featured'),
+    path('dashboard/admin/resource-management/<int:post_id>/toggle-published/', dashboard_views.admin_resource_toggle_published, name='admin_resource_toggle_published'),
+    path('dashboard/admin/resource-management/search/', dashboard_views.admin_resource_search, name='admin_resource_search'),
+
+    # Message Management URLs
+    path('dashboard/admin/message-management/', dashboard_views.admin_message_management_view, name='admin_message_management'),
+    path('dashboard/admin/message-management/list/', dashboard_views.admin_message_list_tab, name='admin_message_list_tab'),
+    path('dashboard/admin/message-management/create/', dashboard_views.admin_message_create_modal, name='admin_message_create_modal'),
+    path('dashboard/admin/message-management/create/submit/', dashboard_views.admin_message_create, name='admin_message_create'),
+    path('dashboard/admin/message-management/edit/<int:message_id>/', dashboard_views.admin_message_edit_modal, name='admin_message_edit_modal'),
+    path('dashboard/admin/message-management/edit/<int:message_id>/submit/', dashboard_views.admin_message_edit, name='admin_message_edit'),
+    path('dashboard/admin/message-management/delete/<int:message_id>/', dashboard_views.admin_message_delete, name='admin_message_delete'),
+    path('dashboard/admin/message-management/preview/<int:message_id>/', dashboard_views.admin_message_preview_modal, name='admin_message_preview_modal'),
+    path('dashboard/admin/message-management/search/', dashboard_views.admin_message_search, name='admin_message_search'),
+    path('dashboard/admin/message-management/analytics/', dashboard_views.admin_message_analytics_tab, name='admin_message_analytics_tab'),
+    path('dashboard/admin/message-management/count/', dashboard_views.admin_message_count_htmx, name='admin_message_count_htmx'),
+    path('dashboard/admin/message-management/schedule/<int:message_id>/', dashboard_views.admin_message_schedule_modal, name='admin_message_schedule_modal'),
+    path('dashboard/admin/message-management/schedule/<int:message_id>/save/', dashboard_views.admin_message_schedule_save, name='admin_message_schedule_save'),
+    path('dashboard/admin/message-management/targeting/<int:message_id>/', dashboard_views.admin_message_targeting_modal, name='admin_message_targeting_modal'),
+    path('dashboard/admin/message-management/performance/<int:message_id>/', dashboard_views.admin_message_performance_modal, name='admin_message_performance_modal'),
+
+    # Frontend Message Display URLs
+    path('messages/popup/', dashboard_views.user_messages_popup, name='user_messages_popup'),
+    path('messages/action/<int:message_id>/', dashboard_views.user_message_action, name='user_message_action'),
+    path('messages/dashboard/', dashboard_views.user_dashboard_messages, name='user_dashboard_messages'),
 
     # Import Request HTMX Endpoints
     path('dashboard/admin/import-requests/add-modal/', dashboard_views.admin_import_request_add_modal, name='admin_import_request_add_modal'),
@@ -165,6 +263,7 @@ urlpatterns = [
 
     # Import Order Tracking URLs
     path('import/tracking/', views.import_order_tracking_dashboard, name='import_order_tracking'),
+    path('import/tracking/dashboard/', views.import_order_tracking_dashboard, name='import_tracking_dashboard'),
     path('import/tracking/<str:order_number>/', views.import_order_detail, name='import_order_detail'),
     path('import/search/', views.chassis_number_search, name='chassis_number_search'),
 
@@ -174,11 +273,52 @@ urlpatterns = [
 
     # Resources (formerly Blog)
     path('resources/', views.BlogListView.as_view(), name='resources'),
+
+    # HTMX endpoints for resources (must come before slug pattern)
+    path('resources/search/', views.resources_live_search, name='resources_live_search'),
+    path('resources/category/<slug:category_slug>/', views.resources_filter_by_category, name='resources_filter_by_category'),
+    path('resources/tag/<slug:tag_slug>/', views.resources_filter_by_tag, name='resources_filter_by_tag'),
+
+    # Resource detail (must come after specific patterns)
     path('resources/<slug:slug>/', views.BlogDetailView.as_view(), name='resource_detail'),
+    path('content/like/<int:post_id>/', views.content_like_toggle, name='content_like_toggle'),
+    path('content/bookmark/<int:post_id>/', views.content_bookmark_toggle, name='content_bookmark_toggle'),
+
+    # Opinion polling endpoints
+    path('poll/vote/<int:poll_id>/', views.poll_vote, name='poll_vote'),
+    path('opinion/review/<int:post_id>/', views.opinion_review_submit, name='opinion_review_submit'),
+    path('review/helpful/<int:review_id>/', views.review_helpful_vote, name='review_helpful_vote'),
+
+    # PDF management endpoints
+    path('guide/pdf/download/<int:post_id>/', views.guide_pdf_download, name='guide_pdf_download'),
+    path('guide/pdf/view/<int:post_id>/', views.guide_pdf_viewer, name='guide_pdf_viewer'),
+    path('guide/pdf/info/<int:post_id>/', views.guide_pdf_info, name='guide_pdf_info'),
+
+    # Infographic chart endpoints
+    path('infographic/chart/data/<int:post_id>/', views.infographic_chart_data, name='infographic_chart_data'),
+    path('infographic/chart/update/<int:post_id>/', views.infographic_chart_update, name='infographic_chart_update'),
+    path('infographic/chart/preview/<int:post_id>/', views.infographic_chart_preview, name='infographic_chart_preview'),
+
+    # Debug endpoints
+    path('debug/messages/', views.message_debug_view, name='message_debug'),
 
     # Static pages
     path('about/', views.about_us, name='about_us'),
     path('contact/', views.contact_us, name='contact_us'),
+
+    # Public Dealer Profile URLs
+    path('dealers/', views.dealer_list, name='dealer_list'),
+    path('dealers/<int:vendor_id>/', views.dealer_profile, name='dealer_profile'),
+
+    # Car Comparison URLs
+    path('compare/', views.car_compare, name='car_compare'),
+    path('compare/add/<int:car_id>/', views.add_to_compare, name='add_to_compare'),
+    path('compare/remove/<int:car_id>/', views.remove_from_compare, name='remove_from_compare'),
+    path('compare/clear/', views.clear_compare, name='clear_compare'),
+
+    # Car Calculator URLs
+    path('calculator/', views.car_calculator, name='car_calculator'),
+    path('calculator/calculate/', views.calculate_loan, name='calculate_loan'),
 
     # Cart and Checkout
     path('cart/', views.cart_view, name='cart'),
@@ -211,13 +351,41 @@ urlpatterns = [
     path('import/tracking/<str:order_number>/status/', views.import_order_status_update_htmx, name='import_order_status_htmx'),
     path('import/tracking/<str:order_number>/timeline/', views.import_order_timeline_htmx, name='import_order_timeline_htmx'),
 
+    # GPS Tracking HTMX endpoints
+    path('import/tracking/<str:order_number>/location/', views.import_order_location_update_htmx, name='import_order_location_htmx'),
+    path('import/tracking/<str:order_number>/route/', views.import_order_route_data_htmx, name='import_order_route_htmx'),
+    path('import/tracking/<str:order_number>/live/', views.import_order_live_tracking_htmx, name='import_order_live_tracking_htmx'),
+    path('import/tracking/<str:order_number>/history/', views.import_order_location_history_htmx, name='import_order_location_history_htmx'),
+    path('import/tracking/dashboard/live/', views.import_order_tracking_dashboard_htmx, name='import_tracking_dashboard_htmx'),
+    path('import/tracking/<str:order_number>/sse/', views.import_order_sse_tracking, name='import_order_sse_tracking'),
+    path('import/tracking/notifications/', views.import_order_tracking_notifications_htmx, name='import_tracking_notifications_htmx'),
+
+    # Admin GPS Tracking Management
+    path('dashboard/admin/gps-tracking/', dashboard_views.admin_gps_tracking_management, name='admin_gps_tracking'),
+    path('dashboard/admin/tracking/order/<int:order_id>/location-modal/', dashboard_views.admin_location_management_modal, name='admin_location_management_modal'),
+    path('dashboard/admin/tracking/order/<int:order_id>/update-location/', dashboard_views.admin_update_order_location, name='admin_update_order_location'),
+    path('dashboard/admin/tracking/order/<int:order_id>/create-route/', dashboard_views.admin_create_route, name='admin_create_route'),
+    path('dashboard/admin/tracking/order/<int:order_id>/add-waypoint/', dashboard_views.admin_add_waypoint, name='admin_add_waypoint'),
+
     # Admin Sidebar HTMX endpoints for real-time updates
     path('dashboard/htmx/tracking-stats/', views.admin_tracking_stats_htmx, name='admin_tracking_stats_htmx'),
     path('dashboard/htmx/inquiry-stats/', views.admin_inquiry_stats_htmx, name='admin_inquiry_stats_htmx'),
-    path('dashboard/htmx/admin-quick-actions/', views.admin_quick_actions_htmx, name='admin_quick_actions_htmx'),
+    path('dashboard/htmx/admin-quick-actions/', dashboard_views.admin_quick_actions_lazy, name='admin_quick_actions_htmx'),
 
     # Payment callbacks
     path('payments/mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
+    path('payments/mpesa/timeout/', views.mpesa_timeout, name='mpesa_timeout'),
+
+    # Enhanced HTMX endpoints for spare parts
+    path('spare-parts/live-search/', views.spare_parts_live_search, name='spare_parts_live_search'),
+    path('spare-parts/quick-view/<int:part_id>/', views.spare_parts_quick_view, name='spare_parts_quick_view'),
+    path('cart/add-htmx/', views.add_to_cart_htmx, name='add_to_cart_htmx'),
+    path('cart/update-htmx/', views.update_cart_quantity_htmx, name='update_cart_quantity_htmx'),
+    path('spare-parts/category/<int:category_id>/', views.spare_parts_category_filter, name='spare_parts_category_filter'),
+    path('spare-parts/stats/', views.spare_parts_stats_htmx, name='spare_parts_stats_htmx'),
+
+    # HTMX endpoints for sell car form
+    path('htmx/models-by-brand/', views.htmx_models_by_brand, name='htmx_models_by_brand'),
 
     # Test 404 page (for development)
     path('404/', views.test_404_view, name='test_404'),
