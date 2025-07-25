@@ -35,34 +35,30 @@ class PromotionAnalyticsManager:
         # Get featured cars metrics
         featured_metrics = PromotionAnalytics.objects.filter(
             metric_type__in=['featured_views', 'featured_clicks'],
-            date__gte=start_date
-        ).values('car__featured_tier', 'metric_type').annotate(
+            date__gte=start_date,
+            car__is_featured=True
+        ).values('metric_type').annotate(
             total_value=Sum('metric_value')
         )
         
-        # Organize by tier
-        tier_performance = {}
-        for tier in ['bronze', 'silver', 'gold', 'platinum']:
-            tier_performance[tier] = {
-                'views': 0,
-                'clicks': 0,
-                'ctr': 0.0  # Click-through rate
-            }
+        # Organize featured cars performance
+        featured_performance = {
+            'views': 0,
+            'clicks': 0,
+            'ctr': 0.0  # Click-through rate
+        }
         
         for metric in featured_metrics:
-            tier = metric['car__featured_tier']
-            if tier in tier_performance:
-                if metric['metric_type'] == 'featured_views':
-                    tier_performance[tier]['views'] = metric['total_value']
-                elif metric['metric_type'] == 'featured_clicks':
-                    tier_performance[tier]['clicks'] = metric['total_value']
-        
+            if metric['metric_type'] == 'featured_views':
+                featured_performance['views'] = metric['total_value'] or 0
+            elif metric['metric_type'] == 'featured_clicks':
+                featured_performance['clicks'] = metric['total_value'] or 0
+
         # Calculate CTR
-        for tier_data in tier_performance.values():
-            if tier_data['views'] > 0:
-                tier_data['ctr'] = (tier_data['clicks'] / tier_data['views']) * 100
-        
-        return tier_performance
+        if featured_performance['views'] > 0:
+            featured_performance['ctr'] = (featured_performance['clicks'] / featured_performance['views']) * 100
+
+        return featured_performance
     
     def get_hot_deals_performance(self, days=30):
         """Get hot deals performance metrics"""
@@ -212,38 +208,58 @@ class PromotionAnalyticsManager:
         
         return daily_data
     
-    def get_tier_comparison(self):
-        """Compare performance across featured tiers"""
-        tiers = FeaturedCarTier.objects.filter(is_active=True).order_by('priority_order')
-        
+    def get_featured_comparison(self):
+        """Compare performance between featured and non-featured cars"""
+        start_date = self.now.date() - timedelta(days=30)
+
         comparison_data = []
-        for tier in tiers:
-            # Get cars in this tier
-            tier_cars = Car.objects.filter(featured_tier=tier.name, is_approved=True)
-            
-            # Get metrics for last 30 days
-            start_date = self.now.date() - timedelta(days=30)
-            tier_metrics = PromotionAnalytics.objects.filter(
-                car__in=tier_cars,
-                metric_type__in=['featured_views', 'featured_clicks'],
-                date__gte=start_date
-            ).aggregate(
-                total_views=Sum('metric_value', filter=Q(metric_type='featured_views')),
-                total_clicks=Sum('metric_value', filter=Q(metric_type='featured_clicks'))
-            )
-            
-            views = tier_metrics['total_views'] or 0
-            clicks = tier_metrics['total_clicks'] or 0
-            
-            comparison_data.append({
-                'tier': tier,
-                'cars_count': tier_cars.count(),
-                'views': views,
-                'clicks': clicks,
-                'ctr': (clicks / views * 100) if views > 0 else 0,
-                'avg_views_per_car': views / tier_cars.count() if tier_cars.count() > 0 else 0
+
+        # Featured cars
+        featured_cars = Car.objects.filter(is_featured=True, is_approved=True)
+        featured_metrics = PromotionAnalytics.objects.filter(
+            car__in=featured_cars,
+            metric_type__in=['featured_views', 'featured_clicks'],
+            date__gte=start_date
+        ).aggregate(
+            total_views=Sum('metric_value', filter=Q(metric_type='featured_views')),
+            total_clicks=Sum('metric_value', filter=Q(metric_type='featured_clicks'))
+        )
+
+        featured_views = featured_metrics['total_views'] or 0
+        featured_clicks = featured_metrics['total_clicks'] or 0
+
+        comparison_data.append({
+            'category': 'Featured Cars',
+            'cars_count': featured_cars.count(),
+            'views': featured_views,
+            'clicks': featured_clicks,
+            'ctr': (featured_clicks / featured_views * 100) if featured_views > 0 else 0,
+            'avg_views_per_car': featured_views / featured_cars.count() if featured_cars.count() > 0 else 0
             })
-        
+
+        # Non-featured cars
+        non_featured_cars = Car.objects.filter(is_featured=False, is_approved=True)
+        non_featured_metrics = PromotionAnalytics.objects.filter(
+            car__in=non_featured_cars,
+            metric_type__in=['featured_views', 'featured_clicks'],
+            date__gte=start_date
+        ).aggregate(
+            total_views=Sum('metric_value', filter=Q(metric_type='featured_views')),
+            total_clicks=Sum('metric_value', filter=Q(metric_type='featured_clicks'))
+        )
+
+        non_featured_views = non_featured_metrics['total_views'] or 0
+        non_featured_clicks = non_featured_metrics['total_clicks'] or 0
+
+        comparison_data.append({
+            'category': 'Regular Cars',
+            'cars_count': non_featured_cars.count(),
+            'views': non_featured_views,
+            'clicks': non_featured_clicks,
+            'ctr': (non_featured_clicks / non_featured_views * 100) if non_featured_views > 0 else 0,
+            'avg_views_per_car': non_featured_views / non_featured_cars.count() if non_featured_cars.count() > 0 else 0
+        })
+
         return comparison_data
     
     def get_conversion_funnel(self, days=30):

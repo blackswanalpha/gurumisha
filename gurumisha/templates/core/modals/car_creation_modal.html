@@ -51,9 +51,12 @@
             <!-- Modal Body -->
             <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-[70vh] overflow-y-auto modal-body">
                 <form id="car-creation-form"
+                      method="post"
+                      action="{% url 'core:sell_car' %}"
                       hx-post="{% url 'core:sell_car' %}"
                       hx-target="body"
                       hx-swap="none"
+                      hx-headers='{"X-Requested-With": "XMLHttpRequest", "HX-Request": "true"}'
                       class="space-y-6"
                       x-data="{ isSubmitting: false }"
                       @submit="isSubmitting = true"
@@ -61,6 +64,11 @@
                       hx-on::after-request="handleAfterSubmit(event)"
                       hx-on::response-error="handleSubmitError(event)">
                     {% csrf_token %}
+
+                    <!-- Hidden field to indicate admin modal -->
+                    {% if is_admin_modal %}
+                        <input type="hidden" name="admin_modal" value="true">
+                    {% endif %}
 
                     <!-- Basic Information -->
                     <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
@@ -112,6 +120,9 @@
                                 </label>
                                 <select name="model" id="id_model" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
                                     <option value="">Select a model</option>
+                                    {% for model in car_models %}
+                                        <option value="{{ model.id }}">{{ model.name }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -414,18 +425,16 @@
                         </div>
                     </div>
 
-                    <!-- Image Upload -->
+                    <!-- Enhanced Multi-Image Upload -->
                     <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
                         <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
-                            <i class="fas fa-camera text-harrier-red mr-2"></i>
-                            Main Image
+                            <i class="fas fa-images text-harrier-red mr-2"></i>
+                            Vehicle Gallery
                         </h4>
-                        <div class="form-group">
-                            <label for="id_main_image" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
-                                Upload Main Image
-                            </label>
-                            <input type="file" name="main_image" id="id_main_image" accept="image/*" class="enhanced-file-input w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
-                        </div>
+                        <p class="text-gray-600 mb-4 font-raleway">Upload 4-6 high-quality images to showcase your vehicle from different angles</p>
+
+                        <!-- Include Enhanced Multi-Image Upload Component -->
+                        {% include 'components/enhanced_multi_image_upload.html' %}
                     </div>
 
                     <!-- Listing Options -->
@@ -456,27 +465,28 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Form Buttons Inside Form -->
+                    <div class="flex flex-col sm:flex-row gap-3 justify-end mt-6 pt-6 border-t border-gray-200">
+                        <button type="button"
+                                class="inline-flex items-center justify-center px-8 py-4 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition-all duration-300 font-montserrat shadow-lg min-h-[56px] text-base"
+                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"
+                                style="color: white !important;">
+                            <i class="fas fa-times mr-3 text-white" style="color: white !important; font-size: 16px;"></i>
+                            <span class="text-white font-bold" style="color: white !important; font-weight: 700;">Cancel</span>
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-red-600 to-red-800 text-white font-bold rounded-lg hover:from-red-700 hover:to-red-900 transition-all duration-300 font-montserrat shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 min-h-[56px] text-base"
+                                x-bind:disabled="isSubmitting"
+                                x-bind:class="{ 'opacity-75 cursor-not-allowed transform-none': isSubmitting }"
+                                style="color: white !important;"
+                                @click="console.log('Submit button clicked')">
+                            <i class="fas fa-plus mr-3 text-white" x-show="!isSubmitting" style="color: white !important; font-size: 16px;"></i>
+                            <i class="fas fa-spinner fa-spin mr-3 text-white" x-show="isSubmitting" style="color: white !important; font-size: 16px;"></i>
+                            <span x-text="isSubmitting ? 'Creating Listing...' : 'Create Car Listing'" class="text-white font-bold" style="color: white !important; font-weight: 700;"></span>
+                        </button>
+                    </div>
                 </form>
-            </div>
-            
-            <!-- Modal Footer -->
-            <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-t border-gray-200">
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                    <button type="button" 
-                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold font-montserrat"
-                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
-                        <i class="fas fa-times mr-2"></i>Cancel
-                    </button>
-                    <button type="submit" 
-                            form="car-creation-form"
-                            class="px-6 py-3 bg-gradient-to-r from-harrier-red to-black text-white rounded-lg hover:from-harrier-red-dark hover:to-gray-900 transition-all duration-200 font-semibold font-montserrat shadow-lg"
-                            x-bind:disabled="isSubmitting"
-                            x-bind:class="{ 'opacity-50 cursor-not-allowed': isSubmitting }">
-                        <i class="fas fa-plus mr-2" x-show="!isSubmitting"></i>
-                        <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
-                        <span x-text="isSubmitting ? 'Creating...' : 'Create Listing'"></span>
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -522,12 +532,143 @@
 #car-creation-modal .enhanced-checkbox {
     @apply w-4 h-4 text-harrier-red bg-white border-2 border-gray-200 rounded focus:ring-harrier-red focus:ring-2 transition-all duration-300;
 }
+
+/* Enhanced Button Styling for Maximum Visibility */
+#car-creation-modal button {
+    position: relative;
+    z-index: 10;
+    font-weight: 700 !important;
+    letter-spacing: 0.025em;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#car-creation-modal button[type="submit"] {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
+    box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+#car-creation-modal button[type="submit"]:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%) !important;
+    box-shadow: 0 6px 20px 0 rgba(220, 38, 38, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+#car-creation-modal button[type="submit"]:focus {
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.3), 0 6px 20px 0 rgba(220, 38, 38, 0.4);
+}
+
+/* Force maximum visibility for all button text and icons */
+#car-creation-modal button span,
+#car-creation-modal button i {
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    font-weight: 700 !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#car-creation-modal button i {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+/* Ensure Alpine.js doesn't hide elements */
+#car-creation-modal [x-show] {
+    display: inline-block !important;
+}
+
+#car-creation-modal [x-show="false"] {
+    display: none !important;
+}
+
+/* Additional button text visibility fixes */
+#car-creation-modal button[type="submit"] span,
+#car-creation-modal button[type="button"] span {
+    color: #ffffff !important;
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    text-transform: none !important;
+    letter-spacing: 0.5px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+#car-creation-modal button[type="submit"] i,
+#car-creation-modal button[type="button"] i {
+    color: #ffffff !important;
+    font-size: 16px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+    margin-right: 12px !important;
+}
+
+/* Override any conflicting styles */
+#car-creation-modal button * {
+    color: white !important;
+}
+
+/* Ensure buttons maintain proper styling */
+#car-creation-modal .modal-footer button {
+    border: none !important;
+    outline: none !important;
+}
 </style>
 
 <script>
+// Model field is now independent from brand selection
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Car creation modal initialized - Model field is independent from brand');
+
+    // Ensure form submission works correctly
+    const form = document.getElementById('car-creation-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submit event triggered');
+
+            // Check if HTMX is available and working
+            if (typeof htmx === 'undefined') {
+                console.log('⚠️ HTMX not available, using regular form submission');
+                return true; // Allow normal form submission
+            }
+
+            // Let HTMX handle it
+            console.log('✅ HTMX available, processing submission');
+        });
+    }
+});
+
 function handleBeforeSubmit(event) {
     console.log('Car creation form submitting...');
-    // Add any pre-submit validation here
+
+    // Get the multi-image upload component
+    const imageUploadComponent = document.querySelector('[x-data*="multiImageUpload"]');
+    if (imageUploadComponent && imageUploadComponent._x_dataStack) {
+        const imageUploadData = imageUploadComponent._x_dataStack[0];
+
+        // Validate images
+        if (!imageUploadData.isValid()) {
+            console.log('⚠️ Image validation failed');
+            event.preventDefault();
+            return false;
+        }
+    }
+
+    // Ensure HTMX is handling the request
+    if (!event.detail || !event.detail.xhr) {
+        console.log('⚠️ HTMX not detected, preventing default form submission');
+        event.preventDefault();
+
+        // Manually trigger HTMX submission
+        const form = document.getElementById('car-creation-form');
+        if (form) {
+            htmx.trigger(form, 'submit');
+        }
+        return false;
+    }
+
+    console.log('✅ HTMX handling form submission');
+    return true;
 }
 
 function handleAfterSubmit(event) {
@@ -561,9 +702,35 @@ function handleAfterSubmit(event) {
                 }
             }
         } catch (e) {
-            // Fallback for non-JSON responses
-            document.getElementById('car-creation-modal').remove();
-            location.reload();
+            console.log('⚠️ JSON parse error:', e);
+            console.log('Raw response:', event.detail.xhr.responseText);
+
+            // Show success message and redirect
+            if (typeof showToast === 'function') {
+                showToast('Car listing created successfully!', 'success');
+            } else if (typeof window.toastManager !== 'undefined') {
+                window.toastManager.show('Car listing created successfully!', 'success');
+            } else {
+                alert('Car listing created successfully!');
+            }
+
+            // Close modal and redirect
+            setTimeout(() => {
+                const modal = document.getElementById('car-creation-modal');
+                if (modal) {
+                    modal.remove();
+                }
+                window.location.href = '/dashboard/admin/listings/';
+            }, 1500);
+        }
+    } else {
+        console.log('🚨 HTTP error:', event.detail.xhr.status);
+        if (typeof showToast === 'function') {
+            showToast('Error creating car listing. Please try again.', 'error');
+        } else if (typeof window.toastManager !== 'undefined') {
+            window.toastManager.show('Error creating car listing. Please try again.', 'error');
+        } else {
+            alert('Error creating car listing. Please try again.');
         }
     }
 }

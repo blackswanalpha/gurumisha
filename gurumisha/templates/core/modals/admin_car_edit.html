@@ -1,21 +1,27 @@
 {% load static %}
+{% load core_extras %}
 
-<!-- Edit Car Modal -->
+<!-- Enhanced Admin Car Edit Modal with Proper Hydration -->
 <div class="fixed inset-0 z-50 overflow-y-auto"
      id="edit-car-modal"
-     x-data="{ show: false }"
-     x-init="show = true"
+     x-data="editCarModal()"
+     x-init="initModal()"
      x-show="show"
      x-transition:enter="ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
      x-transition:leave="ease-in duration-200"
      x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0">
+     x-transition:leave-end="opacity-0"
+     role="dialog"
+     aria-labelledby="modal-title"
+     aria-describedby="modal-description"
+     @keydown.escape="closeModal()">
 
     <!-- Modal Backdrop -->
     <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity modal-backdrop"
-         @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)"></div>
+         @click="closeModal()"
+         aria-hidden="true"></div>
 
     <!-- Modal Container -->
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -36,207 +42,1089 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <div class="w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                            <i class="fas fa-edit text-white text-lg"></i>
+                            <i class="fas fa-edit text-white text-lg" aria-hidden="true"></i>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-white font-montserrat">
+                            <h3 id="modal-title" class="text-xl font-bold text-white font-montserrat">
                                 Edit Car Listing
                             </h3>
-                            <p class="text-sm text-white text-opacity-90 font-raleway">Modify car details and approval status</p>
+                            <p id="modal-description" class="text-sm text-white text-opacity-90 font-raleway">
+                                Modify car details, approval status, and manage all listing information
+                            </p>
                         </div>
                     </div>
                     <button type="button"
-                            class="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white hover:bg-opacity-10 rounded-lg"
-                            @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
-                        <i class="fas fa-times text-xl"></i>
+                            class="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white hover:bg-opacity-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                            @click="closeModal()"
+                            aria-label="Close modal">
+                        <i class="fas fa-times text-xl" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
             
             <!-- Modal Body -->
-            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-96 overflow-y-auto modal-body">
-
+            <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-[80vh] overflow-y-auto modal-body">
+                <!-- Error Container -->
+                <div id="error-container" class="mb-4" role="alert" aria-live="polite" aria-atomic="true"></div>
 
                 <form id="edit-car-form"
                       hx-post="{% url 'core:admin_car_edit' car.id %}"
-                      hx-target="body"
-                      hx-swap="none"
-                      class="space-y-6"
-                      x-data="{ isSubmitting: false }"
+                      hx-target="#error-container"
+                      hx-swap="innerHTML"
+                      hx-indicator="#loading-indicator"
+                      class="space-y-8"
                       @submit="isSubmitting = true"
-                      hx-on::before-request="console.log('HTMX before request'); handleBeforeSubmit(event)"
-                      hx-on::after-request="console.log('HTMX after request'); handleAfterSubmit(event)"
-                      hx-on::response-error="console.log('HTMX error'); handleSubmitError(event)">
+                      hx-on::before-request="handleBeforeSubmit(event)"
+                      hx-on::after-request="handleAfterSubmit(event)"
+                      hx-on::response-error="handleSubmitError(event)"
+                      novalidate>
                     {% csrf_token %}
 
-                    <!-- Basic Information -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-tag text-harrier-red mr-2"></i>Title
-                            </label>
-                            {{ form.title }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-dollar-sign text-harrier-red mr-2"></i>Price (KSH)
-                            </label>
-                            {{ form.price }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-car text-harrier-red mr-2"></i>Brand
-                            </label>
-                            {{ form.brand }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-car-side text-harrier-red mr-2"></i>Model
-                            </label>
-                            {{ form.model }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-calendar text-harrier-red mr-2"></i>Year
-                            </label>
-                            {{ form.year }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-palette text-harrier-red mr-2"></i>Color
-                            </label>
-                            {{ form.color }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-cog text-harrier-red mr-2"></i>Condition
-                            </label>
-                            {{ form.condition }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-tachometer-alt text-harrier-red mr-2"></i>Mileage (km)
-                            </label>
-                            {{ form.mileage }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-gas-pump text-harrier-red mr-2"></i>Fuel Type
-                            </label>
-                            {{ form.fuel_type }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-cogs text-harrier-red mr-2"></i>Transmission
-                            </label>
-                            {{ form.transmission }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-engine text-harrier-red mr-2"></i>Engine Size (L)
-                            </label>
-                            {{ form.engine_size }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-list text-harrier-red mr-2"></i>Listing Type
-                            </label>
-                            {{ form.listing_type }}
+                    <!-- Loading Indicator -->
+                    <div id="loading-indicator" class="htmx-indicator fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div class="bg-white rounded-xl p-6 shadow-2xl flex items-center space-x-4">
+                            <div class="w-8 h-8 border-4 border-harrier-red border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-lg font-semibold text-gray-700">Saving changes...</span>
                         </div>
                     </div>
 
-                    <!-- Description and Features -->
-                    <div class="space-y-6">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-file-alt text-harrier-red mr-2"></i>Description
-                            </label>
-                            {{ form.description }}
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-list-check text-harrier-red mr-2"></i>Features (comma separated)
-                            </label>
-                            {{ form.features }}
-                        </div>
+                    <!-- Tab Navigation -->
+                    <div class="border-b border-gray-200 mb-6">
+                        <nav class="flex space-x-8" aria-label="Edit car sections">
+                            <button type="button"
+                                    @click="switchTab('basic')"
+                                    :class="activeTab === 'basic' ? 'border-harrier-red text-harrier-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-harrier-red focus:ring-offset-2"
+                                    aria-controls="basic-tab"
+                                    :aria-selected="activeTab === 'basic'">
+                                <i class="fas fa-info-circle mr-2" aria-hidden="true"></i>
+                                Basic Information
+                            </button>
+                            <button type="button"
+                                    @click="switchTab('specs')"
+                                    :class="activeTab === 'specs' ? 'border-harrier-red text-harrier-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-harrier-red focus:ring-offset-2"
+                                    aria-controls="specs-tab"
+                                    :aria-selected="activeTab === 'specs'">
+                                <i class="fas fa-cogs mr-2" aria-hidden="true"></i>
+                                Specifications
+                            </button>
+                            <button type="button"
+                                    @click="switchTab('location')"
+                                    :class="activeTab === 'location' ? 'border-harrier-red text-harrier-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-harrier-red focus:ring-offset-2"
+                                    aria-controls="location-tab"
+                                    :aria-selected="activeTab === 'location'">
+                                <i class="fas fa-map-marker-alt mr-2" aria-hidden="true"></i>
+                                Location & Contact
+                            </button>
+                            <button type="button"
+                                    @click="switchTab('admin')"
+                                    :class="activeTab === 'admin' ? 'border-harrier-red text-harrier-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-harrier-red focus:ring-offset-2"
+                                    aria-controls="admin-tab"
+                                    :aria-selected="activeTab === 'admin'">
+                                <i class="fas fa-shield-alt mr-2" aria-hidden="true"></i>
+                                Admin Controls
+                            </button>
+                            <button type="button"
+                                    @click="switchTab('media')"
+                                    :class="activeTab === 'media' ? 'border-harrier-red text-harrier-red' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-harrier-red focus:ring-offset-2"
+                                    aria-controls="media-tab"
+                                    :aria-selected="activeTab === 'media'">
+                                <i class="fas fa-images mr-2" aria-hidden="true"></i>
+                                Images & Media
+                            </button>
+                        </nav>
                     </div>
 
-                    <!-- Status and Approval -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-flag text-harrier-red mr-2"></i>Status
-                            </label>
-                            {{ form.status }}
+                    <!-- Basic Information Tab -->
+                    <div id="basic-tab" x-show="activeTab === 'basic'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" class="space-y-6" role="tabpanel" aria-labelledby="basic-tab-button">
+
+                        <!-- Car Title and Description -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-tag text-harrier-red mr-2" aria-hidden="true"></i>
+                                Car Title & Description
+                            </h4>
+
+                            <div class="space-y-4">
+                                <!-- Car Title -->
+                                <div class="form-group">
+                                    <label for="id_title" class="form-label required">
+                                        <i class="fas fa-heading text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Car Title
+                                    </label>
+                                    <input type="text"
+                                           name="title"
+                                           id="id_title"
+                                           value="{{ car.title }}"
+                                           class="form-input price-format"
+                                           placeholder="e.g., Toyota Camry 2020 - Excellent Condition"
+                                           required
+                                           aria-describedby="title-help">
+                                    <p id="title-help" class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-lightbulb text-yellow-500 mr-1" aria-hidden="true"></i>
+                                        Include brand, model, year, and key selling points
+                                    </p>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="form-group">
+                                    <label for="id_description" class="form-label required">
+                                        <i class="fas fa-file-alt text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Description
+                                    </label>
+                                    <textarea name="description"
+                                              id="id_description"
+                                              rows="4"
+                                              class="form-input"
+                                              placeholder="Detailed description of the car's condition, history, and features..."
+                                              required
+                                              aria-describedby="description-help">{{ car.description }}</textarea>
+                                    <p id="description-help" class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-info-circle text-blue-500 mr-1" aria-hidden="true"></i>
+                                        Provide detailed information about condition, maintenance history, and unique features
+                                    </p>
+                                </div>
+
+                                <!-- Features -->
+                                <div class="form-group">
+                                    <label for="id_features" class="form-label">
+                                        <i class="fas fa-list-check text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Features
+                                    </label>
+                                    <textarea name="features"
+                                              id="id_features"
+                                              rows="3"
+                                              class="form-input"
+                                              placeholder="Air conditioning, Leather seats, Sunroof, Navigation system..."
+                                              aria-describedby="features-help">{{ car.features }}</textarea>
+                                    <p id="features-help" class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-star text-yellow-500 mr-1" aria-hidden="true"></i>
+                                        List key features separated by commas
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-star text-harrier-red mr-2"></i>Star Rating (0-5)
-                            </label>
-                            {{ form.star_rating }}
-                            <p class="text-xs text-gray-500 mt-1">Higher ratings get better visibility (4+ stars = Featured)</p>
-                        </div>
-                    </div>
+                        <!-- Vehicle Identification -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-car text-harrier-red mr-2" aria-hidden="true"></i>
+                                Vehicle Identification
+                            </h4>
 
-                    <!-- Checkboxes Section -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-cog text-harrier-red"></i>Options & Settings
-                            </label>
-                            <div class="space-y-4 bg-gradient-to-br from-gray-50 to-white p-6 rounded-2xl border border-gray-200">
-                                <div class="checkbox-group">
-                                    {{ form.is_approved }}
-                                    <label for="{{ form.is_approved.id_for_label }}" class="text-sm font-semibold text-gray-700">
-                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>Approved for Public Listing
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Brand -->
+                                <div class="form-group">
+                                    <label for="id_brand" class="form-label">
+                                        <i class="fas fa-industry text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Brand
                                     </label>
+                                    <select name="brand" id="id_brand" class="form-input" aria-describedby="brand-help">
+                                        <option value="">Select Brand</option>
+                                        {% for brand in car_brands %}
+                                            <option value="{{ brand.id }}" {% if car.brand_id == brand.id %}selected{% endif %}>
+                                                {{ brand.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <p id="brand-help" class="text-xs text-gray-500 mt-1">
+                                        Select the vehicle manufacturer
+                                    </p>
                                 </div>
-                                <div class="checkbox-group">
-                                    {{ form.negotiable }}
-                                    <label for="{{ form.negotiable.id_for_label }}" class="text-sm font-semibold text-gray-700">
-                                        <i class="fas fa-handshake text-blue-500 mr-2"></i>Price is Negotiable
+
+                                <!-- Model -->
+                                <div class="form-group">
+                                    <label for="id_model" class="form-label">
+                                        <i class="fas fa-car-side text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Model
                                     </label>
+                                    <select name="model" id="id_model" class="form-input" aria-describedby="model-help">
+                                        <option value="">Select Model</option>
+                                        {% for model in car_models %}
+                                            <option value="{{ model.id }}" {% if car.model_id == model.id %}selected{% endif %}>
+                                                {{ model.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <p id="model-help" class="text-xs text-gray-500 mt-1">
+                                        Select the specific model
+                                    </p>
                                 </div>
-                                <div class="checkbox-group">
-                                    {{ form.is_hot_deal }}
-                                    <label for="{{ form.is_hot_deal.id_for_label }}" class="text-sm font-semibold text-gray-700">
-                                        <i class="fas fa-fire text-red-500 mr-2"></i>Mark as Hot Deal
+
+                                <!-- Fallback Brand Name -->
+                                <div class="form-group">
+                                    <label for="id_brand_name" class="form-label">
+                                        <i class="fas fa-edit text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Brand Name (Fallback)
                                     </label>
+                                    <input type="text"
+                                           name="brand_name"
+                                           id="id_brand_name"
+                                           value="{{ car.brand_name }}"
+                                           class="form-input"
+                                           placeholder="Enter brand name if not in dropdown"
+                                           aria-describedby="brand-name-help">
+                                    <p id="brand-name-help" class="text-xs text-gray-500 mt-1">
+                                        Use only if brand is not available in dropdown
+                                    </p>
                                 </div>
-                                <div class="checkbox-group">
-                                    {{ form.is_featured }}
-                                    <label for="{{ form.is_featured.id_for_label }}" class="text-sm font-semibold text-gray-700">
-                                        <i class="fas fa-star text-purple-500 mr-2"></i>Mark as Featured
+
+                                <!-- Fallback Model Name -->
+                                <div class="form-group">
+                                    <label for="id_model_name" class="form-label">
+                                        <i class="fas fa-edit text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Model Name (Fallback)
                                     </label>
+                                    <input type="text"
+                                           name="model_name"
+                                           id="id_model_name"
+                                           value="{{ car.model_name }}"
+                                           class="form-input"
+                                           placeholder="Enter model name if not in dropdown"
+                                           aria-describedby="model-name-help">
+                                    <p id="model-name-help" class="text-xs text-gray-500 mt-1">
+                                        Use only if model is not available in dropdown
+                                    </p>
                                 </div>
-                                <div class="checkbox-group">
-                                    {{ form.is_certified }}
-                                    <label for="{{ form.is_certified.id_for_label }}" class="text-sm font-semibold text-gray-700">
-                                        <i class="fas fa-certificate text-green-500 mr-2"></i>Mark as Certified
+
+                                <!-- Year -->
+                                <div class="form-group">
+                                    <label for="id_year" class="form-label required">
+                                        <i class="fas fa-calendar text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Year
                                     </label>
+                                    <input type="number"
+                                           name="year"
+                                           id="id_year"
+                                           value="{{ car.year }}"
+                                           class="form-input"
+                                           min="1900"
+                                           max="2030"
+                                           required
+                                           aria-describedby="year-help">
+                                    <p id="year-help" class="text-xs text-gray-500 mt-1">
+                                        Manufacturing year (1900-2030)
+                                    </p>
+                                </div>
+
+                                <!-- Color -->
+                                <div class="form-group">
+                                    <label for="id_color" class="form-label required">
+                                        <i class="fas fa-palette text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Color
+                                    </label>
+                                    <input type="text"
+                                           name="color"
+                                           id="id_color"
+                                           value="{{ car.color }}"
+                                           class="form-input"
+                                           placeholder="e.g., White, Black, Silver"
+                                           required
+                                           aria-describedby="color-help">
+                                    <p id="color-help" class="text-xs text-gray-500 mt-1">
+                                        Primary exterior color
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Information -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-dollar-sign text-harrier-red mr-2" aria-hidden="true"></i>
+                                Pricing Information
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Price -->
+                                <div class="form-group">
+                                    <label for="id_price" class="form-label required">
+                                        <i class="fas fa-tag text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Price (KSh)
+                                    </label>
+                                    <input type="number"
+                                           name="price"
+                                           id="id_price"
+                                           value="{{ car.price }}"
+                                           class="form-input price-format"
+                                           min="0"
+                                           step="1000"
+                                           required
+                                           aria-describedby="price-help">
+                                    <p id="price-help" class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-info-circle text-blue-500 mr-1" aria-hidden="true"></i>
+                                        Current asking price in Kenyan Shillings
+                                    </p>
+                                </div>
+
+                                <!-- Negotiable -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-handshake text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Price Options
+                                    </label>
+                                    <div class="mt-2">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox"
+                                                   name="negotiable"
+                                                   id="id_negotiable"
+                                                   {% if car.negotiable %}checked{% endif %}
+                                                   class="form-checkbox text-harrier-red focus:ring-harrier-red">
+                                            <span class="ml-2 text-sm text-gray-700">Price is negotiable</span>
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Allow buyers to negotiate the price
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Hot Deals Dynamic Form Section -->
+                    <!-- Specifications Tab -->
+                    <div id="specs-tab" x-show="activeTab === 'specs'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" class="space-y-6" role="tabpanel" aria-labelledby="specs-tab-button">
+
+                        <!-- Vehicle Condition -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-cog text-harrier-red mr-2" aria-hidden="true"></i>
+                                Vehicle Condition
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Condition -->
+                                <div class="form-group">
+                                    <label for="id_condition" class="form-label">
+                                        <i class="fas fa-star text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Condition
+                                    </label>
+                                    <select name="condition" id="id_condition" class="form-input" aria-describedby="condition-help">
+                                        <option value="">Select Condition</option>
+                                        {% for condition in vehicle_conditions %}
+                                            <option value="{{ condition.id }}" {% if car.condition_id == condition.id %}selected{% endif %}>
+                                                {{ condition.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <p id="condition-help" class="text-xs text-gray-500 mt-1">
+                                        Overall condition of the vehicle
+                                    </p>
+                                </div>
+
+                                <!-- Fallback Condition Name -->
+                                <div class="form-group">
+                                    <label for="id_condition_name" class="form-label">
+                                        <i class="fas fa-edit text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Condition Name (Fallback)
+                                    </label>
+                                    <input type="text"
+                                           name="condition_name"
+                                           id="id_condition_name"
+                                           value="{{ car.condition_name }}"
+                                           class="form-input"
+                                           placeholder="Enter condition if not in dropdown"
+                                           aria-describedby="condition-name-help">
+                                    <p id="condition-name-help" class="text-xs text-gray-500 mt-1">
+                                        Use only if condition is not available in dropdown
+                                    </p>
+                                </div>
+
+                                <!-- Mileage -->
+                                <div class="form-group">
+                                    <label for="id_mileage" class="form-label required">
+                                        <i class="fas fa-tachometer-alt text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Mileage (km)
+                                    </label>
+                                    <input type="number"
+                                           name="mileage"
+                                           id="id_mileage"
+                                           value="{{ car.mileage }}"
+                                           class="form-input"
+                                           min="0"
+                                           step="1000"
+                                           required
+                                           aria-describedby="mileage-help">
+                                    <p id="mileage-help" class="text-xs text-gray-500 mt-1">
+                                        Total distance traveled in kilometers
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Engine & Performance -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-engine text-harrier-red mr-2" aria-hidden="true"></i>
+                                Engine & Performance
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Engine Size -->
+                                <div class="form-group">
+                                    <label for="id_engine_size" class="form-label">
+                                        <i class="fas fa-cogs text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Engine Size
+                                    </label>
+                                    <input type="text"
+                                           name="engine_size"
+                                           id="id_engine_size"
+                                           value="{{ car.engine_size }}"
+                                           class="form-input"
+                                           placeholder="e.g., 2.0L, 1800cc"
+                                           aria-describedby="engine-size-help">
+                                    <p id="engine-size-help" class="text-xs text-gray-500 mt-1">
+                                        Engine displacement (e.g., 2.0L or 2000cc)
+                                    </p>
+                                </div>
+
+                                <!-- Fuel Type -->
+                                <div class="form-group">
+                                    <label for="id_fuel_type" class="form-label required">
+                                        <i class="fas fa-gas-pump text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Fuel Type
+                                    </label>
+                                    <select name="fuel_type" id="id_fuel_type" class="form-input" required aria-describedby="fuel-type-help">
+                                        <option value="">Select Fuel Type</option>
+                                        <option value="petrol" {% if car.fuel_type == 'petrol' %}selected{% endif %}>Petrol</option>
+                                        <option value="diesel" {% if car.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                                        <option value="hybrid" {% if car.fuel_type == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                                        <option value="electric" {% if car.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+                                    </select>
+                                    <p id="fuel-type-help" class="text-xs text-gray-500 mt-1">
+                                        Primary fuel type for the vehicle
+                                    </p>
+                                </div>
+
+                                <!-- Transmission -->
+                                <div class="form-group">
+                                    <label for="id_transmission" class="form-label required">
+                                        <i class="fas fa-cogs text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Transmission
+                                    </label>
+                                    <select name="transmission" id="id_transmission" class="form-input" required aria-describedby="transmission-help">
+                                        <option value="">Select Transmission</option>
+                                        <option value="manual" {% if car.transmission == 'manual' %}selected{% endif %}>Manual</option>
+                                        <option value="automatic" {% if car.transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+                                        <option value="cvt" {% if car.transmission == 'cvt' %}selected{% endif %}>CVT</option>
+                                    </select>
+                                    <p id="transmission-help" class="text-xs text-gray-500 mt-1">
+                                        Type of transmission system
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Listing Information -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-list text-harrier-red mr-2" aria-hidden="true"></i>
+                                Listing Information
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Listing Type -->
+                                <div class="form-group">
+                                    <label for="id_listing_type" class="form-label required">
+                                        <i class="fas fa-tags text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Listing Type
+                                    </label>
+                                    <select name="listing_type" id="id_listing_type" class="form-input" required aria-describedby="listing-type-help">
+                                        <option value="">Select Listing Type</option>
+                                        <option value="local" {% if car.listing_type == 'local' %}selected{% endif %}>Local Listing</option>
+                                        <option value="imported" {% if car.listing_type == 'imported' %}selected{% endif %}>Imported Car</option>
+                                        <option value="sell_behalf" {% if car.listing_type == 'sell_behalf' %}selected{% endif %}>Sell on Behalf</option>
+                                        <option value="auction" {% if car.listing_type == 'auction' %}selected{% endif %}>Auctioned</option>
+                                    </select>
+                                    <p id="listing-type-help" class="text-xs text-gray-500 mt-1">
+                                        Category of the listing
+                                    </p>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="form-group">
+                                    <label for="id_status" class="form-label required">
+                                        <i class="fas fa-flag text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Status
+                                    </label>
+                                    <select name="status" id="id_status" class="form-input" required aria-describedby="status-help">
+                                        <option value="">Select Status</option>
+                                        <option value="available" {% if car.status == 'available' %}selected{% endif %}>Available</option>
+                                        <option value="sold" {% if car.status == 'sold' %}selected{% endif %}>Sold</option>
+                                        <option value="pending" {% if car.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="featured" {% if car.status == 'featured' %}selected{% endif %}>Featured</option>
+                                    </select>
+                                    <p id="status-help" class="text-xs text-gray-500 mt-1">
+                                        Current availability status
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location & Contact Tab -->
+                    <div id="location-tab" x-show="activeTab === 'location'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" class="space-y-6" role="tabpanel" aria-labelledby="location-tab-button">
+
+                        <!-- Location Information -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-map-marker-alt text-harrier-red mr-2" aria-hidden="true"></i>
+                                Vehicle Location
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Area -->
+                                <div class="form-group">
+                                    <label for="id_area" class="form-label">
+                                        <i class="fas fa-map-pin text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Area/Neighborhood
+                                    </label>
+                                    <input type="text"
+                                           name="area"
+                                           id="id_area"
+                                           value="{{ car.area }}"
+                                           class="form-input"
+                                           placeholder="e.g., Westlands, Karen, CBD"
+                                           aria-describedby="area-help">
+                                    <p id="area-help" class="text-xs text-gray-500 mt-1">
+                                        Specific area or neighborhood
+                                    </p>
+                                </div>
+
+                                <!-- City -->
+                                <div class="form-group">
+                                    <label for="id_city" class="form-label">
+                                        <i class="fas fa-city text-harrier-red mr-2" aria-hidden="true"></i>
+                                        City
+                                    </label>
+                                    <input type="text"
+                                           name="city"
+                                           id="id_city"
+                                           value="{{ car.city }}"
+                                           class="form-input"
+                                           placeholder="e.g., Nairobi, Mombasa, Kisumu"
+                                           aria-describedby="city-help">
+                                    <p id="city-help" class="text-xs text-gray-500 mt-1">
+                                        City where the car is located
+                                    </p>
+                                </div>
+
+                                <!-- Country -->
+                                <div class="form-group">
+                                    <label for="id_country" class="form-label">
+                                        <i class="fas fa-globe text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Country
+                                    </label>
+                                    <select name="country" id="id_country" class="form-input" aria-describedby="country-help">
+                                        <option value="">Select Country</option>
+                                        <option value="Kenya" {% if car.country == 'Kenya' %}selected{% endif %}>Kenya</option>
+                                        <option value="Uganda" {% if car.country == 'Uganda' %}selected{% endif %}>Uganda</option>
+                                        <option value="Tanzania" {% if car.country == 'Tanzania' %}selected{% endif %}>Tanzania</option>
+                                        <option value="Rwanda" {% if car.country == 'Rwanda' %}selected{% endif %}>Rwanda</option>
+                                        <option value="Burundi" {% if car.country == 'Burundi' %}selected{% endif %}>Burundi</option>
+                                        <option value="South Sudan" {% if car.country == 'South Sudan' %}selected{% endif %}>South Sudan</option>
+                                        <option value="Ethiopia" {% if car.country == 'Ethiopia' %}selected{% endif %}>Ethiopia</option>
+                                        <option value="Somalia" {% if car.country == 'Somalia' %}selected{% endif %}>Somalia</option>
+                                        <option value="Djibouti" {% if car.country == 'Djibouti' %}selected{% endif %}>Djibouti</option>
+                                        <option value="Eritrea" {% if car.country == 'Eritrea' %}selected{% endif %}>Eritrea</option>
+                                        <!-- Other countries alphabetically -->
+                                        <option value="Algeria" {% if car.country == 'Algeria' %}selected{% endif %}>Algeria</option>
+                                        <option value="Angola" {% if car.country == 'Angola' %}selected{% endif %}>Angola</option>
+                                        <option value="Benin" {% if car.country == 'Benin' %}selected{% endif %}>Benin</option>
+                                        <option value="Botswana" {% if car.country == 'Botswana' %}selected{% endif %}>Botswana</option>
+                                        <option value="Burkina Faso" {% if car.country == 'Burkina Faso' %}selected{% endif %}>Burkina Faso</option>
+                                        <option value="Cameroon" {% if car.country == 'Cameroon' %}selected{% endif %}>Cameroon</option>
+                                        <option value="Cape Verde" {% if car.country == 'Cape Verde' %}selected{% endif %}>Cape Verde</option>
+                                        <option value="Central African Republic" {% if car.country == 'Central African Republic' %}selected{% endif %}>Central African Republic</option>
+                                        <option value="Chad" {% if car.country == 'Chad' %}selected{% endif %}>Chad</option>
+                                        <option value="Comoros" {% if car.country == 'Comoros' %}selected{% endif %}>Comoros</option>
+                                        <option value="Congo" {% if car.country == 'Congo' %}selected{% endif %}>Congo</option>
+                                        <option value="Democratic Republic of Congo" {% if car.country == 'Democratic Republic of Congo' %}selected{% endif %}>Democratic Republic of Congo</option>
+                                        <option value="Egypt" {% if car.country == 'Egypt' %}selected{% endif %}>Egypt</option>
+                                        <option value="Equatorial Guinea" {% if car.country == 'Equatorial Guinea' %}selected{% endif %}>Equatorial Guinea</option>
+                                        <option value="Gabon" {% if car.country == 'Gabon' %}selected{% endif %}>Gabon</option>
+                                        <option value="Gambia" {% if car.country == 'Gambia' %}selected{% endif %}>Gambia</option>
+                                        <option value="Ghana" {% if car.country == 'Ghana' %}selected{% endif %}>Ghana</option>
+                                        <option value="Guinea" {% if car.country == 'Guinea' %}selected{% endif %}>Guinea</option>
+                                        <option value="Guinea-Bissau" {% if car.country == 'Guinea-Bissau' %}selected{% endif %}>Guinea-Bissau</option>
+                                        <option value="Ivory Coast" {% if car.country == 'Ivory Coast' %}selected{% endif %}>Ivory Coast</option>
+                                        <option value="Lesotho" {% if car.country == 'Lesotho' %}selected{% endif %}>Lesotho</option>
+                                        <option value="Liberia" {% if car.country == 'Liberia' %}selected{% endif %}>Liberia</option>
+                                        <option value="Libya" {% if car.country == 'Libya' %}selected{% endif %}>Libya</option>
+                                        <option value="Madagascar" {% if car.country == 'Madagascar' %}selected{% endif %}>Madagascar</option>
+                                        <option value="Malawi" {% if car.country == 'Malawi' %}selected{% endif %}>Malawi</option>
+                                        <option value="Mali" {% if car.country == 'Mali' %}selected{% endif %}>Mali</option>
+                                        <option value="Mauritania" {% if car.country == 'Mauritania' %}selected{% endif %}>Mauritania</option>
+                                        <option value="Mauritius" {% if car.country == 'Mauritius' %}selected{% endif %}>Mauritius</option>
+                                        <option value="Morocco" {% if car.country == 'Morocco' %}selected{% endif %}>Morocco</option>
+                                        <option value="Mozambique" {% if car.country == 'Mozambique' %}selected{% endif %}>Mozambique</option>
+                                        <option value="Namibia" {% if car.country == 'Namibia' %}selected{% endif %}>Namibia</option>
+                                        <option value="Niger" {% if car.country == 'Niger' %}selected{% endif %}>Niger</option>
+                                        <option value="Nigeria" {% if car.country == 'Nigeria' %}selected{% endif %}>Nigeria</option>
+                                        <option value="Sao Tome and Principe" {% if car.country == 'Sao Tome and Principe' %}selected{% endif %}>Sao Tome and Principe</option>
+                                        <option value="Senegal" {% if car.country == 'Senegal' %}selected{% endif %}>Senegal</option>
+                                        <option value="Seychelles" {% if car.country == 'Seychelles' %}selected{% endif %}>Seychelles</option>
+                                        <option value="Sierra Leone" {% if car.country == 'Sierra Leone' %}selected{% endif %}>Sierra Leone</option>
+                                        <option value="South Africa" {% if car.country == 'South Africa' %}selected{% endif %}>South Africa</option>
+                                        <option value="Swaziland" {% if car.country == 'Swaziland' %}selected{% endif %}>Swaziland</option>
+                                        <option value="Togo" {% if car.country == 'Togo' %}selected{% endif %}>Togo</option>
+                                        <option value="Tunisia" {% if car.country == 'Tunisia' %}selected{% endif %}>Tunisia</option>
+                                        <option value="Zambia" {% if car.country == 'Zambia' %}selected{% endif %}>Zambia</option>
+                                        <option value="Zimbabwe" {% if car.country == 'Zimbabwe' %}selected{% endif %}>Zimbabwe</option>
+                                    </select>
+                                    <p id="country-help" class="text-xs text-gray-500 mt-1">
+                                        Country where the car is located
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vendor Information -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-user-tie text-harrier-red mr-2" aria-hidden="true"></i>
+                                Vendor Information
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Vendor Display -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-store text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Current Vendor
+                                    </label>
+                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <div class="flex items-center space-x-3">
+                                            {% if car.vendor.user.profile_picture %}
+                                                <img src="{{ car.vendor.user.profile_picture.url }}"
+                                                     alt="{{ car.vendor.user.get_full_name }}"
+                                                     class="w-10 h-10 rounded-full object-cover">
+                                            {% else %}
+                                                <div class="w-10 h-10 bg-harrier-red rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-white" aria-hidden="true"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <p class="font-semibold text-gray-900">{{ car.vendor.user.get_full_name }}</p>
+                                                <p class="text-sm text-gray-600">{{ car.vendor.user.email }}</p>
+                                                <p class="text-xs text-gray-500">
+                                                    {% if car.vendor.phone %}{{ car.vendor.phone }}{% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Vendor who listed this car
+                                    </p>
+                                </div>
+
+                                <!-- Vendor Status -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-check-circle text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Vendor Status
+                                    </label>
+                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm text-gray-600">Approval Status:</span>
+                                                <span class="px-2 py-1 rounded-full text-xs font-medium {% if car.vendor.is_approved %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                                    {% if car.vendor.is_approved %}Approved{% else %}Pending{% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm text-gray-600">Member Since:</span>
+                                                <span class="text-sm text-gray-900">{{ car.vendor.created_at|date:"M Y" }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm text-gray-600">Total Listings:</span>
+                                                <span class="text-sm text-gray-900">{{ car.vendor.cars.count }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Controls Tab -->
+                    <div id="admin-tab" x-show="activeTab === 'admin'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" class="space-y-6" role="tabpanel" aria-labelledby="admin-tab-button">
+
+                        <!-- Approval Status Management -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-shield-check text-harrier-red mr-2" aria-hidden="true"></i>
+                                Approval Status Management
+                            </h4>
+
+                            <div class="space-y-6">
+                                <!-- Current Approval Status -->
+                                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 {% if car.is_approved %}bg-green-500{% else %}bg-yellow-500{% endif %} rounded-full flex items-center justify-center">
+                                                <i class="fas {% if car.is_approved %}fa-check{% else %}fa-clock{% endif %} text-white" aria-hidden="true"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-gray-900">
+                                                    Current Status:
+                                                    <span class="{% if car.is_approved %}text-green-600{% else %}text-yellow-600{% endif %}">
+                                                        {% if car.is_approved %}Approved{% else %}Pending Approval{% endif %}
+                                                    </span>
+                                                </p>
+                                                {% if car.approval_date %}
+                                                    <p class="text-sm text-gray-600">
+                                                        Approved on: {{ car.approval_date|date:"M d, Y \a\t H:i" }}
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Approval Controls -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Approval Checkbox -->
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="fas fa-check-circle text-harrier-red mr-2" aria-hidden="true"></i>
+                                            Approval Status
+                                        </label>
+                                        <div class="mt-2">
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox"
+                                                       name="is_approved"
+                                                       id="id_is_approved"
+                                                       {% if car.is_approved %}checked{% endif %}
+                                                       class="form-checkbox text-green-600 focus:ring-green-500"
+                                                       onchange="toggleApprovalFields(this.checked)">
+                                                <span class="ml-2 text-sm font-semibold text-gray-700">
+                                                    Approve for public listing
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            When checked, the car will be visible to public users
+                                        </p>
+                                    </div>
+
+                                    <!-- Star Rating -->
+                                    <div class="form-group">
+                                        <label for="id_star_rating" class="form-label">
+                                            <i class="fas fa-star text-harrier-red mr-2" aria-hidden="true"></i>
+                                            Star Rating (0-5)
+                                        </label>
+                                        <select name="star_rating" id="id_star_rating" class="form-input" aria-describedby="star-rating-help">
+                                            <option value="">No Rating</option>
+                                            <option value="1" {% if car.star_rating == 1 %}selected{% endif %}>⭐ 1 Star</option>
+                                            <option value="2" {% if car.star_rating == 2 %}selected{% endif %}>⭐⭐ 2 Stars</option>
+                                            <option value="3" {% if car.star_rating == 3 %}selected{% endif %}>⭐⭐⭐ 3 Stars</option>
+                                            <option value="4" {% if car.star_rating == 4 %}selected{% endif %}>⭐⭐⭐⭐ 4 Stars</option>
+                                            <option value="5" {% if car.star_rating == 5 %}selected{% endif %}>⭐⭐⭐⭐⭐ 5 Stars</option>
+                                        </select>
+                                        <p id="star-rating-help" class="text-xs text-gray-500 mt-1">
+                                            Higher ratings get better visibility (4+ stars = Featured)
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Admin Notes -->
+                                <div class="form-group">
+                                    <label for="id_admin_notes" class="form-label">
+                                        <i class="fas fa-sticky-note text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Admin Notes
+                                    </label>
+                                    <textarea name="admin_notes"
+                                              id="id_admin_notes"
+                                              rows="3"
+                                              class="form-input"
+                                              placeholder="Add notes about approval, rejection, or any special instructions..."
+                                              aria-describedby="admin-notes-help">{{ car.admin_notes|default:"" }}</textarea>
+                                    <p id="admin-notes-help" class="text-xs text-gray-500 mt-1">
+                                        Internal notes for admin reference and vendor communication
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Promotional Features -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-bullhorn text-harrier-red mr-2" aria-hidden="true"></i>
+                                Promotional Features
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Featured Status -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-star text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Featured Status
+                                    </label>
+                                    <div class="space-y-3">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox"
+                                                   name="is_featured"
+                                                   id="id_is_featured"
+                                                   {% if car.is_featured %}checked{% endif %}
+                                                   class="form-checkbox text-purple-600 focus:ring-purple-500"
+                                                   onchange="toggleFeaturedFields(this.checked)">
+                                            <span class="ml-2 text-sm font-semibold text-gray-700">
+                                                Mark as Featured
+                                            </span>
+                                        </label>
+
+                                        <!-- Featured Until Date -->
+                                        <div id="featured-until-field" style="display: {% if car.is_featured %}block{% else %}none{% endif %};">
+                                            <label for="id_featured_until" class="block text-xs text-gray-600 mb-1">Featured Until:</label>
+                                            <input type="datetime-local"
+                                                   name="featured_until"
+                                                   id="id_featured_until"
+                                                   value="{% if car.featured_until %}{{ car.featured_until|date:'Y-m-d\TH:i' }}{% endif %}"
+                                                   class="form-input text-sm">
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Featured cars appear at the top of search results
+                                    </p>
+                                </div>
+
+                                <!-- Hot Deal Status -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-fire text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Hot Deal Status
+                                    </label>
+                                    <div class="space-y-3">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox"
+                                                   name="is_hot_deal"
+                                                   id="id_is_hot_deal"
+                                                   {% if car.is_hot_deal %}checked{% endif %}
+                                                   class="form-checkbox text-red-600 focus:ring-red-500"
+                                                   onchange="toggleHotDealFields(this.checked)">
+                                            <span class="ml-2 text-sm font-semibold text-gray-700">
+                                                Mark as Hot Deal
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Hot deals get special promotion and discounted pricing
+                                    </p>
+                                </div>
+
+                                <!-- Certified Status -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-certificate text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Certification
+                                    </label>
+                                    <div class="mt-2">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox"
+                                                   name="is_certified"
+                                                   id="id_is_certified"
+                                                   {% if car.is_certified %}checked{% endif %}
+                                                   class="form-checkbox text-green-600 focus:ring-green-500">
+                                            <span class="ml-2 text-sm font-semibold text-gray-700">
+                                                Mark as Certified
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Certified cars have been inspected and verified
+                                    </p>
+                                </div>
+
+                                <!-- Auto Featured -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-magic text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Auto Features
+                                    </label>
+                                    <div class="mt-2">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox"
+                                                   name="auto_featured"
+                                                   id="id_auto_featured"
+                                                   {% if car.auto_featured %}checked{% endif %}
+                                                   class="form-checkbox text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm font-semibold text-gray-700">
+                                                Auto-featured based on vendor subscription
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Automatically featured based on vendor's subscription plan
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Metrics -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-chart-line text-harrier-red mr-2" aria-hidden="true"></i>
+                                Performance Metrics
+                            </h4>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <!-- Views Count -->
+                                <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-blue-600">{{ car.views_count|default:0 }}</div>
+                                    <div class="text-xs text-blue-600 font-medium">Views</div>
+                                </div>
+
+                                <!-- Inquiry Count -->
+                                <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-green-600">{{ car.inquiry_count|default:0 }}</div>
+                                    <div class="text-xs text-green-600 font-medium">Inquiries</div>
+                                </div>
+
+                                <!-- Days Listed -->
+                                <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-purple-600">{{ car.created_at|timesince|truncatewords:1 }}</div>
+                                    <div class="text-xs text-purple-600 font-medium">Days Listed</div>
+                                </div>
+
+                                <!-- Last Updated -->
+                                <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg text-center">
+                                    <div class="text-sm font-bold text-orange-600">{{ car.updated_at|date:"M d" }}</div>
+                                    <div class="text-xs text-orange-600 font-medium">Last Updated</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images & Media Tab -->
+                    <div id="media-tab" x-show="activeTab === 'media'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" class="space-y-6" role="tabpanel" aria-labelledby="media-tab-button">
+
+                        <!-- Main Image -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-image text-harrier-red mr-2" aria-hidden="true"></i>
+                                Main Image
+                            </h4>
+
+                            <div class="space-y-4">
+                                <!-- Current Main Image -->
+                                {% if car.main_image %}
+                                    <div class="relative">
+                                        <img src="{{ car.main_image.url }}"
+                                             alt="{{ car.title }}"
+                                             class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                                        <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            Current Main Image
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                                        <div class="text-center text-gray-500">
+                                            <i class="fas fa-image text-4xl mb-2" aria-hidden="true"></i>
+                                            <p>No main image uploaded</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Upload New Main Image -->
+                                <div class="form-group">
+                                    <label for="id_main_image" class="form-label">
+                                        <i class="fas fa-upload text-harrier-red mr-2" aria-hidden="true"></i>
+                                        Upload New Main Image
+                                    </label>
+                                    <input type="file"
+                                           name="main_image"
+                                           id="id_main_image"
+                                           accept="image/*"
+                                           class="form-input"
+                                           aria-describedby="main-image-help">
+                                    <p id="main-image-help" class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-info-circle text-blue-500 mr-1" aria-hidden="true"></i>
+                                        Recommended: 1200x800px, max 5MB, JPG/PNG format
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Gallery -->
+                        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                            <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                                <i class="fas fa-images text-harrier-red mr-2" aria-hidden="true"></i>
+                                Image Gallery
+                            </h4>
+
+                            <!-- Current Gallery Images -->
+                            {% if car.images.all %}
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                                    {% for image in car.images.all %}
+                                        <div class="relative group">
+                                            <img src="{{ image.image.url }}"
+                                                 alt="{{ image.caption|default:car.title }}"
+                                                 class="w-full h-32 object-cover rounded-lg border border-gray-200">
+
+                                            <!-- Image Controls -->
+                                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center space-x-2">
+                                                {% if image.is_primary %}
+                                                    <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
+                                                        Primary
+                                                    </span>
+                                                {% else %}
+                                                    <button type="button"
+                                                            onclick="setPrimaryImage({{ image.id }})"
+                                                            class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                                        Set Primary
+                                                    </button>
+                                                {% endif %}
+                                                <button type="button"
+                                                        onclick="deleteImage({{ image.id }})"
+                                                        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                                    Delete
+                                                </button>
+                                            </div>
+
+                                            <!-- Image Caption -->
+                                            {% if image.caption %}
+                                                <p class="text-xs text-gray-600 mt-1 truncate">{{ image.caption }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-8 text-gray-500">
+                                    <i class="fas fa-images text-4xl mb-2" aria-hidden="true"></i>
+                                    <p>No gallery images uploaded</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Upload New Gallery Images -->
+                            <div class="form-group">
+                                <label for="id_gallery_images" class="form-label">
+                                    <i class="fas fa-plus text-harrier-red mr-2" aria-hidden="true"></i>
+                                    Add Gallery Images
+                                </label>
+                                <input type="file"
+                                       name="gallery_images"
+                                       id="id_gallery_images"
+                                       accept="image/*"
+                                       multiple
+                                       class="form-input"
+                                       aria-describedby="gallery-images-help">
+                                <p id="gallery-images-help" class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-info-circle text-blue-500 mr-1" aria-hidden="true"></i>
+                                    Select multiple images. Recommended: 800x600px, max 3MB each, JPG/PNG format
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hot Deals Dynamic Form Section (shown when hot deal is checked) -->
                     <div id="hot-deals-section"
                          class="form-group transition-all duration-500 ease-in-out transform"
-                         style="display: {% if form.is_hot_deal.value %}block{% else %}none{% endif %};"
-                         x-data="{ isVisible: {% if form.is_hot_deal.value %}true{% else %}false{% endif %} }"
+                         style="display: {% if car.is_hot_deal %}block{% else %}none{% endif %};"
+                         x-data="{ isVisible: {% if car.is_hot_deal %}true{% else %}false{% endif %} }"
                          x-show="isVisible"
                          x-transition:enter="transition ease-out duration-300"
                          x-transition:enter-start="opacity-0 transform scale-95"
@@ -373,26 +1261,75 @@
                         </div>
                     </div>
 
+                    <!-- Image Gallery Management Section -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200 mt-6">
+                        <h4 class="text-lg font-bold text-harrier-dark mb-4 font-montserrat flex items-center">
+                            <i class="fas fa-images text-harrier-red mr-2"></i>
+                            Image Gallery Management
+                        </h4>
+
+                        <!-- Include the image gallery partial -->
+                        {% include 'core/partials/car_image_gallery.html' with car=car car_images=car.images.all %}
+                    </div>
+
                     <!-- Action Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6 pt-6 border-t border-gray-200">
-                        <!-- Cancel Button -->
-                        <button type="button"
-                                class="enhanced-btn enhanced-btn-cancel"
-                                @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
-                            <i class="fas fa-times mr-2"></i>
-                            <span>Cancel</span>
-                        </button>
+                    <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 mt-8 -mx-6 -mb-6 rounded-b-2xl">
+                        <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                            <!-- Left Side - Preview Button -->
+                            <button type="button"
+                                    onclick="previewCar({{ car.id }})"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    aria-label="Preview car listing">
+                                <i class="fas fa-eye mr-2" aria-hidden="true"></i>
+                                <span>Preview</span>
+                            </button>
 
-                        <!-- Submit Button -->
-                        <button type="submit"
-                                id="save-changes-btn"
-                                class="enhanced-btn enhanced-btn-submit"
-                                :disabled="isSubmitting">
+                            <!-- Right Side - Main Actions -->
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <!-- Cancel Button -->
+                                <button type="button"
+                                        class="enhanced-btn enhanced-btn-cancel"
+                                        @click="closeModal()"
+                                        aria-label="Cancel editing and close modal">
+                                    <i class="fas fa-times mr-2" aria-hidden="true"></i>
+                                    <span>Cancel</span>
+                                </button>
 
-                            <i class="fas fa-save mr-2" x-show="!isSubmitting"></i>
-                            <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
-                            <span x-text="isSubmitting ? 'Saving Changes...' : 'Save Changes'"></span>
-                        </button>
+                                <!-- Save & Continue Button -->
+                                <button type="button"
+                                        onclick="saveAndContinue()"
+                                        class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                        :disabled="isSubmitting"
+                                        aria-label="Save changes and continue editing">
+                                    <i class="fas fa-save mr-2" aria-hidden="true"></i>
+                                    <span>Save & Continue</span>
+                                </button>
+
+                                <!-- Save & Close Button -->
+                                <button type="submit"
+                                        id="save-changes-btn"
+                                        class="enhanced-btn enhanced-btn-submit"
+                                        :disabled="isSubmitting"
+                                        aria-label="Save all changes and close modal">
+                                    <i class="fas fa-save mr-2" x-show="!isSubmitting" aria-hidden="true"></i>
+                                    <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting" aria-hidden="true"></i>
+                                    <span x-text="isSubmitting ? 'Saving Changes...' : 'Save & Close'"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Form Validation Summary -->
+                        <div id="validation-summary" class="mt-3 hidden">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-red-500 mt-0.5 mr-2" aria-hidden="true"></i>
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-red-800">Please correct the following errors:</h4>
+                                        <ul id="validation-errors" class="text-sm text-red-700 mt-1 list-disc list-inside"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -704,22 +1641,365 @@
 </style>
 
 <script>
+// Debug: Modal loaded
+console.log('🎯 Admin Car Edit Modal loaded for car ID:', {{ car.id }});
+console.log('📝 Form element exists:', !!document.getElementById('edit-car-form'));
+
+// Alpine.js component for edit car modal
+function editCarModal() {
+    return {
+        show: false,
+        activeTab: 'basic',
+        isSubmitting: false,
+
+        // Initialize the modal
+        initModal() {
+            console.log('🎯 Alpine.js modal component initialized for car {{ car.id }}');
+
+            // Show the modal
+            this.show = true;
+
+            // Focus management
+            this.$nextTick(() => {
+                const firstInput = this.$el.querySelector('input, select, textarea');
+                if (firstInput) {
+                    firstInput.focus();
+                    console.log('🎯 Focus set to first input');
+                }
+            });
+
+            // Initialize any additional components
+            this.initializeComponents();
+        },
+
+        // Close modal function
+        closeModal() {
+            console.log('🚪 Closing modal');
+            this.show = false;
+            setTimeout(() => {
+                this.$el.remove();
+                console.log('🗑️ Modal removed from DOM');
+            }, 200);
+        },
+
+        // Switch tabs
+        switchTab(tab) {
+            console.log('📑 Switching to tab:', tab);
+            this.activeTab = tab;
+        },
+
+        // Initialize additional components
+        initializeComponents() {
+            // Initialize hot deal toggles
+            this.initHotDealToggles();
+
+            // Initialize form validation
+            this.initFormValidation();
+
+            // Initialize price formatting
+            this.initPriceFormatting();
+        },
+
+        // Initialize hot deal toggles
+        initHotDealToggles() {
+            const hotDealCheckbox = this.$el.querySelector('#id_is_hot_deal');
+            if (hotDealCheckbox) {
+                hotDealCheckbox.addEventListener('change', (e) => {
+                    toggleHotDealFields(e.target.checked);
+                });
+
+                // Initialize state
+                if (hotDealCheckbox.checked) {
+                    toggleHotDealFields(true);
+                }
+            }
+
+            const featuredCheckbox = this.$el.querySelector('#id_is_featured');
+            if (featuredCheckbox) {
+                featuredCheckbox.addEventListener('change', (e) => {
+                    toggleFeaturedFields(e.target.checked);
+                });
+
+                // Initialize state
+                if (featuredCheckbox.checked) {
+                    toggleFeaturedFields(true);
+                }
+            }
+        },
+
+        // Initialize form validation
+        initFormValidation() {
+            const form = this.$el.querySelector('#edit-car-form');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    if (!this.validateForm()) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    this.isSubmitting = true;
+                });
+            }
+        },
+
+        // Initialize price formatting
+        initPriceFormatting() {
+            const priceInputs = this.$el.querySelectorAll('.price-format');
+            priceInputs.forEach(input => {
+                if (typeof formatPrice === 'function') {
+                    input.addEventListener('input', (e) => {
+                        formatPrice(e.target);
+                    });
+                }
+            });
+        },
+
+        // Validate form
+        validateForm() {
+            return validateForm(); // Use the global validation function
+        }
+    };
+}
+
+// Ensure Alpine.js is available and register the component
+document.addEventListener('alpine:init', () => {
+    console.log('🎯 Alpine.js initialized - registering editCarModal component');
+});
+
+// Fallback initialization if Alpine.js is already loaded
+if (typeof Alpine !== 'undefined') {
+    console.log('🎯 Alpine.js already available - modal ready');
+} else {
+    console.log('⏳ Waiting for Alpine.js to load...');
+}
+
 // Simplified HTMX event handlers
+// Enhanced form validation
+function validateForm() {
+    const errors = [];
+    const form = document.getElementById('edit-car-form');
+
+    // Required fields validation
+    const requiredFields = [
+        { id: 'id_title', name: 'Car Title' },
+        { id: 'id_price', name: 'Price' },
+        { id: 'id_year', name: 'Year' },
+        { id: 'id_color', name: 'Color' },
+        { id: 'id_fuel_type', name: 'Fuel Type' },
+        { id: 'id_transmission', name: 'Transmission' },
+        { id: 'id_mileage', name: 'Mileage' },
+        { id: 'id_listing_type', name: 'Listing Type' },
+        { id: 'id_status', name: 'Status' },
+        { id: 'id_description', name: 'Description' }
+    ];
+
+    requiredFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (element && !element.value.trim()) {
+            errors.push(`${field.name} is required`);
+            element.classList.add('border-red-500');
+        } else if (element) {
+            element.classList.remove('border-red-500');
+        }
+    });
+
+    // Price validation
+    const priceField = document.getElementById('id_price');
+    if (priceField && priceField.value) {
+        const price = parseFloat(priceField.value);
+        if (price <= 0) {
+            errors.push('Price must be greater than 0');
+            priceField.classList.add('border-red-500');
+        } else if (price > 1000000000) {
+            errors.push('Price cannot exceed 1 billion');
+            priceField.classList.add('border-red-500');
+        }
+    }
+
+    // Year validation
+    const yearField = document.getElementById('id_year');
+    if (yearField && yearField.value) {
+        const year = parseInt(yearField.value);
+        const currentYear = new Date().getFullYear();
+        if (year < 1900 || year > currentYear + 1) {
+            errors.push(`Year must be between 1900 and ${currentYear + 1}`);
+            yearField.classList.add('border-red-500');
+        }
+    }
+
+    // Mileage validation
+    const mileageField = document.getElementById('id_mileage');
+    if (mileageField && mileageField.value) {
+        const mileage = parseInt(mileageField.value);
+        if (mileage < 0) {
+            errors.push('Mileage cannot be negative');
+            mileageField.classList.add('border-red-500');
+        }
+    }
+
+    // Show validation summary
+    const validationSummary = document.getElementById('validation-summary');
+    const validationErrors = document.getElementById('validation-errors');
+
+    if (errors.length > 0) {
+        validationErrors.innerHTML = errors.map(error => `<li>${error}</li>`).join('');
+        validationSummary.classList.remove('hidden');
+        validationSummary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return false;
+    } else {
+        validationSummary.classList.add('hidden');
+        return true;
+    }
+}
+
+// Enhanced form submission handlers
 function handleBeforeSubmit(event) {
     console.log('🚀 HTMX Before Submit triggered!');
-    console.log('Event details:', event.detail);
+
+    // Validate form before submission
+    if (!validateForm()) {
+        event.preventDefault();
+        return false;
+    }
 
     // Show loading state
     const submitBtn = document.getElementById('save-changes-btn');
     if (submitBtn) {
-        console.log('✅ Submit button found, disabling...');
         submitBtn.disabled = true;
-    } else {
-        console.log('❌ Submit button not found!');
     }
 
     // Show notification
-    showSimpleToast('Saving car details...', 'info');
+    if (typeof showToast === 'function') {
+        showToast('Saving car details...', 'info');
+    }
+}
+
+// Preview car functionality
+function previewCar(carId) {
+    window.open(`/cars/${carId}/`, '_blank');
+}
+
+// Save and continue functionality
+function saveAndContinue() {
+    if (!validateForm()) {
+        return;
+    }
+
+    const form = document.getElementById('edit-car-form');
+    const formData = new FormData(form);
+
+    // Add a flag to indicate this is a save-and-continue action
+    formData.append('save_and_continue', 'true');
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (typeof showToast === 'function') {
+                showToast('Changes saved successfully!', 'success');
+            }
+            // Optionally refresh form data or update UI
+        } else {
+            if (typeof showToast === 'function') {
+                showToast('Error saving changes. Please try again.', 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Error saving changes. Please try again.', 'error');
+        }
+    });
+}
+
+// Toggle functions for dynamic fields
+function toggleApprovalFields(isApproved) {
+    // Add any specific logic for approval status changes
+    console.log('Approval status changed:', isApproved);
+}
+
+function toggleFeaturedFields(isFeatured) {
+    const featuredUntilField = document.getElementById('featured-until-field');
+    if (featuredUntilField) {
+        featuredUntilField.style.display = isFeatured ? 'block' : 'none';
+    }
+}
+
+function toggleHotDealFields(isHotDeal) {
+    const hotDealsSection = document.getElementById('hot-deals-section');
+    if (hotDealsSection) {
+        hotDealsSection.style.display = isHotDeal ? 'block' : 'none';
+    }
+}
+
+// Image management functions
+function setPrimaryImage(imageId) {
+    fetch(`/dashboard/admin/car-image/${imageId}/set-primary/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (typeof showToast === 'function') {
+                showToast('Primary image updated!', 'success');
+            }
+            // Refresh the media tab
+            location.reload();
+        } else {
+            if (typeof showToast === 'function') {
+                showToast('Error updating primary image.', 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Error updating primary image.', 'error');
+        }
+    });
+}
+
+function deleteImage(imageId) {
+    if (confirm('Are you sure you want to delete this image?')) {
+        fetch(`/dashboard/admin/car-image/${imageId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (typeof showToast === 'function') {
+                    showToast('Image deleted successfully!', 'success');
+                }
+                // Refresh the media tab
+                location.reload();
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast('Error deleting image.', 'error');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (typeof showToast === 'function') {
+                showToast('Error deleting image.', 'error');
+            }
+        });
+    }
 }
 
 function handleAfterSubmit(event) {

@@ -262,3 +262,25 @@ def user_preferences(request):
     except Exception:
         # Return safe defaults if any error occurs
         return {'user_preferences': {}}
+
+
+def compare_context(request):
+    """
+    Add compare list data to all templates.
+    """
+    compare_list = request.session.get('compare_list', [])
+    compare_count = len(compare_list)
+
+    # Get car objects for the floating widget
+    all_cars = []
+    if compare_list:
+        all_cars = Car.objects.filter(
+            id__in=compare_list,
+            is_approved=True
+        ).select_related('brand', 'model')
+
+    return {
+        'compare_list': compare_list,
+        'compare_count': compare_count,
+        'all_cars': all_cars,
+    }

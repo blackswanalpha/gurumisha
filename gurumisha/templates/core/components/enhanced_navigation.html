@@ -1,0 +1,1147 @@
+{% load static %}
+
+<!-- Enhanced Category Navigation Component -->
+<div class="enhanced-navigation-container">
+    <!-- Main Navigation Bar -->
+    <nav class="main-navigation bg-gradient-to-r from-gray-900 via-red-900 to-gray-900 shadow-2xl">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <!-- Logo and Brand -->
+                <div class="brand-section flex items-center gap-4">
+                    <a href="{% url 'core:homepage' %}" class="brand-logo">
+                        <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="h-10 w-auto">
+                    </a>
+                    <div class="brand-text hidden md:block">
+                        <h1 class="text-white font-bold text-xl font-montserrat">Resources</h1>
+                        <p class="text-white/70 text-sm font-raleway">Automotive Knowledge Hub</p>
+                    </div>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="search-section flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <input type="text" 
+                               id="global-search" 
+                               placeholder="Search articles, guides, news..." 
+                               class="w-full pl-12 pr-16 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                               hx-get="{% url 'core:global_search' %}"
+                               hx-target="#search-results"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-indicator="#search-loading">
+                        
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-white/60"></i>
+                        </div>
+                        
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                            <div id="search-loading" class="htmx-indicator">
+                                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            </div>
+                            <button type="button" 
+                                    onclick="clearGlobalSearch()"
+                                    class="ml-2 text-white/60 hover:text-white transition-colors">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Results Dropdown -->
+                    <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 hidden max-h-96 overflow-y-auto">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Navigation Actions -->
+                <div class="nav-actions flex items-center gap-4">
+                    <button onclick="toggleAdvancedFilters()" 
+                            class="nav-btn">
+                        <i class="fas fa-filter"></i>
+                        <span class="hidden md:inline">Filters</span>
+                    </button>
+                    
+                    <button onclick="toggleBookmarks()" 
+                            class="nav-btn">
+                        <i class="fas fa-bookmark"></i>
+                        <span class="hidden md:inline">Saved</span>
+                    </button>
+                    
+                    <div class="nav-divider hidden md:block w-px h-6 bg-white/20"></div>
+                    
+                    <a href="{% url 'core:homepage' %}" class="nav-btn">
+                        <i class="fas fa-home"></i>
+                        <span class="hidden md:inline">Home</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Category Navigation -->
+    <div class="category-navigation bg-white shadow-lg border-b border-gray-200">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <!-- Category Tabs -->
+                <div class="category-tabs flex items-center gap-2 overflow-x-auto">
+                    <a href="{% url 'core:resources' %}" 
+                       class="category-tab {% if not current_category and not current_content_type %}active{% endif %}">
+                        <i class="fas fa-th-large"></i>
+                        <span>All Content</span>
+                        <span class="count">{{ total_content_count }}</span>
+                    </a>
+                    
+                    {% for category in categories %}
+                    <a href="{% url 'core:resources_by_category' category.slug %}" 
+                       class="category-tab {% if current_category == category.slug %}active{% endif %}">
+                        <i class="{{ category.icon|default:'fas fa-folder' }}"></i>
+                        <span>{{ category.name }}</span>
+                        <span class="count">{{ category.content_count }}</span>
+                    </a>
+                    {% endfor %}
+                    
+                    <div class="category-divider"></div>
+                    
+                    <!-- Content Type Filters -->
+                    <a href="?content_type=article" 
+                       class="content-type-tab {% if current_content_type == 'article' %}active{% endif %}">
+                        <i class="fas fa-newspaper"></i>
+                        <span>Articles</span>
+                    </a>
+                    
+                    <a href="?content_type=guide" 
+                       class="content-type-tab {% if current_content_type == 'guide' %}active{% endif %}">
+                        <i class="fas fa-book"></i>
+                        <span>Guides</span>
+                    </a>
+                    
+                    <a href="?content_type=infographic" 
+                       class="content-type-tab {% if current_content_type == 'infographic' %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Charts</span>
+                    </a>
+                    
+                    <a href="?content_type=opinion" 
+                       class="content-type-tab {% if current_content_type == 'opinion' %}active{% endif %}">
+                        <i class="fas fa-comment-alt"></i>
+                        <span>Opinions</span>
+                    </a>
+                    
+                    <a href="?content_type=news" 
+                       class="content-type-tab {% if current_content_type == 'news' %}active{% endif %}">
+                        <i class="fas fa-rss"></i>
+                        <span>News</span>
+                    </a>
+                </div>
+                
+                <!-- Sort and View Options -->
+                <div class="nav-options flex items-center gap-3">
+                    <div class="sort-dropdown relative">
+                        <button onclick="toggleSortDropdown()" 
+                                class="sort-btn flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            <i class="fas fa-sort"></i>
+                            <span class="hidden md:inline">Sort</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        
+                        <div id="sort-dropdown" class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-40 hidden min-w-48">
+                            <div class="py-2">
+                                <a href="?sort=newest" class="sort-option">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Newest First</span>
+                                </a>
+                                <a href="?sort=oldest" class="sort-option">
+                                    <i class="fas fa-history"></i>
+                                    <span>Oldest First</span>
+                                </a>
+                                <a href="?sort=popular" class="sort-option">
+                                    <i class="fas fa-fire"></i>
+                                    <span>Most Popular</span>
+                                </a>
+                                <a href="?sort=trending" class="sort-option">
+                                    <i class="fas fa-trending-up"></i>
+                                    <span>Trending</span>
+                                </a>
+                                <a href="?sort=alphabetical" class="sort-option">
+                                    <i class="fas fa-sort-alpha-down"></i>
+                                    <span>A to Z</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="view-toggle flex bg-gray-100 rounded-lg p-1">
+                        <button onclick="setViewMode('grid')" 
+                                class="view-btn active" 
+                                data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button onclick="setViewMode('list')" 
+                                class="view-btn" 
+                                data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Advanced Filters Panel -->
+    <div id="advanced-filters" class="advanced-filters-panel hidden bg-gray-50 border-b border-gray-200">
+        <div class="container mx-auto px-4 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Date Range Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <select name="date_range" class="filter-select">
+                        <option value="">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                
+                <!-- Difficulty Level Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Difficulty Level</label>
+                    <select name="difficulty" class="filter-select">
+                        <option value="">All Levels</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="expert">Expert</option>
+                    </select>
+                </div>
+                
+                <!-- Reading Time Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Reading Time</label>
+                    <select name="reading_time" class="filter-select">
+                        <option value="">Any Length</option>
+                        <option value="quick">Quick Read (< 5 min)</option>
+                        <option value="medium">Medium (5-15 min)</option>
+                        <option value="long">Long Read (> 15 min)</option>
+                    </select>
+                </div>
+                
+                <!-- Tags Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Tags</label>
+                    <div class="tags-filter">
+                        <input type="text" 
+                               placeholder="Search tags..." 
+                               class="filter-input"
+                               id="tag-search">
+                        <div class="popular-tags mt-2">
+                            {% for tag in popular_tags %}
+                            <button onclick="toggleTag('{{ tag.slug }}')" 
+                                    class="tag-filter-btn" 
+                                    data-tag="{{ tag.slug }}">
+                                {{ tag.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-actions mt-6 flex items-center justify-between">
+                <div class="active-filters flex items-center gap-2">
+                    <span class="text-sm text-gray-600">Active filters:</span>
+                    <div id="active-filter-tags" class="flex gap-2">
+                        <!-- Active filter tags will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="filter-buttons flex gap-3">
+                    <button onclick="clearAllFilters()" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                        Clear All
+                    </button>
+                    <button onclick="applyFilters()" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-navigation bg-white border-b border-gray-100">
+        <div class="container mx-auto px-4 py-3">
+            <nav class="breadcrumb flex items-center gap-2 text-sm">
+                <a href="{% url 'core:homepage' %}" class="breadcrumb-item">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                
+                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                
+                <a href="{% url 'core:resources' %}" class="breadcrumb-item">
+                    <span>Resources</span>
+                </a>
+                
+                {% if current_category %}
+                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                <span class="breadcrumb-current">{{ current_category.name }}</span>
+                {% elif current_content_type %}
+                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                <span class="breadcrumb-current">{{ current_content_type|title }}</span>
+                {% elif search_query %}
+                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                <span class="breadcrumb-current">Search: "{{ search_query }}"</span>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Enhanced Navigation Styles */
+.enhanced-navigation-container {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+.main-navigation {
+    backdrop-filter: blur(20px);
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+}
+
+.nav-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.category-tabs {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.category-tab,
+.content-type-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: #6b7280;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+    position: relative;
+}
+
+.category-tab:hover,
+.content-type-tab:hover {
+    color: #dc2626;
+    background: #fef2f2;
+    transform: translateY(-1px);
+}
+
+.category-tab.active,
+.content-type-tab.active {
+    color: #dc2626;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fecaca;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.category-tab .count {
+    background: #e5e7eb;
+    color: #6b7280;
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.category-tab.active .count {
+    background: #dc2626;
+    color: white;
+}
+
+.category-divider {
+    width: 1px;
+    height: 2rem;
+    background: #e5e7eb;
+    margin: 0 0.5rem;
+}
+
+.sort-btn {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+}
+
+.sort-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-family: 'Raleway', sans-serif;
+}
+
+.sort-option:hover {
+    background: #f3f4f6;
+    color: #dc2626;
+}
+
+.view-btn {
+    padding: 0.5rem;
+    color: #6b7280;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.view-btn.active {
+    color: #dc2626;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.advanced-filters-panel {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-label {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.filter-select,
+.filter-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background: white;
+    color: #374151;
+    font-family: 'Raleway', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.tag-filter-btn {
+    padding: 0.25rem 0.75rem;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-family: 'Raleway', sans-serif;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tag-filter-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.tag-filter-btn.active {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-family: 'Raleway', sans-serif;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-item:hover {
+    color: #dc2626;
+}
+
+.breadcrumb-current {
+    color: #dc2626;
+    font-weight: 600;
+    font-family: 'Raleway', sans-serif;
+}
+
+/* Search Results Styles */
+#search-results {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.3s ease;
+}
+
+.search-result-item:hover {
+    background: #f9fafb;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .category-tabs {
+        gap: 0.5rem;
+    }
+    
+    .nav-options {
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-section {
+        margin: 0 1rem;
+    }
+    
+    .category-tab,
+    .content-type-tab {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .nav-actions .nav-btn span {
+        display: none;
+    }
+    
+    .advanced-filters-panel .grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-text {
+        display: none;
+    }
+    
+    .category-divider {
+        display: none;
+    }
+    
+    .breadcrumb-item span {
+        display: none;
+    }
+    
+    .breadcrumb-item i {
+        display: block;
+    }
+}
+</style>
+
+<script>
+// Enhanced Navigation JavaScript
+let currentFilters = {};
+let searchTimeout = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEnhancedNavigation();
+    setupSearchFunctionality();
+    setupFilterSystem();
+    setupViewModeToggle();
+});
+
+function initializeEnhancedNavigation() {
+    console.log('Initializing Enhanced Navigation System...');
+
+    // Setup HTMX event listeners
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        if (evt.target.id === 'global-search') {
+            showSearchLoading();
+        }
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.target.id === 'global-search') {
+            hideSearchLoading();
+            showSearchResults();
+        }
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.sort-dropdown')) {
+            document.getElementById('sort-dropdown').classList.add('hidden');
+        }
+        if (!e.target.closest('.search-section')) {
+            document.getElementById('search-results').classList.add('hidden');
+        }
+    });
+
+    // Setup keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K for search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('global-search').focus();
+        }
+
+        // Escape to close search
+        if (e.key === 'Escape') {
+            clearGlobalSearch();
+            document.getElementById('global-search').blur();
+        }
+    });
+}
+
+function setupSearchFunctionality() {
+    const searchInput = document.getElementById('global-search');
+
+    if (searchInput) {
+        // Enhanced search with debouncing
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+
+            if (query.length === 0) {
+                hideSearchResults();
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                performGlobalSearch(query);
+            }, 300);
+        });
+
+        // Search suggestions on focus
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length > 0) {
+                showSearchResults();
+            } else {
+                showSearchSuggestions();
+            }
+        });
+    }
+}
+
+function performGlobalSearch(query) {
+    fetch(`{% url 'core:global_search' %}?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySearchResults(data.results);
+            } else {
+                displaySearchError();
+            }
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            displaySearchError();
+        });
+}
+
+function displaySearchResults(results) {
+    const resultsContainer = document.getElementById('search-results');
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="search-result-item text-center py-8">
+                <i class="fas fa-search text-gray-300 text-3xl mb-3"></i>
+                <p class="text-gray-500">No results found</p>
+                <p class="text-gray-400 text-sm">Try different keywords or browse categories</p>
+            </div>
+        `;
+    } else {
+        let resultsHTML = '';
+
+        results.forEach(result => {
+            resultsHTML += `
+                <div class="search-result-item">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="${result.icon} text-red-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-800 mb-1">
+                                <a href="${result.url}" class="hover:text-red-600 transition-colors">
+                                    ${result.title}
+                                </a>
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-2 line-clamp-2">${result.excerpt}</p>
+                            <div class="flex items-center gap-3 text-xs text-gray-500">
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-tag"></i>
+                                    ${result.content_type}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-calendar"></i>
+                                    ${result.date}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-eye"></i>
+                                    ${result.views}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        resultsContainer.innerHTML = resultsHTML;
+    }
+
+    showSearchResults();
+}
+
+function showSearchSuggestions() {
+    const resultsContainer = document.getElementById('search-results');
+
+    resultsContainer.innerHTML = `
+        <div class="p-4">
+            <h5 class="font-semibold text-gray-800 mb-3">Popular Searches</h5>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="searchFor('electric vehicles')" class="suggestion-tag">Electric Vehicles</button>
+                <button onclick="searchFor('car maintenance')" class="suggestion-tag">Car Maintenance</button>
+                <button onclick="searchFor('buying guide')" class="suggestion-tag">Buying Guide</button>
+                <button onclick="searchFor('automotive news')" class="suggestion-tag">Automotive News</button>
+                <button onclick="searchFor('car reviews')" class="suggestion-tag">Car Reviews</button>
+            </div>
+        </div>
+    `;
+
+    showSearchResults();
+}
+
+function searchFor(query) {
+    document.getElementById('global-search').value = query;
+    performGlobalSearch(query);
+}
+
+function displaySearchError() {
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = `
+        <div class="search-result-item text-center py-8">
+            <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-3"></i>
+            <p class="text-gray-600">Search error occurred</p>
+            <button onclick="retrySearch()" class="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                Try Again
+            </button>
+        </div>
+    `;
+    showSearchResults();
+}
+
+function showSearchResults() {
+    document.getElementById('search-results').classList.remove('hidden');
+}
+
+function hideSearchResults() {
+    document.getElementById('search-results').classList.add('hidden');
+}
+
+function showSearchLoading() {
+    document.getElementById('search-loading').style.display = 'block';
+}
+
+function hideSearchLoading() {
+    document.getElementById('search-loading').style.display = 'none';
+}
+
+function clearGlobalSearch() {
+    document.getElementById('global-search').value = '';
+    hideSearchResults();
+}
+
+function retrySearch() {
+    const query = document.getElementById('global-search').value.trim();
+    if (query) {
+        performGlobalSearch(query);
+    }
+}
+
+function toggleSortDropdown() {
+    const dropdown = document.getElementById('sort-dropdown');
+    dropdown.classList.toggle('hidden');
+}
+
+function setupFilterSystem() {
+    // Setup filter change listeners
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            updateActiveFilters();
+        });
+    });
+
+    // Setup tag search
+    const tagSearch = document.getElementById('tag-search');
+    if (tagSearch) {
+        tagSearch.addEventListener('input', function() {
+            filterTags(this.value);
+        });
+    }
+}
+
+function toggleAdvancedFilters() {
+    const filtersPanel = document.getElementById('advanced-filters');
+    filtersPanel.classList.toggle('hidden');
+
+    // Update button state
+    const filterBtn = document.querySelector('[onclick="toggleAdvancedFilters()"]');
+    if (filtersPanel.classList.contains('hidden')) {
+        filterBtn.classList.remove('bg-red-600', 'text-white');
+        filterBtn.classList.add('text-white/80');
+    } else {
+        filterBtn.classList.add('bg-red-600', 'text-white');
+        filterBtn.classList.remove('text-white/80');
+    }
+}
+
+function toggleTag(tagSlug) {
+    const tagBtn = document.querySelector(`[data-tag="${tagSlug}"]`);
+    tagBtn.classList.toggle('active');
+    updateActiveFilters();
+}
+
+function updateActiveFilters() {
+    const activeFiltersContainer = document.getElementById('active-filter-tags');
+    const filters = [];
+
+    // Collect active filters
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        if (select.value) {
+            filters.push({
+                type: select.name,
+                value: select.value,
+                label: select.options[select.selectedIndex].text
+            });
+        }
+    });
+
+    // Collect active tags
+    const activeTags = document.querySelectorAll('.tag-filter-btn.active');
+    activeTags.forEach(tag => {
+        filters.push({
+            type: 'tag',
+            value: tag.dataset.tag,
+            label: tag.textContent.trim()
+        });
+    });
+
+    // Display active filters
+    if (filters.length === 0) {
+        activeFiltersContainer.innerHTML = '<span class="text-gray-400 text-sm">None</span>';
+    } else {
+        let filtersHTML = '';
+        filters.forEach(filter => {
+            filtersHTML += `
+                <span class="active-filter-tag flex items-center gap-1 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                    ${filter.label}
+                    <button onclick="removeFilter('${filter.type}', '${filter.value}')" class="ml-1 hover:text-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            `;
+        });
+        activeFiltersContainer.innerHTML = filtersHTML;
+    }
+
+    currentFilters = filters;
+}
+
+function removeFilter(type, value) {
+    if (type === 'tag') {
+        const tagBtn = document.querySelector(`[data-tag="${value}"]`);
+        if (tagBtn) tagBtn.classList.remove('active');
+    } else {
+        const select = document.querySelector(`[name="${type}"]`);
+        if (select) select.value = '';
+    }
+    updateActiveFilters();
+}
+
+function clearAllFilters() {
+    // Clear all select filters
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        select.value = '';
+    });
+
+    // Clear all tag filters
+    const activeTags = document.querySelectorAll('.tag-filter-btn.active');
+    activeTags.forEach(tag => {
+        tag.classList.remove('active');
+    });
+
+    updateActiveFilters();
+}
+
+function applyFilters() {
+    // Build filter URL
+    const params = new URLSearchParams();
+
+    currentFilters.forEach(filter => {
+        if (filter.type === 'tag') {
+            params.append('tags', filter.value);
+        } else {
+            params.set(filter.type, filter.value);
+        }
+    });
+
+    // Apply filters by redirecting
+    const currentUrl = new URL(window.location);
+    const newUrl = `${currentUrl.pathname}?${params.toString()}`;
+    window.location.href = newUrl;
+}
+
+function filterTags(query) {
+    const tagButtons = document.querySelectorAll('.tag-filter-btn');
+    tagButtons.forEach(btn => {
+        const tagName = btn.textContent.toLowerCase();
+        if (tagName.includes(query.toLowerCase())) {
+            btn.style.display = 'inline-block';
+        } else {
+            btn.style.display = 'none';
+        }
+    });
+}
+
+function setupViewModeToggle() {
+    // Get saved view mode from localStorage
+    const savedViewMode = localStorage.getItem('resourceViewMode') || 'grid';
+    setViewMode(savedViewMode);
+}
+
+function setViewMode(mode) {
+    // Update button states
+    const viewButtons = document.querySelectorAll('.view-btn');
+    viewButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.view === mode) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Save to localStorage
+    localStorage.setItem('resourceViewMode', mode);
+
+    // Apply view mode to content
+    const contentContainer = document.getElementById('resources-content');
+    if (contentContainer) {
+        contentContainer.className = contentContainer.className.replace(/view-\w+/, '');
+        contentContainer.classList.add(`view-${mode}`);
+    }
+
+    // Trigger content reload with new view mode
+    const event = new CustomEvent('viewModeChanged', { detail: { mode } });
+    document.dispatchEvent(event);
+}
+
+function toggleBookmarks() {
+    // Toggle bookmarks panel (implement based on your requirements)
+    const bookmarkedItems = JSON.parse(localStorage.getItem('bookmarkedResources') || '[]');
+
+    if (bookmarkedItems.length === 0) {
+        showToast('No bookmarked resources yet', 'info');
+        return;
+    }
+
+    // Show bookmarks modal or navigate to bookmarks page
+    showBookmarksModal(bookmarkedItems);
+}
+
+function showBookmarksModal(bookmarks) {
+    // Create and show bookmarks modal
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+    modal.style.background = 'rgba(0, 0, 0, 0.8)';
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Bookmarked Resources</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                ${bookmarks.map(bookmark => `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">${bookmark.title}</h4>
+                            <p class="text-sm text-gray-600">${bookmark.type} • ${bookmark.date}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${bookmark.url}" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm">
+                                View
+                            </a>
+                            <button onclick="removeBookmark('${bookmark.id}')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function removeBookmark(bookmarkId) {
+    let bookmarks = JSON.parse(localStorage.getItem('bookmarkedResources') || '[]');
+    bookmarks = bookmarks.filter(b => b.id !== bookmarkId);
+    localStorage.setItem('bookmarkedResources', JSON.stringify(bookmarks));
+
+    // Refresh bookmarks modal
+    const modal = document.querySelector('.fixed');
+    if (modal) {
+        modal.remove();
+        showBookmarksModal(bookmarks);
+    }
+
+    showToast('Bookmark removed', 'success');
+}
+
+// Utility function for toast notifications
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content flex items-center gap-3">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 400px;
+    `;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Auto remove
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Add suggestion tag styles
+const suggestionTagStyles = `
+    .suggestion-tag {
+        padding: 0.5rem 1rem;
+        background: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-family: 'Raleway', sans-serif;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .suggestion-tag:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+`;
+
+// Add styles to document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = suggestionTagStyles;
+document.head.appendChild(styleSheet);
+</script>

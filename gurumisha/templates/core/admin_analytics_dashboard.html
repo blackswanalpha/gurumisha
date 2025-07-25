@@ -1,0 +1,1180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics Dashboard - Gurumisha Admin{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" rel="stylesheet">
+<style>
+/* Analytics Dashboard Styles */
+.analytics-dashboard {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 2rem 2rem;
+}
+
+.dashboard-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-family: 'Raleway', sans-serif;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #dc2626, #991b1b);
+    border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.stat-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-family: 'Raleway', sans-serif;
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.stat-change {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.stat-change.positive {
+    color: #10b981;
+}
+
+.stat-change.negative {
+    color: #ef4444;
+}
+
+/* Chart Containers */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.chart-header {
+    display: flex;
+    items-center: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.chart-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chart-control-btn {
+    padding: 0.5rem 1rem;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: none;
+    border-radius: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chart-control-btn:hover,
+.chart-control-btn.active {
+    background: #dc2626;
+    color: white;
+}
+
+/* Tables */
+.data-table-container {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: #f8fafc;
+    color: #374151;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #6b7280;
+    font-family: 'Raleway', sans-serif;
+}
+
+.data-table tr:hover {
+    background: #f9fafb;
+}
+
+/* Filters */
+.analytics-filters {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.75rem;
+    background: white;
+    color: #374151;
+    font-family: 'Raleway', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Export Button */
+.export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-title {
+        font-size: 2rem;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+    }
+    
+    .chart-container {
+        padding: 1.5rem;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Loading States */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-dashboard">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="dashboard-title">Analytics Dashboard</h1>
+                    <p class="dashboard-subtitle">Comprehensive insights into your content performance</p>
+                </div>
+                
+                <div class="header-actions flex gap-3">
+                    <button onclick="refreshDashboard()" 
+                            class="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    
+                    <button onclick="exportAnalytics()" class="export-btn">
+                        <i class="fas fa-download"></i>
+                        <span>Export Report</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4">
+        <!-- Analytics Filters -->
+        <div class="analytics-filters animate-fade-in">
+            <div class="filter-group">
+                <label class="font-semibold text-gray-700">Time Period:</label>
+                <select id="time-period" class="filter-select" onchange="updateAnalytics()">
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d" selected>Last 30 Days</option>
+                    <option value="90d">Last 90 Days</option>
+                    <option value="1y">Last Year</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+                
+                <label class="font-semibold text-gray-700">Content Type:</label>
+                <select id="content-type" class="filter-select" onchange="updateAnalytics()">
+                    <option value="all">All Content</option>
+                    <option value="article">Articles</option>
+                    <option value="guide">Guides</option>
+                    <option value="infographic">Infographics</option>
+                    <option value="opinion">Opinions</option>
+                    <option value="news">News</option>
+                </select>
+                
+                <label class="font-semibold text-gray-700">Category:</label>
+                <select id="category" class="filter-select" onchange="updateAnalytics()">
+                    <option value="all">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Key Metrics Stats -->
+        <div class="stats-grid animate-fade-in" style="animation-delay: 0.1s;">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="stat-value" id="total-views">{{ total_views|default:0 }}</div>
+                <div class="stat-label">Total Views</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+12.5% from last period</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="stat-value" id="total-likes">{{ total_likes|default:0 }}</div>
+                <div class="stat-label">Total Likes</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+8.3% from last period</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-comment"></i>
+                </div>
+                <div class="stat-value" id="total-comments">{{ total_comments|default:0 }}</div>
+                <div class="stat-label">Total Comments</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+15.7% from last period</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-bookmark"></i>
+                </div>
+                <div class="stat-value" id="total-bookmarks">{{ total_bookmarks|default:0 }}</div>
+                <div class="stat-label">Total Bookmarks</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+6.2% from last period</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-value" id="total-content">{{ total_content|default:0 }}</div>
+                <div class="stat-label">Total Content</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+3 new this period</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-value" id="active-users">{{ active_users|default:0 }}</div>
+                <div class="stat-label">Active Users</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+18.9% from last period</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid animate-fade-in" style="animation-delay: 0.2s;">
+            <!-- Main Analytics Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Content Performance Over Time</h3>
+                    <div class="chart-controls">
+                        <button class="chart-control-btn active" onclick="setChartMetric('views')">Views</button>
+                        <button class="chart-control-btn" onclick="setChartMetric('likes')">Likes</button>
+                        <button class="chart-control-btn" onclick="setChartMetric('comments')">Comments</button>
+                        <button class="chart-control-btn" onclick="setChartMetric('bookmarks')">Bookmarks</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="performance-chart" width="800" height="400"></canvas>
+                </div>
+            </div>
+            
+            <!-- Content Type Distribution -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Content Type Distribution</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="content-type-chart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Performing Content -->
+        <div class="data-table-container animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="chart-title">Top Performing Content</h3>
+                <div class="table-controls">
+                    <select id="performance-metric" class="filter-select" onchange="updateTopContent()">
+                        <option value="views">Most Viewed</option>
+                        <option value="likes">Most Liked</option>
+                        <option value="comments">Most Commented</option>
+                        <option value="bookmarks">Most Bookmarked</option>
+                        <option value="engagement">Highest Engagement</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="data-table" id="top-content-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Views</th>
+                            <th>Likes</th>
+                            <th>Comments</th>
+                            <th>Bookmarks</th>
+                            <th>Engagement Rate</th>
+                            <th>Published</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-content-tbody">
+                        <!-- Content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- User Engagement Insights -->
+        <div class="charts-grid animate-fade-in" style="animation-delay: 0.4s;">
+            <!-- User Activity Heatmap -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">User Activity Heatmap</h3>
+                    <div class="chart-controls">
+                        <button class="chart-control-btn active" onclick="setHeatmapView('hourly')">Hourly</button>
+                        <button class="chart-control-btn" onclick="setHeatmapView('daily')">Daily</button>
+                        <button class="chart-control-btn" onclick="setHeatmapView('weekly')">Weekly</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="activity-heatmap" width="800" height="300"></canvas>
+                </div>
+            </div>
+            
+            <!-- Engagement Funnel -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Engagement Funnel</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="engagement-funnel" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+// Analytics Dashboard JavaScript
+let performanceChart = null;
+let contentTypeChart = null;
+let activityHeatmap = null;
+let engagementFunnel = null;
+let currentMetric = 'views';
+let currentFilters = {
+    timePeriod: '30d',
+    contentType: 'all',
+    category: 'all'
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAnalyticsDashboard();
+    loadAnalyticsData();
+    setupRealTimeUpdates();
+});
+
+function initializeAnalyticsDashboard() {
+    console.log('Initializing Analytics Dashboard...');
+
+    // Initialize charts
+    initializePerformanceChart();
+    initializeContentTypeChart();
+    initializeActivityHeatmap();
+    initializeEngagementFunnel();
+
+    // Load top content table
+    loadTopContent();
+
+    // Setup auto-refresh
+    setInterval(refreshDashboard, 300000); // Refresh every 5 minutes
+}
+
+function initializePerformanceChart() {
+    const ctx = document.getElementById('performance-chart').getContext('2d');
+
+    performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Views',
+                data: [],
+                borderColor: '#dc2626',
+                backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: '#dc2626',
+                    borderWidth: 1,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+function initializeContentTypeChart() {
+    const ctx = document.getElementById('content-type-chart').getContext('2d');
+
+    contentTypeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Articles', 'Guides', 'Infographics', 'Opinions', 'News'],
+            datasets: [{
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: [
+                    '#dc2626',
+                    '#ea580c',
+                    '#d97706',
+                    '#ca8a04',
+                    '#65a30d'
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                duration: 1500
+            }
+        }
+    });
+}
+
+function initializeActivityHeatmap() {
+    const ctx = document.getElementById('activity-heatmap').getContext('2d');
+
+    // Create a simple heatmap using Chart.js scatter plot
+    activityHeatmap = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'User Activity',
+                data: [],
+                backgroundColor: function(context) {
+                    const value = context.parsed.y;
+                    const alpha = Math.min(value / 100, 1);
+                    return `rgba(220, 38, 38, ${alpha})`;
+                },
+                pointRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return `Hour: ${context[0].parsed.x}:00`;
+                        },
+                        label: function(context) {
+                            return `Activity: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    min: 0,
+                    max: 23,
+                    title: {
+                        display: true,
+                        text: 'Hour of Day'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Activity Level'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initializeEngagementFunnel() {
+    const ctx = document.getElementById('engagement-funnel').getContext('2d');
+
+    engagementFunnel = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Views', 'Likes', 'Comments', 'Bookmarks', 'Shares'],
+            datasets: [{
+                label: 'Engagement Funnel',
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: [
+                    '#dc2626',
+                    '#ea580c',
+                    '#d97706',
+                    '#ca8a04',
+                    '#65a30d'
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data[0]; // Views as baseline
+                            const percentage = ((context.parsed.x / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed.x} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+function loadAnalyticsData() {
+    // Show loading state
+    showLoadingState();
+
+    // Fetch analytics data
+    fetch('{% url "core:analytics_data" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(currentFilters)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateDashboardData(data);
+        } else {
+            showErrorState('Failed to load analytics data');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading analytics:', error);
+        showErrorState('Error loading analytics data');
+    })
+    .finally(() => {
+        hideLoadingState();
+    });
+}
+
+function updateDashboardData(data) {
+    // Update stats cards
+    updateStatsCards(data.stats);
+
+    // Update performance chart
+    updatePerformanceChart(data.performance);
+
+    // Update content type chart
+    updateContentTypeChart(data.contentTypes);
+
+    // Update activity heatmap
+    updateActivityHeatmap(data.activity);
+
+    // Update engagement funnel
+    updateEngagementFunnel(data.engagement);
+
+    // Update top content table
+    updateTopContentTable(data.topContent);
+}
+
+function updateStatsCards(stats) {
+    document.getElementById('total-views').textContent = formatNumber(stats.totalViews);
+    document.getElementById('total-likes').textContent = formatNumber(stats.totalLikes);
+    document.getElementById('total-comments').textContent = formatNumber(stats.totalComments);
+    document.getElementById('total-bookmarks').textContent = formatNumber(stats.totalBookmarks);
+    document.getElementById('total-content').textContent = formatNumber(stats.totalContent);
+    document.getElementById('active-users').textContent = formatNumber(stats.activeUsers);
+}
+
+function updatePerformanceChart(performanceData) {
+    performanceChart.data.labels = performanceData.labels;
+    performanceChart.data.datasets[0].data = performanceData.data;
+    performanceChart.data.datasets[0].label = currentMetric.charAt(0).toUpperCase() + currentMetric.slice(1);
+    performanceChart.update();
+}
+
+function updateContentTypeChart(contentTypeData) {
+    contentTypeChart.data.datasets[0].data = [
+        contentTypeData.articles,
+        contentTypeData.guides,
+        contentTypeData.infographics,
+        contentTypeData.opinions,
+        contentTypeData.news
+    ];
+    contentTypeChart.update();
+}
+
+function updateActivityHeatmap(activityData) {
+    const heatmapData = [];
+
+    activityData.forEach((value, hour) => {
+        heatmapData.push({
+            x: hour,
+            y: value
+        });
+    });
+
+    activityHeatmap.data.datasets[0].data = heatmapData;
+    activityHeatmap.update();
+}
+
+function updateEngagementFunnel(engagementData) {
+    engagementFunnel.data.datasets[0].data = [
+        engagementData.views,
+        engagementData.likes,
+        engagementData.comments,
+        engagementData.bookmarks,
+        engagementData.shares
+    ];
+    engagementFunnel.update();
+}
+
+function updateTopContentTable(topContentData) {
+    const tbody = document.getElementById('top-content-tbody');
+
+    if (topContentData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-8 text-gray-500">
+                    No content data available for the selected filters
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let tableHTML = '';
+    topContentData.forEach(item => {
+        const engagementRate = ((item.likes + item.comments + item.bookmarks) / item.views * 100).toFixed(1);
+
+        tableHTML += `
+            <tr>
+                <td>
+                    <div class="font-semibold text-gray-800">${item.title}</div>
+                    <div class="text-sm text-gray-500">${item.excerpt}</div>
+                </td>
+                <td>
+                    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                        ${item.contentType}
+                    </span>
+                </td>
+                <td class="font-semibold">${formatNumber(item.views)}</td>
+                <td class="font-semibold">${formatNumber(item.likes)}</td>
+                <td class="font-semibold">${formatNumber(item.comments)}</td>
+                <td class="font-semibold">${formatNumber(item.bookmarks)}</td>
+                <td>
+                    <div class="flex items-center gap-2">
+                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                            <div class="bg-red-600 h-2 rounded-full" style="width: ${Math.min(engagementRate, 100)}%"></div>
+                        </div>
+                        <span class="text-sm font-medium">${engagementRate}%</span>
+                    </div>
+                </td>
+                <td class="text-sm text-gray-500">${formatDate(item.publishedAt)}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = tableHTML;
+}
+
+function setChartMetric(metric) {
+    currentMetric = metric;
+
+    // Update button states
+    document.querySelectorAll('.chart-control-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Reload chart data
+    loadAnalyticsData();
+}
+
+function updateAnalytics() {
+    // Get current filter values
+    currentFilters.timePeriod = document.getElementById('time-period').value;
+    currentFilters.contentType = document.getElementById('content-type').value;
+    currentFilters.category = document.getElementById('category').value;
+
+    // Reload data
+    loadAnalyticsData();
+}
+
+function loadTopContent() {
+    const metric = document.getElementById('performance-metric').value;
+
+    fetch(`{% url "core:top_content_data" %}?metric=${metric}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(currentFilters)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateTopContentTable(data.topContent);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading top content:', error);
+    });
+}
+
+function updateTopContent() {
+    loadTopContent();
+}
+
+function refreshDashboard() {
+    // Add refresh animation
+    const refreshBtn = document.querySelector('[onclick="refreshDashboard()"]');
+    const icon = refreshBtn.querySelector('i');
+    icon.style.animation = 'spin 1s linear infinite';
+
+    loadAnalyticsData();
+
+    setTimeout(() => {
+        icon.style.animation = '';
+    }, 1000);
+}
+
+function exportAnalytics() {
+    const exportBtn = document.querySelector('.export-btn');
+    const originalText = exportBtn.innerHTML;
+
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
+    exportBtn.disabled = true;
+
+    fetch('{% url "core:export_analytics" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            ...currentFilters,
+            metric: currentMetric
+        })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        showToast('Analytics report exported successfully!', 'success');
+    })
+    .catch(error => {
+        console.error('Error exporting analytics:', error);
+        showToast('Error exporting report. Please try again.', 'error');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+    });
+}
+
+function setupRealTimeUpdates() {
+    // Setup WebSocket connection for real-time updates (if available)
+    if (typeof WebSocket !== 'undefined') {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/analytics/`;
+
+        try {
+            const socket = new WebSocket(wsUrl);
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'analytics_update') {
+                    updateDashboardData(data.data);
+                }
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket connection closed. Falling back to polling.');
+                // Fallback to polling every 30 seconds
+                setInterval(loadAnalyticsData, 30000);
+            };
+        } catch (error) {
+            console.log('WebSocket not available. Using polling for updates.');
+            setInterval(loadAnalyticsData, 30000);
+        }
+    }
+}
+
+// Utility Functions
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function showLoadingState() {
+    // Add loading skeletons to charts
+    document.querySelectorAll('.chart-wrapper canvas').forEach(canvas => {
+        canvas.style.opacity = '0.5';
+    });
+}
+
+function hideLoadingState() {
+    document.querySelectorAll('.chart-wrapper canvas').forEach(canvas => {
+        canvas.style.opacity = '1';
+    });
+}
+
+function showErrorState(message) {
+    showToast(message, 'error');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content flex items-center gap-3">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 400px;
+    `;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Auto remove
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Add CSS for spin animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
+{% load math_filters %}
 <!-- Live Tracking Dashboard Component -->
-<div class="live-tracking-dashboard" 
+<div class="live-tracking-dashboard"
      hx-get="{% url 'core:import_tracking_dashboard_htmx' %}"
      hx-trigger="every 45s"
      hx-swap="innerHTML"

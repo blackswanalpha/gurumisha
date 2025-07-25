@@ -10,14 +10,16 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.urls import reverse_lazy
 from django.utils import timezone
 import logging
+import time
 from .models import (
     Car, CarBrand, CarModel, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
     Inquiry, Testimonial, BlogPost, Vendor, User,
     Cart, CartItem, Order, OrderItem, Payment, Invoice, StockMovement,
-    OpinionPoll, PollOption, PollVote, OpinionReview, ReviewHelpfulVote
+    OpinionPoll, PollOption, PollVote, OpinionReview, ReviewHelpfulVote, Wishlist
 )
 from .forms import (
     CustomUserRegistrationForm, CustomLoginForm, SellCarForm,
@@ -366,6 +368,244 @@ def homepage(request):
     return render(request, 'core/homepage.html', context)
 
 
+class CarExploreView(ListView):
+    """Enhanced car explore page - destination for homepage search form"""
+    model = Car
+    template_name = 'core/car_explore.html'
+    context_object_name = 'cars'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = Car.objects.filter(is_approved=True).select_related('brand', 'model', 'condition')
+
+        # Search filters - enhanced to include more fields
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(brand__name__icontains=search) |
+                Q(model__name__icontains=search) |
+                Q(brand_name__icontains=search) |
+                Q(model_name__icontains=search) |
+                Q(description__icontains=search) |
+                Q(features__icontains=search) |
+                Q(area__icontains=search) |
+                Q(city__icontains=search)
+            )
+
+        # Brand filter
+        brand = self.request.GET.get('brand')
+        if brand:
+            queryset = queryset.filter(
+                Q(brand__id=brand) | Q(brand_name__iexact=brand)
+            )
+
+        # Model filter (dynamic based on brand)
+        model = self.request.GET.get('model')
+        if model:
+            queryset = queryset.filter(
+                Q(model__id=model) | Q(model_name__icontains=model)
+            )
+
+        # Condition filter - handle both VehicleCondition model and string field
+        condition = self.request.GET.get('condition')
+        if condition:
+            queryset = queryset.filter(
+                Q(condition__name__iexact=condition) | Q(condition_name__iexact=condition)
+            )
+
+        # Body type filter (using model's body_type or fallback)
+        body_type = self.request.GET.get('body_type')
+        if body_type:
+            queryset = queryset.filter(model__body_type__iexact=body_type)
+
+        # Fuel type filter
+        fuel_type = self.request.GET.get('fuel_type')
+        if fuel_type:
+            queryset = queryset.filter(fuel_type__iexact=fuel_type)
+
+        # Transmission filter
+        transmission = self.request.GET.get('transmission')
+        if transmission:
+            queryset = queryset.filter(transmission__iexact=transmission)
+
+        # Price range filter
+        min_price = self.request.GET.get('min_price')
+        max_price = self.request.GET.get('max_price')
+        if min_price:
+            try:
+                queryset = queryset.filter(price__gte=float(min_price))
+            except (ValueError, TypeError):
+                pass
+        if max_price:
+            try:
+                queryset = queryset.filter(price__lte=float(max_price))
+            except (ValueError, TypeError):
+                pass
+
+        # Year range filter
+        min_year = self.request.GET.get('min_year')
+        max_year = self.request.GET.get('max_year')
+        if min_year:
+            try:
+                queryset = queryset.filter(year__gte=int(min_year))
+            except (ValueError, TypeError):
+                pass
+        if max_year:
+            try:
+                queryset = queryset.filter(year__lte=int(max_year))
+            except (ValueError, TypeError):
+                pass
+
+        # Mileage range filter
+        min_mileage = self.request.GET.get('min_mileage')
+        max_mileage = self.request.GET.get('max_mileage')
+        if min_mileage:
+            try:
+                queryset = queryset.filter(mileage__gte=int(min_mileage))
+            except (ValueError, TypeError):
+                pass
+        if max_mileage:
+            try:
+                queryset = queryset.filter(mileage__lte=int(max_mileage))
+            except (ValueError, TypeError):
+                pass
+
+        # Location filters
+        area = self.request.GET.get('area')
+        if area:
+            queryset = queryset.filter(area__icontains=area)
+
+        city = self.request.GET.get('city')
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+
+        country = self.request.GET.get('country')
+        if country:
+            queryset = queryset.filter(country__icontains=country)
+
+        # Listing type filter (pill categories)
+        listing_type = self.request.GET.get('listing_type')
+        if listing_type == 'imported':
+            queryset = queryset.filter(listing_type='imported')
+        elif listing_type == 'sell_behalf':
+            queryset = queryset.filter(listing_type='sell_behalf')
+        elif listing_type == 'auction':
+            queryset = queryset.filter(listing_type='auction')
+
+        # Featured filter
+        featured_only = self.request.GET.get('featured_only')
+        if featured_only:
+            queryset = queryset.filter(is_featured=True)
+
+        # Hot deals filter
+        hot_deals_only = self.request.GET.get('hot_deals')
+        if hot_deals_only:
+            queryset = queryset.filter(is_hot_deal=True)
+
+        # Sorting
+        sort_by = self.request.GET.get('sort', 'featured')
+        if sort_by == 'price_low':
+            queryset = queryset.order_by('price')
+        elif sort_by == 'price_high':
+            queryset = queryset.order_by('-price')
+        elif sort_by == 'year_new':
+            queryset = queryset.order_by('-year')
+        elif sort_by == 'year_old':
+            queryset = queryset.order_by('year')
+        elif sort_by == 'mileage_low':
+            queryset = queryset.order_by('mileage')
+        elif sort_by == 'mileage_high':
+            queryset = queryset.order_by('-mileage')
+        elif sort_by == 'rating':
+            queryset = queryset.order_by('-calculated_rating')
+        else:  # featured (default)
+            queryset = queryset.order_by('-is_featured', '-calculated_rating', '-views_count')
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add filter options
+        context['car_brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
+        context['car_models'] = CarModel.objects.filter(is_active=True).select_related('brand').order_by('brand__name', 'name')
+        context['vehicle_conditions'] = VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name')
+
+        # Body types from CarModel choices
+        context['body_types'] = [
+            ('sedan', 'Sedan'),
+            ('suv', 'SUV'),
+            ('hatchback', 'Hatchback'),
+            ('coupe', 'Coupe'),
+            ('convertible', 'Convertible'),
+            ('wagon', 'Wagon'),
+            ('pickup', 'Pickup Truck'),
+            ('van', 'Van'),
+            ('crossover', 'Crossover'),
+            ('sports', 'Sports Car'),
+            ('luxury', 'Luxury'),
+            ('compact', 'Compact'),
+        ]
+
+        # Transmission options from Car model choices
+        context['transmission_types'] = Car.TRANSMISSION_CHOICES
+
+        # Fuel types from Car model choices
+        context['fuel_types'] = Car.FUEL_TYPE_CHOICES
+
+        # Year range
+        context['year_range'] = range(1990, 2025)
+
+        # Location options (get unique values from existing cars)
+        context['cities'] = Car.objects.filter(is_approved=True, city__isnull=False).exclude(city='').values_list('city', flat=True).distinct().order_by('city')
+        context['countries'] = Car.objects.filter(is_approved=True, country__isnull=False).exclude(country='').values_list('country', flat=True).distinct().order_by('country')
+
+        # Current filters for maintaining state
+        context['current_filters'] = {
+            'search': self.request.GET.get('search', ''),
+            'brand': self.request.GET.get('brand', ''),
+            'model': self.request.GET.get('model', ''),
+            'condition': self.request.GET.get('condition', ''),
+            'body_type': self.request.GET.get('body_type', ''),
+            'fuel_type': self.request.GET.get('fuel_type', ''),
+            'transmission': self.request.GET.get('transmission', ''),
+            'min_price': self.request.GET.get('min_price', ''),
+            'max_price': self.request.GET.get('max_price', ''),
+            'min_year': self.request.GET.get('min_year', ''),
+            'max_year': self.request.GET.get('max_year', ''),
+            'min_mileage': self.request.GET.get('min_mileage', ''),
+            'max_mileage': self.request.GET.get('max_mileage', ''),
+            'area': self.request.GET.get('area', ''),
+            'city': self.request.GET.get('city', ''),
+            'country': self.request.GET.get('country', ''),
+            'listing_type': self.request.GET.get('listing_type', ''),
+            'featured_only': self.request.GET.get('featured_only', ''),
+            'hot_deals': self.request.GET.get('hot_deals', ''),
+            'sort': self.request.GET.get('sort', 'featured'),
+        }
+
+        # Pill counts for categories
+        all_cars = Car.objects.filter(is_approved=True)
+        context['total_cars'] = all_cars.count()
+        context['imported_count'] = all_cars.filter(listing_type='imported').count()
+        context['sell_behalf_count'] = all_cars.filter(listing_type='sell_behalf').count()
+        context['auction_count'] = all_cars.filter(listing_type='auction').count()
+
+        # Compare list context
+        compare_list = self.request.session.get('compare_list', [])
+        context['compare_list'] = compare_list
+        context['compare_count'] = len(compare_list)
+
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        # Handle HTMX requests by returning only the results section
+        if self.request.headers.get('HX-Request'):
+            return render(self.request, 'core/partials/car_explore_results.html', context)
+        return super().render_to_response(context, **response_kwargs)
+
+
 class CarListView(ListView):
     """Enhanced car listing page with advanced filters and HTMX support"""
     model = Car
@@ -391,6 +631,11 @@ class CarListView(ListView):
         brand = self.request.GET.get('brand')
         if brand:
             queryset = queryset.filter(brand__id=brand)
+
+        # Model filter
+        model = self.request.GET.get('model')
+        if model:
+            queryset = queryset.filter(model__id=model)
 
         # Price range filter
         min_price = self.request.GET.get('min_price')
@@ -510,6 +755,7 @@ class CarListView(ListView):
 
         # Enhanced context data
         context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
+        context['car_models'] = CarModel.objects.filter(is_active=True).select_related('brand').order_by('brand__name', 'name')
         context['fuel_types'] = Car.FUEL_TYPE_CHOICES
         context['transmission_types'] = Car.TRANSMISSION_CHOICES
         # Get condition types from VehicleCondition model
@@ -555,11 +801,20 @@ class CarListView(ListView):
         context['auction_count'] = base_queryset.filter(listing_type='auction').count()
         context['local_count'] = base_queryset.filter(listing_type='local').count()
 
-        # Add car brands for the brand showcase section
-        context['car_brands'] = CarBrand.objects.filter(is_active=True).prefetch_related('car_set')[:6]
+        # Add car brands for the brand showcase section and hero form
+        context['car_brands'] = CarBrand.objects.filter(is_active=True).prefetch_related('car_set')
+
+        # Add vehicle conditions for hero form
+        from .models import VehicleCondition
+        context['vehicle_conditions'] = VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name')
 
         # Add recently viewed cars
         context['recently_viewed_cars'] = self.get_recently_viewed_cars()
+
+        # Compare list context
+        compare_list = self.request.session.get('compare_list', [])
+        context['compare_list'] = compare_list
+        context['compare_count'] = len(compare_list)
 
         return context
 
@@ -665,6 +920,10 @@ class CarDetailView(DetailView):
             status='available'
         ).exclude(id=car.id)[:4]
 
+        # Enhanced image gallery data
+        import json
+        context['gallery_images_json'] = json.dumps(car.get_all_images())
+
         # Rating system context
         if self.request.user.is_authenticated:
             try:
@@ -673,6 +932,13 @@ class CarDetailView(DetailView):
                 context['user_rating'] = user_rating
             except CarRating.DoesNotExist:
                 context['user_rating'] = None
+
+            # Wishlist status
+            context['in_wishlist'] = Wishlist.objects.filter(
+                user=self.request.user, car=car
+            ).exists()
+        else:
+            context['in_wishlist'] = False
 
         # Hot deal information
         if car.is_hot_deal:
@@ -683,6 +949,11 @@ class CarDetailView(DetailView):
                     context['hot_deal'] = hot_deal
             except HotDeal.DoesNotExist:
                 pass
+
+        # Compare list status
+        compare_list = self.request.session.get('compare_list', [])
+        context['in_compare'] = car.id in compare_list
+        context['compare_count'] = len(compare_list)
 
         return context
 
@@ -898,10 +1169,29 @@ def htmx_countdown_timer_update(request, deal_id):
         return render(request, 'components/countdown_timer.html', {'expired': True})
 
 
+def htmx_models_by_brand(request):
+    """HTMX endpoint for getting models based on selected brand"""
+    brand_id = request.GET.get('brand')
+    models = []
+
+    if brand_id:
+        try:
+            models = CarModel.objects.filter(
+                brand_id=brand_id,
+                is_active=True
+            ).order_by('name')
+        except (ValueError, CarModel.DoesNotExist):
+            pass
+
+    context = {'models': models, 'selected_model': request.GET.get('model', '')}
+    return render(request, 'core/partials/model_options.html', context)
+
+
 def htmx_car_list_filter(request):
     """HTMX endpoint for dynamic car list filtering"""
     # Get filter parameters
     brand = request.GET.get('brand')
+    model = request.GET.get('model')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     year_from = request.GET.get('year_from')
@@ -923,6 +1213,12 @@ def htmx_car_list_filter(request):
     # Apply filters
     if brand:
         cars = cars.filter(brand_id=brand)
+
+    if model:
+        cars = cars.filter(model_id=model)
+
+    if model:
+        cars = cars.filter(model_id=model)
 
     if min_price:
         try:
@@ -2539,6 +2835,41 @@ def about_us(request):
     return render(request, 'core/about_us.html', context)
 
 
+def customer_service(request):
+    """Customer service page"""
+    return render(request, 'core/customer_service.html')
+
+
+def help_center(request):
+    """Help center page"""
+    return render(request, 'core/help_center.html')
+
+
+def faqs(request):
+    """FAQs page"""
+    return render(request, 'core/faqs.html')
+
+
+def payment_options(request):
+    """Payment options page"""
+    return render(request, 'core/payment_options.html')
+
+
+def shipping_info(request):
+    """Shipping information page"""
+    return render(request, 'core/shipping_info.html')
+
+
+def return_policy(request):
+    """Return policy page"""
+    return render(request, 'core/return_policy.html')
+
+
+def contact_support(request):
+    """Contact support page"""
+    return render(request, 'core/contact_support.html')
+
+
 def dealer_list(request):
     """Public dealer listing page"""
     vendors = Vendor.objects.filter(
@@ -2665,6 +2996,24 @@ def add_to_compare(request, car_id):
         compare_list.append(car_id)
         request.session['compare_list'] = compare_list
 
+        # Check if this is an HTMX request for button replacement
+        if request.headers.get('HX-Request'):
+            from django.template.loader import render_to_string
+
+            # Determine which button template to use based on referrer
+            referer = request.META.get('HTTP_REFERER', '')
+            if 'car_detail' in referer or 'cars/' in referer:
+                template = 'components/compare_button.html'
+            else:
+                template = 'components/compare_button_compact.html'
+
+            button_html = render_to_string(template, {
+                'car': car,
+                'in_compare': True,
+                'compare_count': len(compare_list)
+            })
+            return HttpResponse(button_html)
+
         return JsonResponse({
             'success': True,
             'message': f'{car.title} added to comparison!',
@@ -2692,6 +3041,24 @@ def remove_from_compare(request, car_id):
 
             car = get_object_or_404(Car, id=car_id)
 
+            # Check if this is an HTMX request for button replacement
+            if request.headers.get('HX-Request'):
+                from django.template.loader import render_to_string
+
+                # Determine which button template to use based on referrer
+                referer = request.META.get('HTTP_REFERER', '')
+                if 'car_detail' in referer or 'cars/' in referer:
+                    template = 'components/compare_button.html'
+                else:
+                    template = 'components/compare_button_compact.html'
+
+                button_html = render_to_string(template, {
+                    'car': car,
+                    'in_compare': False,
+                    'compare_count': len(compare_list)
+                })
+                return HttpResponse(button_html)
+
             return JsonResponse({
                 'success': True,
                 'message': f'{car.title} removed from comparison.',
@@ -2715,13 +3082,24 @@ def remove_from_compare(request, car_id):
 @require_http_methods(["POST"])
 def clear_compare(request):
     """Clear all cars from comparison list"""
-    request.session['compare_list'] = []
+    try:
+        request.session['compare_list'] = []
 
-    return JsonResponse({
-        'success': True,
-        'message': 'Comparison list cleared.',
-        'count': 0
-    })
+        # Check if this is an HTMX request for widget removal
+        if request.headers.get('HX-Request'):
+            return HttpResponse('')  # Return empty response to remove widget
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Comparison list cleared.',
+            'count': 0
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error clearing comparison list.',
+            'count': len(request.session.get('compare_list', []))
+        })
 
 
 def car_calculator(request):
@@ -2921,39 +3299,39 @@ def system_test(request):
 
 
 # HTMX Views for Sell Car Form
-def htmx_models_by_brand(request):
-    """HTMX endpoint to load models by brand"""
-    brand_id = request.GET.get('brand')
-    models = []
-
-    if brand_id:
-        try:
-            brand = CarBrand.objects.get(id=brand_id, is_active=True)
-            models = CarModel.objects.filter(brand=brand, is_active=True).order_by('name')
-        except CarBrand.DoesNotExist:
-            pass
-
-    return render(request, 'core/htmx/models_by_brand.html', {
-        'models': models
-    })
+# Note: htmx_models_by_brand function is defined earlier in the file
 
 
 # Car Sales Views
 @login_required
 def sell_car(request):
     """Sell car form view"""
-    # Check if this is a modal request for admin
-    is_admin_modal = request.GET.get('modal') == 'true' and request.GET.get('admin') == 'true'
+    # Check if this is a modal request for admin (GET for loading, POST with hidden field or HTMX)
+    is_admin_modal = (
+        (request.GET.get('modal') == 'true' and request.GET.get('admin') == 'true') or
+        (request.POST.get('admin_modal') == 'true') or
+        (request.headers.get('HX-Request') and request.user.role == 'admin')
+    )
 
-    # Redirect admin users to admin car listings page (except for modal requests)
-    if request.user.role == 'admin' and not is_admin_modal:
-        messages.info(request, 'As an admin, please use the admin car listings page to manage cars and sell on behalf functionality.')
-        return redirect('core:admin_listings')
+    # Debug logging
+    print(f"DEBUG sell_car: method={request.method}, user_role={request.user.role}, is_admin_modal={is_admin_modal}")
+    print(f"DEBUG GET params: modal={request.GET.get('modal')}, admin={request.GET.get('admin')}")
+    print(f"DEBUG POST params: admin_modal={request.POST.get('admin_modal')}")
+    print(f"DEBUG Headers: HX-Request={request.headers.get('HX-Request')}")
+
+    # Allow admin users to access sell car page directly (no redirect for regular access)
+    # Only redirect if they're trying to access without proper permissions
+    # Removed the automatic redirect to let admins use the sell car page normally
 
     if request.method == 'POST':
         form = SellCarForm(request.POST, request.FILES)
         if form.is_valid():
             car = form.save(commit=False)
+
+            # Handle multiple image uploads
+            image_files = request.FILES.getlist('images')
+            captions = request.POST.getlist('captions')
+            is_primary_list = [request.POST.get(f'is_primary_{i}') == 'true' for i in range(len(image_files))]
 
             # Handle vendor assignment based on user role
             if request.user.role == 'admin':
@@ -3003,11 +3381,19 @@ def sell_car(request):
             car.status = 'available'
             car.save()
 
+            # Save multiple images
+            if image_files:
+                created_images = form.save_images(car, image_files, captions, is_primary_list)
+                if created_images:
+                    print(f"Successfully saved {len(created_images)} images for car {car.id}")
+                else:
+                    print("No images were saved - validation may have failed")
+
             # Handle success message and redirect based on user role
             if request.user.role == 'admin':
                 messages.success(request, 'Car listing has been created and approved successfully.')
-                # For HTMX modal requests, return JSON response
-                if request.headers.get('HX-Request'):
+                # For HTMX modal requests or admin modal requests, return JSON response
+                if request.headers.get('HX-Request') or is_admin_modal:
                     return JsonResponse({
                         'status': 'success',
                         'message': 'Car listing created successfully!',
@@ -3043,6 +3429,7 @@ def sell_car(request):
     context = {
         'form': form,
         'car_brands': CarBrand.objects.filter(is_active=True).order_by('display_order', 'name'),
+        'car_models': CarModel.objects.filter(is_active=True).order_by('name'),
         'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name'),
     }
 
@@ -3074,6 +3461,96 @@ def import_request(request):
         form = ImportRequestForm()
 
     return render(request, 'core/import_request.html', {'form': form})
+
+
+# Enhanced Image Upload Management for Car Selling Forms
+
+@require_http_methods(["POST"])
+def preview_car_images(request):
+    """Preview uploaded images before form submission"""
+    from .utils.image_optimization import validate_car_image
+    import json
+    import base64
+
+    if not request.FILES.getlist('images'):
+        return JsonResponse({'error': 'No images provided'}, status=400)
+
+    previews = []
+    errors = []
+
+    for i, image_file in enumerate(request.FILES.getlist('images')):
+        try:
+            # Validate image
+            is_valid, error_msg = validate_car_image(image_file)
+            if not is_valid:
+                errors.append(f"Image {i+1}: {error_msg}")
+                continue
+
+            # Create preview data
+            image_file.seek(0)  # Reset file pointer
+            image_data = image_file.read()
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+
+            preview = {
+                'id': f'preview_{i}_{int(time.time())}',
+                'name': image_file.name,
+                'size': image_file.size,
+                'type': image_file.content_type,
+                'preview': f'data:{image_file.content_type};base64,{image_base64}',
+                'caption': request.POST.get(f'captions[{i}]', ''),
+                'is_primary': i == 0,  # First image is primary by default
+                'order': i + 1
+            }
+
+            previews.append(preview)
+
+        except Exception as e:
+            errors.append(f"Error processing image {i+1}: {str(e)}")
+
+    return JsonResponse({
+        'success': True,
+        'previews': previews,
+        'errors': errors,
+        'total_count': len(previews)
+    })
+
+
+@require_http_methods(["POST"])
+def validate_car_image_upload(request):
+    """Validate individual image upload"""
+    from .utils.image_optimization import validate_car_image
+
+    if 'image' not in request.FILES:
+        return JsonResponse({'valid': False, 'error': 'No image provided'})
+
+    image_file = request.FILES['image']
+
+    try:
+        is_valid, error_msg = validate_car_image(image_file)
+
+        if is_valid:
+            # Get image dimensions
+            from PIL import Image
+            img = Image.open(image_file)
+
+            return JsonResponse({
+                'valid': True,
+                'width': img.width,
+                'height': img.height,
+                'size': image_file.size,
+                'type': image_file.content_type
+            })
+        else:
+            return JsonResponse({
+                'valid': False,
+                'error': error_msg
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'valid': False,
+            'error': f'Error validating image: {str(e)}'
+        })
 
 
 def import_listings(request):
@@ -3153,6 +3630,18 @@ def import_order_tracking_dashboard(request):
             Q(model__icontains=search_query)
         )
 
+    # Get tracking-specific data for live dashboard
+    tracked_orders = ImportOrder.objects.filter(
+        customer=request.user,
+        tracking_enabled=True
+    ).exclude(status__in=['delivered', 'cancelled'])
+
+    total_tracked_orders = tracked_orders.count()
+    orders_with_location = tracked_orders.filter(
+        current_latitude__isnull=False,
+        current_longitude__isnull=False
+    ).count()
+
     context = {
         'orders': user_orders,
         'status_choices': ImportOrder.STATUS_CHOICES,
@@ -3165,6 +3654,9 @@ def import_order_tracking_dashboard(request):
         'delivered_orders': ImportOrder.objects.filter(
             customer=request.user, status='delivered'
         ).count(),
+        # Live dashboard data
+        'total_tracked_orders': total_tracked_orders,
+        'orders_with_location': orders_with_location,
     }
 
     return render(request, 'core/import_tracking/dashboard.html', context)
@@ -4314,3 +4806,111 @@ def message_debug_view(request):
     }
 
     return render(request, 'core/message_debug.html', context)
+
+
+# Wishlist Views
+@require_http_methods(["POST"])
+def add_to_wishlist(request, car_id):
+    """Add car to user's wishlist via HTMX"""
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'message': 'Please log in to add cars to your wishlist.',
+            'redirect': '/login/'
+        })
+
+    try:
+        car = get_object_or_404(Car, id=car_id, is_approved=True)
+
+        # Check if already in wishlist
+        if Wishlist.objects.filter(user=request.user, car=car).exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Car is already in your wishlist.',
+                'in_wishlist': True
+            })
+
+        # Add to wishlist
+        Wishlist.objects.create(user=request.user, car=car)
+
+        # Check if this is an HTMX request for button replacement
+        if request.headers.get('HX-Request'):
+            from django.template.loader import render_to_string
+            button_html = render_to_string('components/wishlist_button.html', {
+                'car': car,
+                'in_wishlist': True
+            })
+            return HttpResponse(button_html)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'{car.title} added to your wishlist!',
+            'in_wishlist': True,
+            'car_title': car.title
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error adding car to wishlist.',
+            'in_wishlist': False
+        })
+
+
+@require_http_methods(["POST"])
+def remove_from_wishlist(request, car_id):
+    """Remove car from user's wishlist via HTMX"""
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'message': 'Please log in to manage your wishlist.',
+            'redirect': '/login/'
+        })
+
+    try:
+        car = get_object_or_404(Car, id=car_id)
+        wishlist_item = Wishlist.objects.filter(user=request.user, car=car).first()
+
+        if wishlist_item:
+            wishlist_item.delete()
+
+            # Check if this is an HTMX request for button replacement
+            if request.headers.get('HX-Request'):
+                from django.template.loader import render_to_string
+                button_html = render_to_string('components/wishlist_button.html', {
+                    'car': car,
+                    'in_wishlist': False
+                })
+                return HttpResponse(button_html)
+
+            return JsonResponse({
+                'success': True,
+                'message': f'{car.title} removed from your wishlist.',
+                'in_wishlist': False
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Car not found in your wishlist.',
+                'in_wishlist': False
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error removing car from wishlist.',
+            'in_wishlist': False
+        })
+
+
+def check_wishlist_status(request, car_id):
+    """Check if car is in user's wishlist"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'in_wishlist': False})
+
+    try:
+        car = get_object_or_404(Car, id=car_id)
+        in_wishlist = Wishlist.objects.filter(user=request.user, car=car).exists()
+        return JsonResponse({'in_wishlist': in_wishlist})
+    except:
+        return JsonResponse({'in_wishlist': False})

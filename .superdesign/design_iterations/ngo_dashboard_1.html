@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[var(--background)] text-[var(--foreground)]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.0.0/dist/flowbite.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --background: #0F172A;
+            --foreground: #F8FAFC;
+            --card: #1E293B;
+            --card-foreground: #F8FAFC;
+            --popover: #1E293B;
+            --popover-foreground: #F8FAFC;
+            --primary: #00BFA5;
+            --primary-foreground: #0F172A;
+            --secondary: #FF6D00;
+            --secondary-foreground: #F8FAFC;
+            --muted: #334155;
+            --muted-foreground: #94A3B8;
+            --accent: #38BDF8;
+            --accent-foreground: #F8FAFC;
+            --destructive: #EF4444;
+            --destructive-foreground: #F8FAFC;
+            --border: #334155;
+            --input: #334155;
+            --ring: #00BFA5;
+            --chart-1: #00BFA5;
+            --chart-2: #FF6D00;
+            --chart-3: #38BDF8;
+            --chart-4: #10B981;
+            --chart-5: #F59E0B;
+            --sidebar: #1E293B;
+            --sidebar-foreground: #F8FAFC;
+            --sidebar-primary: #00BFA5;
+            --sidebar-primary-foreground: #0F172A;
+            --sidebar-accent: #FF6D00;
+            --sidebar-accent-foreground: #F8FAFC;
+            --sidebar-border: #334155;
+            --sidebar-ring: #00BFA5;
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius: 0.5rem;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Top Navigation -->
+    <header class="bg-[var(--sidebar)] shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-6">
+                <h1 class="text-xl font-bold text-[var(--primary)]">NGO Connect</h1>
+                <nav class="hidden md:flex space-x-4">
+                    <a href="#" class="text-[var(--foreground)] hover:text-[var(--primary)] transition-colors">Volunteers</a>
+                    <a href="#" class="text-[var(--foreground)] hover:text-[var(--primary)] transition-colors">Donations</a>
+                    <a href="#" class="text-[var(--foreground)] hover:text-[var(--primary)] transition-colors">Projects</a>
+                    <a href="#" class="text-[var(--foreground)] hover:text-[var(--primary)] transition-colors">Reports</a>
+                    <a href="#" class="text-[var(--foreground)] hover:text-[var(--primary)] transition-colors">Settings</a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search..." class="bg-[var(--input)] text-[var(--foreground)] rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] w-48">
+                    <lucide-icon name="search" class="absolute right-3 top-2.5 text-[var(--muted-foreground)] w-4 h-4"></lucide-icon>
+                </div>
+                <button class="relative">
+                    <lucide-icon name="bell" class="text-[var(--foreground)] w-5 h-5"></lucide-icon>
+                    <span class="absolute -top-1 -right-1 bg-[var(--destructive)] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]"></div>
+                    <span class="font-medium text-[var(--foreground)]">Admin</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-[var(--foreground)]">Volunteers</h2>
+                    <lucide-icon name="users" class="text-[var(--primary)] w-5 h-5"></lucide-icon>
+                </div>
+                <p class="text-3xl font-bold text-[var(--primary)]">1,234</p>
+                <p class="text-sm text-[var(--muted-foreground)]">+12% from last month</p>
+            </div>
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-[var(--foreground)]">Donations</h2>
+                    <lucide-icon name="dollar-sign" class="text-[var(--secondary)] w-5 h-5"></lucide-icon>
+                </div>
+                <p class="text-3xl font-bold text-[var(--secondary)]">$45,678</p>
+                <p class="text-sm text-[var(--muted-foreground)]">+24% from last month</p>
+            </div>
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-[var(--foreground)]">Projects</h2>
+                    <lucide-icon name="briefcase" class="text-[var(--accent)] w-5 h-5"></lucide-icon>
+                </div>
+                <p class="text-3xl font-bold text-[var(--accent)]">23 Active</p>
+                <p class="text-sm text-[var(--muted-foreground)]">+3 completed this month</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <h2 class="text-xl font-semibold mb-4 text-[var(--foreground)]">Recent Activity</h2>
+                <div class="space-y-4">
+                    <div class="card">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center text-white">
+                                <lucide-icon name="user-plus" class="w-5 h-5"></lucide-icon>
+                            </div>
+                            <div>
+                                <p class="font-medium">New volunteer registration</p>
+                                <p class="text-sm text-[var(--muted-foreground)]">John Doe joined the team</p>
+                                <p class="text-xs text-[var(--muted-foreground)] mt-1">2 hours ago</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--secondary)] to-[var(--accent)] flex items-center justify-center text-white">
+                                <lucide-icon name="credit-card" class="w-5 h-5"></lucide-icon>
+                            </div>
+                            <div>
+                                <p class="font-medium">Donation received</p>
+                                <p class="text-sm text-[var(--muted-foreground)]">$1,200 from Jane Smith</p>
+                                <p class="text-xs text-[var(--muted-foreground)] mt-1">5 hours ago</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] flex items-center justify-center text-white">
+                                <lucide-icon name="edit-3" class="w-5 h-5"></lucide-icon>
+                            </div>
+                            <div>
+                                <p class="font-medium">Project update</p>
+                                <p class="text-sm text-[var(--muted-foreground)]">Clean Water Initiative - Phase 2 completed</p>
+                                <p class="text-xs text-[var(--muted-foreground)] mt-1">1 day ago</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-xl font-semibold mb-4 text-[var(--foreground)]">Quick Actions</h2>
+                <div class="space-y-4">
+                    <button class="btn-primary w-full flex items-center justify-center space-x-2">
+                        <lucide-icon name="user-plus" class="w-4 h-4"></lucide-icon>
+                        <span>Add Volunteer</span>
+                    </button>
+                    <button class="btn-primary w-full flex items-center justify-center space-x-2 bg-[var(--secondary)] hover:bg-[var(--secondary)]">
+                        <lucide-icon name="credit-card" class="w-4 h-4"></lucide-icon>
+                        <span>Record Donation</span>
+                    </button>
+                    <button class="btn-primary w-full flex items-center justify-center space-x-2 bg-[var(--accent)] hover:bg-[var(--accent)]">
+                        <lucide-icon name="briefcase" class="w-4 h-4"></lucide-icon>
+                        <span>Create Project</span>
+                    </button>
+                    <div class="card">
+                        <h3 class="font-medium mb-2">Upcoming Events</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-center text-sm">
+                                <lucide-icon name="calendar" class="w-4 h-4 mr-2 text-[var(--muted-foreground)]"></lucide-icon>
+                                Community Clean-up - Apr 15
+                            </li>
+                            <li class="flex items-center text-sm">
+                                <lucide-icon name="calendar" class="w-4 h-4 mr-2 text-[var(--muted-foreground)]"></lucide-icon>
+                                Fundraising Gala - Apr 22
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

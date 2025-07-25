@@ -295,6 +295,44 @@
         font-size: 1rem !important;
     }
 }
+
+/* Simplified Image Upload Styles */
+.simplified-multi-image-upload .upload-area {
+    transition: all 0.3s ease;
+}
+
+.simplified-multi-image-upload .upload-area:hover {
+    border-color: rgba(220, 38, 38, 0.6);
+    background-color: rgba(220, 38, 38, 0.05);
+}
+
+.simplified-multi-image-upload .upload-area.drag-over {
+    border-color: #DC2626;
+    background-color: rgba(220, 38, 38, 0.1);
+    transform: scale(1.02);
+}
+
+.simplified-multi-image-upload .image-preview-item {
+    transition: all 0.3s ease;
+}
+
+.simplified-multi-image-upload .image-preview-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.simplified-multi-image-upload .primary-badge {
+    background: linear-gradient(135deg, #DC2626, #B91C1C);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.simplified-multi-image-upload .set-primary-btn {
+    transition: all 0.2s ease;
+}
+
+.simplified-multi-image-upload .set-primary-btn:hover {
+    transform: scale(1.05);
+}
 </style>
 {% endblock %}
 
@@ -622,37 +660,79 @@
                         </div>
                     </div>
 
-                    <!-- Enhanced Image Upload Section -->
+                    <!-- Enhanced Multi-Image Upload Section -->
                     <div class="form-section bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/30 shadow-lg">
                         <div class="section-header mb-8">
                             <h3 class="text-2xl font-montserrat font-bold text-harrier-dark mb-2 flex items-center">
-                                <i class="fas fa-camera text-harrier-red mr-3"></i>
-                                Main Photo
+                                <i class="fas fa-images text-harrier-red mr-3"></i>
+                                Vehicle Gallery
                             </h3>
-                            <p class="text-harrier-gray-dark font-raleway">Upload a high-quality image that showcases your vehicle</p>
+                            <p class="text-harrier-gray-dark font-raleway">Upload 4-6 high-quality images to showcase your vehicle from different angles</p>
                         </div>
-                        <div class="form-group">
-                            <label for="{{ form.main_image.id_for_label }}" class="enhanced-label block text-base font-semibold text-harrier-dark mb-3 font-montserrat">
-                                <i class="fas fa-upload text-harrier-red mr-2"></i>
-                                Upload Main Photo <span class="text-harrier-red">*</span>
-                            </label>
-                            <div class="image-upload-container relative">
-                                {{ form.main_image }}
-                                <div class="upload-guidelines mt-4 p-4 bg-blue-50/80 rounded-xl border border-blue-200">
-                                    <h4 class="font-semibold text-blue-800 mb-2 font-montserrat">Photo Guidelines:</h4>
-                                    <ul class="text-sm text-blue-700 space-y-1 font-raleway">
-                                        <li>• Use high-resolution images (minimum 800x600px)</li>
-                                        <li>• Show the car from the front-side angle</li>
-                                        <li>• Ensure good lighting and clear visibility</li>
-                                        <li>• Avoid filters or heavy editing</li>
-                                    </ul>
+
+                        <!-- Simplified Multi-Image Upload -->
+                        <div class="simplified-multi-image-upload">
+                            <!-- Upload Zone -->
+                            <div class="upload-zone relative mb-6">
+                                <div class="upload-area border-2 border-dashed border-harrier-red/30 rounded-2xl p-8 text-center transition-all duration-300 hover:border-harrier-red/60 hover:bg-harrier-red/5"
+                                     id="upload-area">
+
+                                    <!-- Upload Icon and Text -->
+                                    <div class="upload-content">
+                                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-harrier-red to-harrier-dark rounded-full flex items-center justify-center">
+                                            <i class="fas fa-cloud-upload-alt text-white text-2xl"></i>
+                                        </div>
+
+                                        <h4 class="text-xl font-bold text-harrier-dark mb-2 font-montserrat">Upload Vehicle Images</h4>
+                                        <p class="text-gray-600 mb-4 font-raleway">Drag and drop images here or click to browse</p>
+
+                                        <button type="button"
+                                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-harrier-red to-harrier-dark text-white rounded-lg hover:from-harrier-dark hover:to-harrier-red transition-all duration-300 font-medium shadow-lg"
+                                                onclick="document.getElementById('vehicle-images').click()">
+                                            <i class="fas fa-plus mr-2"></i>
+                                            Select Images
+                                        </button>
+
+                                        <input type="file"
+                                               id="vehicle-images"
+                                               name="images"
+                                               multiple
+                                               accept="image/*"
+                                               class="hidden"
+                                               onchange="handleImageSelection(this)">
+                                    </div>
+
+                                    <!-- Upload Guidelines -->
+                                    <div class="upload-guidelines mt-6 p-4 bg-blue-50/80 rounded-xl border border-blue-200">
+                                        <h5 class="font-semibold text-blue-800 mb-2 font-montserrat flex items-center">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            Photo Guidelines
+                                        </h5>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-700 font-raleway">
+                                            <div>• Upload 4-6 high-quality images</div>
+                                            <div>• Minimum resolution: 800x600px</div>
+                                            <div>• Maximum file size: 5MB each</div>
+                                            <div>• Supported formats: JPG, PNG</div>
+                                            <div>• Show different angles of the vehicle</div>
+                                            <div>• Ensure good lighting and clarity</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            {% if form.main_image.errors %}
-                                <div class="error-message mt-2 text-sm text-red-600 font-raleway flex items-center">
-                                    <i class="fas fa-exclamation-circle mr-1"></i>{{ form.main_image.errors.0 }}
+
+                            <!-- Image Preview Grid -->
+                            <div id="image-preview-grid" class="image-preview-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden">
+                                <!-- Preview images will be inserted here -->
+                            </div>
+
+                            <!-- Upload Progress -->
+                            <div id="upload-progress" class="upload-progress hidden mt-4">
+                                <div class="bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-harrier-red to-harrier-dark h-2 rounded-full transition-all duration-300"
+                                         id="progress-bar" style="width: 0%"></div>
                                 </div>
-                            {% endif %}
+                                <p class="text-sm text-gray-600 mt-2 text-center" id="progress-text">Uploading images...</p>
+                            </div>
                         </div>
                     </div>
 
@@ -993,6 +1073,348 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global variables for image management
+    let selectedImages = [];
+    let imageUploadData = { images: [], isValid: () => true };
+
+    // Simplified image upload handler
+    function handleImageSelection(input) {
+        const files = input.files;
+        const previewGrid = document.getElementById('image-preview-grid');
+        const uploadArea = document.getElementById('upload-area');
+
+        if (files.length === 0) return;
+
+        // Clear previous selections
+        selectedImages = [];
+        previewGrid.innerHTML = '';
+
+        // Validate and process files
+        Array.from(files).forEach((file, index) => {
+            if (validateImageFile(file)) {
+                selectedImages.push({
+                    file: file,
+                    caption: '',
+                    isPrimary: index === 0 // First image is primary by default
+                });
+
+                // Create preview
+                createImagePreview(file, index);
+            }
+        });
+
+        // Show/hide preview grid
+        if (selectedImages.length > 0) {
+            previewGrid.classList.remove('hidden');
+            uploadArea.querySelector('.upload-content h4').textContent = `${selectedImages.length} Images Selected`;
+            uploadArea.querySelector('.upload-content p').textContent = 'Click to select different images or add more';
+        } else {
+            previewGrid.classList.add('hidden');
+        }
+
+        // Update global imageUploadData for form submission
+        imageUploadData.images = selectedImages;
+    }
+
+    function validateImageFile(file) {
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            alert(`${file.name} is not a valid image file.`);
+            return false;
+        }
+
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`${file.name} is too large. Maximum file size is 5MB.`);
+            return false;
+        }
+
+        return true;
+    }
+
+    function createImagePreview(file, index) {
+        const previewGrid = document.getElementById('image-preview-grid');
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'image-preview-item bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden group hover:shadow-xl transition-all duration-300';
+            previewDiv.innerHTML = `
+                <div class="relative">
+                    <img src="${e.target.result}"
+                         alt="Preview ${index + 1}"
+                         class="w-full h-48 object-cover">
+
+                    <!-- Primary Badge -->
+                    <div class="absolute top-2 left-2 ${index === 0 ? '' : 'hidden'} bg-harrier-red text-white px-2 py-1 rounded-full text-xs font-bold primary-badge">
+                        <i class="fas fa-star mr-1"></i>PRIMARY
+                    </div>
+
+                    <!-- Remove Button -->
+                    <button type="button"
+                            class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
+                            onclick="removeImage(${index})">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+
+                    <!-- Set Primary Button -->
+                    <button type="button"
+                            class="absolute bottom-2 left-2 ${index === 0 ? 'hidden' : ''} px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors set-primary-btn"
+                            onclick="setPrimaryImage(${index})">
+                        Set as Primary
+                    </button>
+                </div>
+
+                <div class="p-4">
+                    <input type="text"
+                           placeholder="Add caption (optional)"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red focus:border-transparent"
+                           onchange="updateImageCaption(${index}, this.value)">
+                </div>
+            `;
+
+            previewGrid.appendChild(previewDiv);
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    function removeImage(index) {
+        selectedImages.splice(index, 1);
+
+        // Update imageUploadData
+        imageUploadData.images = selectedImages;
+
+        // Refresh preview grid
+        refreshPreviewGrid();
+    }
+
+    function setPrimaryImage(index) {
+        // Remove primary status from all images
+        selectedImages.forEach(img => img.isPrimary = false);
+
+        // Set new primary
+        selectedImages[index].isPrimary = true;
+
+        // Update imageUploadData
+        imageUploadData.images = selectedImages;
+
+        // Refresh preview grid
+        refreshPreviewGrid();
+    }
+
+    function updateImageCaption(index, caption) {
+        if (selectedImages[index]) {
+            selectedImages[index].caption = caption;
+            imageUploadData.images = selectedImages;
+        }
+    }
+
+    function refreshPreviewGrid() {
+        const previewGrid = document.getElementById('image-preview-grid');
+        const uploadArea = document.getElementById('upload-area');
+
+        previewGrid.innerHTML = '';
+
+        if (selectedImages.length === 0) {
+            previewGrid.classList.add('hidden');
+            uploadArea.querySelector('.upload-content h4').textContent = 'Upload Vehicle Images';
+            uploadArea.querySelector('.upload-content p').textContent = 'Drag and drop images here or click to browse';
+            return;
+        }
+
+        selectedImages.forEach((imageData, index) => {
+            createImagePreview(imageData.file, index);
+        });
+
+        uploadArea.querySelector('.upload-content h4').textContent = `${selectedImages.length} Images Selected`;
+        uploadArea.querySelector('.upload-content p').textContent = 'Click to select different images or add more';
+    }
+
+    // Drag and drop functionality
+    function setupDragAndDrop() {
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('vehicle-images');
+
+        if (!uploadArea || !fileInput) return;
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        // Handle dropped files
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            uploadArea.classList.add('border-harrier-red', 'bg-harrier-red/10');
+        }
+
+        function unhighlight(e) {
+            uploadArea.classList.remove('border-harrier-red', 'bg-harrier-red/10');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            // Create a new FileList-like object and trigger the change event
+            fileInput.files = files;
+            handleImageSelection(fileInput);
+        }
+    }
+
+    // Enhanced form submission with multi-image validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('sell-car-form');
+        if (!form) return;
+
+        // Setup drag and drop
+        setupDragAndDrop();
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Get the multi-image upload component
+            const imageUploadComponent = document.querySelector('[x-data*="multiImageUpload"]');
+            let imageUploadData = null;
+
+            if (imageUploadComponent && imageUploadComponent._x_dataStack) {
+                imageUploadData = imageUploadComponent._x_dataStack[0];
+
+                // Validate images
+                if (!imageUploadData.isValid()) {
+                    return; // Stop submission if images are invalid
+                }
+            }
+
+            // Show loading state
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+            submitBtn.disabled = true;
+
+            // Create FormData object
+            const formData = new FormData(this);
+
+            // Add image data if available
+            if (imageUploadData && imageUploadData.images.length > 0) {
+                imageUploadData.images.forEach((image, index) => {
+                    formData.append('images', image.file);
+                    formData.append(`captions`, image.caption);
+                    formData.append(`is_primary_${index}`, image.isPrimary);
+                });
+            }
+
+            // Submit form
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Show success message
+                    showToast(data.message, 'success');
+
+                    // Redirect after delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/dashboard/';
+                    }, 2000);
+                } else {
+                    // Show error message
+                    showToast(data.message || 'Please correct the errors below.', 'error');
+
+                    // Display field errors
+                    if (data.errors) {
+                        Object.keys(data.errors).forEach(field => {
+                            const fieldElement = document.querySelector(`[name="${field}"]`);
+                            if (fieldElement) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'error-message mt-2 text-sm text-red-600 font-raleway flex items-center';
+                                errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${data.errors[field][0]}`;
+
+                                // Remove existing error messages
+                                const existingError = fieldElement.parentNode.querySelector('.error-message');
+                                if (existingError) {
+                                    existingError.remove();
+                                }
+
+                                fieldElement.parentNode.appendChild(errorDiv);
+                            }
+                        });
+                    }
+
+                    // Reset submit button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+
+                // Reset submit button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    });
+
+    // Toast notification function
+    function showToast(message, type) {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+        }`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 5000);
+    }
+</script>
 {% endblock %}
 
 

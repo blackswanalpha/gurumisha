@@ -4,22 +4,49 @@
 {% block title %}About Us - Gurumisha{% endblock %}
 
 {% block content %}
-<!-- Compact Hero Section with Image -->
-<section class="relative h-96 md:h-[500px] flex items-center justify-center overflow-hidden">
+<!-- Enhanced Hero Section with Product Image -->
+<section class="relative h-96 md:h-[600px] lg:h-[700px] flex items-center justify-center overflow-hidden">
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
-        <img src="{% static 'images/about-hero.jpg' %}" alt="Gurumisha Motors - About Us" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-gradient-to-br from-black/60 via-red-900/40 to-black/70"></div>
+        <img src="{% static 'images/products-images/p12.jpg' %}" alt="Gurumisha Motors - Premium Vehicles" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-red-900/50 to-black/80"></div>
     </div>
 
     <!-- Animated Background Elements -->
     <div class="absolute inset-0 z-10">
         <div class="absolute top-10 left-10 w-20 h-20 bg-red-500/20 rounded-full blur-2xl animate-pulse"></div>
         <div class="absolute bottom-16 right-16 w-24 h-24 bg-orange-500/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
+        <div class="absolute top-1/3 right-1/4 w-16 h-16 bg-yellow-500/15 rounded-full blur-xl animate-pulse delay-500"></div>
+    </div>
+
+    <!-- Featured Vehicle Image -->
+    <div class="absolute right-8 top-1/2 transform -translate-y-1/2 z-15 hidden lg:block">
+        <div class="relative group">
+            <div class="w-80 h-60 rounded-2xl overflow-hidden shadow-2xl transform rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                <img src="{% static 'images/products-images/p16.jpg' %}" alt="Featured Vehicle" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <div class="absolute bottom-4 left-4 text-white">
+                    <p class="text-sm font-semibold">Featured Vehicle</p>
+                    <p class="text-xs text-gray-200">Premium Collection</p>
+                </div>
+            </div>
+            <!-- Floating badge -->
+            <div class="absolute -top-3 -right-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-bounce">
+                NEW
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Vehicle Image for Mobile/Tablet -->
+    <div class="absolute left-8 bottom-8 z-15 block lg:hidden">
+        <div class="w-32 h-24 rounded-xl overflow-hidden shadow-xl transform -rotate-2">
+            <img src="{% static 'images/products-images/p14.jpg' %}" alt="Vehicle Preview" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        </div>
     </div>
 
     <!-- Main Content -->
-    <div class="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <div class="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center lg:text-left lg:max-w-3xl">
         <!-- Breadcrumb -->
         <div class="mb-6">
             <nav class="flex justify-center" aria-label="Breadcrumb">
@@ -47,26 +74,42 @@
                     GURUMISHA
                 </span>
             </h1>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto mb-6 rounded-full"></div>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto lg:mx-0 mb-6 rounded-full"></div>
         </div>
 
         <!-- Description -->
-        <div class="max-w-3xl mx-auto mb-8">
+        <div class="max-w-3xl mx-auto lg:mx-0 mb-8">
             <p class="text-lg md:text-xl text-gray-200 leading-relaxed font-raleway">
                 Kenya's premier automotive marketplace, connecting car enthusiasts with their dream vehicles and providing
                 <span class="text-yellow-300 font-semibold">world-class import services</span> since our inception.
             </p>
         </div>
 
+        <!-- Stats Row -->
+        <div class="grid grid-cols-3 gap-4 mb-8 max-w-md mx-auto lg:mx-0">
+            <div class="text-center lg:text-left">
+                <div class="text-2xl md:text-3xl font-bold text-red-400 mb-1">5000+</div>
+                <div class="text-xs text-gray-300 uppercase tracking-wide">Cars Sold</div>
+            </div>
+            <div class="text-center lg:text-left">
+                <div class="text-2xl md:text-3xl font-bold text-orange-400 mb-1">150+</div>
+                <div class="text-xs text-gray-300 uppercase tracking-wide">Dealers</div>
+            </div>
+            <div class="text-center lg:text-left">
+                <div class="text-2xl md:text-3xl font-bold text-yellow-400 mb-1">24/7</div>
+                <div class="text-xs text-gray-300 uppercase tracking-wide">Support</div>
+            </div>
+        </div>
+
         <!-- Call to Action -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a href="{% url 'core:car_list' %}" class="group inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-gradient-to-r from-red-600 to-red-800 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-montserrat">
-                <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform duration-300"></i>
-                Explore Cars
+        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center lg:items-start">
+            <a href="{% url 'core:car_list' %}" class="group inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-red-600 to-red-800 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-montserrat">
+                <i class="fas fa-car mr-3 group-hover:rotate-12 transition-transform duration-300"></i>
+                Explore Our Cars
             </a>
-            <a href="#our-story" class="group inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white border-2 border-white/50 rounded-xl backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white transform hover:scale-105 transition-all duration-300 font-montserrat">
-                <i class="fas fa-arrow-down mr-2 group-hover:bounce transition-transform duration-300"></i>
-                Our Story
+            <a href="#our-story" class="group inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white border-2 border-white/50 rounded-xl backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white transform hover:scale-105 transition-all duration-300 font-montserrat">
+                <i class="fas fa-arrow-down mr-3 group-hover:bounce transition-transform duration-300"></i>
+                Learn More
             </a>
         </div>
     </div>

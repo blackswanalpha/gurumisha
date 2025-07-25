@@ -64,29 +64,29 @@ class Command(BaseCommand):
 
             # Feature cars
             for car in cars_to_feature:
-                if car.featured_tier != subscription.tier or not car.auto_featured:
+                if not car.is_featured or not car.auto_featured:
                     if not dry_run:
-                        car.featured_tier = subscription.tier
+                        car.is_featured = True
                         car.auto_featured = True
                         car.featured_until = None  # No expiry for auto-featured
-                        car.save(update_fields=['featured_tier', 'auto_featured', 'featured_until'])
-                    
+                        car.save(update_fields=['is_featured', 'auto_featured', 'featured_until'])
+
                     total_featured += 1
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f'{"[DRY RUN] " if dry_run else ""}Featured: {car.title} as {subscription.tier.title()}'
+                            f'{"[DRY RUN] " if dry_run else ""}Featured: {car.title} (subscription tier: {subscription.tier.title()})'
                         )
                     )
 
             # Unfeature excess cars (only auto-featured ones)
             for car in cars_to_unfeature:
-                if car.auto_featured and car.featured_tier != 'none':
+                if car.auto_featured and car.is_featured:
                     if not dry_run:
-                        car.featured_tier = 'none'
+                        car.is_featured = False
                         car.auto_featured = False
                         car.featured_until = None
-                        car.save(update_fields=['featured_tier', 'auto_featured', 'featured_until'])
-                    
+                        car.save(update_fields=['is_featured', 'auto_featured', 'featured_until'])
+
                     total_unfeatured += 1
                     self.stdout.write(
                         self.style.WARNING(
@@ -105,16 +105,16 @@ class Command(BaseCommand):
             auto_featured_cars = Car.objects.filter(
                 vendor=vendor,
                 auto_featured=True,
-                featured_tier__in=['bronze', 'silver', 'gold', 'platinum']
+                is_featured=True
             )
 
             for car in auto_featured_cars:
                 if not dry_run:
-                    car.featured_tier = 'none'
+                    car.is_featured = False
                     car.auto_featured = False
                     car.featured_until = None
-                    car.save(update_fields=['featured_tier', 'auto_featured', 'featured_until'])
-                
+                    car.save(update_fields=['is_featured', 'auto_featured', 'featured_until'])
+
                 total_unfeatured += 1
                 self.stdout.write(
                     self.style.WARNING(

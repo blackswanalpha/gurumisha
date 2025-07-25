@@ -82,6 +82,7 @@
                         'shimmer': 'shimmer 1.5s infinite',
                         'scale-in': 'scaleIn 0.5s ease-out',
                         'rotate-slow': 'rotateSlow 8s linear infinite',
+                        'whatsapp-pulse': 'whatsappPulse 2s infinite',
                     },
                     keyframes: {
                         fadeIn: {
@@ -126,6 +127,11 @@
                             '0%': { transform: 'rotate(0deg)' },
                             '100%': { transform: 'rotate(360deg)' },
                         },
+                        whatsappPulse: {
+                            '0%': { transform: 'scale(1)', opacity: '0.7' },
+                            '50%': { transform: 'scale(1.1)', opacity: '0.4' },
+                            '100%': { transform: 'scale(1)', opacity: '0.7' },
+                        },
                     },
                     transitionTimingFunction: {
                         'bounce-in': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
@@ -140,8 +146,114 @@
     <!-- Error Suppressor (load before HTMX) -->
     <script src="{% static 'js/error-suppressor.js' %}"></script>
 
+    <!-- Enhanced Price Formatter -->
+    <script src="{% static 'js/price-formatter.js' %}"></script>
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- HTMX Extensions for Enhanced Error Handling -->
+    <script>
+        // Enhanced HTMX error handling
+        document.addEventListener('htmx:responseError', function(event) {
+            console.error('HTMX Response Error:', event.detail);
+
+            // Show user-friendly error message
+            const errorContainer = document.getElementById('error-container') ||
+                                 document.createElement('div');
+            errorContainer.id = 'error-container';
+            errorContainer.className = 'fixed top-4 right-4 z-50 max-w-md';
+            errorContainer.innerHTML = `
+                <div class="bg-red-50 border-2 border-red-500 text-red-800 p-4 rounded-xl shadow-lg animate-fade-in-up" role="alert" aria-live="assertive">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-lg mt-0.5" aria-hidden="true"></i>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold mb-1">Connection Error</h3>
+                            <p class="text-sm">Unable to complete your request. Please check your connection and try again.</p>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()"
+                                class="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1"
+                                aria-label="Dismiss error">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (!document.getElementById('error-container')) {
+                document.body.appendChild(errorContainer);
+            }
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (errorContainer.parentNode) {
+                    errorContainer.remove();
+                }
+            }, 5000);
+        });
+
+        // Enhanced HTMX timeout handling
+        document.addEventListener('htmx:timeout', function(event) {
+            console.warn('HTMX Timeout:', event.detail);
+
+            const errorContainer = document.getElementById('error-container') ||
+                                 document.createElement('div');
+            errorContainer.id = 'error-container';
+            errorContainer.className = 'fixed top-4 right-4 z-50 max-w-md';
+            errorContainer.innerHTML = `
+                <div class="bg-yellow-50 border-2 border-yellow-500 text-yellow-800 p-4 rounded-xl shadow-lg animate-fade-in-up" role="alert" aria-live="assertive">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-clock text-yellow-600 text-lg mt-0.5" aria-hidden="true"></i>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold mb-1">Request Timeout</h3>
+                            <p class="text-sm">The request is taking longer than expected. Please try again.</p>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()"
+                                class="text-yellow-600 hover:text-yellow-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 rounded p-1"
+                                aria-label="Dismiss timeout message">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (!document.getElementById('error-container')) {
+                document.body.appendChild(errorContainer);
+            }
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (errorContainer.parentNode) {
+                    errorContainer.remove();
+                }
+            }, 5000);
+        });
+
+        // Accessibility enhancements for HTMX
+        document.addEventListener('htmx:beforeRequest', function(event) {
+            // Add loading state to buttons
+            const trigger = event.detail.elt;
+            if (trigger.tagName === 'BUTTON') {
+                trigger.setAttribute('aria-busy', 'true');
+                trigger.style.cursor = 'wait';
+            }
+        });
+
+        document.addEventListener('htmx:afterRequest', function(event) {
+            // Remove loading state from buttons
+            const trigger = event.detail.elt;
+            if (trigger.tagName === 'BUTTON') {
+                trigger.setAttribute('aria-busy', 'false');
+                trigger.style.cursor = '';
+            }
+        });
+    </script>
+
+    <!-- Alpine.js for enhanced gallery -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Sortable.js for drag and drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -193,8 +305,8 @@
                         <div class="flex-shrink-0">
                             <a href="{% url 'core:homepage' %}" class="flex items-center group">
                                 <!-- Primary Logo - Enhanced Responsive Sizing for Better Visibility -->
-                                <img src="{% static 'images/loga.png' %}" alt="Gurumisha Motors"
-                                     class="logo-primary h-16 sm:h-14 md:h-16 lg:h-18 xl:h-20 2xl:h-24 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 filter drop-shadow-sm">
+                                <img src="{% static 'images/logo.jpeg' %}" alt="Gurumisha Motors"
+                                     class="logo-primary h-6 sm:h-7 md:h-6 lg:h-9 xl:h-10 2xl:h-12 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 filter drop-shadow-sm">
 
                                 <!-- Alternative: Compact Logo for smaller screens (uncomment if needed) -->
                                 <!-- <img src="{% static 'images/logo-compact.png' %}" alt="Gurumisha"
@@ -488,7 +600,7 @@
                         <!-- Company Info -->
                         <div class="lg:col-span-1">
                             <div class="flex items-center mb-6">
-                                <img src="{% static 'images/logo.png' %}" alt="Gurumisha Motors" class="logo-footer h-10 sm:h-12 md:h-14 w-auto filter brightness-110 transition-all duration-300 hover:scale-105">
+                                <img src="{% static 'images/logo.jpeg' %}" alt="Gurumisha Motors" class="logo-footer h-10 sm:h-12 md:h-14 w-auto filter brightness-110 transition-all duration-300 hover:scale-105">
                             </div>
                             <p class="text-gray-300 mb-6 leading-relaxed">Your trusted automotive marketplace for buying, selling, and importing quality vehicles. We connect car enthusiasts with their dream cars.</p>
 
@@ -541,22 +653,25 @@
                         <div>
                             <h4 class="text-lg font-heading font-bold mb-6 text-primary-red uppercase tracking-wide" style="font-family: 'Saira Condensed', sans-serif;">Customer Service</h4>
                             <ul class="space-y-3">
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                <li><a href="{% url 'core:help_center' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
                                     <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Help Center
                                 </a></li>
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                <li><a href="{% url 'core:faqs' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
                                     <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> FAQs
                                 </a></li>
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                <li><a href="{% url 'core:payment_options' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
                                     <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Payment Options
                                 </a></li>
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                <li><a href="{% url 'core:shipping_info' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
                                     <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Shipping Info
                                 </a></li>
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                <li><a href="{% url 'core:return_policy' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
                                     <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Return Policy
                                 </a></li>
-                                <li><a href="{% url 'core:contact_us' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                <li><a href="{% url 'core:customer_service' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
+                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Customer Service
+                                </a></li>
+                                <li><a href="{% url 'core:contact_support' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
                                     <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Contact Support
                                 </a></li>
                             </ul>
@@ -610,7 +725,7 @@
             </div>
 
             <!-- Bottom Footer -->
-            <div class="bg-gradient-to-r from-primary-blue to-primary-black py-8">
+            <div class="bg-gradient-to-r from-primary-red to-primary-black py-8">
                 <div class="container mx-auto px-4">
                     <div class="flex flex-col lg:flex-row justify-between items-center space-y-6 lg:space-y-0">
                         <!-- Copyright -->
@@ -632,20 +747,20 @@
                             <p class="text-gray-400 text-xs mb-3 uppercase tracking-wider">Secure Payments</p>
                             <div class="flex justify-center lg:justify-end space-x-3">
                                 <!-- M-Pesa -->
-                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
-                                    <span class="text-green-600 font-bold text-xs">M-PESA</span>
+                                <div class="w-16 h-10 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center shadow-lg hover:scale-110 hover:shadow-red-500/20 transition-all duration-300 border border-gray-200/50">
+                                    <img src="{% static 'images/payment/mpesa.png' %}" alt="M-Pesa" class="h-6 w-auto object-contain">
                                 </div>
                                 <!-- Visa -->
-                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
-                                    <i class="fab fa-cc-visa text-blue-600 text-lg"></i>
+                                <div class="w-16 h-10 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center shadow-lg hover:scale-110 hover:shadow-red-500/20 transition-all duration-300 border border-gray-200/50">
+                                    <img src="{% static 'images/payment/visa.png' %}" alt="Visa" class="h-6 w-auto object-contain">
                                 </div>
                                 <!-- Mastercard -->
-                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
-                                    <i class="fab fa-cc-mastercard text-red-500 text-lg"></i>
+                                <div class="w-16 h-10 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center shadow-lg hover:scale-110 hover:shadow-red-500/20 transition-all duration-300 border border-gray-200/50">
+                                    <img src="{% static 'images/payment/mastercard.png' %}" alt="Mastercard" class="h-6 w-auto object-contain">
                                 </div>
                                 <!-- PayPal -->
-                                <div class="w-12 h-8 bg-white rounded flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
-                                    <i class="fab fa-cc-paypal text-blue-500 text-lg"></i>
+                                <div class="w-16 h-10 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center shadow-lg hover:scale-110 hover:shadow-red-500/20 transition-all duration-300 border border-gray-200/50">
+                                    <img src="{% static 'images/payment/paypal.png' %}" alt="PayPal" class="h-6 w-auto object-contain">
                                 </div>
                             </div>
                         </div>
@@ -655,8 +770,10 @@
         </footer>
     </div>
 
-    <!-- Harrier Custom Styles - Exact Font Matching -->
+  
     <style>
+
+
         /* Modern Typography System */
         body {
             font-family: 'Inter', system-ui, sans-serif;
@@ -1303,6 +1420,68 @@
                 evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
             });
 
+            // Enhanced HTMX + Alpine.js hydration
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                console.log('🔄 HTMX afterSwap - Re-initializing Alpine.js');
+
+                // Re-initialize Alpine.js for new content
+                if (typeof Alpine !== 'undefined' && Alpine.initTree) {
+                    // Find all new Alpine components in the swapped content
+                    const newElements = evt.detail.target.querySelectorAll('[x-data]');
+                    newElements.forEach(element => {
+                        if (!element._x_dataStack) {
+                            console.log('🎯 Initializing Alpine component:', element);
+                            Alpine.initTree(element);
+                        }
+                    });
+                } else {
+                    console.warn('⚠️ Alpine.js not available for hydration');
+                }
+            });
+
+            // Handle Alpine.js hydration for dynamically loaded content
+            document.body.addEventListener('htmx:load', function(evt) {
+                console.log('🔄 HTMX load event - Checking for Alpine components');
+
+                if (typeof Alpine !== 'undefined') {
+                    // Initialize Alpine.js for the loaded content
+                    const alpineElements = evt.detail.elt.querySelectorAll('[x-data]');
+                    if (alpineElements.length > 0) {
+                        console.log(`🎯 Found ${alpineElements.length} Alpine components to initialize`);
+                        alpineElements.forEach(element => {
+                            if (!element._x_dataStack) {
+                                Alpine.initTree(element);
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Handle modal-specific hydration
+            document.body.addEventListener('htmx:afterRequest', function(evt) {
+                if (evt.detail.xhr.status === 200) {
+                    // Check if this is a modal response
+                    const responseText = evt.detail.xhr.responseText;
+                    if (responseText.includes('edit-car-modal') || responseText.includes('x-data')) {
+                        console.log('🎯 Modal detected - Ensuring Alpine.js hydration');
+
+                        setTimeout(() => {
+                            const modal = document.getElementById('edit-car-modal');
+                            if (modal && typeof Alpine !== 'undefined') {
+                                console.log('🔄 Re-initializing modal Alpine.js');
+                                Alpine.initTree(modal);
+
+                                // Trigger show state
+                                const alpineData = Alpine.$data(modal);
+                                if (alpineData && typeof alpineData.show !== 'undefined') {
+                                    alpineData.show = true;
+                                }
+                            }
+                        }, 100);
+                    }
+                }
+            });
+
             // Close mobile menu when clicking outside
             document.addEventListener('click', function(e) {
                 if (mobileMenu && !mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
@@ -1510,5 +1689,240 @@
     </script>
 
     {% block extra_js %}{% endblock %}
+
+    <!-- WhatsApp Floating Button Component -->
+    <div id="whatsapp-floating-widget top-12">
+        <a href="https://wa.me/254720557457?text=Hello%20Gurumisha!%20I%27m%20interested%20in%20your%20automotive%20services.%20Could%20you%20please%20help%20me%3F"
+           class="whatsapp-float"
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="Chat with us on WhatsApp"
+           title="Chat with us on WhatsApp">
+            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+            <span class="whatsapp-tooltip">Chat with us on WhatsApp</span>
+        </a>
+    </div>
+
+    <style>
+        /* WhatsApp Floating Button Styles */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .whatsapp-float::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #DC2626, #1F2937);
+            z-index: -1;
+            animation: whatsapp-pulse 2s infinite;
+            opacity: 0.6;
+        }
+
+        .whatsapp-float:hover {
+            transform: translateY(-4px) scale(1.1);
+            box-shadow: 0 16px 40px rgba(220, 38, 38, 0.5), 0 8px 20px rgba(31, 41, 55, 0.4);
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 25%, #B91C1C 50%, #991B1B 75%, #374151 100%);
+        }
+
+        .whatsapp-float:hover::before {
+            animation-duration: 1s;
+            opacity: 0.8;
+        }
+
+        .whatsapp-float i {
+            color: white;
+            font-size: 28px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        .whatsapp-float:hover i {
+            transform: rotate(15deg) scale(1.1);
+            color: white;
+        }
+
+        /* Tooltip Styles */
+        .whatsapp-tooltip {
+            position: absolute;
+            right: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .whatsapp-tooltip::after {
+            content: '';
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 6px solid transparent;
+            border-left-color: rgba(31, 41, 55, 0.95);
+        }
+
+        .whatsapp-float:hover .whatsapp-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) translateX(-8px);
+        }
+
+        /* Pulse Animation */
+        @keyframes whatsapp-pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            .whatsapp-float {
+                bottom: 24px;
+                right: 24px;
+                width: 56px;
+                height: 56px;
+            }
+
+            .whatsapp-float i {
+                font-size: 24px;
+            }
+
+            .whatsapp-tooltip {
+                display: none; /* Hide tooltip on mobile for better UX */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .whatsapp-float {
+                bottom: 20px;
+                right: 20px;
+                width: 52px;
+                height: 52px;
+            }
+
+            .whatsapp-float i {
+                font-size: 22px;
+            }
+        }
+
+        /* Accessibility Improvements */
+        .whatsapp-float:focus {
+            outline: 3px solid #DC2626;
+            outline-offset: 4px;
+        }
+
+        .whatsapp-float:focus .whatsapp-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) translateX(-8px);
+        }
+
+        /* Reduced Motion Support */
+        @media (prefers-reduced-motion: reduce) {
+            .whatsapp-float,
+            .whatsapp-float::before,
+            .whatsapp-float i,
+            .whatsapp-tooltip {
+                animation: none;
+                transition: none;
+            }
+        }
+
+        /* High Contrast Mode Support */
+        @media (prefers-contrast: high) {
+            .whatsapp-float {
+                border: 3px solid white;
+                background: #000;
+            }
+
+            .whatsapp-tooltip {
+                background: #000;
+                border: 2px solid white;
+            }
+        }
+    </style>
+
+    <script>
+        // WhatsApp Floating Button Enhancement Script
+        document.addEventListener('DOMContentLoaded', function() {
+            const whatsappButton = document.querySelector('.whatsapp-float');
+
+            if (whatsappButton) {
+                // Add click tracking
+                whatsappButton.addEventListener('click', function() {
+                    // Track WhatsApp button clicks for analytics
+                    if (typeof gtag !== 'undefined') {
+                        gtag('event', 'whatsapp_click', {
+                            'event_category': 'engagement',
+                            'event_label': 'floating_button'
+                        });
+                    }
+
+                    // Optional: Add custom tracking
+                    console.log('WhatsApp button clicked');
+                });
+
+                // Add keyboard navigation support
+                whatsappButton.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+
+                // Add entrance animation after page load
+                setTimeout(() => {
+                    whatsappButton.style.opacity = '1';
+                    whatsappButton.style.transform = 'scale(1)';
+                }, 1000);
+            }
+        });
+    </script>
+
+    <!-- Floating Compare Widget -->
+    {% include 'components/floating_compare_widget.html' %}
 </body>
 </html>

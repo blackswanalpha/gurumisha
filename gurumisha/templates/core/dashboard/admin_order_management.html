@@ -31,7 +31,7 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-blue-600 font-montserrat">45</div>
+                    <div class="stat-value text-blue-600 font-montserrat">{{ order_stats.pending_orders|default:0 }}</div>
                     <div class="stat-label font-raleway">Pending</div>
                     <div class="stat-trend text-xs text-blue-600 mt-1">
                         <i class="fas fa-clock mr-1"></i>Awaiting processing
@@ -46,7 +46,7 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-orange-600 font-montserrat">23</div>
+                    <div class="stat-value text-orange-600 font-montserrat">{{ order_stats.processing_orders|default:0 }}</div>
                     <div class="stat-label font-raleway">Processing</div>
                     <div class="stat-trend text-xs text-orange-600 mt-1">
                         <i class="fas fa-cogs mr-1"></i>In progress
@@ -76,7 +76,7 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-green-600 font-montserrat">189</div>
+                    <div class="stat-value text-green-600 font-montserrat">{{ order_stats.completed_orders|default:0 }}</div>
                     <div class="stat-label font-raleway">Delivered</div>
                     <div class="stat-trend text-xs text-green-600 mt-1">
                         <i class="fas fa-check-circle mr-1"></i>Completed
@@ -91,7 +91,7 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-red-600 font-montserrat">8</div>
+                    <div class="stat-value text-red-600 font-montserrat">{{ order_stats.cancelled_orders|default:0 }}</div>
                     <div class="stat-label font-raleway">Cancelled</div>
                     <div class="stat-trend text-xs text-red-600 mt-1">
                         <i class="fas fa-times-circle mr-1"></i>Refunded
@@ -199,13 +199,14 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
+                    {% for order in orders %}
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="checkbox" class="rounded border-gray-300 text-harrier-red focus:ring-harrier-red">
+                            <input type="checkbox" class="rounded border-gray-300 text-harrier-red focus:ring-harrier-red" value="{{ order.id }}">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-harrier-dark">#SP-2024-001</div>
-                            <div class="text-sm text-gray-500">Dec 15, 2024 2:30 PM</div>
+                            <div class="text-sm font-medium text-harrier-dark">#{{ order.order_number }}</div>
+                            <div class="text-sm text-gray-500">{{ order.created_at|date:"M d, Y g:i A" }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
@@ -213,47 +214,78 @@
                                     <i class="fas fa-user text-gray-600 text-sm"></i>
                                 </div>
                                 <div>
-                                    <div class="text-sm font-medium text-gray-900">John Doe</div>
-                                    <div class="text-sm text-gray-500">john@example.com</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ order.customer.get_full_name|default:order.customer.username }}</div>
+                                    <div class="text-sm text-gray-500">{{ order.customer.email }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">Brake Pads, Oil Filter</div>
-                            <div class="text-sm text-gray-500">2 items • 3 units total</div>
+                            <div class="text-sm text-gray-900">
+                                {% for item in order.items.all %}
+                                    {% if item.spare_part %}{{ item.spare_part.name }}{% if not forloop.last %}, {% endif %}{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-sm text-gray-500">{{ order.items.count }} item{{ order.items.count|pluralize }} • {{ order.items.all|length }} units total</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-semibold text-green-600">KSh 4,500</div>
-                            <div class="text-sm text-gray-500">Paid</div>
+                            <div class="text-sm font-semibold text-green-600">KSh {{ order.total_amount|floatformat:0 }}</div>
+                            <div class="text-sm text-gray-500">
+                                {% if order.payment_status == 'paid' %}Paid
+                                {% elif order.payment_status == 'pending' %}Pending
+                                {% elif order.payment_status == 'failed' %}Failed
+                                {% else %}{{ order.get_payment_status_display }}{% endif %}
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="fas fa-check-circle mr-1"></i>Delivered
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if order.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif order.status == 'processing' %}bg-blue-100 text-blue-800
+                                {% elif order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif order.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {% if order.status == 'completed' %}<i class="fas fa-check-circle mr-1"></i>{% endif %}
+                                {{ order.get_status_display }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                                    <i class="fas fa-mobile-alt text-white text-xs"></i>
-                                </div>
-                                <span class="text-sm text-gray-900">M-Pesa</span>
+                                {% if order.payments.exists %}
+                                    {% with order.payments.first as payment %}
+                                        <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-2">
+                                            <i class="fas fa-mobile-alt text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm text-gray-900">{{ payment.get_payment_method_display|default:"M-Pesa" }}</span>
+                                    {% endwith %}
+                                {% else %}
+                                    <span class="text-sm text-gray-500">No payment</span>
+                                {% endif %}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center gap-2">
-                                <button onclick="viewOrderDetails('SP-2024-001')" class="pill-action-btn pill-btn-view">
+                                <button onclick="viewOrderDetails('{{ order.order_number }}')" class="pill-action-btn pill-btn-view">
                                     <i class="fas fa-eye mr-1"></i>View
                                 </button>
-                                <button onclick="updateOrderStatus('SP-2024-001')" class="pill-action-btn pill-btn-edit">
+                                <button onclick="updateOrderStatus('{{ order.order_number }}')" class="pill-action-btn pill-btn-edit">
                                     <i class="fas fa-edit mr-1"></i>Update
                                 </button>
-                                <button onclick="printInvoice('SP-2024-001')" class="pill-action-btn pill-btn-restock">
+                                <button onclick="printInvoice('{{ order.order_number }}')" class="pill-action-btn pill-btn-restock">
                                     <i class="fas fa-print mr-1"></i>Print
                                 </button>
                             </div>
                         </td>
                     </tr>
-                    <!-- More rows would be dynamically generated -->
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-shopping-cart text-gray-400 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No Orders Yet</h4>
+                            <p class="text-gray-600 font-raleway">Customer orders will appear here when they make purchases.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -283,6 +315,56 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Enhanced Button Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        line-height: 1.2;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        border: 2px solid transparent;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enhanced-btn-primary {
+        background: linear-gradient(135deg,
+            #DC2626 0%,
+            #1F2937 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .enhanced-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+    }
+
+    .enhanced-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1F2937;
+        border-color: rgba(156, 163, 175, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: #DC2626;
+        color: #DC2626;
+        transform: translateY(-1px);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

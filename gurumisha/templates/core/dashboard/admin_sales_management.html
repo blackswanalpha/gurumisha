@@ -1,5 +1,6 @@
 {% extends 'base_admin_dashboard.html' %}
 {% load static %}
+{% load math_filters %}
 
 {% block page_title %}Sales Management{% endblock %}
 {% block page_description %}Comprehensive sales tracking and revenue management for spare parts{% endblock %}
@@ -28,10 +29,10 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-green-600 font-montserrat">KSh 2,450,000</div>
+                    <div class="stat-value text-green-600 font-montserrat">KSh {{ total_sales.total_amount|floatformat:0|default:0 }}</div>
                     <div class="stat-label font-raleway">Total Revenue</div>
                     <div class="stat-trend text-xs text-green-600 mt-1">
-                        <i class="fas fa-arrow-up mr-1"></i>+18% this month
+                        <i class="fas fa-dollar-sign mr-1"></i>All time sales
                     </div>
                 </div>
                 <div class="stat-icon bg-gradient-to-br from-green-500 to-green-600">
@@ -46,10 +47,10 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-blue-600 font-montserrat">1,247</div>
+                    <div class="stat-value text-blue-600 font-montserrat">{{ total_sales.total_orders|default:0 }}</div>
                     <div class="stat-label font-raleway">Total Orders</div>
                     <div class="stat-trend text-xs text-blue-600 mt-1">
-                        <i class="fas fa-shopping-cart mr-1"></i>+12% this month
+                        <i class="fas fa-shopping-cart mr-1"></i>Completed orders
                     </div>
                 </div>
                 <div class="stat-icon bg-gradient-to-br from-blue-500 to-blue-600">
@@ -64,10 +65,10 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-purple-600 font-montserrat">KSh 1,965</div>
+                    <div class="stat-value text-purple-600 font-montserrat">KSh {% if total_sales.total_orders and total_sales.total_amount %}{{ total_sales.total_amount|floatformat:0|div:total_sales.total_orders }}{% else %}0{% endif %}</div>
                     <div class="stat-label font-raleway">Average Order</div>
                     <div class="stat-trend text-xs text-purple-600 mt-1">
-                        <i class="fas fa-calculator mr-1"></i>+5% this month
+                        <i class="fas fa-calculator mr-1"></i>Per order value
                     </div>
                 </div>
                 <div class="stat-icon bg-gradient-to-br from-purple-500 to-purple-600">
@@ -82,10 +83,10 @@
         <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="stat-value text-orange-600 font-montserrat">342</div>
-                    <div class="stat-label font-raleway">New Customers</div>
+                    <div class="stat-value text-orange-600 font-montserrat">{{ monthly_sales.total_orders|default:0 }}</div>
+                    <div class="stat-label font-raleway">Monthly Orders</div>
                     <div class="stat-trend text-xs text-orange-600 mt-1">
-                        <i class="fas fa-users mr-1"></i>+25% this month
+                        <i class="fas fa-calendar-alt mr-1"></i>Last 30 days
                     </div>
                 </div>
                 <div class="stat-icon bg-gradient-to-br from-orange-500 to-orange-600">
@@ -241,47 +242,116 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
+                    {% for sale in recent_sales %}
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-harrier-dark">#SP-2024-001</div>
+                            <div class="text-sm font-medium text-harrier-dark">#{{ sale.order_number }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">John Doe</div>
-                            <div class="text-sm text-gray-500">john@example.com</div>
+                            <div class="text-sm text-gray-900">{{ sale.customer.get_full_name|default:sale.customer.username }}</div>
+                            <div class="text-sm text-gray-500">{{ sale.customer.email }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">Brake Pads, Oil Filter</div>
-                            <div class="text-sm text-gray-500">2 items</div>
+                            <div class="text-sm text-gray-900">
+                                {% for item in sale.items.all %}
+                                    {% if item.spare_part %}{{ item.spare_part.name }}{% if not forloop.last %}, {% endif %}{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-sm text-gray-500">{{ sale.items.count }} item{{ sale.items.count|pluralize }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-semibold text-green-600">KSh 4,500</div>
+                            <div class="text-sm font-semibold text-green-600">KSh {{ sale.total_amount|floatformat:0 }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Completed
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if sale.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif sale.status == 'processing' %}bg-blue-100 text-blue-800
+                                {% elif sale.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ sale.get_status_display }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">Dec 15, 2024</div>
-                            <div class="text-sm text-gray-500">2:30 PM</div>
+                            <div class="text-sm text-gray-900">{{ sale.created_at|date:"M d, Y" }}</div>
+                            <div class="text-sm text-gray-500">{{ sale.created_at|time:"g:i A" }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center gap-2">
-                                <button class="pill-action-btn pill-btn-view">
+                                <button onclick="viewSaleDetails('{{ sale.order_number }}')" class="pill-action-btn pill-btn-view">
                                     <i class="fas fa-eye mr-1"></i>View
                                 </button>
-                                <button class="pill-action-btn pill-btn-edit">
+                                <button onclick="generateInvoice('{{ sale.order_number }}')" class="pill-action-btn pill-btn-edit">
                                     <i class="fas fa-receipt mr-1"></i>Invoice
                                 </button>
                             </div>
                         </td>
                     </tr>
-                    <!-- More rows would be dynamically generated -->
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-chart-line text-gray-400 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No Sales Yet</h4>
+                            <p class="text-gray-600 font-raleway">Sales data will appear here when customers make purchases.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Enhanced Button Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        line-height: 1.2;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        border: 2px solid transparent;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enhanced-btn-primary {
+        background: linear-gradient(135deg,
+            #DC2626 0%,
+            #1F2937 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .enhanced-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+    }
+
+    .enhanced-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1F2937;
+        border-color: rgba(156, 163, 175, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: #DC2626;
+        color: #DC2626;
+        transform: translateY(-1px);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

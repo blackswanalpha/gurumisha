@@ -67,6 +67,16 @@
                     Add New Car
                 </button>
 
+                <!-- Debug Test Button (remove in production) -->
+                {% if cars %}
+                    <button onclick="testEditFunction()"
+                            class="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
+                            title="Test edit functionality">
+                        <i class="fas fa-bug mr-2"></i>
+                        Test Edit
+                    </button>
+                {% endif %}
+
                 <!-- Search -->
                 <form method="GET" class="flex">
                     <input type="text" name="search" placeholder="Search listings..."
@@ -204,8 +214,21 @@
                                     </a>
                                     <span class="text-gray-300">|</span>
 
-                                    <button onclick="editCar({{ car.id }})" class="text-harrier-red hover:text-harrier-dark transition-colors">
-                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    <!-- Enhanced Edit Button with HTMX and Fallback -->
+                                    <button hx-get="{% url 'core:admin_car_edit' car.id %}"
+                                            hx-target="body"
+                                            hx-swap="beforeend"
+                                            hx-indicator="#loading-indicator-{{ car.id }}"
+                                            onclick="handleEditClick({{ car.id }}, event)"
+                                            class="text-harrier-red hover:text-harrier-dark transition-colors duration-200 px-2 py-1 rounded hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-harrier-red focus:ring-opacity-50"
+                                            type="button"
+                                            title="Edit car listing"
+                                            data-car-id="{{ car.id }}">
+                                        <i class="fas fa-edit mr-1" aria-hidden="true"></i>Edit
+                                        <!-- Loading indicator -->
+                                        <span id="loading-indicator-{{ car.id }}" class="htmx-indicator ml-2">
+                                            <i class="fas fa-spinner fa-spin text-sm"></i>
+                                        </span>
                                     </button>
 
                                     {% if car.is_approved %}
@@ -287,7 +310,280 @@
 
 {% block extra_js %}
 {{ block.super }}
+
+<!-- Ensure HTMX is loaded -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
 <script>
+// Debug: Check if page is loaded correctly
+console.log('🚀 Admin listings page loaded');
+console.log('📊 Cars count:', {{ cars|length }});
+console.log('🔧 HTMX version:', htmx ? htmx.version : 'Not loaded');
+console.log('🔧 Alpine available:', typeof Alpine !== 'undefined');
+
+// Enhanced DOM ready with HTMX support
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ DOM Content Loaded');
+    console.log('🔧 HTMX available:', typeof htmx !== 'undefined');
+    console.log('🔧 Alpine available:', typeof Alpine !== 'undefined');
+
+    // Initialize HTMX if not already done
+    if (typeof htmx !== 'undefined') {
+        // Configure HTMX for better error handling
+        htmx.config.responseHandling = [
+            {code:"204", swap: false},
+            {code:"[23]..", swap: true},
+            {code:"[45]..", swap: false, error:true}
+        ];
+
+        // Enhanced HTMX event listeners for edit modals
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.xhr.status === 200 && evt.detail.target === document.body) {
+                console.log('✅ Modal loaded via HTMX');
+
+                // Wait for DOM to be ready, then initialize Alpine.js
+                setTimeout(() => {
+                    const modal = document.getElementById('edit-car-modal');
+                    if (modal && typeof Alpine !== 'undefined') {
+                        console.log('🎯 Initializing Alpine.js for edit modal');
+
+                        // Remove any existing Alpine data
+                        if (modal._x_dataStack) {
+                            delete modal._x_dataStack;
+                        }
+
+                        // Initialize Alpine.js
+                        Alpine.initTree(modal);
+
+                        // Manually trigger the init function
+                        const alpineData = Alpine.$data(modal);
+                        if (alpineData && typeof alpineData.initModal === 'function') {
+                            alpineData.initModal();
+                        }
+
+                        console.log('✅ Alpine.js initialized for modal');
+                    } else if (!modal) {
+                        console.warn('⚠️ Modal element not found');
+                    } else {
+                        console.warn('⚠️ Alpine.js not available');
+                    }
+                }, 50);
+            }
+        });
+
+        // Handle HTMX load event for better hydration
+        document.body.addEventListener('htmx:load', function(evt) {
+            console.log('🔄 HTMX load event triggered');
+
+            if (evt.detail.elt.id === 'edit-car-modal') {
+                console.log('🎯 Edit modal detected in load event');
+
+                setTimeout(() => {
+                    if (typeof Alpine !== 'undefined') {
+                        Alpine.initTree(evt.detail.elt);
+                        console.log('✅ Alpine.js initialized via load event');
+                    }
+                }, 100);
+            }
+        });
+
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            console.error('❌ HTMX Error:', evt.detail);
+            if (typeof showToast === 'function') {
+                showToast('Failed to load edit form. Please try again.', 'error');
+            } else {
+                alert('Failed to load edit form. Please try again.');
+            }
+        });
+
+        console.log('✅ HTMX configured for edit modals');
+    }
+
+    // Check if edit buttons exist
+    const editButtons = document.querySelectorAll('button[hx-get*="edit"], button[onclick*="editCar"]');
+    console.log('🔘 Edit buttons found:', editButtons.length);
+
+    // Add fallback click handlers for non-HTMX buttons
+    editButtons.forEach((button, index) => {
+        if (!button.hasAttribute('hx-get')) {
+            console.log(`🔘 Setting up fallback for edit button ${index + 1}`);
+
+            button.addEventListener('click', function(e) {
+                console.log('🖱️ Edit button clicked (fallback handler)');
+                const carId = this.getAttribute('data-car-id');
+                if (carId) {
+                    console.log('🚗 Car ID from data attribute:', carId);
+                    editCar(carId);
+                } else {
+                    console.error('❌ No car ID found in data attribute');
+                }
+            });
+        }
+
+        // Ensure button is clickable
+        button.style.cursor = 'pointer';
+        button.style.pointerEvents = 'auto';
+    });
+
+    // Test toast functionality
+    if (typeof showToast === 'function') {
+        console.log('✅ Toast function available');
+    } else {
+        console.warn('⚠️ Toast function not available');
+    }
+});
+
+// Global error handler
+window.addEventListener('error', function(e) {
+    console.error('🚨 Global error:', e.error);
+});
+
+// Enhanced edit click handler with multiple fallbacks
+function handleEditClick(carId, event) {
+    console.log('🖱️ Edit button clicked for car:', carId);
+
+    // Don't prevent default - let HTMX handle it first
+    // event.preventDefault();
+
+    // Try HTMX first
+    if (typeof htmx !== 'undefined') {
+        console.log('✅ Using HTMX for edit');
+        // Let HTMX handle it naturally
+        return true;
+    } else {
+        console.log('⚠️ HTMX not available, using fallback');
+        event.preventDefault();
+        editCar(carId);
+        return false;
+    }
+}
+
+// Manual Alpine.js initialization for modals
+function initializeModalAlpine(modalElement) {
+    if (!modalElement || typeof Alpine === 'undefined') {
+        console.warn('⚠️ Cannot initialize Alpine.js - missing element or Alpine');
+        return false;
+    }
+
+    try {
+        console.log('🎯 Manually initializing Alpine.js for modal');
+
+        // Clean up any existing Alpine data
+        if (modalElement._x_dataStack) {
+            delete modalElement._x_dataStack;
+        }
+
+        // Initialize Alpine.js
+        Alpine.initTree(modalElement);
+
+        // Wait a bit then trigger the init
+        setTimeout(() => {
+            const alpineData = Alpine.$data(modalElement);
+            if (alpineData && typeof alpineData.initModal === 'function') {
+                alpineData.initModal();
+                console.log('✅ Modal Alpine.js component initialized');
+            }
+        }, 50);
+
+        return true;
+    } catch (error) {
+        console.error('❌ Error initializing Alpine.js:', error);
+        return false;
+    }
+}
+
+// Enhanced modal detection and initialization
+function ensureModalHydration() {
+    const modal = document.getElementById('edit-car-modal');
+    if (modal) {
+        console.log('🔍 Modal found, checking Alpine.js state');
+
+        // Check if Alpine.js is already initialized
+        if (!modal._x_dataStack && typeof Alpine !== 'undefined') {
+            console.log('🔄 Re-initializing Alpine.js for modal');
+            initializeModalAlpine(modal);
+        } else if (modal._x_dataStack) {
+            console.log('✅ Alpine.js already initialized for modal');
+        } else {
+            console.warn('⚠️ Alpine.js not available');
+        }
+    }
+}
+
+// Test function to verify edit functionality
+function testEditFunction() {
+    console.log('🧪 Testing edit function...');
+    const firstEditButton = document.querySelector('button[onclick*="editCar"]');
+    if (firstEditButton) {
+        const carId = firstEditButton.getAttribute('data-car-id');
+        console.log('🧪 Testing with car ID:', carId);
+        editCar(carId);
+    } else {
+        console.error('❌ No edit buttons found for testing');
+    }
+}
+
+// Alternative edit function using HTMX (fallback)
+function editCarHTMX(carId) {
+    console.log('🔄 Using HTMX fallback for car ID:', carId);
+
+    // Create a temporary element for HTMX request
+    const tempDiv = document.createElement('div');
+    tempDiv.setAttribute('hx-get', `/dashboard/admin/car/${carId}/edit/`);
+    tempDiv.setAttribute('hx-target', 'body');
+    tempDiv.setAttribute('hx-swap', 'beforeend');
+
+    document.body.appendChild(tempDiv);
+
+    // Trigger HTMX request
+    if (typeof htmx !== 'undefined') {
+        htmx.process(tempDiv);
+        htmx.trigger(tempDiv, 'click');
+    } else {
+        console.error('❌ HTMX not available, falling back to fetch');
+        editCar(carId);
+    }
+
+    // Clean up
+    setTimeout(() => {
+        if (tempDiv.parentNode) {
+            tempDiv.parentNode.removeChild(tempDiv);
+        }
+    }, 1000);
+}
+
+// Enhanced edit function with multiple fallbacks
+function editCarEnhanced(carId) {
+    console.log('🚀 Enhanced edit car function called for ID:', carId);
+
+    // Try different methods in order of preference
+    const methods = [
+        () => editCar(carId),
+        () => editCarHTMX(carId),
+        () => window.location.href = `/dashboard/admin/car/${carId}/edit/`
+    ];
+
+    let currentMethod = 0;
+
+    function tryNextMethod() {
+        if (currentMethod < methods.length) {
+            try {
+                console.log(`🔄 Trying method ${currentMethod + 1}`);
+                methods[currentMethod]();
+                currentMethod++;
+            } catch (error) {
+                console.error(`❌ Method ${currentMethod + 1} failed:`, error);
+                currentMethod++;
+                tryNextMethod();
+            }
+        } else {
+            console.error('❌ All methods failed');
+            alert('Unable to open edit form. Please refresh the page and try again.');
+        }
+    }
+
+    tryNextMethod();
+}
 function approveCar(carId) {
     if (confirm('Are you sure you want to approve this car listing?')) {
         // Show loading state
@@ -401,19 +697,98 @@ function rejectCar(carId) {
 }
 
 function editCar(carId) {
-    // Load edit modal via HTMX
-    fetch(`/dashboard/admin/car/${carId}/edit/`)
-        .then(response => response.text())
-        .then(html => {
-            // Create modal container
-            const modalContainer = document.createElement('div');
-            modalContainer.innerHTML = html;
-            document.body.appendChild(modalContainer);
-        })
-        .catch(error => {
-            console.error('Error loading edit modal:', error);
-            alert('An error occurred while loading the edit form.');
+    console.log('🚀 Edit car clicked for ID:', carId);
+
+    // Show loading indicator
+    const loadingToast = showLoadingToast('Loading edit form...');
+
+    // Load edit modal via fetch
+    fetch(`/dashboard/admin/car/${carId}/edit/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(html => {
+        console.log('✅ HTML received, length:', html.length);
+
+        // Hide loading toast
+        if (loadingToast && typeof loadingToast.hide === 'function') {
+            loadingToast.hide();
+        }
+
+        // Remove any existing modals
+        const existingModals = document.querySelectorAll('#edit-car-modal');
+        existingModals.forEach(modal => modal.remove());
+
+        // Create modal container
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = html;
+
+        // Append to body
+        document.body.appendChild(modalContainer);
+
+        // Initialize Alpine.js if needed
+        if (typeof Alpine !== 'undefined') {
+            Alpine.initTree(modalContainer);
+        }
+
+        // Initialize any custom scripts in the modal
+        const scripts = modalContainer.querySelectorAll('script');
+        scripts.forEach(script => {
+            if (script.src) {
+                // External script
+                const newScript = document.createElement('script');
+                newScript.src = script.src;
+                document.head.appendChild(newScript);
+            } else {
+                // Inline script
+                try {
+                    eval(script.textContent);
+                } catch (e) {
+                    console.error('Error executing modal script:', e);
+                }
+            }
         });
+
+        console.log('✅ Modal loaded successfully');
+
+        // Show success toast
+        if (typeof showToast === 'function') {
+            showToast('Edit form loaded successfully', 'success');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error loading edit modal:', error);
+
+        // Hide loading toast
+        if (loadingToast && typeof loadingToast.hide === 'function') {
+            loadingToast.hide();
+        }
+
+        // Show error message
+        if (typeof showToast === 'function') {
+            showToast('Failed to load edit form. Please try again.', 'error');
+        } else {
+            alert('An error occurred while loading the edit form. Please try again.');
+        }
+    });
+}
+
+// Helper function to show loading toast
+function showLoadingToast(message) {
+    if (typeof showToast === 'function') {
+        return showToast(message, 'info', { duration: 0 }); // Duration 0 means it won't auto-hide
+    }
+    return null;
 }
 
 function featureCar(carId) {

@@ -1,0 +1,35 @@
+<!-- Compact Compare Button for Car Listing Pages -->
+<button 
+    id="compare-btn-{{ car.id }}"
+    hx-post="{% if in_compare %}{% url 'core:remove_from_compare' car.id %}{% else %}{% url 'core:add_to_compare' car.id %}{% endif %}"
+    hx-target="#compare-btn-{{ car.id }}"
+    hx-swap="outerHTML"
+    hx-trigger="click"
+    class="group relative w-10 h-10 bg-white/90 backdrop-blur-sm border-2 {% if in_compare %}border-blue-500 text-blue-600 shadow-lg shadow-blue-500/20{% else %}border-gray-300 text-gray-600{% endif %} rounded-lg flex items-center justify-center transition-all duration-500 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+    title="{% if in_compare %}Remove from Compare{% else %}Add to Compare{% endif %}">
+    
+    <!-- Animated Background Gradient -->
+    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 opacity-0 {% if in_compare %}group-hover:opacity-20{% else %}group-hover:opacity-10{% endif %} transition-all duration-500 rounded-lg"></div>
+    
+    <!-- Active State Indicator -->
+    {% if in_compare %}
+    <div class="absolute inset-0 bg-blue-500/20 rounded-lg animate-pulse"></div>
+    {% endif %}
+    
+    <!-- Scale Icon with Enhanced Animation -->
+    <div class="relative z-10">
+        <i class="fas fa-balance-scale {% if in_compare %}text-blue-500{% else %}text-gray-500{% endif %} text-sm transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 {% if in_compare %}animate-bounce{% endif %}"></i>
+        
+        <!-- Count Badge for Active State -->
+        {% if in_compare and compare_count > 0 %}
+        <div class="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+            {{ compare_count }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Ripple Effect on Click -->
+    <div class="absolute inset-0 rounded-lg overflow-hidden">
+        <div class="absolute inset-0 bg-blue-500/30 scale-0 group-active:scale-100 transition-transform duration-300 rounded-lg"></div>
+    </div>
+</button>

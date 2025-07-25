@@ -162,6 +162,100 @@
         font-weight: 600;
         transition: all 0.2s ease;
     }
+
+    /* WhatsApp Floating Button Styles */
+    .whatsapp-float {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        backdrop-filter: blur(20px);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .whatsapp-float:hover {
+        transform: translateY(-3px) scale(1.1);
+        box-shadow: 0 12px 32px rgba(220, 38, 38, 0.5), 0 6px 16px rgba(31, 41, 55, 0.4);
+        background: linear-gradient(135deg, #EF4444 0%, #DC2626 25%, #B91C1C 50%, #991B1B 75%, #374151 100%);
+    }
+
+    .whatsapp-float i {
+        color: white;
+        font-size: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .whatsapp-float:hover i {
+        transform: rotate(15deg) scale(1.1);
+        color: white;
+    }
+
+    /* Pulse animation for WhatsApp button */
+    .whatsapp-float::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #DC2626, #1F2937);
+        z-index: -1;
+        animation: whatsapp-pulse 2s infinite;
+        opacity: 0.7;
+    }
+
+    @keyframes whatsapp-pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.7;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.4;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.7;
+        }
+    }
+
+    /* Mobile responsiveness for WhatsApp button */
+    @media (max-width: 768px) {
+        .whatsapp-float {
+            bottom: 20px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+        }
+
+        .whatsapp-float i {
+            font-size: 22px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .whatsapp-float {
+            bottom: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+        }
+
+        .whatsapp-float i {
+            font-size: 20px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -194,14 +288,14 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-6 animate-fade-in-up animate-delay-600">
-                        <a href="{% url 'core:car_list' %}"
+                        <a href="{% url 'core:car_explore' %}"
                            class="admin-request-add-btn group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-105 hover:shadow-2xl font-montserrat relative overflow-hidden"
                            style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);">
                             <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <span class="relative z-10">Browse Cars</span>
+                            <span class="relative z-10">Explore Cars</span>
                             <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-400 to-gray-800 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                         </a>
                         <a href="{% url 'core:sell_car' %}"
@@ -220,7 +314,7 @@
                 <!-- Car Search Form -->
                 <div class="car-search-form bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
                     <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Find Your Perfect Car</h3>
-                    <form id="car-search-form" action="{% url 'core:car_list' %}" method="GET">
+                    <form id="car-search-form" action="{% url 'core:car_explore' %}" method="GET">
                         <div class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="form-group">
@@ -632,8 +726,8 @@
         </div>
 
         <div class="flex justify-center mb-12">
-            <a href="{% url 'core:car_list' %}" class="admin-request-add-btn">
-                <i class="fas fa-car mr-2"></i>VIEW ALL CARS
+            <a href="{% url 'core:car_explore' %}" class="admin-request-add-btn">
+                <i class="fas fa-car mr-2"></i>EXPLORE ALL CARS
             </a>
         </div>
         
@@ -655,7 +749,7 @@
 
                         <!-- Hot Deal Countdown -->
                         {% if car.is_hot_deal %}
-                            <div class="absolute top-4 left-4">
+                            <div class="absolute top-20 left-4">
                                 {% if car.hot_deal_details %}
                                     {% with hot_deal=car.hot_deal_details %}
                                         {% hot_deal_countdown hot_deal %}
@@ -675,12 +769,6 @@
                             </button>
                         </div>
 
-                        <!-- Featured Pill - Positioned below heart icon -->
-                        <div class="absolute top-20 right-4">
-                            <span class="bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg border border-white/20">
-                                <i class="fas fa-star mr-1"></i>Featured
-                            </span>
-                        </div>
 
                         <!-- Glassmorphism Overlay on Hover -->
                         <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -913,7 +1001,7 @@
                     </div>
                     <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
                 </div>
-                <h3 class="text-xl font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">UPLOAD PHOTOS</h3>
+                <h3 class="text-xl text-white  ont-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">UPLOAD PHOTOS</h3>
                 <p class="text-gray-200 font-raleway leading-relaxed">Add high-quality photos of your vehicle to attract more buyers and showcase your car's best features</p>
             </div>
 
@@ -926,7 +1014,7 @@
                     </div>
                     <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
                 </div>
-                <h3 class="text-xl font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">ADD DETAILS</h3>
+                <h3 class="text-xl text-white font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">ADD DETAILS</h3>
                 <p class="text-gray-200 font-raleway leading-relaxed">Provide comprehensive vehicle information, specifications, and maintenance history for transparency</p>
             </div>
 
@@ -939,7 +1027,7 @@
                     </div>
                     <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
                 </div>
-                <h3 class="text-xl font-montserrat font-bold mb-4 group-hover:text-green-400 transition-colors duration-300">GET OFFERS</h3>
+                <h3 class="text-xl text-white font-montserrat font-bold mb-4 group-hover:text-green-400 transition-colors duration-300">GET OFFERS</h3>
                 <p class="text-gray-200 font-raleway leading-relaxed">Receive inquiries and offers from thousands of interested buyers across our platform</p>
             </div>
         </div>
@@ -1039,7 +1127,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="hot-deals">
             {% for car in hot_deals %}
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group" data-deal-id="{% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% endif %}">
+                <a href="{% url 'core:car_detail' car.pk %}" class="block bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer transform hover:-translate-y-2" data-deal-id="{% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% endif %}" onclick="trackHotDealCardClick({{ car.pk }}, {% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% else %}null{% endif %})">
                     <div class="relative">
                         {% if car.main_image %}
                             <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
@@ -1070,7 +1158,7 @@
                         <!-- Discount Badge -->
                         {% if car.hot_deal_details %}
                             <div class="absolute bottom-3 left-3">
-                                <div class="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">
+                                <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                                     {% if car.hot_deal_details.discount_type == 'percentage' %}
                                         {{ car.hot_deal_details.discount_value|floatformat:0 }}% OFF
                                     {% else %}
@@ -1082,7 +1170,7 @@
                     </div>
 
                     <div class="p-4">
-                        <h3 class="font-semibold text-midnight mb-1 truncate">{{ car.title }}</h3>
+                        <h3 class="font-semibold text-midnight mb-1 truncate group-hover:text-red-600 transition-colors duration-300">{{ car.title }}</h3>
                         <p class="text-sm text-gray-600 mb-2">{{ car.year }} • {{ car.mileage|floatformat:0 }} km</p>
 
                         <!-- Star Rating -->
@@ -1106,15 +1194,14 @@
                                     <span class="text-lg font-bold text-crimson">{{ car.price|add_commas }}</span>
                                 {% endif %}
                             </div>
-                            <div class="flex space-x-2">
-                                {% if car.hot_deal_details %}
-                                    <a href="{% url 'core:hot_deal_detail' car.hot_deal_details.id %}" class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors">Deal</a>
-                                {% endif %}
-                                <a href="{% url 'core:car_detail' car.pk %}" class="text-xs bg-crimson text-white px-3 py-1 rounded hover:bg-electric-red transition-colors">View</a>
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-arrow-right text-white text-xs"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
             {% empty %}
                 <div class="col-span-full text-center py-8">
                     <p class="text-gray-500">No hot deals available at the moment.</p>
@@ -2064,6 +2151,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 30000);
 });
 
+// Track hot deal card clicks
+function trackHotDealCardClick(carId, dealId) {
+    // Track analytics for hot deal card clicks
+    fetch('/analytics/track/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+        },
+        body: JSON.stringify({
+            metric_type: 'hot_deal_card_clicks',
+            car_id: carId,
+            deal_id: dealId
+        })
+    }).catch(console.error);
+}
+
 // Enhanced Entrance Animations
 function initEntranceAnimations() {
     const observerOptions = {
@@ -2340,4 +2444,12 @@ function testMessagePopup() {
 <!-- Simple Welcome Popup Component - No Dependencies -->
 {% include 'components/simple_welcome_popup.html' %}
 
+    <!-- WhatsApp Floating Button -->
+    <a href="https://api.whatsapp.com/send/?phone=254720557457&text&type=phone_number&app_absent=0"
+       class="whatsapp-float"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Contact us on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 {% endblock %}

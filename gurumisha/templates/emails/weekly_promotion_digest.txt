@@ -27,7 +27,7 @@ View All Hot Deals: {{ site_url }}/hot-deals/
 {{ car.title }}
 {{ car.brand.name }} {{ car.model.name }}
 Price: KSh {{ car.price|floatformat:0 }}
-{{ car.featured_tier|title }} Featured
+Featured
 
 {% endfor %}
 View All Featured Cars: {{ site_url }}/featured-cars/

@@ -57,14 +57,14 @@
                 <div class="mb-4">
                     {% if car.is_hot_deal and car.hot_deal_details %}
                         <div class="flex items-center space-x-2">
-                            <span class="text-2xl font-bold text-red-600">KSh {{ car.hot_deal_details.discounted_price|floatformat:0 }}</span>
-                            <span class="text-lg text-gray-500 line-through">KSh {{ car.hot_deal_details.original_price|floatformat:0 }}</span>
+                            <span class="text-2xl font-bold text-red-600">KSh {{ car.hot_deal_details.discounted_price|currency_ksh_no_decimals }}</span>
+                            <span class="text-lg text-gray-500 line-through">KSh {{ car.hot_deal_details.original_price|currency_ksh_no_decimals }}</span>
                         </div>
                         <p class="text-sm text-green-600 font-medium">
-                            Save: KSh {{ car.hot_deal_details.original_price|sub:car.hot_deal_details.discounted_price|floatformat:0 }}
+                            Save: KSh {{ car.hot_deal_details.original_price|sub:car.hot_deal_details.discounted_price|currency_ksh_no_decimals }}
                         </p>
                     {% else %}
-                        <span class="text-2xl font-bold text-gray-900">KSh {{ car.price|floatformat:0 }}</span>
+                        <span class="text-2xl font-bold text-gray-900">KSh {{ car.price|currency_ksh_no_decimals }}</span>
                     {% endif %}
                 </div>
                 

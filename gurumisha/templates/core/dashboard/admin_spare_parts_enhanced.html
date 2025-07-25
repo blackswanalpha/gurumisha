@@ -14,16 +14,16 @@
         </div>
         
         <div class="flex flex-wrap gap-3">
-            <button onclick="openAddPartModal()" class="btn-admin-primary text-sm">
+            <button onclick="openAddPartModal()" class="enhanced-btn enhanced-btn-primary text-sm">
                 <i class="fas fa-plus mr-2"></i>Add Spare Part
             </button>
-            <button onclick="openBulkImportModal()" class="btn-admin-secondary text-sm">
+            <button onclick="openBulkImportModal()" class="enhanced-btn enhanced-btn-secondary text-sm">
                 <i class="fas fa-upload mr-2"></i>Bulk Import
             </button>
-            <button onclick="exportSparePartsData()" class="btn-admin-secondary text-sm">
+            <button onclick="exportSparePartsData()" class="enhanced-btn enhanced-btn-secondary text-sm">
                 <i class="fas fa-download mr-2"></i>Export Data
             </button>
-            <button onclick="openInventoryAlertsModal()" class="btn-admin-secondary text-sm relative">
+            <button onclick="openInventoryAlertsModal()" class="enhanced-btn enhanced-btn-secondary text-sm relative">
                 <i class="fas fa-exclamation-triangle mr-2"></i>Alerts
                 {% if low_stock_parts > 0 %}
                 <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -100,15 +100,23 @@
     <!-- Advanced Filters and Search -->
     <div class="admin-card animate-fade-in-up" style="animation-delay: 0.3s;">
         <div class="p-6">
-            <form method="GET" class="space-y-4" id="filter-form">
+            <form method="GET" class="space-y-4" id="filter-form"
+                  hx-get="{% url 'core:admin_spare_parts_enhanced' %}"
+                  hx-target="#spare-parts-table"
+                  hx-trigger="change, submit"
+                  hx-indicator="#loading-indicator">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Search -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Search Parts</label>
                         <div class="relative">
-                            <input type="text" name="search" value="{{ search_query }}" 
+                            <input type="text" name="search" value="{{ search_query }}"
                                    placeholder="Name, SKU, Part Number..."
-                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent">
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent"
+                                   hx-get="{% url 'core:admin_spare_parts_enhanced' %}"
+                                   hx-target="#spare-parts-table"
+                                   hx-trigger="keyup changed delay:500ms"
+                                   hx-indicator="#loading-indicator">
                             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                         </div>
                     </div>
@@ -156,10 +164,10 @@
                         Showing {{ spare_parts|length }} of {{ total_parts }} parts
                     </div>
                     <div class="flex space-x-3">
-                        <button type="button" onclick="clearFilters()" class="btn-admin-secondary text-sm">
+                        <button type="button" onclick="clearFilters()" class="enhanced-btn enhanced-btn-secondary text-sm">
                             <i class="fas fa-times mr-2"></i>Clear Filters
                         </button>
-                        <button type="submit" class="btn-admin-primary text-sm">
+                        <button type="submit" class="enhanced-btn enhanced-btn-primary text-sm">
                             <i class="fas fa-filter mr-2"></i>Apply Filters
                         </button>
                     </div>
@@ -179,6 +187,13 @@
                     <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Spare Parts Inventory</h3>
                 </div>
                 <div class="flex items-center space-x-3">
+                    <!-- Loading Indicator -->
+                    <div id="loading-indicator" class="htmx-indicator">
+                        <div class="flex items-center space-x-2 text-harrier-red">
+                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-harrier-red"></div>
+                            <span class="text-sm">Loading...</span>
+                        </div>
+                    </div>
                     <div class="flex items-center space-x-2">
                         <label class="text-sm text-gray-600">View:</label>
                         <button onclick="toggleView('table')" id="table-view-btn" class="px-3 py-1 text-sm rounded-lg bg-harrier-red text-white">
@@ -194,6 +209,7 @@
         
         <!-- Table View -->
         <div id="table-view" class="overflow-x-auto">
+            <div id="spare-parts-table">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -323,7 +339,7 @@
                             </div>
                             <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No spare parts found</h4>
                             <p class="text-gray-600 font-raleway mb-4">No spare parts match your current filters.</p>
-                            <button onclick="clearFilters()" class="btn-admin-primary">
+                            <button onclick="clearFilters()" class="enhanced-btn enhanced-btn-primary">
                                 <i class="fas fa-times mr-2"></i>Clear Filters
                             </button>
                         </td>
@@ -331,6 +347,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- Pagination -->
@@ -415,6 +432,65 @@
 
     .overflow-x-auto::-webkit-scrollbar-thumb:hover {
         background: #B91C1C;
+    }
+
+    /* Enhanced Button Styles */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        line-height: 1.2;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        border: 2px solid transparent;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enhanced-btn-primary {
+        background: linear-gradient(135deg,
+            #DC2626 0%,
+            #1F2937 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .enhanced-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+    }
+
+    .enhanced-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1F2937;
+        border-color: rgba(156, 163, 175, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: #DC2626;
+        color: #DC2626;
+        transform: translateY(-1px);
+    }
+
+    /* HTMX Loading Indicator */
+    .htmx-indicator {
+        opacity: 0;
+        transition: opacity 200ms ease-in;
+    }
+
+    .htmx-request .htmx-indicator {
+        opacity: 1;
+    }
+
+    .htmx-request.htmx-indicator {
+        opacity: 1;
     }
 </style>
 {% endblock %}
@@ -529,20 +605,64 @@ function openInventoryAlertsModal() {
 
 // Part Management Functions
 function viewPartDetail(partId) {
-    window.location.href = `/admin/spare-parts/${partId}/`;
+    fetch(`/dashboard/admin/spare-parts/view/${partId}/modal/`)
+        .then(response => response.text())
+        .then(html => {
+            document.body.insertAdjacentHTML('beforeend', html);
+        })
+        .catch(error => {
+            console.error('Error loading modal:', error);
+            showToast('Error loading part details', 'error');
+        });
 }
 
 function editPart(partId) {
-    showToast('Edit Part Modal - Implementation needed', 'info');
+    fetch(`/dashboard/admin/spare-parts/edit/${partId}/modal/`)
+        .then(response => response.text())
+        .then(html => {
+            document.body.insertAdjacentHTML('beforeend', html);
+        })
+        .catch(error => {
+            console.error('Error loading modal:', error);
+            showToast('Error loading edit part modal', 'error');
+        });
 }
 
 function updateStock(partId) {
-    showToast('Stock Update Modal - Implementation needed', 'info');
+    fetch(`/dashboard/admin/spare-parts/restock/${partId}/modal/`)
+        .then(response => response.text())
+        .then(html => {
+            document.body.insertAdjacentHTML('beforeend', html);
+        })
+        .catch(error => {
+            console.error('Error loading modal:', error);
+            showToast('Error loading restock modal', 'error');
+        });
 }
 
 function deletePart(partId) {
-    if (confirm('Are you sure you want to delete this spare part?')) {
-        showToast('Delete functionality - Implementation needed', 'info');
+    if (confirm('Are you sure you want to delete this spare part? This action cannot be undone.')) {
+        fetch(`/dashboard/admin/spare-parts/delete/${partId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'HX-Request': 'true'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success !== false) {
+                showToast('Spare part deleted successfully', 'success');
+                // Refresh the table
+                location.reload();
+            } else {
+                showToast(data.error || 'Error deleting spare part', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error deleting spare part', 'error');
+        });
     }
 }
 

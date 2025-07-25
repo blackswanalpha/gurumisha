@@ -1,0 +1,542 @@
+{% load static %}
+
+<!-- Individual Comment Item -->
+<div class="comment-item bg-white border border-gray-200 rounded-lg p-4 transition-all duration-300 hover:shadow-md" 
+     data-comment-id="{{ comment.id }}">
+    
+    <!-- Comment Header -->
+    <div class="comment-header flex items-start justify-between mb-3">
+        <div class="comment-author flex items-center gap-3">
+            <!-- User Avatar -->
+            <div class="user-avatar w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {{ comment.author.get_full_name|default:comment.author.username|first|upper }}
+            </div>
+            
+            <!-- Author Info -->
+            <div class="author-info">
+                <div class="author-name font-semibold text-gray-800 font-raleway">
+                    {{ comment.author.get_full_name|default:comment.author.username }}
+                    {% if comment.author.is_staff %}
+                        <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
+                            <i class="fas fa-shield-alt mr-1"></i>Staff
+                        </span>
+                    {% endif %}
+                    {% if comment.author == post.author %}
+                        <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                            <i class="fas fa-pen mr-1"></i>Author
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="comment-meta flex items-center gap-3 text-sm text-gray-500">
+                    <span class="comment-date flex items-center gap-1">
+                        <i class="fas fa-clock"></i>
+                        <time datetime="{{ comment.created_at|date:'c' }}" title="{{ comment.created_at|date:'F d, Y g:i A' }}">
+                            {{ comment.created_at|timesince }} ago
+                        </time>
+                    </span>
+                    
+                    {% if comment.is_edited %}
+                    <span class="edited-indicator flex items-center gap-1 text-orange-600">
+                        <i class="fas fa-edit"></i>
+                        <span>Edited</span>
+                    </span>
+                    {% endif %}
+                    
+                    {% if comment.is_pinned %}
+                    <span class="pinned-indicator flex items-center gap-1 text-green-600">
+                        <i class="fas fa-thumbtack"></i>
+                        <span>Pinned</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comment Actions Menu -->
+        <div class="comment-actions relative">
+            <button onclick="toggleCommentMenu({{ comment.id }})" 
+                    class="comment-menu-btn p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            
+            <div id="comment-menu-{{ comment.id }}" class="comment-menu absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 hidden min-w-40">
+                {% if user.is_authenticated %}
+                    <!-- Like Comment -->
+                    <button onclick="toggleCommentLike({{ comment.id }})" 
+                            class="menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-heart mr-2 {% if user_liked_comment %}text-red-500{% endif %}"></i>
+                        {% if user_liked_comment %}Unlike{% else %}Like{% endif %}
+                    </button>
+                    
+                    <!-- Reply to Comment -->
+                    <button onclick="showReplyForm({{ comment.id }})" 
+                            class="menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-reply mr-2"></i>Reply
+                    </button>
+                    
+                    {% if user == comment.author %}
+                    <!-- Edit Comment -->
+                    <button onclick="editComment({{ comment.id }})" 
+                            class="menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Edit
+                    </button>
+                    
+                    <!-- Delete Comment -->
+                    <button onclick="deleteComment({{ comment.id }})" 
+                            class="menu-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                    {% endif %}
+                    
+                    {% if user.is_staff %}
+                    <div class="border-t border-gray-200 my-1"></div>
+                    
+                    <!-- Pin/Unpin Comment -->
+                    <button onclick="toggleCommentPin({{ comment.id }})" 
+                            class="menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-thumbtack mr-2"></i>
+                        {% if comment.is_pinned %}Unpin{% else %}Pin{% endif %}
+                    </button>
+                    
+                    <!-- Moderate Comment -->
+                    <button onclick="moderateComment({{ comment.id }})" 
+                            class="menu-item w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors">
+                        <i class="fas fa-flag mr-2"></i>Moderate
+                    </button>
+                    {% endif %}
+                {% endif %}
+                
+                <!-- Report Comment -->
+                <button onclick="reportComment({{ comment.id }})" 
+                        class="menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-flag mr-2"></i>Report
+                </button>
+                
+                <!-- Share Comment -->
+                <button onclick="shareComment({{ comment.id }})" 
+                        class="menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-share mr-2"></i>Share
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comment Content -->
+    <div class="comment-content mb-4">
+        <div id="comment-text-{{ comment.id }}" class="comment-text prose prose-sm max-w-none">
+            {{ comment.content|linebreaks }}
+        </div>
+        
+        <!-- Edit Form (Hidden by default) -->
+        <div id="comment-edit-form-{{ comment.id }}" class="comment-edit-form hidden">
+            <form onsubmit="saveCommentEdit(event, {{ comment.id }})">
+                <textarea class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" 
+                          rows="3" 
+                          required>{{ comment.content }}</textarea>
+                <div class="flex gap-2 mt-2">
+                    <button type="submit" 
+                            class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                        Save
+                    </button>
+                    <button type="button" 
+                            onclick="cancelCommentEdit({{ comment.id }})" 
+                            class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Comment Footer -->
+    <div class="comment-footer flex items-center justify-between">
+        <!-- Comment Stats -->
+        <div class="comment-stats flex items-center gap-4">
+            <div class="like-stats flex items-center gap-1 text-sm text-gray-500">
+                <i class="fas fa-heart text-red-500"></i>
+                <span id="comment-likes-{{ comment.id }}">{{ comment.likes_count|default:0 }}</span>
+                <span>like{{ comment.likes_count|pluralize }}</span>
+            </div>
+            
+            {% if comment.replies.count > 0 %}
+            <div class="reply-stats flex items-center gap-1 text-sm text-gray-500">
+                <i class="fas fa-reply"></i>
+                <span>{{ comment.replies.count }}</span>
+                <span>repl{{ comment.replies.count|pluralize:"y,ies" }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions flex items-center gap-2">
+            {% if user.is_authenticated %}
+            <button onclick="toggleCommentLike({{ comment.id }})" 
+                    class="quick-action-btn {% if user_liked_comment %}active{% endif %}"
+                    title="Like comment">
+                <i class="fas fa-heart"></i>
+            </button>
+            
+            <button onclick="showReplyForm({{ comment.id }})" 
+                    class="quick-action-btn"
+                    title="Reply to comment">
+                <i class="fas fa-reply"></i>
+            </button>
+            {% endif %}
+            
+            <button onclick="shareComment({{ comment.id }})" 
+                    class="quick-action-btn"
+                    title="Share comment">
+                <i class="fas fa-share"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Reply Form (Hidden by default) -->
+    <div id="reply-form-{{ comment.id }}" class="reply-form hidden mt-4 pl-8 border-l-2 border-blue-200">
+        <form hx-post="{% url 'core:add_reply' comment.id %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#replies-{{ comment.id }}"
+              hx-swap="beforeend">
+            
+            <div class="flex items-start gap-3">
+                <div class="user-avatar w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                    {{ user.get_full_name|default:user.username|first|upper }}
+                </div>
+                
+                <div class="flex-1">
+                    <textarea name="content" 
+                              placeholder="Write a reply..." 
+                              rows="2"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                              required></textarea>
+                    
+                    <div class="flex gap-2 mt-2">
+                        <button type="submit" 
+                                class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                            Reply
+                        </button>
+                        <button type="button" 
+                                onclick="hideReplyForm({{ comment.id }})" 
+                                class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Replies Section -->
+    {% if comment.replies.exists %}
+    <div class="replies-section mt-4 pl-8 border-l-2 border-gray-200">
+        <div class="replies-header mb-3">
+            <button onclick="toggleReplies({{ comment.id }})" 
+                    class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                <i class="fas fa-chevron-down mr-1"></i>
+                View {{ comment.replies.count }} repl{{ comment.replies.count|pluralize:"y,ies" }}
+            </button>
+        </div>
+        
+        <div id="replies-{{ comment.id }}" class="replies-list space-y-3 hidden">
+            {% for reply in comment.replies.all %}
+                {% include 'core/components/comment_item.html' with comment=reply is_reply=True %}
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div id="replies-{{ comment.id }}" class="replies-list space-y-3 mt-4 pl-8 border-l-2 border-gray-200 hidden">
+        <!-- New replies will be added here -->
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.comment-item {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comment-menu {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.quick-action-btn {
+    padding: 0.5rem;
+    color: #6b7280;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.quick-action-btn:hover {
+    color: #374151;
+    background: #f3f4f6;
+}
+
+.quick-action-btn.active {
+    color: #ef4444;
+}
+
+.menu-item {
+    transition: all 0.2s ease;
+}
+
+.menu-item:first-child {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.menu-item:last-child {
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Reply styling for nested comments */
+.comment-item[data-is-reply="true"] {
+    background: #f9fafb;
+    border-left: 3px solid #3b82f6;
+}
+
+.comment-item[data-is-reply="true"] .user-avatar {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .comment-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .comment-actions {
+        align-self: flex-end;
+    }
+    
+    .comment-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .quick-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Comment interaction functions
+function toggleCommentMenu(commentId) {
+    const menu = document.getElementById(`comment-menu-${commentId}`);
+    const allMenus = document.querySelectorAll('.comment-menu');
+    
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m.id !== `comment-menu-${commentId}`) {
+            m.classList.add('hidden');
+        }
+    });
+    
+    // Toggle current menu
+    menu.classList.toggle('hidden');
+}
+
+function toggleCommentLike(commentId) {
+    fetch(`{% url 'core:toggle_comment_like' 0 %}`.replace('0', commentId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update like count
+            document.getElementById(`comment-likes-${commentId}`).textContent = data.likes_count;
+            
+            // Update button states
+            const quickBtn = document.querySelector(`[onclick="toggleCommentLike(${commentId})"]`);
+            const menuBtn = document.querySelector(`#comment-menu-${commentId} [onclick="toggleCommentLike(${commentId})"]`);
+            
+            if (data.liked) {
+                quickBtn.classList.add('active');
+                menuBtn.innerHTML = '<i class="fas fa-heart mr-2 text-red-500"></i>Unlike';
+            } else {
+                quickBtn.classList.remove('active');
+                menuBtn.innerHTML = '<i class="fas fa-heart mr-2"></i>Like';
+            }
+            
+            // Close menu
+            document.getElementById(`comment-menu-${commentId}`).classList.add('hidden');
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling comment like:', error);
+        showToast('Error updating like. Please try again.', 'error');
+    });
+}
+
+function showReplyForm(commentId) {
+    const replyForm = document.getElementById(`reply-form-${commentId}`);
+    replyForm.classList.remove('hidden');
+    replyForm.querySelector('textarea').focus();
+    
+    // Close menu
+    document.getElementById(`comment-menu-${commentId}`).classList.add('hidden');
+}
+
+function hideReplyForm(commentId) {
+    const replyForm = document.getElementById(`reply-form-${commentId}`);
+    replyForm.classList.add('hidden');
+    replyForm.querySelector('textarea').value = '';
+}
+
+function editComment(commentId) {
+    const textDiv = document.getElementById(`comment-text-${commentId}`);
+    const editForm = document.getElementById(`comment-edit-form-${commentId}`);
+    
+    textDiv.classList.add('hidden');
+    editForm.classList.remove('hidden');
+    editForm.querySelector('textarea').focus();
+    
+    // Close menu
+    document.getElementById(`comment-menu-${commentId}`).classList.add('hidden');
+}
+
+function cancelCommentEdit(commentId) {
+    const textDiv = document.getElementById(`comment-text-${commentId}`);
+    const editForm = document.getElementById(`comment-edit-form-${commentId}`);
+    
+    textDiv.classList.remove('hidden');
+    editForm.classList.add('hidden');
+}
+
+function saveCommentEdit(event, commentId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const textarea = form.querySelector('textarea');
+    const newContent = textarea.value.trim();
+    
+    if (!newContent) {
+        showToast('Comment cannot be empty', 'error');
+        return;
+    }
+    
+    fetch(`{% url 'core:edit_comment' 0 %}`.replace('0', commentId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            content: newContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update comment text
+            document.getElementById(`comment-text-${commentId}`).innerHTML = data.content;
+            
+            // Show updated text, hide edit form
+            cancelCommentEdit(commentId);
+            
+            showToast('Comment updated successfully', 'success');
+        } else {
+            showToast(data.message || 'Error updating comment', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating comment:', error);
+        showToast('Error updating comment. Please try again.', 'error');
+    });
+}
+
+function deleteComment(commentId) {
+    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`{% url 'core:delete_comment' 0 %}`.replace('0', commentId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove comment from DOM
+            const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+            commentElement.style.opacity = '0';
+            commentElement.style.transform = 'translateX(-100%)';
+            
+            setTimeout(() => {
+                commentElement.remove();
+            }, 300);
+            
+            showToast('Comment deleted successfully', 'success');
+        } else {
+            showToast(data.message || 'Error deleting comment', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting comment:', error);
+        showToast('Error deleting comment. Please try again.', 'error');
+    });
+}
+
+function toggleReplies(commentId) {
+    const repliesDiv = document.getElementById(`replies-${commentId}`);
+    const toggleBtn = document.querySelector(`[onclick="toggleReplies(${commentId})"]`);
+    const icon = toggleBtn.querySelector('i');
+    
+    repliesDiv.classList.toggle('hidden');
+    
+    if (repliesDiv.classList.contains('hidden')) {
+        icon.className = 'fas fa-chevron-down mr-1';
+        toggleBtn.innerHTML = toggleBtn.innerHTML.replace('Hide', 'View');
+    } else {
+        icon.className = 'fas fa-chevron-up mr-1';
+        toggleBtn.innerHTML = toggleBtn.innerHTML.replace('View', 'Hide');
+    }
+}
+
+// Close comment menus when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.comment-actions')) {
+        document.querySelectorAll('.comment-menu').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+    }
+});
+</script>

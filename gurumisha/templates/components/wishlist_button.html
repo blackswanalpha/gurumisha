@@ -1,0 +1,72 @@
+<!-- Modern Wishlist Button Component with Enhanced Design and Accessibility -->
+<button
+    id="wishlist-btn-{{ car.id }}"
+    hx-post="{% if in_wishlist %}{% url 'core:remove_from_wishlist' car.id %}{% else %}{% url 'core:add_to_wishlist' car.id %}{% endif %}"
+    hx-target="#wishlist-btn-{{ car.id }}"
+    hx-swap="outerHTML"
+    hx-trigger="click"
+    hx-indicator="#wishlist-loading-{{ car.id }}"
+    hx-on:htmx:before-request="this.setAttribute('aria-busy', 'true')"
+    hx-on:htmx:after-request="this.setAttribute('aria-busy', 'false')"
+    class="group relative flex items-center justify-center px-4 sm:px-6 py-3 bg-white/90 backdrop-blur-sm border-2 {% if in_wishlist %}border-red-500 text-red-600 shadow-lg shadow-red-500/20{% else %}border-gray-300 text-gray-600{% endif %} rounded-xl font-semibold transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-red-500/25 focus:outline-none focus:ring-4 focus:ring-red-500/20 min-h-[48px] w-full sm:w-auto"
+    type="button"
+    aria-label="{% if in_wishlist %}Remove {{ car.title }} from wishlist{% else %}Add {{ car.title }} to wishlist{% endif %}"
+    aria-describedby="wishlist-help-{{ car.id }}"
+    aria-pressed="{% if in_wishlist %}true{% else %}false{% endif %}"
+    role="button"
+    tabindex="0">
+
+    <!-- Animated Background Gradient -->
+    <div class="absolute inset-0 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 opacity-0 {% if in_wishlist %}group-hover:opacity-20{% else %}group-hover:opacity-10{% endif %} transition-all duration-500 rounded-xl"></div>
+
+    <!-- Pulse Animation for Active State -->
+    {% if in_wishlist %}
+    <div class="absolute inset-0 bg-red-500/20 rounded-xl animate-pulse"></div>
+    {% endif %}
+
+    <!-- Loading Indicator -->
+    <div id="wishlist-loading-{{ car.id }}" class="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-xl flex items-center justify-center opacity-0 transition-opacity duration-200 htmx-indicator">
+        <div class="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" role="status" aria-label="Loading"></div>
+    </div>
+
+    <!-- Heart Icon with Enhanced Animation -->
+    <div class="relative z-10 flex items-center space-x-3">
+        <div class="relative">
+            <i class="{% if in_wishlist %}fas fa-heart text-red-500{% else %}far fa-heart{% endif %} text-lg transition-all duration-300 group-hover:scale-125 {% if in_wishlist %}animate-pulse{% endif %}" aria-hidden="true"></i>
+
+            <!-- Floating Hearts Animation for Active State -->
+            {% if in_wishlist %}
+            <div class="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full animate-ping" aria-hidden="true"></div>
+            {% endif %}
+        </div>
+
+        <!-- Text with Smooth Transition -->
+        <span class="relative z-10 font-montserrat font-semibold tracking-wide transition-all duration-300 group-hover:text-red-600">
+            {% if in_wishlist %}
+                <span class="flex items-center space-x-1">
+                    <span>Saved</span>
+                    <i class="fas fa-check text-xs" aria-hidden="true"></i>
+                </span>
+            {% else %}
+                Save for Later
+            {% endif %}
+        </span>
+    </div>
+
+    <!-- Ripple Effect on Click -->
+    <div class="absolute inset-0 rounded-xl overflow-hidden" aria-hidden="true">
+        <div class="absolute inset-0 bg-red-500/30 scale-0 group-active:scale-100 transition-transform duration-300 rounded-xl"></div>
+    </div>
+</button>
+
+<!-- Screen Reader Help Text -->
+<div id="wishlist-help-{{ car.id }}" class="sr-only">
+    {% if in_wishlist %}
+        This car is currently saved in your wishlist. Click to remove it.
+    {% else %}
+        Click to save this car to your wishlist for later viewing.
+    {% endif %}
+</div>
+
+<!-- Success/Error Message Container -->
+<div id="wishlist-message-{{ car.id }}" class="mt-2" role="status" aria-live="polite" aria-atomic="true"></div>

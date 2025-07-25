@@ -1,3 +1,5 @@
+{% load core_extras %}
+
 <!-- Update Pill Counts -->
 <script>
     // Update pill counts when HTMX response is received
@@ -166,13 +168,16 @@
                 <div class="flex justify-between items-center pt-4 border-t border-gray-100">
                     <div>
                         <span class="text-2xl font-bold text-primary-red" style="font-family: 'Saira Condensed', sans-serif;">
-                            KSh {{ car.price|floatformat:0 }}
+                            KSh {{ car.price|currency_ksh_no_decimals }}
                         </span>
                     </div>
                     <div class="flex space-x-2">
-                        <button class="w-10 h-10 border-2 border-gray-200 rounded-lg flex items-center justify-center hover:border-primary-red hover:text-primary-red transition-all duration-300" title="Compare">
-                            <i class="fas fa-balance-scale text-sm"></i>
-                        </button>
+                        <!-- Modern Compare Button -->
+                        {% if car.id in compare_list %}
+                            {% include 'components/compare_button_compact.html' with car=car in_compare=True compare_count=compare_count %}
+                        {% else %}
+                            {% include 'components/compare_button_compact.html' with car=car in_compare=False compare_count=compare_count %}
+                        {% endif %}
                         <a href="{% url 'core:car_detail' car.pk %}" class="bg-gradient-to-r from-primary-red to-accent-red text-white px-6 py-2 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg">
                             VIEW
                         </a>

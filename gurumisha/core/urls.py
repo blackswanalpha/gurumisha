@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, dashboard_views
+from . import views, dashboard_views, resource_views
 
 app_name = 'core'
 
@@ -87,9 +87,24 @@ urlpatterns = [
     path('dashboard/admin/car/<int:car_id>/feature/', dashboard_views.admin_feature_car, name='admin_feature_car'),
     path('dashboard/admin/car/<int:car_id>/hot-deal/', dashboard_views.admin_hot_deal_management, name='admin_hot_deal_management'),
     path('dashboard/admin/car/<int:car_id>/delete/', dashboard_views.admin_car_delete_view, name='admin_car_delete'),
+
+    # Enhanced Image Gallery Management URLs
+    path('car/<int:car_id>/images/upload/', dashboard_views.car_image_upload, name='car_image_upload'),
+    path('car/<int:car_id>/images/<int:image_id>/delete/', dashboard_views.car_image_delete, name='car_image_delete'),
+    path('car/<int:car_id>/images/<int:image_id>/set-primary/', dashboard_views.car_image_set_primary, name='car_image_set_primary'),
+    path('car/<int:car_id>/images/reorder/', dashboard_views.car_image_reorder, name='car_image_reorder'),
     path('dashboard/admin/analytics/', dashboard_views.admin_analytics_view, name='admin_analytics'),
     path('dashboard/admin/analytics/api/', dashboard_views.promotion_analytics_api, name='promotion_analytics_api'),
     path('dashboard/admin/spare-parts/', dashboard_views.admin_spare_parts_overview, name='admin_spare_parts'),
+
+    # Enhanced Admin Resource Management URLs
+    path('dashboard/admin/resources/', resource_views.admin_resource_management, name='admin_resource_management'),
+    path('dashboard/admin/resources/create/', resource_views.admin_resource_create, name='admin_resource_create'),
+    path('dashboard/admin/resources/<int:post_id>/edit/', resource_views.admin_resource_edit, name='admin_resource_edit'),
+    path('dashboard/admin/resources/<int:post_id>/update/', resource_views.admin_resource_update, name='admin_resource_update'),
+    path('dashboard/admin/resources/<int:post_id>/delete/', resource_views.admin_resource_delete, name='admin_resource_delete'),
+    path('dashboard/admin/resources/table/', resource_views.admin_resources_table, name='admin_resources_table'),
+    path('dashboard/admin/resources/analytics/', resource_views.admin_analytics_dashboard, name='admin_analytics_dashboard'),
 
     # Admin Actions
     path('dashboard/admin/approve-car/<int:car_id>/', dashboard_views.approve_car_listing, name='approve_car'),
@@ -163,6 +178,8 @@ urlpatterns = [
     path('dashboard/admin/resource-management/infographics/', dashboard_views.admin_resource_infographics_tab, name='admin_resource_infographics_tab'),
     path('dashboard/admin/resource-management/opinions/', dashboard_views.admin_resource_opinions_tab, name='admin_resource_opinions_tab'),
     path('dashboard/admin/resource-management/news/', dashboard_views.admin_resource_news_tab, name='admin_resource_news_tab'),
+    path('dashboard/admin/resource-management/statistics/', dashboard_views.admin_resource_statistics, name='admin_resource_statistics'),
+    path('dashboard/admin/resource-management/export/', dashboard_views.admin_resource_export, name='admin_resource_export'),
 
     # Resource CRUD URLs
     path('dashboard/admin/resource-management/create-modal/', dashboard_views.admin_resource_create_modal, name='admin_resource_create_modal'),
@@ -170,6 +187,7 @@ urlpatterns = [
     path('dashboard/admin/resource-management/<int:post_id>/edit-modal/', dashboard_views.admin_resource_edit_modal, name='admin_resource_edit_modal'),
     path('dashboard/admin/resource-management/<int:post_id>/edit/', dashboard_views.admin_resource_edit, name='admin_resource_edit'),
     path('dashboard/admin/resource-management/<int:post_id>/delete/', dashboard_views.admin_resource_delete, name='admin_resource_delete'),
+    path('dashboard/admin/resource-management/<int:post_id>/toggle-publish/', dashboard_views.admin_resource_toggle_publish, name='admin_resource_toggle_publish'),
     path('dashboard/admin/resource-management/<int:post_id>/toggle-featured/', dashboard_views.admin_resource_toggle_featured, name='admin_resource_toggle_featured'),
     path('dashboard/admin/resource-management/<int:post_id>/toggle-published/', dashboard_views.admin_resource_toggle_published, name='admin_resource_toggle_published'),
     path('dashboard/admin/resource-management/search/', dashboard_views.admin_resource_search, name='admin_resource_search'),
@@ -243,8 +261,13 @@ urlpatterns = [
 
     # Car related URLs
     path('cars/', views.CarListView.as_view(), name='car_list'),
+    path('explore/', views.CarExploreView.as_view(), name='car_explore'),
     path('cars/<int:pk>/', views.CarDetailView.as_view(), name='car_detail'),
     path('sell-car/', views.sell_car, name='sell_car'),
+
+    # Enhanced Image Upload URLs for Car Selling
+    path('api/preview-car-images/', views.preview_car_images, name='preview_car_images'),
+    path('api/validate-car-image/', views.validate_car_image_upload, name='validate_car_image'),
 
     # Hot Deals URLs
     path('hot-deals/', views.hot_deals_list, name='hot_deals_list'),
@@ -276,13 +299,19 @@ urlpatterns = [
 
     # HTMX endpoints for resources (must come before slug pattern)
     path('resources/search/', views.resources_live_search, name='resources_live_search'),
-    path('resources/category/<slug:category_slug>/', views.resources_filter_by_category, name='resources_filter_by_category'),
+    path('resources/category/<slug:category_slug>/', resource_views.resources_by_category, name='resources_by_category'),
     path('resources/tag/<slug:tag_slug>/', views.resources_filter_by_tag, name='resources_filter_by_tag'),
 
     # Resource detail (must come after specific patterns)
     path('resources/<slug:slug>/', views.BlogDetailView.as_view(), name='resource_detail'),
-    path('content/like/<int:post_id>/', views.content_like_toggle, name='content_like_toggle'),
-    path('content/bookmark/<int:post_id>/', views.content_bookmark_toggle, name='content_bookmark_toggle'),
+
+    # Enhanced Navigation and Interaction URLs
+    path('search/global/', resource_views.global_search, name='global_search'),
+    path('search/mobile/', resource_views.mobile_search, name='mobile_search'),
+    path('content/like/<int:post_id>/', resource_views.content_like_toggle, name='content_like_toggle'),
+    path('content/bookmark/<int:post_id>/', resource_views.content_bookmark_toggle, name='content_bookmark_toggle'),
+    path('content/track-engagement/', resource_views.track_engagement, name='track_engagement'),
+    path('content/recommendations/<int:post_id>/', resource_views.get_recommendations, name='get_recommendations'),
 
     # Opinion polling endpoints
     path('poll/vote/<int:poll_id>/', views.poll_vote, name='poll_vote'),
@@ -299,12 +328,29 @@ urlpatterns = [
     path('infographic/chart/update/<int:post_id>/', views.infographic_chart_update, name='infographic_chart_update'),
     path('infographic/chart/preview/<int:post_id>/', views.infographic_chart_preview, name='infographic_chart_preview'),
 
+    # Analytics and Data Endpoints
+    path('analytics/data/', resource_views.analytics_data, name='analytics_data'),
+    path('analytics/top-content/', resource_views.top_content_data, name='top_content_data'),
+    path('analytics/export/', resource_views.export_analytics, name='export_analytics'),
+
+    # Comment System URLs
+    path('comments/add/<int:post_id>/', resource_views.add_comment, name='add_comment'),
+    path('comments/sorted/<int:post_id>/', resource_views.get_sorted_comments, name='get_sorted_comments'),
+    path('comments/load-more/<int:post_id>/', resource_views.load_more_comments, name='load_more_comments'),
+
     # Debug endpoints
     path('debug/messages/', views.message_debug_view, name='message_debug'),
 
     # Static pages
     path('about/', views.about_us, name='about_us'),
     path('contact/', views.contact_us, name='contact_us'),
+    path('customer-service/', views.customer_service, name='customer_service'),
+    path('help-center/', views.help_center, name='help_center'),
+    path('faqs/', views.faqs, name='faqs'),
+    path('payment-options/', views.payment_options, name='payment_options'),
+    path('shipping-info/', views.shipping_info, name='shipping_info'),
+    path('return-policy/', views.return_policy, name='return_policy'),
+    path('contact-support/', views.contact_support, name='contact_support'),
 
     # Public Dealer Profile URLs
     path('dealers/', views.dealer_list, name='dealer_list'),
@@ -315,6 +361,11 @@ urlpatterns = [
     path('compare/add/<int:car_id>/', views.add_to_compare, name='add_to_compare'),
     path('compare/remove/<int:car_id>/', views.remove_from_compare, name='remove_from_compare'),
     path('compare/clear/', views.clear_compare, name='clear_compare'),
+
+    # Wishlist URLs
+    path('wishlist/add/<int:car_id>/', views.add_to_wishlist, name='add_to_wishlist'),
+    path('wishlist/remove/<int:car_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
+    path('wishlist/check/<int:car_id>/', views.check_wishlist_status, name='check_wishlist_status'),
 
     # Car Calculator URLs
     path('calculator/', views.car_calculator, name='car_calculator'),
@@ -346,6 +397,7 @@ urlpatterns = [
     path('htmx/analytics/widget/', views.htmx_promotion_analytics_widget, name='htmx_promotion_analytics_widget'),
     path('htmx/countdown/<int:deal_id>/', views.htmx_countdown_timer_update, name='htmx_countdown_timer_update'),
     path('htmx/cars/filter/', views.htmx_car_list_filter, name='htmx_car_list_filter'),
+    path('htmx/models-by-brand/', views.htmx_models_by_brand, name='htmx_models_by_brand'),
 
     # Import Order Tracking HTMX endpoints
     path('import/tracking/<str:order_number>/status/', views.import_order_status_update_htmx, name='import_order_status_htmx'),
@@ -385,7 +437,7 @@ urlpatterns = [
     path('spare-parts/stats/', views.spare_parts_stats_htmx, name='spare_parts_stats_htmx'),
 
     # HTMX endpoints for sell car form
-    path('htmx/models-by-brand/', views.htmx_models_by_brand, name='htmx_models_by_brand'),
+    # Note: htmx_models_by_brand URL already defined above
 
     # Test 404 page (for development)
     path('404/', views.test_404_view, name='test_404'),

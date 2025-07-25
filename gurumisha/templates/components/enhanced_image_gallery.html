@@ -1,0 +1,226 @@
+{% load static %}
+
+<!-- Enhanced Image Gallery Component -->
+<div class="enhanced-image-gallery" x-data="imageGallery()" x-init="init()">
+    <!-- Main Image Display -->
+    <div class="main-image-container relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-gray-100 to-gray-200">
+        <div class="relative group">
+            <!-- Loading Placeholder -->
+            <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse">
+                <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
+            </div>
+            
+            <!-- Main Image -->
+            <img x-show="!loading && currentImage" 
+                 :src="currentImage?.url" 
+                 :alt="currentImage?.caption || 'Car Image'"
+                 class="w-full h-96 md:h-[500px] object-cover transition-all duration-500 cursor-zoom-in"
+                 @click="openFullscreen()"
+                 @load="loading = false"
+                 @error="handleImageError()">
+            
+            <!-- No Image Placeholder -->
+            <div x-show="!loading && !currentImage" 
+                 class="w-full h-96 md:h-[500px] bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                <div class="text-center text-gray-400">
+                    <i class="fas fa-car text-8xl mb-4"></i>
+                    <p class="text-xl font-montserrat">No Images Available</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Arrows -->
+            <template x-if="images.length > 1">
+                <div class="absolute inset-y-0 left-0 right-0 flex items-center justify-between pointer-events-none">
+                    <button @click="previousImage()" 
+                            class="ml-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-300 pointer-events-auto transform hover:scale-110 backdrop-blur-sm"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentIndex === 0 }">
+                        <i class="fas fa-chevron-left text-xl"></i>
+                    </button>
+                    <button @click="nextImage()" 
+                            class="mr-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-300 pointer-events-auto transform hover:scale-110 backdrop-blur-sm"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentIndex === images.length - 1 }">
+                        <i class="fas fa-chevron-right text-xl"></i>
+                    </button>
+                </div>
+            </template>
+            
+            <!-- Image Counter -->
+            <div x-show="images.length > 1" 
+                 class="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+                <span x-text="currentIndex + 1"></span> / <span x-text="images.length"></span>
+            </div>
+            
+            <!-- Fullscreen Button -->
+            <button @click="openFullscreen()" 
+                    class="absolute top-4 left-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-300 transform hover:scale-110 backdrop-blur-sm">
+                <i class="fas fa-expand text-lg"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Thumbnail Gallery -->
+    <div x-show="images.length > 1" class="thumbnail-gallery mt-6">
+        <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-harrier-red scrollbar-track-gray-200">
+            <template x-for="(image, index) in images" :key="index">
+                <div class="flex-shrink-0">
+                    <img :src="image.url" 
+                         :alt="image.caption || `Image ${index + 1}`"
+                         class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-xl cursor-pointer transition-all duration-300 border-3"
+                         :class="{ 
+                             'border-harrier-red shadow-lg transform scale-105': currentIndex === index,
+                             'border-transparent hover:border-harrier-red/50 hover:transform hover:scale-105': currentIndex !== index
+                         }"
+                         @click="setCurrentImage(index)">
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Image Caption -->
+    <div x-show="currentImage?.caption" class="mt-4 text-center">
+        <p class="text-gray-600 font-raleway italic" x-text="currentImage?.caption"></p>
+    </div>
+</div>
+
+<!-- Fullscreen Modal -->
+<div x-show="fullscreenOpen" 
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+     @click="closeFullscreen()"
+     @keydown.escape.window="closeFullscreen()">
+    
+    <!-- Close Button -->
+    <button @click="closeFullscreen()" 
+            class="absolute top-4 right-4 p-3 text-white hover:text-harrier-red transition-colors z-10">
+        <i class="fas fa-times text-3xl"></i>
+    </button>
+    
+    <!-- Fullscreen Image -->
+    <div class="relative max-w-full max-h-full" @click.stop>
+        <img :src="currentImage?.url" 
+             :alt="currentImage?.caption || 'Car Image'"
+             class="max-w-full max-h-full object-contain">
+        
+        <!-- Fullscreen Navigation -->
+        <template x-if="images.length > 1">
+            <div class="absolute inset-y-0 left-0 right-0 flex items-center justify-between pointer-events-none">
+                <button @click="previousImage()" 
+                        class="ml-4 p-4 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all duration-300 pointer-events-auto backdrop-blur-sm"
+                        :class="{ 'opacity-50 cursor-not-allowed': currentIndex === 0 }">
+                    <i class="fas fa-chevron-left text-2xl"></i>
+                </button>
+                <button @click="nextImage()" 
+                        class="mr-4 p-4 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all duration-300 pointer-events-auto backdrop-blur-sm"
+                        :class="{ 'opacity-50 cursor-not-allowed': currentIndex === images.length - 1 }">
+                    <i class="fas fa-chevron-right text-2xl"></i>
+                </button>
+            </div>
+        </template>
+        
+        <!-- Fullscreen Counter -->
+        <div x-show="images.length > 1" 
+             class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-lg font-medium backdrop-blur-sm">
+            <span x-text="currentIndex + 1"></span> / <span x-text="images.length"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+.enhanced-image-gallery {
+    /* Custom scrollbar for webkit browsers */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+}
+
+.scrollbar-thumb-harrier-red::-webkit-scrollbar-thumb {
+    background-color: #DC2626;
+    border-radius: 3px;
+}
+
+.scrollbar-track-gray-200::-webkit-scrollbar-track {
+    background-color: #E5E7EB;
+    border-radius: 3px;
+}
+
+.border-3 {
+    border-width: 3px;
+}
+</style>
+
+<script>
+function imageGallery() {
+    return {
+        images: [],
+        currentIndex: 0,
+        currentImage: null,
+        loading: true,
+        fullscreenOpen: false,
+        
+        init() {
+            // Initialize with images passed from parent template
+            if (window.galleryImages) {
+                this.images = window.galleryImages;
+                this.setCurrentImage(0);
+            }
+        },
+        
+        setCurrentImage(index) {
+            if (index >= 0 && index < this.images.length) {
+                this.currentIndex = index;
+                this.currentImage = this.images[index];
+                this.loading = true;
+            }
+        },
+        
+        nextImage() {
+            if (this.currentIndex < this.images.length - 1) {
+                this.setCurrentImage(this.currentIndex + 1);
+            }
+        },
+        
+        previousImage() {
+            if (this.currentIndex > 0) {
+                this.setCurrentImage(this.currentIndex - 1);
+            }
+        },
+        
+        openFullscreen() {
+            this.fullscreenOpen = true;
+            document.body.style.overflow = 'hidden';
+        },
+        
+        closeFullscreen() {
+            this.fullscreenOpen = false;
+            document.body.style.overflow = 'auto';
+        },
+        
+        handleImageError() {
+            this.loading = false;
+            console.error('Failed to load image:', this.currentImage?.url);
+        }
+    }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    const gallery = document.querySelector('[x-data*="imageGallery"]');
+    if (gallery && gallery._x_dataStack && gallery._x_dataStack[0]) {
+        const galleryData = gallery._x_dataStack[0];
+        
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            galleryData.previousImage();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            galleryData.nextImage();
+        }
+    }
+});
+</script>

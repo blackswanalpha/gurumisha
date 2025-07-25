@@ -619,6 +619,46 @@ class Car(models.Model):
             return [feature.strip() for feature in self.features.split(',')]
         return []
 
+    def get_gallery_images(self):
+        """Get all gallery images ordered by priority"""
+        return self.images.all().order_by('order', '-is_primary', '-created_at')
+
+    def get_primary_gallery_image(self):
+        """Get the primary gallery image or first available image"""
+        primary = self.images.filter(is_primary=True).first()
+        if primary:
+            return primary
+        return self.images.first()
+
+    def get_display_image(self):
+        """Get the best image to display (main_image or primary gallery image)"""
+        if self.main_image:
+            return self.main_image
+        primary_gallery = self.get_primary_gallery_image()
+        return primary_gallery.image if primary_gallery else None
+
+    def get_all_images(self):
+        """Get all images including main_image and gallery images"""
+        images = []
+        if self.main_image:
+            images.append({
+                'url': self.main_image.url,
+                'caption': 'Main Image',
+                'is_main': True,
+                'is_primary': True
+            })
+
+        for img in self.get_gallery_images():
+            images.append({
+                'url': img.image.url,
+                'caption': img.caption or f'Gallery Image {img.order + 1}',
+                'is_main': False,
+                'is_primary': img.is_primary,
+                'id': img.id
+            })
+
+        return images
+
     def is_currently_featured(self):
         """Check if car is currently featured"""
         return (self.is_featured and
@@ -978,17 +1018,69 @@ class PromotionAnalytics(models.Model):
 
 
 class CarImage(models.Model):
-    """Additional images for cars"""
+    """Enhanced additional images for cars with gallery support"""
     car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='cars/gallery/')
     caption = models.CharField(max_length=200, blank=True)
     order = models.PositiveIntegerField(default=0)
+    is_primary = models.BooleanField(default=False, help_text="Set as primary gallery image")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Image for {self.car}"
+        return f"Image for {self.car} - {'Primary' if self.is_primary else 'Gallery'}"
+
+    def save(self, *args, **kwargs):
+        # Optimize image before saving
+        if self.image and hasattr(self.image, 'file'):
+            try:
+                from .utils.image_optimization import optimize_car_image, validate_car_image
+
+                # Validate image
+                is_valid, error_msg = validate_car_image(self.image.file)
+                if not is_valid:
+                    raise ValueError(error_msg)
+
+                # Optimize image
+                optimized_image = optimize_car_image(self.image.file)
+                self.image.save(
+                    self.image.name,
+                    optimized_image,
+                    save=False
+                )
+            except ImportError:
+                # Fallback if optimization utils are not available
+                pass
+            except Exception as e:
+                # Log error but don't fail the save
+                print(f"Image optimization error: {str(e)}")
+
+        # Ensure only one primary image per car
+        if self.is_primary:
+            CarImage.objects.filter(car=self.car, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
+
+        super().save(*args, **kwargs)
+
+    def get_thumbnail_url(self):
+        """Get thumbnail URL for the image"""
+        # For now, return the original image URL
+        # In production, you might want to use a thumbnail service
+        return self.image.url if self.image else None
+
+    @classmethod
+    def get_primary_image(cls, car):
+        """Get the primary image for a car"""
+        try:
+            return cls.objects.filter(car=car, is_primary=True).first()
+        except cls.DoesNotExist:
+            return None
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', '-is_primary', '-created_at']
+        indexes = [
+            models.Index(fields=['car', 'is_primary']),
+            models.Index(fields=['car', 'order']),
+        ]
 
 
 class ImportRequest(models.Model):
@@ -2357,6 +2449,22 @@ class BlogPost(models.Model):
                                      ('polar', 'Polar Area Chart'),
                                  ], help_text="Primary chart type for infographics")
 
+    # News-specific fields
+    news_source = models.CharField(max_length=200, blank=True, help_text="Source of the news article")
+    news_location = models.CharField(max_length=200, blank=True, help_text="Location where news occurred")
+    breaking_news = models.BooleanField(default=False, help_text="Mark as breaking news")
+    news_priority = models.CharField(max_length=20, blank=True,
+                                   choices=[
+                                       ('low', 'Low Priority'),
+                                       ('medium', 'Medium Priority'),
+                                       ('high', 'High Priority'),
+                                       ('urgent', 'Urgent'),
+                                   ], help_text="News priority level")
+
+    # Enhanced engagement fields
+    comment_count = models.PositiveIntegerField(default=0, help_text="Number of approved comments")
+    bookmark_count = models.PositiveIntegerField(default=0, help_text="Number of bookmarks")
+
     # Status and Publishing
     is_published = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False, help_text="Show in featured content sections")
@@ -2464,6 +2572,48 @@ class BlogPost(models.Model):
             'options': options or {}
         }
         self.save(update_fields=['chart_type', 'chart_data'])
+
+    @property
+    def is_news(self):
+        """Check if this is a news post"""
+        return self.content_type == 'news'
+
+    @property
+    def is_breaking_news(self):
+        """Check if this is breaking news"""
+        return self.is_news and self.breaking_news
+
+    @property
+    def has_poll(self):
+        """Check if this opinion post has a poll"""
+        return hasattr(self, 'poll') and self.content_type == 'opinion'
+
+    def update_engagement_counts(self):
+        """Update engagement metrics from related objects"""
+        if hasattr(self, 'comments'):
+            self.comment_count = self.comments.filter(is_approved=True).count()
+        if hasattr(self, 'bookmarks'):
+            self.bookmark_count = self.bookmarks.count()
+        self.save(update_fields=['comment_count', 'bookmark_count'])
+
+    def get_content_type_icon(self):
+        """Get Font Awesome icon for content type"""
+        icons = {
+            'article': 'fas fa-newspaper',
+            'guide': 'fas fa-book',
+            'infographic': 'fas fa-chart-bar',
+            'opinion': 'fas fa-comment-alt',
+            'news': 'fas fa-rss',
+            'review': 'fas fa-star',
+        }
+        return icons.get(self.content_type, 'fas fa-file-alt')
+
+    def get_reading_progress_estimate(self, words_per_minute=200):
+        """Calculate reading progress based on content length"""
+        import re
+        # Count words in content
+        word_count = len(re.findall(r'\w+', self.content))
+        return max(1, round(word_count / words_per_minute))
 
     class Meta:
         ordering = ['-published_at', '-created_at']
@@ -3151,6 +3301,24 @@ class RecentlyViewedCar(models.Model):
         if self.user:
             return f"{self.user.username} viewed {self.car.title}"
         return f"Anonymous user viewed {self.car.title}"
+
+
+class Wishlist(models.Model):
+    """User wishlist for saving favorite cars"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_items')
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='wishlist_items')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'car']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['car', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.car.title}"
 
     def __str__(self):
         viewer_name = self.viewer.username if self.viewer else f"Anonymous ({self.viewer_ip})"

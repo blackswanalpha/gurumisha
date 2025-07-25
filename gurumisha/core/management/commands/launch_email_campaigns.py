@@ -113,7 +113,7 @@ class Command(BaseCommand):
         week_ago = timezone.now() - timedelta(days=7)
         featured_cars = Car.objects.filter(
             is_approved=True,
-            featured_tier__in=['bronze', 'silver', 'gold', 'platinum'],
+            is_featured=True,
             updated_at__gte=week_ago
         ).select_related('brand', 'model', 'vendor')
         

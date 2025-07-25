@@ -1,0 +1,133 @@
+{% load static %}
+
+<!-- Comments List Partial -->
+<div class="comments-list">
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="comment-item bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200 hover:border-gray-300 transition-colors duration-200">
+                <div class="comment-header flex items-center justify-between mb-3">
+                    <div class="comment-author flex items-center gap-3">
+                        <div class="author-avatar w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                            {{ comment.user.username|first|upper }}
+                        </div>
+                        <div class="author-info">
+                            <h4 class="font-semibold text-gray-800 text-sm">{{ comment.user.username }}</h4>
+                            <p class="text-xs text-gray-500">{{ comment.created_at|timesince }} ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="comment-actions flex items-center gap-2">
+                        {% if user.is_authenticated %}
+                            <button class="text-gray-400 hover:text-blue-600 transition-colors duration-200" 
+                                    title="Like comment">
+                                <i class="fas fa-thumbs-up text-sm"></i>
+                            </button>
+                            <button class="text-gray-400 hover:text-blue-600 transition-colors duration-200" 
+                                    title="Reply to comment">
+                                <i class="fas fa-reply text-sm"></i>
+                            </button>
+                        {% endif %}
+                        
+                        {% if comment.user == user or user.is_staff %}
+                            <button class="text-gray-400 hover:text-red-600 transition-colors duration-200" 
+                                    title="Delete comment">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="comment-content">
+                    <p class="text-gray-700 leading-relaxed">{{ comment.content|linebreaks }}</p>
+                </div>
+                
+                <!-- Replies section (for future implementation) -->
+                {% if comment.replies.exists %}
+                    <div class="comment-replies mt-4 ml-6 border-l-2 border-gray-200 pl-4">
+                        {% for reply in comment.replies.all %}
+                            <div class="reply-item bg-white rounded-lg p-3 mb-2 border border-gray-100">
+                                <div class="reply-header flex items-center gap-2 mb-2">
+                                    <div class="author-avatar w-6 h-6 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                                        {{ reply.user.username|first|upper }}
+                                    </div>
+                                    <span class="font-medium text-gray-800 text-sm">{{ reply.user.username }}</span>
+                                    <span class="text-xs text-gray-500">{{ reply.created_at|timesince }} ago</span>
+                                </div>
+                                <p class="text-gray-700 text-sm leading-relaxed">{{ reply.content|linebreaks }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <!-- Load More Comments (for pagination) -->
+        {% if comments|length >= 10 %}
+            <div class="text-center mt-6">
+                <button class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium">
+                    <i class="fas fa-chevron-down mr-2"></i>Load More Comments
+                </button>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="no-comments text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-comments text-gray-300 text-5xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No comments yet</h3>
+            <p class="text-gray-500 mb-6">Be the first to share your thoughts on this {{ post.get_content_type_display|lower }}!</p>
+            
+            {% if user.is_authenticated %}
+                <button onclick="document.getElementById('comment-form').scrollIntoView({behavior: 'smooth'})" 
+                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium">
+                    <i class="fas fa-comment mr-2"></i>Write a Comment
+                </button>
+            {% else %}
+                <a href="{% url 'core:login' %}?next={{ request.path }}" 
+                   class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium inline-block">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login to Comment
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.comment-item {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comment-actions button:hover {
+    transform: scale(1.1);
+}
+
+.author-avatar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reply-item {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+</style>

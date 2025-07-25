@@ -89,48 +89,98 @@ def to_toast_type(django_message_level):
 
 @register.filter
 def currency_ksh(value):
-    """Format currency in KSH with comma separators"""
+    """Format currency in xxx,xxx,xxx.xx format with comma separators"""
     try:
+        # Handle None or empty values
+        if value is None or value == '':
+            return "0.00"
+
         # Convert to float if it's a string
         if isinstance(value, str):
+            # Remove any existing currency symbols or commas
+            value = value.replace('KSH', '').replace('KSh', '').replace(',', '').strip()
             value = float(value)
 
+        # Ensure it's a valid number
+        value = float(value)
+
         # Format with commas and 2 decimal places
-        formatted = "{:,.2f}".format(float(value))
-        return f"KSH {formatted}"
-    except (ValueError, TypeError):
-        return f"KSH 0.00"
+        formatted = "{:,.2f}".format(value)
+        return formatted
+    except (ValueError, TypeError, AttributeError):
+        return "0.00"
 
 @register.filter
 def currency_ksh_no_decimals(value):
-    """Format currency in KSH with comma separators, no decimals for whole numbers"""
+    """Format currency in xxx,xxx,xxx format with comma separators (no decimals)"""
     try:
+        # Handle None or empty values
+        if value is None or value == '':
+            return "0"
+
         # Convert to float if it's a string
         if isinstance(value, str):
+            # Remove any existing currency symbols or commas
+            value = value.replace('KSH', '').replace('KSh', '').replace(',', '').strip()
             value = float(value)
 
-        # Check if it's a whole number
-        if value == int(value):
-            formatted = "{:,}".format(int(value))
-        else:
-            formatted = "{:,.2f}".format(float(value))
+        # Ensure it's a valid number
+        value = float(value)
 
-        return f"KSH {formatted}"
-    except (ValueError, TypeError):
-        return f"KSH 0"
+        # Format as integer with comma separators (no decimals)
+        formatted = "{:,}".format(int(value))
+        return formatted
+    except (ValueError, TypeError, AttributeError):
+        return "0"
+
+@register.filter
+def currency_ksh_with_symbol(value):
+    """Format currency with KSh symbol in consistent format"""
+    try:
+        formatted_value = currency_ksh_no_decimals(value)
+        return f"KSh {formatted_value}"
+    except:
+        return "KSh 0"
 
 @register.filter
 def add_commas(value):
     """Add comma separators to numbers"""
     try:
+        # Handle None or empty values
+        if value is None or value == '':
+            return "0"
+
         # Convert to float if it's a string
         if isinstance(value, str):
+            value = value.replace(',', '').strip()
             value = float(value)
+
+        # Ensure it's a valid number
+        value = float(value)
 
         # Check if it's a whole number
         if value == int(value):
             return "{:,}".format(int(value))
         else:
-            return "{:,.2f}".format(float(value))
-    except (ValueError, TypeError):
-        return value
+            return "{:,.2f}".format(value)
+    except (ValueError, TypeError, AttributeError):
+        return "0"
+
+@register.filter
+def format_price_range(min_price, max_price):
+    """Format price range for display"""
+    try:
+        if min_price and max_price:
+            min_formatted = currency_ksh_no_decimals(min_price)
+            max_formatted = currency_ksh_no_decimals(max_price)
+            return f"KSh {min_formatted} - KSh {max_formatted}"
+        elif min_price:
+            min_formatted = currency_ksh_no_decimals(min_price)
+            return f"From KSh {min_formatted}"
+        elif max_price:
+            max_formatted = currency_ksh_no_decimals(max_price)
+            return f"Up to KSh {max_formatted}"
+        else:
+            return "Any Price"
+    except:
+        return "Any Price"

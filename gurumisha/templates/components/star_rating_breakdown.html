@@ -36,7 +36,8 @@
         </div>
         
         <!-- Recent Reviews -->
-        {% with recent_reviews=car.ratings.filter:is_approved=True|slice:":3" %}
+        {% if car.ratings.all %}
+            {% with recent_reviews=car.ratings.all|slice:":3" %}
             {% if recent_reviews %}
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <h4 class="text-md font-semibold text-gray-900 mb-3">Recent Reviews</h4>
@@ -64,7 +65,8 @@
                     </div>
                 </div>
             {% endif %}
-        {% endwith %}
+            {% endwith %}
+        {% endif %}
     {% else %}
         <div class="text-center py-8">
             <i class="fas fa-star text-gray-300 text-4xl mb-3"></i>

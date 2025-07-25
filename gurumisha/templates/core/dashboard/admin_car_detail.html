@@ -488,19 +488,98 @@
 {{ block.super }}
 <script>
 function editCar(carId) {
-    // Load edit modal via HTMX
-    fetch(`/dashboard/admin/car/${carId}/edit/`)
-        .then(response => response.text())
-        .then(html => {
-            // Create modal container
-            const modalContainer = document.createElement('div');
-            modalContainer.innerHTML = html;
-            document.body.appendChild(modalContainer);
-        })
-        .catch(error => {
-            console.error('Error loading edit modal:', error);
-            alert('An error occurred while loading the edit form.');
+    console.log('🚀 Edit car clicked for ID:', carId);
+
+    // Show loading indicator
+    const loadingToast = showLoadingToast('Loading edit form...');
+
+    // Load edit modal via fetch
+    fetch(`/dashboard/admin/car/${carId}/edit/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(html => {
+        console.log('✅ HTML received, length:', html.length);
+
+        // Hide loading toast
+        if (loadingToast && typeof loadingToast.hide === 'function') {
+            loadingToast.hide();
+        }
+
+        // Remove any existing modals
+        const existingModals = document.querySelectorAll('#edit-car-modal');
+        existingModals.forEach(modal => modal.remove());
+
+        // Create modal container
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = html;
+
+        // Append to body
+        document.body.appendChild(modalContainer);
+
+        // Initialize Alpine.js if needed
+        if (typeof Alpine !== 'undefined') {
+            Alpine.initTree(modalContainer);
+        }
+
+        // Initialize any custom scripts in the modal
+        const scripts = modalContainer.querySelectorAll('script');
+        scripts.forEach(script => {
+            if (script.src) {
+                // External script
+                const newScript = document.createElement('script');
+                newScript.src = script.src;
+                document.head.appendChild(newScript);
+            } else {
+                // Inline script
+                try {
+                    eval(script.textContent);
+                } catch (e) {
+                    console.error('Error executing modal script:', e);
+                }
+            }
         });
+
+        console.log('✅ Modal loaded successfully');
+
+        // Show success toast
+        if (typeof showToast === 'function') {
+            showToast('Edit form loaded successfully', 'success');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error loading edit modal:', error);
+
+        // Hide loading toast
+        if (loadingToast && typeof loadingToast.hide === 'function') {
+            loadingToast.hide();
+        }
+
+        // Show error message
+        if (typeof showToast === 'function') {
+            showToast('Failed to load edit form. Please try again.', 'error');
+        } else {
+            alert('An error occurred while loading the edit form. Please try again.');
+        }
+    });
+}
+
+// Helper function to show loading toast
+function showLoadingToast(message) {
+    if (typeof showToast === 'function') {
+        return showToast(message, 'info', { duration: 0 }); // Duration 0 means it won't auto-hide
+    }
+    return null;
 }
 
 function featureCar(carId) {

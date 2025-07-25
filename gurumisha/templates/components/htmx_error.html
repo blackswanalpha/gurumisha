@@ -1,0 +1,145 @@
+<!-- Enhanced HTMX Error Component with Accessibility -->
+<div id="error-container" 
+     class="mb-4 p-4 rounded-xl border-2 {{ error_style }} transition-all duration-300 animate-fade-in-up"
+     role="alert"
+     aria-live="polite"
+     aria-atomic="true">
+    
+    <!-- Error Header -->
+    <div class="flex items-start space-x-3">
+        <!-- Error Icon -->
+        <div class="flex-shrink-0 mt-0.5">
+            {% if error_type == 'validation' %}
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-lg" aria-hidden="true"></i>
+            {% elif error_type == 'database' %}
+                <i class="fas fa-database text-red-600 text-lg" aria-hidden="true"></i>
+            {% elif error_type == 'permission' %}
+                <i class="fas fa-lock text-orange-600 text-lg" aria-hidden="true"></i>
+            {% else %}
+                <i class="fas fa-exclamation-circle text-gray-600 text-lg" aria-hidden="true"></i>
+            {% endif %}
+        </div>
+        
+        <!-- Error Content -->
+        <div class="flex-1 min-w-0">
+            <!-- Error Title -->
+            <h3 class="text-sm font-semibold font-montserrat mb-1">
+                {% if error_type == 'validation' %}
+                    Validation Error
+                {% elif error_type == 'database' %}
+                    Database Error
+                {% elif error_type == 'permission' %}
+                    Permission Denied
+                {% else %}
+                    Error
+                {% endif %}
+            </h3>
+            
+            <!-- Error Message -->
+            <p class="text-sm font-raleway leading-relaxed" id="error-message">
+                {{ error_message }}
+            </p>
+            
+            <!-- Additional Help Text -->
+            {% if error_type == 'database' %}
+                <p class="text-xs mt-2 opacity-75">
+                    If this problem persists, please contact support.
+                </p>
+            {% elif error_type == 'validation' %}
+                <p class="text-xs mt-2 opacity-75">
+                    Please check your input and try again.
+                </p>
+            {% elif error_type == 'permission' %}
+                <p class="text-xs mt-2 opacity-75">
+                    Please log in or contact an administrator.
+                </p>
+            {% endif %}
+        </div>
+        
+        <!-- Dismiss Button -->
+        <button type="button" 
+                class="flex-shrink-0 p-1 rounded-lg hover:bg-black/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-current"
+                onclick="this.parentElement.parentElement.remove()"
+                aria-label="Dismiss error message">
+            <i class="fas fa-times text-sm" aria-hidden="true"></i>
+        </button>
+    </div>
+    
+    <!-- Form Errors (if applicable) -->
+    {% if form_errors %}
+        <div class="mt-3 pt-3 border-t border-current/20">
+            <h4 class="text-xs font-semibold uppercase tracking-wide mb-2">Field Errors:</h4>
+            <ul class="space-y-1" role="list">
+                {% for field, errors in form_errors.items %}
+                    <li class="text-xs">
+                        <strong>{{ field|title }}:</strong>
+                        {% for error in errors %}
+                            {{ error }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <!-- Retry Button (for certain error types) -->
+    {% if error_type == 'database' or error_type == 'general' %}
+        <div class="mt-3 pt-3 border-t border-current/20">
+            <button type="button" 
+                    class="text-xs font-semibold uppercase tracking-wide hover:underline focus:outline-none focus:underline"
+                    onclick="location.reload()"
+                    aria-label="Retry the last action">
+                <i class="fas fa-redo mr-1" aria-hidden="true"></i>
+                Retry
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Screen Reader Only Error Announcement -->
+<div class="sr-only" aria-live="assertive" aria-atomic="true">
+    Error: {{ error_message }}
+</div>
+
+<style>
+/* Enhanced error animations */
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out;
+}
+
+/* Focus styles for better accessibility */
+#error-container button:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    #error-container {
+        border-width: 3px;
+        font-weight: 600;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in-up {
+        animation: none;
+    }
+    
+    #error-container {
+        transition: none;
+    }
+}
+</style>

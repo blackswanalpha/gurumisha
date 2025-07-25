@@ -27,7 +27,7 @@
              x-transition:leave-end="opacity-0 scale-95">
             
             <!-- Modal Header -->
-            <div class="modal-header bg-gradient-to-r from-purple-600 to-purple-800 px-6 py-4">
+            <div class="modal-header bg-gradient-to-r from-harrier-red to-harrier-dark px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
@@ -409,5 +409,51 @@
         .grid {
             grid-template-columns: 1fr !important;
         }
+    }
+
+    /* Enhanced Button Styles for Modal */
+    .enhanced-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        line-height: 1.2;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Montserrat', sans-serif;
+        border: 2px solid transparent;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enhanced-btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1F2937;
+        border-color: rgba(156, 163, 175, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .enhanced-btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: #DC2626;
+        color: #DC2626;
+        transform: translateY(-1px);
+    }
+
+    .enhanced-btn-cancel {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1F2937;
+        border-color: rgba(156, 163, 175, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .enhanced-btn-cancel:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: #DC2626;
+        color: #DC2626;
+        transform: translateY(-1px);
     }
 </style>

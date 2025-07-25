@@ -1,0 +1,130 @@
+<!-- Floating Compare Widget -->
+{% if compare_count > 0 %}
+<div id="floating-compare-widget" class="fixed bottom-24 right-6 z-50 animate-slide-up">
+    <div class="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-2xl shadow-2xl backdrop-blur-lg border border-blue-500/20 overflow-hidden group hover:scale-105 transition-all duration-500">
+        <!-- Animated Background -->
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        
+        <!-- Widget Content -->
+        <div class="relative z-10 p-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-balance-scale text-sm animate-bounce"></i>
+                    </div>
+                    <span class="font-semibold font-montserrat text-sm">Compare Cars</span>
+                </div>
+                <div class="bg-blue-500/30 px-2 py-1 rounded-full text-xs font-bold">
+                    {{ compare_count }}/3
+                </div>
+            </div>
+            
+            <!-- Car Thumbnails -->
+            <div class="flex space-x-2 mb-4">
+                {% for car_id in compare_list %}
+                    {% for car in all_cars %}
+                        {% if car.id == car_id %}
+                        <div class="relative group/thumb">
+                            <div class="w-12 h-8 rounded-lg overflow-hidden border-2 border-blue-400/50 group-hover/thumb:border-blue-300 transition-colors duration-300">
+                                {% if car.main_image %}
+                                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                        <i class="fas fa-car text-white text-xs"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Remove button -->
+                            <button 
+                                hx-post="{% url 'core:remove_from_compare' car.id %}"
+                                hx-target="#floating-compare-widget"
+                                hx-swap="outerHTML"
+                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-300 hover:bg-red-600">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                
+                <!-- Add more slots -->
+                {% if compare_count == 1 %}
+                    <div class="w-12 h-8 rounded-lg border-2 border-dashed border-blue-400/50 flex items-center justify-center bg-blue-500/20 hover:bg-blue-500/30 transition-colors duration-300 cursor-pointer"
+                         onclick="window.location.href='{% url 'core:car_list' %}'">
+                        <i class="fas fa-plus text-blue-300 text-xs"></i>
+                    </div>
+                    <div class="w-12 h-8 rounded-lg border-2 border-dashed border-blue-400/50 flex items-center justify-center bg-blue-500/20 hover:bg-blue-500/30 transition-colors duration-300 cursor-pointer"
+                         onclick="window.location.href='{% url 'core:car_list' %}'">
+                        <i class="fas fa-plus text-blue-300 text-xs"></i>
+                    </div>
+                {% elif compare_count == 2 %}
+                    <div class="w-12 h-8 rounded-lg border-2 border-dashed border-blue-400/50 flex items-center justify-center bg-blue-500/20 hover:bg-blue-500/30 transition-colors duration-300 cursor-pointer"
+                         onclick="window.location.href='{% url 'core:car_list' %}'">
+                        <i class="fas fa-plus text-blue-300 text-xs"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-2">
+                <a href="{% url 'core:car_compare' %}" 
+                   class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors duration-300 flex items-center justify-center space-x-1">
+                    <i class="fas fa-eye text-xs"></i>
+                    <span>Compare</span>
+                </a>
+                <button 
+                    hx-post="{% url 'core:clear_compare' %}"
+                    hx-target="#floating-compare-widget"
+                    hx-swap="outerHTML"
+                    class="bg-red-500/80 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-300">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Pulse Animation -->
+        <div class="absolute inset-0 rounded-2xl border-2 border-blue-400/50 animate-ping"></div>
+    </div>
+</div>
+
+<!-- Custom Animations -->
+<style>
+@keyframes slide-up {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #floating-compare-widget {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        width: auto;
+    }
+    
+    #floating-compare-widget .flex {
+        flex-wrap: wrap;
+    }
+    
+    #floating-compare-widget .w-12 {
+        width: 2.5rem;
+    }
+    
+    #floating-compare-widget .h-8 {
+        height: 1.75rem;
+    }
+}
+</style>
+{% endif %}

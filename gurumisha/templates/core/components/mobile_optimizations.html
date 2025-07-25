@@ -1,0 +1,1598 @@
+{% load static %}
+
+<!-- Mobile Optimization Components -->
+<div class="mobile-optimizations">
+    <!-- Mobile Navigation Menu -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay hidden">
+        <div class="mobile-nav-container">
+            <div class="mobile-nav-header">
+                <div class="mobile-nav-logo">
+                    <img src="{% static 'images/logo.png' %}" alt="Gurumisha" class="h-8 w-auto">
+                    <span class="font-bold text-white text-lg">Gurumisha</span>
+                </div>
+                <button onclick="closeMobileNav()" class="mobile-nav-close">
+                    <i class="fas fa-times text-white text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mobile-nav-content">
+                <!-- Search Bar -->
+                <div class="mobile-search-container">
+                    <div class="relative">
+                        <input type="text" 
+                               placeholder="Search resources..." 
+                               class="mobile-search-input"
+                               id="mobile-search">
+                        <i class="fas fa-search mobile-search-icon"></i>
+                    </div>
+                </div>
+                
+                <!-- Navigation Links -->
+                <nav class="mobile-nav-links">
+                    <a href="{% url 'core:homepage' %}" class="mobile-nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    
+                    <a href="{% url 'core:resources' %}" class="mobile-nav-link">
+                        <i class="fas fa-book"></i>
+                        <span>All Resources</span>
+                    </a>
+                    
+                    <div class="mobile-nav-section">
+                        <div class="mobile-nav-section-title">Content Types</div>
+                        <a href="?content_type=article" class="mobile-nav-link sub-link">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Articles</span>
+                        </a>
+                        <a href="?content_type=guide" class="mobile-nav-link sub-link">
+                            <i class="fas fa-book-open"></i>
+                            <span>Guides</span>
+                        </a>
+                        <a href="?content_type=infographic" class="mobile-nav-link sub-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Infographics</span>
+                        </a>
+                        <a href="?content_type=opinion" class="mobile-nav-link sub-link">
+                            <i class="fas fa-comment-alt"></i>
+                            <span>Opinions</span>
+                        </a>
+                        <a href="?content_type=news" class="mobile-nav-link sub-link">
+                            <i class="fas fa-rss"></i>
+                            <span>News</span>
+                        </a>
+                    </div>
+                    
+                    <div class="mobile-nav-section">
+                        <div class="mobile-nav-section-title">Categories</div>
+                        {% for category in categories %}
+                        <a href="{% url 'core:resources_by_category' category.slug %}" class="mobile-nav-link sub-link">
+                            <i class="{{ category.icon|default:'fas fa-folder' }}"></i>
+                            <span>{{ category.name }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if user.is_authenticated %}
+                    <div class="mobile-nav-section">
+                        <div class="mobile-nav-section-title">My Account</div>
+                        <a href="#" onclick="showBookmarks()" class="mobile-nav-link sub-link">
+                            <i class="fas fa-bookmark"></i>
+                            <span>Bookmarks</span>
+                        </a>
+                        <a href="#" onclick="showReadingHistory()" class="mobile-nav-link sub-link">
+                            <i class="fas fa-history"></i>
+                            <span>Reading History</span>
+                        </a>
+                        <a href="{% url 'core:profile' %}" class="mobile-nav-link sub-link">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="{% url 'core:logout' %}" class="mobile-nav-link sub-link">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="mobile-nav-section">
+                        <a href="{% url 'core:login' %}" class="mobile-nav-link">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </a>
+                        <a href="{% url 'core:register' %}" class="mobile-nav-link">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Sign Up</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Filter Panel -->
+    <div id="mobile-filter-panel" class="mobile-filter-panel hidden">
+        <div class="mobile-filter-container">
+            <div class="mobile-filter-header">
+                <h3 class="mobile-filter-title">Filters</h3>
+                <button onclick="closeMobileFilters()" class="mobile-filter-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mobile-filter-content">
+                <!-- Sort Options -->
+                <div class="mobile-filter-group">
+                    <label class="mobile-filter-label">Sort By</label>
+                    <select class="mobile-filter-select" onchange="applySortFilter(this.value)">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="trending">Trending</option>
+                        <option value="alphabetical">A to Z</option>
+                    </select>
+                </div>
+                
+                <!-- Content Type Filter -->
+                <div class="mobile-filter-group">
+                    <label class="mobile-filter-label">Content Type</label>
+                    <div class="mobile-filter-options">
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-content-type" value="all" checked>
+                            <span>All Content</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-content-type" value="article">
+                            <span>Articles</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-content-type" value="guide">
+                            <span>Guides</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-content-type" value="infographic">
+                            <span>Infographics</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-content-type" value="opinion">
+                            <span>Opinions</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-content-type" value="news">
+                            <span>News</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Reading Time Filter -->
+                <div class="mobile-filter-group">
+                    <label class="mobile-filter-label">Reading Time</label>
+                    <div class="mobile-filter-options">
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-reading-time" value="all" checked>
+                            <span>Any Length</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-reading-time" value="quick">
+                            <span>Quick Read (< 5 min)</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-reading-time" value="medium">
+                            <span>Medium (5-15 min)</span>
+                        </label>
+                        <label class="mobile-filter-option">
+                            <input type="radio" name="mobile-reading-time" value="long">
+                            <span>Long Read (> 15 min)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Date Range Filter -->
+                <div class="mobile-filter-group">
+                    <label class="mobile-filter-label">Date Range</label>
+                    <select class="mobile-filter-select">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mobile-filter-actions">
+                <button onclick="clearMobileFilters()" class="mobile-filter-btn secondary">
+                    Clear All
+                </button>
+                <button onclick="applyMobileFilters()" class="mobile-filter-btn primary">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Floating Action Button -->
+    <div class="mobile-fab-container">
+        <button id="mobile-fab" class="mobile-fab" onclick="toggleMobileFab()">
+            <i class="fas fa-plus"></i>
+        </button>
+        
+        <div id="mobile-fab-menu" class="mobile-fab-menu hidden">
+            <button class="mobile-fab-item" onclick="scrollToTop()" title="Scroll to Top">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            <button class="mobile-fab-item" onclick="openMobileFilters()" title="Filters">
+                <i class="fas fa-filter"></i>
+            </button>
+            
+            <button class="mobile-fab-item" onclick="toggleMobileSearch()" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+            
+            {% if user.is_authenticated %}
+            <button class="mobile-fab-item" onclick="showBookmarks()" title="Bookmarks">
+                <i class="fas fa-bookmark"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Mobile Search Overlay -->
+    <div id="mobile-search-overlay" class="mobile-search-overlay hidden">
+        <div class="mobile-search-container-full">
+            <div class="mobile-search-header">
+                <div class="mobile-search-input-container">
+                    <input type="text" 
+                           placeholder="Search articles, guides, news..." 
+                           class="mobile-search-input-full"
+                           id="mobile-search-full">
+                    <button onclick="performMobileSearch()" class="mobile-search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <button onclick="closeMobileSearch()" class="mobile-search-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mobile-search-results" id="mobile-search-results">
+                <!-- Search results will be populated here -->
+                <div class="mobile-search-suggestions">
+                    <h4 class="suggestions-title">Popular Searches</h4>
+                    <div class="suggestions-list">
+                        <button class="suggestion-tag" onclick="searchFor('electric vehicles')">Electric Vehicles</button>
+                        <button class="suggestion-tag" onclick="searchFor('car maintenance')">Car Maintenance</button>
+                        <button class="suggestion-tag" onclick="searchFor('buying guide')">Buying Guide</button>
+                        <button class="suggestion-tag" onclick="searchFor('automotive news')">Automotive News</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Reading Progress -->
+    <div class="mobile-reading-progress">
+        <div class="mobile-progress-bar" id="mobile-progress-bar"></div>
+    </div>
+    
+    <!-- Mobile Share Sheet -->
+    <div id="mobile-share-sheet" class="mobile-share-sheet hidden">
+        <div class="mobile-share-container">
+            <div class="mobile-share-header">
+                <div class="mobile-share-handle"></div>
+                <h3 class="mobile-share-title">Share this content</h3>
+            </div>
+            
+            <div class="mobile-share-options">
+                <button class="mobile-share-option" onclick="shareToSocial('whatsapp')">
+                    <div class="mobile-share-icon whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <span>WhatsApp</span>
+                </button>
+                
+                <button class="mobile-share-option" onclick="shareToSocial('twitter')">
+                    <div class="mobile-share-icon twitter">
+                        <i class="fab fa-twitter"></i>
+                    </div>
+                    <span>Twitter</span>
+                </button>
+                
+                <button class="mobile-share-option" onclick="shareToSocial('facebook')">
+                    <div class="mobile-share-icon facebook">
+                        <i class="fab fa-facebook"></i>
+                    </div>
+                    <span>Facebook</span>
+                </button>
+                
+                <button class="mobile-share-option" onclick="copyLink()">
+                    <div class="mobile-share-icon copy">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <span>Copy Link</span>
+                </button>
+                
+                <button class="mobile-share-option" onclick="shareNative()">
+                    <div class="mobile-share-icon native">
+                        <i class="fas fa-share"></i>
+                    </div>
+                    <span>More</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Toast Container -->
+    <div id="mobile-toast-container" class="mobile-toast-container"></div>
+</div>
+
+<style>
+/* Mobile Optimization Styles */
+@media (max-width: 768px) {
+    /* Mobile Navigation Overlay */
+    .mobile-nav-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .mobile-nav-container {
+        height: 100%;
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+        overflow-y: auto;
+        font-family: 'Raleway', sans-serif;
+    }
+    
+    .mobile-nav-header {
+        display: flex;
+        items-center: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .mobile-nav-close {
+        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .mobile-nav-content {
+        padding: 1rem;
+    }
+    
+    .mobile-search-container {
+        margin-bottom: 2rem;
+    }
+    
+    .mobile-search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 0.75rem;
+        color: white;
+        font-size: 1rem;
+    }
+    
+    .mobile-search-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .mobile-search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .mobile-nav-links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .mobile-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 500;
+    }
+    
+    .mobile-nav-link:hover,
+    .mobile-nav-link:active {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    .mobile-nav-link.sub-link {
+        padding-left: 2rem;
+        font-size: 0.9rem;
+    }
+    
+    .mobile-nav-section {
+        margin: 1rem 0;
+    }
+    
+    .mobile-nav-section-title {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        padding: 0 1rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+    
+    /* Mobile Filter Panel */
+    .mobile-filter-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 1rem 1rem 0 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        max-height: 80vh;
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    .mobile-filter-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .mobile-filter-header {
+        display: flex;
+        items-center: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .mobile-filter-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    
+    .mobile-filter-close {
+        padding: 0.5rem;
+        background: #f3f4f6;
+        border: none;
+        border-radius: 0.5rem;
+        color: #6b7280;
+        cursor: pointer;
+    }
+    
+    .mobile-filter-content {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+    
+    .mobile-filter-group {
+        margin-bottom: 2rem;
+    }
+    
+    .mobile-filter-label {
+        display: block;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+    }
+    
+    .mobile-filter-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background: white;
+        color: #374151;
+        font-family: 'Raleway', sans-serif;
+    }
+    
+    .mobile-filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .mobile-filter-option {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Raleway', sans-serif;
+    }
+    
+    .mobile-filter-option:hover {
+        background: #f9fafb;
+        border-color: #dc2626;
+    }
+    
+    .mobile-filter-option input[type="radio"] {
+        accent-color: #dc2626;
+    }
+    
+    .mobile-filter-actions {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .mobile-filter-btn {
+        flex: 1;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 0.75rem;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-filter-btn.primary {
+        background: #dc2626;
+        color: white;
+    }
+    
+    .mobile-filter-btn.secondary {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+    
+    /* Mobile Floating Action Button */
+    .mobile-fab-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 1rem;
+        z-index: 100;
+    }
+    
+    .mobile-fab {
+        width: 3.5rem;
+        height: 3.5rem;
+        background: linear-gradient(135deg, #dc2626 0%, #000000 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.25rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+    
+    .mobile-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(220, 38, 38, 0.5);
+    }
+    
+    .mobile-fab-menu {
+        position: absolute;
+        bottom: 4.5rem;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    .mobile-fab-item {
+        width: 3rem;
+        height: 3rem;
+        background: white;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+        border-radius: 50%;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+    
+    .mobile-fab-item:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+    }
+    
+    /* Mobile Search Overlay */
+    .mobile-search-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        z-index: 1000;
+        animation: slideDown 0.3s ease-out;
+    }
+    
+    .mobile-search-container-full {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .mobile-search-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .mobile-search-input-container {
+        flex: 1;
+        position: relative;
+    }
+    
+    .mobile-search-input-full {
+        width: 100%;
+        padding: 0.75rem 3rem 0.75rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        font-size: 1rem;
+        font-family: 'Raleway', sans-serif;
+    }
+    
+    .mobile-search-btn {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 0.5rem;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .mobile-search-close {
+        padding: 0.5rem;
+        background: #f3f4f6;
+        border: none;
+        border-radius: 0.5rem;
+        color: #6b7280;
+        cursor: pointer;
+    }
+    
+    .mobile-search-results {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+    
+    .mobile-search-suggestions {
+        margin-bottom: 2rem;
+    }
+    
+    .suggestions-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 1rem;
+    }
+    
+    .suggestions-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .suggestion-tag {
+        padding: 0.5rem 1rem;
+        background: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-family: 'Raleway', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .suggestion-tag:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+    }
+    
+    /* Mobile Reading Progress */
+    .mobile-reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: 50;
+    }
+    
+    .mobile-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #dc2626, #991b1b);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+    
+    /* Mobile Share Sheet */
+    .mobile-share-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 1rem 1rem 0 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    .mobile-share-container {
+        padding: 1rem;
+    }
+    
+    .mobile-share-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .mobile-share-handle {
+        width: 2rem;
+        height: 0.25rem;
+        background: #d1d5db;
+        border-radius: 0.125rem;
+        margin: 0 auto 1rem;
+    }
+    
+    .mobile-share-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .mobile-share-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .mobile-share-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 0.5rem;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Raleway', sans-serif;
+        color: #6b7280;
+    }
+    
+    .mobile-share-option:hover {
+        background: #f9fafb;
+        border-radius: 0.75rem;
+    }
+    
+    .mobile-share-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+    }
+    
+    .mobile-share-icon.whatsapp { background: linear-gradient(135deg, #25d366 0%, #1a9b4f 100%); }
+    .mobile-share-icon.twitter { background: linear-gradient(135deg, #1da1f2 0%, #1a73e8 100%); }
+    .mobile-share-icon.facebook { background: linear-gradient(135deg, #1877f2 0%, #166fe5 100%); }
+    .mobile-share-icon.copy { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
+    .mobile-share-icon.native { background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%); }
+    
+    /* Mobile Toast Container */
+    .mobile-toast-container {
+        position: fixed;
+        bottom: 6rem;
+        left: 1rem;
+        right: 1rem;
+        z-index: 1001;
+        pointer-events: none;
+    }
+    
+    .mobile-toast {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 0.5rem;
+        animation: slideInUp 0.3s ease-out;
+        font-family: 'Raleway', sans-serif;
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    
+    @keyframes slideDown {
+        from { transform: translateY(-100%); }
+        to { transform: translateY(0); }
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideInUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+}
+
+/* Hide mobile components on desktop */
+@media (min-width: 769px) {
+    .mobile-optimizations {
+        display: none;
+    }
+}
+</style>
+
+<script>
+// Mobile Optimization JavaScript
+let mobileNavOpen = false;
+let mobileFiltersOpen = false;
+let mobileSearchOpen = false;
+let mobileShareOpen = false;
+let mobileFabOpen = false;
+let touchStartY = 0;
+let touchEndY = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMobileOptimizations();
+    setupMobileGestures();
+    setupMobileReadingProgress();
+    setupMobileSearch();
+});
+
+function initializeMobileOptimizations() {
+    console.log('Initializing Mobile Optimizations...');
+
+    // Check if device is mobile
+    if (!isMobileDevice()) {
+        return;
+    }
+
+    // Setup mobile navigation
+    setupMobileNavigation();
+
+    // Setup mobile FAB
+    setupMobileFAB();
+
+    // Setup mobile share functionality
+    setupMobileShare();
+
+    // Setup mobile filters
+    setupMobileFilters();
+
+    // Setup viewport meta tag for proper mobile scaling
+    ensureViewportMeta();
+
+    // Setup touch feedback
+    setupTouchFeedback();
+
+    // Setup mobile-specific event listeners
+    setupMobileEventListeners();
+}
+
+function isMobileDevice() {
+    return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function setupMobileNavigation() {
+    // Add mobile menu button to main navigation if not exists
+    const mainNav = document.querySelector('.main-navigation');
+    if (mainNav && !document.querySelector('.mobile-menu-btn')) {
+        const mobileMenuBtn = document.createElement('button');
+        mobileMenuBtn.className = 'mobile-menu-btn md:hidden p-2 text-white';
+        mobileMenuBtn.innerHTML = '<i class="fas fa-bars text-xl"></i>';
+        mobileMenuBtn.onclick = openMobileNav;
+
+        const navContainer = mainNav.querySelector('.container .flex');
+        if (navContainer) {
+            navContainer.appendChild(mobileMenuBtn);
+        }
+    }
+}
+
+function openMobileNav() {
+    const overlay = document.getElementById('mobile-nav-overlay');
+    overlay.classList.remove('hidden');
+    mobileNavOpen = true;
+    document.body.style.overflow = 'hidden';
+
+    // Focus trap
+    const firstFocusable = overlay.querySelector('input, button, a');
+    if (firstFocusable) {
+        firstFocusable.focus();
+    }
+}
+
+function closeMobileNav() {
+    const overlay = document.getElementById('mobile-nav-overlay');
+    overlay.classList.add('hidden');
+    mobileNavOpen = false;
+    document.body.style.overflow = '';
+}
+
+function setupMobileFAB() {
+    // Show/hide FAB based on scroll
+    let lastScrollTop = 0;
+    const fab = document.getElementById('mobile-fab');
+
+    window.addEventListener('scroll', function() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+            // Scrolling down
+            fab.style.transform = 'translateY(100px)';
+        } else {
+            // Scrolling up
+            fab.style.transform = 'translateY(0)';
+        }
+
+        lastScrollTop = scrollTop;
+    });
+}
+
+function toggleMobileFab() {
+    const fabMenu = document.getElementById('mobile-fab-menu');
+    const fabIcon = document.querySelector('#mobile-fab i');
+
+    if (mobileFabOpen) {
+        fabMenu.classList.add('hidden');
+        fabIcon.className = 'fas fa-plus';
+        fabIcon.style.transform = 'rotate(0deg)';
+        mobileFabOpen = false;
+    } else {
+        fabMenu.classList.remove('hidden');
+        fabIcon.className = 'fas fa-times';
+        fabIcon.style.transform = 'rotate(180deg)';
+        mobileFabOpen = true;
+    }
+}
+
+function setupMobileGestures() {
+    // Swipe gestures for navigation
+    document.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', function(e) {
+        touchEndY = e.changedTouches[0].clientY;
+        handleSwipeGesture();
+    });
+
+    // Pull to refresh (if at top of page)
+    let pullToRefreshTriggered = false;
+
+    document.addEventListener('touchmove', function(e) {
+        if (window.scrollY === 0 && !pullToRefreshTriggered) {
+            const touchY = e.touches[0].clientY;
+            const pullDistance = touchY - touchStartY;
+
+            if (pullDistance > 100) {
+                pullToRefreshTriggered = true;
+                showMobileToast('Release to refresh');
+
+                // Add haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }
+        }
+    });
+
+    document.addEventListener('touchend', function() {
+        if (pullToRefreshTriggered) {
+            pullToRefreshTriggered = false;
+            refreshContent();
+        }
+    });
+}
+
+function handleSwipeGesture() {
+    const swipeThreshold = 50;
+    const swipeDistance = touchStartY - touchEndY;
+
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+        if (swipeDistance > 0) {
+            // Swipe up
+            if (mobileShareOpen) {
+                closeMobileShare();
+            } else if (mobileFiltersOpen) {
+                closeMobileFilters();
+            }
+        } else {
+            // Swipe down
+            if (mobileNavOpen) {
+                closeMobileNav();
+            } else if (mobileSearchOpen) {
+                closeMobileSearch();
+            }
+        }
+    }
+}
+
+function setupMobileReadingProgress() {
+    const progressBar = document.getElementById('mobile-progress-bar');
+    if (!progressBar) return;
+
+    function updateMobileProgress() {
+        const contentArea = document.querySelector('.prose-content, .main-content');
+        if (!contentArea) return;
+
+        const contentTop = contentArea.offsetTop;
+        const contentHeight = contentArea.offsetHeight;
+        const windowHeight = window.innerHeight;
+        const scrollTop = window.pageYOffset;
+
+        const progress = Math.min(
+            Math.max((scrollTop - contentTop + windowHeight) / contentHeight, 0),
+            1
+        );
+
+        progressBar.style.width = (progress * 100) + '%';
+    }
+
+    window.addEventListener('scroll', updateMobileProgress);
+    updateMobileProgress();
+}
+
+function setupMobileSearch() {
+    const mobileSearchInput = document.getElementById('mobile-search-full');
+    if (!mobileSearchInput) return;
+
+    mobileSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length > 2) {
+            performMobileSearch(query);
+        } else {
+            showMobileSearchSuggestions();
+        }
+    });
+
+    mobileSearchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performMobileSearch();
+        }
+    });
+}
+
+function toggleMobileSearch() {
+    if (mobileSearchOpen) {
+        closeMobileSearch();
+    } else {
+        openMobileSearch();
+    }
+    toggleMobileFab(); // Close FAB menu
+}
+
+function openMobileSearch() {
+    const overlay = document.getElementById('mobile-search-overlay');
+    overlay.classList.remove('hidden');
+    mobileSearchOpen = true;
+    document.body.style.overflow = 'hidden';
+
+    // Focus search input
+    const searchInput = document.getElementById('mobile-search-full');
+    if (searchInput) {
+        setTimeout(() => searchInput.focus(), 100);
+    }
+
+    showMobileSearchSuggestions();
+}
+
+function closeMobileSearch() {
+    const overlay = document.getElementById('mobile-search-overlay');
+    overlay.classList.add('hidden');
+    mobileSearchOpen = false;
+    document.body.style.overflow = '';
+
+    // Clear search input
+    const searchInput = document.getElementById('mobile-search-full');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+}
+
+function performMobileSearch(query) {
+    const searchQuery = query || document.getElementById('mobile-search-full').value.trim();
+    if (!searchQuery) return;
+
+    const resultsContainer = document.getElementById('mobile-search-results');
+
+    // Show loading state
+    resultsContainer.innerHTML = `
+        <div class="mobile-search-loading text-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-3"></div>
+            <p class="text-gray-600">Searching...</p>
+        </div>
+    `;
+
+    // Perform search
+    fetch(`{% url 'core:mobile_search' %}?q=${encodeURIComponent(searchQuery)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayMobileSearchResults(data.results);
+            } else {
+                showMobileSearchError();
+            }
+        })
+        .catch(error => {
+            console.error('Mobile search error:', error);
+            showMobileSearchError();
+        });
+}
+
+function displayMobileSearchResults(results) {
+    const resultsContainer = document.getElementById('mobile-search-results');
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="mobile-search-empty text-center py-8">
+                <i class="fas fa-search text-gray-300 text-4xl mb-4"></i>
+                <h4 class="text-lg font-semibold text-gray-600 mb-2">No results found</h4>
+                <p class="text-gray-500">Try different keywords or browse categories</p>
+            </div>
+        `;
+        return;
+    }
+
+    let resultsHTML = '<div class="mobile-search-results-list space-y-4">';
+
+    results.forEach(result => {
+        resultsHTML += `
+            <div class="mobile-search-result-item">
+                <a href="${result.url}" class="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="${result.icon} text-red-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-800 mb-1 line-clamp-2">${result.title}</h4>
+                            <p class="text-sm text-gray-600 mb-2 line-clamp-2">${result.excerpt}</p>
+                            <div class="flex items-center gap-3 text-xs text-gray-500">
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-tag"></i>
+                                    ${result.content_type}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-calendar"></i>
+                                    ${result.date}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        `;
+    });
+
+    resultsHTML += '</div>';
+
+    document.getElementById('mobile-search-results').innerHTML = resultsHTML;
+}
+
+function showMobileSearchSuggestions() {
+    const resultsContainer = document.getElementById('mobile-search-results');
+    resultsContainer.innerHTML = `
+        <div class="mobile-search-suggestions">
+            <h4 class="suggestions-title">Popular Searches</h4>
+            <div class="suggestions-list">
+                <button class="suggestion-tag" onclick="searchFor('electric vehicles')">Electric Vehicles</button>
+                <button class="suggestion-tag" onclick="searchFor('car maintenance')">Car Maintenance</button>
+                <button class="suggestion-tag" onclick="searchFor('buying guide')">Buying Guide</button>
+                <button class="suggestion-tag" onclick="searchFor('automotive news')">Automotive News</button>
+                <button class="suggestion-tag" onclick="searchFor('car reviews')">Car Reviews</button>
+                <button class="suggestion-tag" onclick="searchFor('insurance tips')">Insurance Tips</button>
+            </div>
+        </div>
+    `;
+}
+
+function searchFor(query) {
+    document.getElementById('mobile-search-full').value = query;
+    performMobileSearch(query);
+}
+
+function showMobileSearchError() {
+    const resultsContainer = document.getElementById('mobile-search-results');
+    resultsContainer.innerHTML = `
+        <div class="mobile-search-error text-center py-8">
+            <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+            <h4 class="text-lg font-semibold text-gray-600 mb-2">Search Error</h4>
+            <p class="text-gray-500 mb-4">Something went wrong. Please try again.</p>
+            <button onclick="performMobileSearch()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                Retry Search
+            </button>
+        </div>
+    `;
+}
+
+function setupMobileFilters() {
+    // Setup filter change listeners
+    const filterInputs = document.querySelectorAll('.mobile-filter-option input');
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            updateMobileFilterPreview();
+        });
+    });
+}
+
+function openMobileFilters() {
+    const panel = document.getElementById('mobile-filter-panel');
+    panel.classList.remove('hidden');
+    mobileFiltersOpen = true;
+    document.body.style.overflow = 'hidden';
+    toggleMobileFab(); // Close FAB menu
+}
+
+function closeMobileFilters() {
+    const panel = document.getElementById('mobile-filter-panel');
+    panel.classList.add('hidden');
+    mobileFiltersOpen = false;
+    document.body.style.overflow = '';
+}
+
+function clearMobileFilters() {
+    // Reset all filter inputs
+    const filterInputs = document.querySelectorAll('.mobile-filter-option input');
+    filterInputs.forEach(input => {
+        if (input.value === 'all') {
+            input.checked = true;
+        } else {
+            input.checked = false;
+        }
+    });
+
+    // Reset select filters
+    const filterSelects = document.querySelectorAll('.mobile-filter-select');
+    filterSelects.forEach(select => {
+        select.selectedIndex = 0;
+    });
+
+    updateMobileFilterPreview();
+}
+
+function applyMobileFilters() {
+    // Collect filter values
+    const filters = {};
+
+    // Content type filter
+    const contentTypeInput = document.querySelector('input[name="mobile-content-type"]:checked');
+    if (contentTypeInput && contentTypeInput.value !== 'all') {
+        filters.content_type = contentTypeInput.value;
+    }
+
+    // Reading time filter
+    const readingTimeInput = document.querySelector('input[name="mobile-reading-time"]:checked');
+    if (readingTimeInput && readingTimeInput.value !== 'all') {
+        filters.reading_time = readingTimeInput.value;
+    }
+
+    // Sort filter
+    const sortSelect = document.querySelector('.mobile-filter-select');
+    if (sortSelect && sortSelect.value) {
+        filters.sort = sortSelect.value;
+    }
+
+    // Build URL with filters
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+        params.set(key, filters[key]);
+    });
+
+    // Apply filters by redirecting
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.location.href = newUrl;
+
+    closeMobileFilters();
+}
+
+function updateMobileFilterPreview() {
+    // Update filter preview (could show active filter count)
+    const activeFilters = document.querySelectorAll('.mobile-filter-option input:checked');
+    const activeCount = Array.from(activeFilters).filter(input => input.value !== 'all').length;
+
+    // Update FAB filter button if needed
+    const filterFabBtn = document.querySelector('.mobile-fab-item[onclick="openMobileFilters()"]');
+    if (filterFabBtn && activeCount > 0) {
+        filterFabBtn.innerHTML = `<i class="fas fa-filter"></i><span class="filter-count">${activeCount}</span>`;
+    } else if (filterFabBtn) {
+        filterFabBtn.innerHTML = '<i class="fas fa-filter"></i>';
+    }
+}
+
+function setupMobileShare() {
+    // Check for native sharing support
+    if (navigator.share) {
+        console.log('Native sharing supported');
+    }
+}
+
+function openMobileShare() {
+    const sheet = document.getElementById('mobile-share-sheet');
+    sheet.classList.remove('hidden');
+    mobileShareOpen = true;
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileShare() {
+    const sheet = document.getElementById('mobile-share-sheet');
+    sheet.classList.add('hidden');
+    mobileShareOpen = false;
+    document.body.style.overflow = '';
+}
+
+function shareToSocial(platform) {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(document.title);
+    const text = encodeURIComponent('Check out this article from Gurumisha');
+
+    let shareUrl = '';
+
+    switch (platform) {
+        case 'whatsapp':
+            shareUrl = `https://wa.me/?text=${title}%20${url}`;
+            break;
+        case 'twitter':
+            shareUrl = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
+            break;
+        case 'facebook':
+            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+            break;
+    }
+
+    if (shareUrl) {
+        window.open(shareUrl, '_blank');
+        closeMobileShare();
+        showMobileToast('Opening share dialog...');
+    }
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        showMobileToast('Link copied to clipboard!');
+        closeMobileShare();
+    }).catch(() => {
+        showMobileToast('Failed to copy link');
+    });
+}
+
+function shareNative() {
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            text: 'Check out this article from Gurumisha',
+            url: window.location.href
+        }).then(() => {
+            closeMobileShare();
+        }).catch(console.error);
+    } else {
+        showMobileToast('Native sharing not supported');
+    }
+}
+
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    toggleMobileFab(); // Close FAB menu
+}
+
+function showBookmarks() {
+    // Show bookmarks (implement based on your requirements)
+    const bookmarks = JSON.parse(localStorage.getItem('bookmarkedResources') || '[]');
+
+    if (bookmarks.length === 0) {
+        showMobileToast('No bookmarks yet');
+        return;
+    }
+
+    // Navigate to bookmarks page or show modal
+    showMobileToast(`You have ${bookmarks.length} bookmark${bookmarks.length > 1 ? 's' : ''}`);
+    toggleMobileFab(); // Close FAB menu
+}
+
+function showReadingHistory() {
+    // Show reading history (implement based on your requirements)
+    showMobileToast('Reading history feature coming soon');
+}
+
+function refreshContent() {
+    // Refresh current page content
+    showMobileToast('Refreshing content...');
+
+    // Add refresh animation
+    document.body.style.transform = 'translateY(-10px)';
+    setTimeout(() => {
+        document.body.style.transform = '';
+        window.location.reload();
+    }, 300);
+}
+
+function setupTouchFeedback() {
+    // Add touch feedback to interactive elements
+    const interactiveElements = document.querySelectorAll('button, a, .mobile-nav-link, .mobile-share-option');
+
+    interactiveElements.forEach(element => {
+        element.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+            this.style.opacity = '0.8';
+        });
+
+        element.addEventListener('touchend', function() {
+            this.style.transform = '';
+            this.style.opacity = '';
+        });
+
+        element.addEventListener('touchcancel', function() {
+            this.style.transform = '';
+            this.style.opacity = '';
+        });
+    });
+}
+
+function setupMobileEventListeners() {
+    // Close overlays on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (mobileNavOpen) closeMobileNav();
+            if (mobileSearchOpen) closeMobileSearch();
+            if (mobileFiltersOpen) closeMobileFilters();
+            if (mobileShareOpen) closeMobileShare();
+            if (mobileFabOpen) toggleMobileFab();
+        }
+    });
+
+    // Close overlays on background click
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'mobile-nav-overlay') closeMobileNav();
+        if (e.target.id === 'mobile-search-overlay') closeMobileSearch();
+        if (e.target.id === 'mobile-filter-panel') closeMobileFilters();
+        if (e.target.id === 'mobile-share-sheet') closeMobileShare();
+    });
+
+    // Handle orientation change
+    window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+            // Recalculate dimensions after orientation change
+            if (mobileNavOpen || mobileSearchOpen || mobileFiltersOpen || mobileShareOpen) {
+                // Adjust overlay heights if needed
+                const overlays = document.querySelectorAll('.mobile-nav-overlay, .mobile-search-overlay, .mobile-filter-panel, .mobile-share-sheet');
+                overlays.forEach(overlay => {
+                    overlay.style.height = window.innerHeight + 'px';
+                });
+            }
+        }, 100);
+    });
+}
+
+function ensureViewportMeta() {
+    // Ensure proper viewport meta tag exists
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+        viewportMeta = document.createElement('meta');
+        viewportMeta.name = 'viewport';
+        viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        document.head.appendChild(viewportMeta);
+    }
+}
+
+function showMobileToast(message, duration = 3000) {
+    const container = document.getElementById('mobile-toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'mobile-toast';
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    // Auto remove
+    setTimeout(() => {
+        toast.style.animation = 'slideInUp 0.3s ease-out reverse';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, duration);
+}
+
+// Utility functions
+function applySortFilter(sortValue) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('sort', sortValue);
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+}
+
+// Add CSS for filter count badge
+const mobileStyles = document.createElement('style');
+mobileStyles.textContent = `
+    .filter-count {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc2626;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+`;
+document.head.appendChild(mobileStyles);
+</script>

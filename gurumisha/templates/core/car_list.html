@@ -11,44 +11,54 @@
 {% block content %}
 
 
-<!-- Enhanced Hero Section -->
-<section class="relative bg-gradient-to-br from-primary-black via-primary-blue to-primary-red min-h-[60vh] flex items-center overflow-hidden">
-    <!-- Background Image -->
-    <div class="absolute inset-0 z-0">
-        <img src="{% static 'images/car-image-1-1200x600.jpg' %}" alt="Car Listing Hero" class="w-full h-full object-cover opacity-30">
-        <div class="absolute inset-0 bg-gradient-to-r from-primary-black/80 via-primary-blue/60 to-primary-red/70"></div>
-    </div>
+<!-- Enhanced Hero Section with Video Background -->
+<section class="main-banner relative min-h-[80vh] flex items-center overflow-hidden">
+    <!-- Video Background -->
+    <video autoplay muted loop id="cars-hero-video" class="absolute inset-0 w-full h-full object-cover z-0">
+        <source src="{% static 'images/video.mp4' %}" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Video Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-br from-primary-black/85 via-primary-blue/75 to-primary-red/70 z-10"></div>
 
     <!-- Hero Content -->
-    <div class="relative z-10 container mx-auto px-4 py-16">
-        <div class="max-w-4xl mx-auto text-center text-white">
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight animate-fade-in-up font-montserrat" style="text-transform: uppercase; letter-spacing: 2px;">
-                DISCOVER YOUR
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">PERFECT</span>
-                VEHICLE
-            </h1>
-            <p class="text-xl md:text-2xl mb-8 text-gray-200 leading-relaxed max-w-3xl mx-auto animate-fade-in-up animate-delay-200 font-inter">
-                Browse through our premium collection of vehicles from trusted dealers across Kenya
-            </p>
+    <div class="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div class="text-center text-white space-y-8">
+            <!-- Hero Text Content -->
+            <div class="space-y-6">
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight animate-fade-in-up font-montserrat">
+                    Find Your
+                    <span class="text-gradient bg-gradient-to-r from-red-500 to-red-700 bg-clip-text text-transparent">
+                        Perfect
+                    </span>
+                    Vehicle
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-200 leading-relaxed max-w-4xl mx-auto animate-fade-in-up animate-delay-300 font-inter">
+                    Discover premium vehicles from trusted dealers. Browse, compare, and find your ideal car in Kenya's leading automotive marketplace.
+                </p>
+            </div>
 
-            <!-- Quick Search in Hero -->
-            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto">
-                <form method="GET" class="flex flex-col md:flex-row gap-4" id="hero-search-form">
-                    <div class="flex-1">
-                        <input type="text" name="search" value="{{ current_filters.search }}"
-                               placeholder="Search by brand, model, or keyword..."
-                               class="w-full px-4 py-3 rounded-lg border-0 bg-white/90 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-primary-red focus:bg-white transition-all">
-                    </div>
-                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-primary-red to-accent-red text-white font-bold rounded-lg hover:from-accent-red hover:to-primary-red transform hover:scale-105 transition-all duration-300 shadow-lg">
-                        <i class="fas fa-search mr-2"></i>SEARCH CARS
-                    </button>
-                </form>
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto animate-fade-in-up animate-delay-500">
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-red-500 mb-2">{{ total_cars|default:"500+" }}</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Available Cars</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-red-500 mb-2">{{ car_brands.count|default:"50+" }}</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Trusted Brands</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-red-500 mb-2">24/7</div>
+                    <div class="text-sm text-gray-300 uppercase tracking-wide">Support</div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Scroll Indicator -->
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce z-20">
         <i class="fas fa-chevron-down text-2xl"></i>
     </div>
 </section>
@@ -68,54 +78,50 @@
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {% for brand in car_brands %}
-                <div class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 p-6 border border-gray-100 hover:border-red-200 overflow-hidden relative"
-                     onclick="window.location.href='{% url 'core:car_list' %}?brand={{ brand.id }}'">
+                {% with brand_name=brand.name|lower %}
+                    {% if brand_name == 'toyota' or brand_name == 'honda' or brand_name == 'nissan' or brand_name == 'bmw' or brand_name == 'mercedes' or brand_name == 'mercedes-benz' or brand_name == 'mazda' or brand_name == 'mitsubishi' or brand_name == 'subaru' %}
+                        <div class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 p-6 border border-gray-100 hover:border-red-200 overflow-hidden relative"
+                             onclick="window.location.href='{% url 'core:car_list' %}?brand={{ brand.id }}'">
 
-                    <!-- Subtle background pattern -->
-                    <div class="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <!-- Subtle background pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                    <div class="text-center relative z-10">
-                        <div class="mb-4 flex justify-center">
-                            {% with brand_name=brand.name|lower %}
-                                {% if brand_name == 'toyota' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /toyota.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'honda' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /honda.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'nissan' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /nissan.jpeg' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'bmw' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /bmw.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'mercedes' or brand_name == 'mercedes-benz' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /mercedez.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'mazda' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /mazda.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'mitsubishi' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /mitsubishi.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% elif brand_name == 'subaru' %}
-                                    <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
-                                        <img src="{% static 'images/brands /subaru.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
-                                    </div>
-                                {% else %}
-                                    <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-gray-900 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                        {{ brand.name|first|upper }}
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        </div>
+                            <div class="text-center relative z-10">
+                                <div class="mb-4 flex justify-center">
+                                    {% if brand_name == 'toyota' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /toyota.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'honda' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /honda.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'nissan' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /nissan.jpeg' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'bmw' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /bmw.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'mercedes' or brand_name == 'mercedes-benz' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /mercedez.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'mazda' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /mazda.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'mitsubishi' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /mitsubishi.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% elif brand_name == 'subaru' %}
+                                        <div class="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors duration-300">
+                                            <img src="{% static 'images/brands /subaru.png' %}" alt="{{ brand.name }}" class="h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:brightness-110">
+                                        </div>
+                                    {% endif %}
+                                </div>
                         <div class="space-y-2">
                             <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wide font-montserrat group-hover:text-red-600 transition-colors duration-300">
                                 {{ brand.name }}
@@ -129,6 +135,8 @@
                         </div>
                     </div>
                 </div>
+                    {% endif %}
+                {% endwith %}
             {% empty %}
                 <div class="col-span-full text-center py-12">
                     <div class="w-20 h-20 bg-gradient-to-br from-red-600 to-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -282,6 +290,7 @@
                                   hx-target="#cars-results"
                                   hx-trigger="change, submit"
                                   hx-indicator="#loading-indicator"
+                                  hx-push-url="true"
                                   role="search"
                                   aria-label="Car search filters"
                                   class="space-y-6">
@@ -313,12 +322,55 @@
                                         </div>
                                         BRAND
                                     </label>
-                                    <select name="brand" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white/90 backdrop-blur-sm font-inter">
+                                    <select name="brand" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white/90 backdrop-blur-sm font-inter"
+                                            hx-get="{% url 'core:htmx_models_by_brand' %}"
+                                            hx-target="#model-options"
+                                            hx-include="[name='brand']">
                                         <option value="">All Brands</option>
                                         {% for brand in brands %}
                                             <option value="{{ brand.id }}" {% if current_filters.brand == brand.id|stringformat:"s" %}selected{% endif %}>
                                                 {{ brand.name }}
                                             </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Enhanced Model Filter -->
+                                <div class="bg-indigo-50/80 backdrop-blur-sm rounded-xl p-4 border border-indigo-200/50">
+                                    <label class="flex items-center text-sm font-bold text-primary-black mb-3 uppercase tracking-wide font-montserrat">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-cogs text-white text-xs"></i>
+                                        </div>
+                                        MODEL
+                                    </label>
+                                    <select name="model" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 bg-white/90 backdrop-blur-sm font-inter" id="model-options">
+                                        <option value="">All Models</option>
+                                        {% for model in car_models %}
+                                            {% if not current_filters.brand or model.brand.id|stringformat:"s" == current_filters.brand %}
+                                                <option value="{{ model.id }}" {% if current_filters.model == model.id|stringformat:"s" %}selected{% endif %}>
+                                                    {{ model.name }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Enhanced Model Filter -->
+                                <div class="bg-indigo-50/80 backdrop-blur-sm rounded-xl p-4 border border-indigo-200/50">
+                                    <label class="flex items-center text-sm font-bold text-primary-black mb-3 uppercase tracking-wide font-montserrat">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-cogs text-white text-xs"></i>
+                                        </div>
+                                        MODEL
+                                    </label>
+                                    <select name="model" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 bg-white/90 backdrop-blur-sm font-inter" id="model-options">
+                                        <option value="">All Models</option>
+                                        {% for model in car_models %}
+                                            {% if not current_filters.brand or model.brand.id|stringformat:"s" == current_filters.brand %}
+                                                <option value="{{ model.id }}" {% if current_filters.model == model.id|stringformat:"s" %}selected{% endif %}>
+                                                    {{ model.name }}
+                                                </option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -621,7 +673,7 @@
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 <h4 class="font-bold text-gray-900 text-xs font-montserrat truncate">{{ car.title }}</h4>
-                                                <p class="text-xs text-gray-600 font-raleway">KSh {{ car.price|floatformat:0|add_commas }}</p>
+                                                <p class="text-xs text-gray-600 font-raleway">KSh {{ car.price|currency_ksh_no_decimals }}</p>
                                                 <div class="flex items-center text-xs text-gray-500 mt-1">
                                                     <span class="mr-2">{{ car.year }}</span>
                                                     <span>{{ car.mileage|floatformat:0 }}K km</span>
@@ -672,14 +724,6 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-4 md:mt-0">
-                            <!-- Add Car Button (for authenticated vendors/admins) -->
-                            {% if user.is_authenticated and user.role in 'vendor,admin' %}
-                                <button onclick="openCarCreationModal()"
-                                        class="flex items-center px-4 py-2 bg-gradient-to-r from-harrier-red to-black text-white rounded-lg hover:from-harrier-red-dark hover:to-gray-900 transition-all duration-300 font-semibold shadow-lg transform hover:scale-105 focus:ring-2 focus:ring-harrier-red focus:ring-offset-2">
-                                    <i class="fas fa-plus mr-2"></i>
-                                    Add Car
-                                </button>
-                            {% endif %}
 
                             <!-- Sort Dropdown -->
                             <div class="flex items-center space-x-2">
@@ -718,13 +762,15 @@
                         {% for car in cars %}
                             <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group card-animate animate-entrance animate-delay-{{ forloop.counter }}00">
                                 <div class="relative overflow-hidden">
-                                    {% if car.main_image %}
-                                        <img data-src="{{ car.main_image.url }}" src="{% static 'images/products-images/p1.jpg' %}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500 image-zoom loading-shimmer" loading="lazy">
-                                    {% else %}
-                                        <div class="w-full h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                            <i class="fas fa-car text-gray-400 text-5xl"></i>
-                                        </div>
-                                    {% endif %}
+                                    {% with car.get_display_image as display_image %}
+                                        {% if display_image %}
+                                            <img data-src="{{ display_image.url }}" src="{% static 'images/products-images/p1.jpg' %}" alt="{{ car.title }}" class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500 image-zoom loading-shimmer" loading="lazy">
+                                        {% else %}
+                                            <div class="w-full h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                                <i class="fas fa-car text-gray-400 text-5xl"></i>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
 
                                     <!-- Enhanced Badges -->
                                     {% if car.status == 'featured' %}
@@ -816,7 +862,7 @@
                                     <div class="flex justify-between items-center pt-4 border-t border-gray-100">
                                         <div>
                                             <span class="text-2xl font-bold text-primary-red" style="font-family: 'Saira Condensed', sans-serif;">
-                                                KSh {{ car.price|floatformat:0 }}
+                                                KSh {{ car.price|currency_ksh_no_decimals }}
                                             </span>
                                         </div>
                                         <div class="flex space-x-2">
@@ -983,11 +1029,29 @@
             });
         }
 
-        // Auto-submit form on filter change with HTMX
-        document.querySelectorAll('#filter-form select, #filter-form input').forEach(element => {
+        // Enhanced auto-submit form on filter change with HTMX
+        document.querySelectorAll('#filter-form select, #filter-form input[type="checkbox"]').forEach(element => {
             element.addEventListener('change', function() {
+                // Show loading indicator
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'block';
+                }
+
                 // Trigger HTMX request
                 htmx.trigger('#filter-form', 'submit');
+            });
+        });
+
+        // Price range inputs with debounce
+        const priceInputs = document.querySelectorAll('#filter-form input[name="min_price"], #filter-form input[name="max_price"]');
+        priceInputs.forEach(input => {
+            let priceTimeout;
+            input.addEventListener('input', function() {
+                clearTimeout(priceTimeout);
+                priceTimeout = setTimeout(() => {
+                    htmx.trigger('#filter-form', 'submit');
+                }, 500);
             });
         });
 
@@ -1077,11 +1141,17 @@
             });
         });
 
-        // Enhanced loading states
+        // Enhanced loading states and error handling
         document.body.addEventListener('htmx:beforeRequest', function(evt) {
             const loadingIndicator = document.getElementById('loading-indicator');
             if (loadingIndicator) {
                 loadingIndicator.style.display = 'block';
+            }
+
+            // Add loading class to form
+            const filterForm = document.getElementById('filter-form');
+            if (filterForm) {
+                filterForm.classList.add('opacity-75');
             }
         });
 
@@ -1091,34 +1161,122 @@
                 loadingIndicator.style.display = 'none';
             }
 
+            // Remove loading class from form
+            const filterForm = document.getElementById('filter-form');
+            if (filterForm) {
+                filterForm.classList.remove('opacity-75');
+            }
+
             // Remove loading state from all pill buttons
             pillButtons.forEach(btn => {
                 btn.classList.remove('pill-loading');
             });
         });
 
-        // Car Creation Modal Functions
-        window.openCarCreationModal = function() {
-            // Check if user is admin and redirect to admin listings
-            {% if user.role == 'admin' %}
-                window.location.href = '{% url "core:admin_listings" %}';
-                return;
-            {% endif %}
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            console.error('HTMX Error:', evt.detail);
+            // Show error message to user
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            errorMsg.textContent = 'Error loading results. Please try again.';
+            document.body.appendChild(errorMsg);
 
-            // Load the modal via HTMX for vendors
-            fetch('{% url "core:sell_car" %}?modal=true')
-                .then(response => response.text())
-                .then(html => {
-                    // Create modal container
-                    const modalContainer = document.createElement('div');
-                    modalContainer.innerHTML = html;
-                    document.body.appendChild(modalContainer);
-                })
-                .catch(error => {
-                    console.error('Error loading car creation modal:', error);
-                    alert('Error loading car creation form. Please try again.');
-                });
-        };
+            setTimeout(() => {
+                errorMsg.remove();
+            }, 5000);
+        });
+
+        // Car Creation Modal Functions removed
     });
+
+    // Enhanced HTMX event listeners for compare functionality
+    document.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.xhr.status === 200) {
+            try {
+                const response = JSON.parse(event.detail.xhr.responseText);
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            } catch (e) {
+                // Response is HTML (button replacement), no need to parse JSON
+            }
+        }
+    });
+
+    // Notification system
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+
+        // Base classes for modern design
+        notification.className = `fixed top-6 right-6 z-50 max-w-sm w-full bg-white/95 backdrop-blur-lg border border-gray-200 rounded-2xl shadow-2xl transform translate-x-full transition-all duration-500 ease-out`;
+
+        // Type-specific styling
+        let iconClass, borderColor, iconBg;
+        switch(type) {
+            case 'success':
+                iconClass = 'fas fa-check-circle';
+                borderColor = 'border-green-500';
+                iconBg = 'bg-green-500';
+                break;
+            case 'error':
+                iconClass = 'fas fa-times-circle';
+                borderColor = 'border-red-500';
+                iconBg = 'bg-red-500';
+                break;
+            default:
+                iconClass = 'fas fa-info-circle';
+                borderColor = 'border-blue-500';
+                iconBg = 'bg-blue-500';
+        }
+
+        notification.classList.add(borderColor);
+
+        notification.innerHTML = `
+            <div class="p-4">
+                <div class="flex items-start space-x-3">
+                    <div class="${iconBg} text-white rounded-full p-2 flex-shrink-0">
+                        <i class="${iconClass} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 font-montserrat">${message}</p>
+                    </div>
+                    <button onclick="removeNotification(this)" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Slide in animation
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            const button = notification.querySelector('button');
+            if (button) removeNotification(button);
+        }, 5000);
+    }
+
+    // Function to remove notification with animation
+    function removeNotification(button) {
+        const notification = button.closest('.fixed');
+        if (notification) {
+            notification.classList.add('translate-x-full');
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 500);
+        }
+    }
+
+
 </script>
 {% endblock %}

@@ -477,7 +477,7 @@ class SellCarForm(forms.ModelForm):
         model = Car
         fields = [
             'year', 'engine_size', 'fuel_type', 'transmission', 'mileage',
-            'color', 'price', 'title', 'description', 'features', 'main_image',
+            'color', 'price', 'title', 'description', 'features',
             'listing_type', 'negotiable', 'area', 'city', 'country'
         ]
         widgets = {
@@ -523,10 +523,7 @@ class SellCarForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'List key features separated by commas (e.g., Air Conditioning, Power Steering, ABS, Leather Seats, Sunroof, Navigation System)'
             }),
-            'main_image': forms.FileInput(attrs={
-                'class': 'enhanced-file-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-harrier-red file:text-white hover:file:bg-harrier-red-dark',
-                'accept': 'image/*'
-            }),
+
             'listing_type': forms.Select(attrs={
                 'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'
             }),
@@ -573,6 +570,62 @@ class SellCarForm(forms.ModelForm):
         if mileage and mileage > 1000000:  # 1 million km
             raise forms.ValidationError('Mileage seems too high. Please check your input.')
         return mileage
+
+    def save_images(self, car, image_files, captions=None, is_primary_list=None):
+        """
+        Save multiple images for the car
+
+        Args:
+            car: Car instance
+            image_files: List of uploaded image files
+            captions: List of captions for images
+            is_primary_list: List of boolean values indicating primary images
+        """
+        from .models import CarImage
+        try:
+            from .utils.image_optimization import validate_car_image
+        except ImportError:
+            # Fallback validation function if utils not available
+            def validate_car_image(image_file):
+                return True, None
+
+        if not image_files:
+            return []
+
+        created_images = []
+        captions = captions or []
+        is_primary_list = is_primary_list or []
+
+        # Ensure only one primary image
+        primary_count = sum(1 for is_primary in is_primary_list if is_primary)
+        if primary_count != 1:
+            # Set first image as primary if no primary or multiple primaries
+            is_primary_list = [i == 0 for i in range(len(image_files))]
+
+        for i, image_file in enumerate(image_files):
+            try:
+                # Validate image
+                is_valid, error_msg = validate_car_image(image_file)
+                if not is_valid:
+                    continue  # Skip invalid images
+
+                # Create CarImage instance
+                car_image = CarImage.objects.create(
+                    car=car,
+                    image=image_file,
+                    caption=captions[i] if i < len(captions) else '',
+                    order=i + 1,
+                    is_primary=is_primary_list[i] if i < len(is_primary_list) else False
+                )
+
+                created_images.append(car_image)
+
+            except Exception as e:
+                # Log error but continue with other images
+                print(f"Error saving image {i}: {str(e)}")
+                continue
+
+        return created_images
 
     def save(self, commit=True):
         """Custom save method to handle independent hardcoded choices"""
@@ -1257,6 +1310,57 @@ class SparePartForm(forms.ModelForm):
                 raise ValidationError("Invalid image file.")
 
         return image
+
+    def save_images(self, car, image_files, captions=None, is_primary_list=None):
+        """
+        Save multiple images for the car
+
+        Args:
+            car: Car instance
+            image_files: List of uploaded image files
+            captions: List of captions for images
+            is_primary_list: List of boolean values indicating primary images
+        """
+        from .models import CarImage
+        from .utils.image_optimization import validate_car_image
+
+        if not image_files:
+            return []
+
+        created_images = []
+        captions = captions or []
+        is_primary_list = is_primary_list or []
+
+        # Ensure only one primary image
+        primary_count = sum(1 for is_primary in is_primary_list if is_primary)
+        if primary_count != 1:
+            # Set first image as primary if no primary or multiple primaries
+            is_primary_list = [i == 0 for i in range(len(image_files))]
+
+        for i, image_file in enumerate(image_files):
+            try:
+                # Validate image
+                is_valid, error_msg = validate_car_image(image_file)
+                if not is_valid:
+                    continue  # Skip invalid images
+
+                # Create CarImage instance
+                car_image = CarImage.objects.create(
+                    car=car,
+                    image=image_file,
+                    caption=captions[i] if i < len(captions) else '',
+                    order=i + 1,
+                    is_primary=is_primary_list[i] if i < len(is_primary_list) else False
+                )
+
+                created_images.append(car_image)
+
+            except Exception as e:
+                # Log error but continue with other images
+                print(f"Error saving image {i}: {str(e)}")
+                continue
+
+        return created_images
 
     def save(self, commit=True):
         """Override save to ensure vendor is set and handle two-tier category system"""

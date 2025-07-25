@@ -1,0 +1,6 @@
+<option value="">All Models</option>
+{% for model in models %}
+    <option value="{{ model.id }}" {% if selected_model == model.id|stringformat:"s" %}selected{% endif %}>
+        {{ model.name }}
+    </option>
+{% endfor %}

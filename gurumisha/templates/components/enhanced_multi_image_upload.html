@@ -1,0 +1,425 @@
+{% load static %}
+
+<!-- Enhanced Multi-Image Upload Component -->
+<div class="enhanced-multi-image-upload" x-data="multiImageUpload()" x-init="init()">
+    <!-- Upload Zone -->
+    <div class="upload-zone relative">
+        <div class="upload-area border-2 border-dashed border-harrier-red/30 rounded-2xl p-8 text-center transition-all duration-300 hover:border-harrier-red/60 hover:bg-harrier-red/5"
+             :class="{ 'border-harrier-red bg-harrier-red/10': isDragOver }"
+             @dragover.prevent="isDragOver = true"
+             @dragleave.prevent="isDragOver = false"
+             @drop.prevent="handleDrop($event)">
+            
+            <!-- Upload Icon and Text -->
+            <div class="upload-content">
+                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-harrier-red to-harrier-dark rounded-full flex items-center justify-center">
+                    <i class="fas fa-cloud-upload-alt text-white text-2xl"></i>
+                </div>
+                
+                <h3 class="text-xl font-bold text-harrier-dark mb-2 font-montserrat">Upload Vehicle Images</h3>
+                <p class="text-gray-600 mb-4 font-raleway">Drag and drop images here or click to browse</p>
+                
+                <button type="button" 
+                        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-harrier-red to-harrier-dark text-white rounded-lg hover:from-harrier-dark hover:to-harrier-red transition-all duration-300 font-medium shadow-lg"
+                        @click="$refs.fileInput.click()">
+                    <i class="fas fa-plus mr-2"></i>
+                    Select Images
+                </button>
+                
+                <input type="file" 
+                       x-ref="fileInput"
+                       multiple 
+                       accept="image/*"
+                       class="hidden"
+                       @change="handleFileSelect($event)">
+            </div>
+            
+            <!-- Upload Guidelines -->
+            <div class="upload-guidelines mt-6 p-4 bg-blue-50/80 rounded-xl border border-blue-200">
+                <h4 class="font-semibold text-blue-800 mb-2 font-montserrat flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Photo Guidelines
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-700 font-raleway">
+                    <div>• Upload 4-6 high-quality images</div>
+                    <div>• Minimum resolution: 800x600px</div>
+                    <div>• Maximum file size: 5MB each</div>
+                    <div>• Supported formats: JPG, PNG</div>
+                    <div>• Show different angles of the vehicle</div>
+                    <div>• Ensure good lighting and clarity</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image Preview Grid -->
+    <div x-show="images.length > 0" class="image-preview-grid mt-8">
+        <div class="flex items-center justify-between mb-4">
+            <h4 class="text-lg font-bold text-harrier-dark font-montserrat flex items-center">
+                <i class="fas fa-images text-harrier-red mr-2"></i>
+                Uploaded Images (<span x-text="images.length"></span>/6)
+            </h4>
+            <div class="text-sm text-gray-600 font-raleway">
+                Drag to reorder • Click star to set as primary
+            </div>
+        </div>
+        
+        <!-- Sortable Image Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="sortable-preview">
+            <template x-for="(image, index) in images" :key="image.id">
+                <div class="image-preview-item bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden group hover:shadow-xl transition-all duration-300"
+                     :data-image-id="image.id">
+                    
+                    <!-- Image Display -->
+                    <div class="relative">
+                        <img :src="image.preview" 
+                             :alt="image.caption || 'Vehicle Image'"
+                             class="w-full h-48 object-cover">
+                        
+                        <!-- Primary Badge -->
+                        <div x-show="image.isPrimary" 
+                             class="absolute top-2 left-2 bg-harrier-red text-white px-2 py-1 rounded-full text-xs font-bold">
+                            <i class="fas fa-star mr-1"></i>PRIMARY
+                        </div>
+                        
+                        <!-- Upload Progress -->
+                        <div x-show="image.uploading" 
+                             class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <div class="text-center text-white">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <div class="text-sm">Uploading...</div>
+                                <div class="w-32 bg-gray-200 rounded-full h-2 mt-2">
+                                    <div class="bg-harrier-red h-2 rounded-full transition-all duration-300" 
+                                         :style="`width: ${image.progress}%`"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Hover Actions -->
+                        <div x-show="!image.uploading" 
+                             class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2">
+                            
+                            <!-- Set Primary Button -->
+                            <button @click="setPrimary(index)"
+                                    :class="image.isPrimary ? 'bg-yellow-600' : 'bg-yellow-500 hover:bg-yellow-600'"
+                                    class="p-2 text-white rounded-full transition-colors"
+                                    :title="image.isPrimary ? 'Primary Image' : 'Set as Primary'">
+                                <i class="fas fa-star text-sm"></i>
+                            </button>
+                            
+                            <!-- Delete Button -->
+                            <button @click="removeImage(index)"
+                                    class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                                    title="Delete Image">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                            
+                            <!-- Drag Handle -->
+                            <div class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full cursor-move drag-handle"
+                                 title="Drag to Reorder">
+                                <i class="fas fa-grip-vertical text-sm"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Validation Errors -->
+                        <div x-show="image.error" 
+                             class="absolute inset-0 bg-red-500/90 flex items-center justify-center">
+                            <div class="text-center text-white p-4">
+                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                                <div class="text-sm" x-text="image.error"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Image Info -->
+                    <div class="p-4">
+                        <div class="mb-2">
+                            <input type="text" 
+                                   x-model="image.caption"
+                                   placeholder="Add image caption (optional)"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent text-sm font-raleway">
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-xs text-gray-500 font-raleway">
+                            <span x-text="formatFileSize(image.size)"></span>
+                            <span x-text="`${image.width}x${image.height}`"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Upload Status Messages -->
+    <div x-show="uploadStatus.message" class="mt-4">
+        <div class="p-4 rounded-lg border"
+             :class="{
+                 'bg-green-50 border-green-200 text-green-700': uploadStatus.type === 'success',
+                 'bg-red-50 border-red-200 text-red-700': uploadStatus.type === 'error',
+                 'bg-blue-50 border-blue-200 text-blue-700': uploadStatus.type === 'info'
+             }">
+            <div class="flex items-center">
+                <i class="fas mr-2"
+                   :class="{
+                       'fa-check-circle': uploadStatus.type === 'success',
+                       'fa-exclamation-triangle': uploadStatus.type === 'error',
+                       'fa-info-circle': uploadStatus.type === 'info'
+                   }"></i>
+                <span x-text="uploadStatus.message"></span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden Inputs for Form Submission -->
+    <div class="hidden-inputs">
+        <template x-for="(image, index) in images" :key="image.id">
+            <div>
+                <input type="hidden" :name="`images[${index}][file]`" :value="image.file">
+                <input type="hidden" :name="`images[${index}][caption]`" :value="image.caption">
+                <input type="hidden" :name="`images[${index}][isPrimary]`" :value="image.isPrimary">
+                <input type="hidden" :name="`images[${index}][order]`" :value="index + 1">
+            </div>
+        </template>
+    </div>
+</div>
+
+<style>
+.enhanced-multi-image-upload {
+    /* Component-specific styles */
+}
+
+.upload-area {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-preview-item {
+    transition: transform 0.2s ease;
+}
+
+.image-preview-item:hover {
+    transform: translateY(-2px);
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Sortable placeholder styles */
+.sortable-ghost {
+    opacity: 0.5;
+}
+
+.sortable-chosen {
+    transform: scale(1.05);
+}
+</style>
+
+<script>
+function multiImageUpload() {
+    return {
+        images: [],
+        isDragOver: false,
+        maxImages: 6,
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+        allowedTypes: ['image/jpeg', 'image/jpg', 'image/png'],
+        uploadStatus: {
+            message: '',
+            type: ''
+        },
+
+        init() {
+            // Initialize sortable functionality
+            this.$nextTick(() => {
+                this.initSortable();
+            });
+        },
+
+        initSortable() {
+            const container = document.getElementById('sortable-preview');
+            if (container && typeof Sortable !== 'undefined') {
+                new Sortable(container, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    onEnd: (evt) => {
+                        this.reorderImages(evt.oldIndex, evt.newIndex);
+                    }
+                });
+            }
+        },
+
+        handleDrop(event) {
+            this.isDragOver = false;
+            const files = Array.from(event.dataTransfer.files);
+            this.processFiles(files);
+        },
+
+        handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            this.processFiles(files);
+            // Reset input
+            event.target.value = '';
+        },
+
+        processFiles(files) {
+            // Check total image limit
+            if (this.images.length + files.length > this.maxImages) {
+                this.showStatus(`You can only upload up to ${this.maxImages} images. Please remove some images first.`, 'error');
+                return;
+            }
+
+            files.forEach(file => {
+                if (this.validateFile(file)) {
+                    this.addImage(file);
+                }
+            });
+        },
+
+        validateFile(file) {
+            // Check file type
+            if (!this.allowedTypes.includes(file.type)) {
+                this.showStatus(`File "${file.name}" is not a supported image format. Please use JPG or PNG.`, 'error');
+                return false;
+            }
+
+            // Check file size
+            if (file.size > this.maxFileSize) {
+                this.showStatus(`File "${file.name}" is too large. Maximum size is 5MB.`, 'error');
+                return false;
+            }
+
+            return true;
+        },
+
+        addImage(file) {
+            const imageId = Date.now() + Math.random();
+            const image = {
+                id: imageId,
+                file: file,
+                preview: '',
+                caption: '',
+                isPrimary: this.images.length === 0, // First image is primary by default
+                uploading: false,
+                progress: 0,
+                error: null,
+                width: 0,
+                height: 0,
+                size: file.size
+            };
+
+            // Create preview
+            this.createPreview(file, image);
+            this.images.push(image);
+
+            this.showStatus(`Added "${file.name}" to upload queue.`, 'success');
+        },
+
+        createPreview(file, image) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                image.preview = e.target.result;
+
+                // Get image dimensions
+                const img = new Image();
+                img.onload = () => {
+                    image.width = img.width;
+                    image.height = img.height;
+
+                    // Validate dimensions
+                    if (img.width < 800 || img.height < 600) {
+                        image.error = 'Image resolution too low. Minimum 800x600px required.';
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        },
+
+        removeImage(index) {
+            const removedImage = this.images[index];
+            this.images.splice(index, 1);
+
+            // If removed image was primary, set first image as primary
+            if (removedImage.isPrimary && this.images.length > 0) {
+                this.images[0].isPrimary = true;
+            }
+
+            this.showStatus('Image removed successfully.', 'info');
+        },
+
+        setPrimary(index) {
+            // Remove primary from all images
+            this.images.forEach(img => img.isPrimary = false);
+            // Set selected image as primary
+            this.images[index].isPrimary = true;
+
+            this.showStatus('Primary image updated.', 'success');
+        },
+
+        reorderImages(oldIndex, newIndex) {
+            const movedImage = this.images.splice(oldIndex, 1)[0];
+            this.images.splice(newIndex, 0, movedImage);
+        },
+
+        formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+
+        showStatus(message, type) {
+            this.uploadStatus = { message, type };
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                this.uploadStatus = { message: '', type: '' };
+            }, 5000);
+        },
+
+        // Method to get form data for submission
+        getFormData() {
+            const formData = new FormData();
+
+            this.images.forEach((image, index) => {
+                formData.append(`images[${index}]`, image.file);
+                formData.append(`captions[${index}]`, image.caption);
+                formData.append(`is_primary[${index}]`, image.isPrimary);
+                formData.append(`order[${index}]`, index + 1);
+            });
+
+            return formData;
+        },
+
+        // Validation method for form submission
+        isValid() {
+            if (this.images.length === 0) {
+                this.showStatus('Please upload at least one image.', 'error');
+                return false;
+            }
+
+            const hasErrors = this.images.some(img => img.error);
+            if (hasErrors) {
+                this.showStatus('Please fix image errors before submitting.', 'error');
+                return false;
+            }
+
+            const hasPrimary = this.images.some(img => img.isPrimary);
+            if (!hasPrimary) {
+                this.showStatus('Please select a primary image.', 'error');
+                return false;
+            }
+
+            return true;
+        }
+    }
+}
+</script>

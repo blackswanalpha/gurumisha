@@ -4,7 +4,8 @@ Dashboard-specific forms for Gurumisha Motors
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from .models import Vendor, Car, ImportRequest, Inquiry, CarBrand, CarModel
+from django.utils import timezone
+from .models import Vendor, Car, ImportRequest, Inquiry, CarBrand, CarModel, VehicleCondition
 from .utils.image_utils import default_image_handler
 
 User = get_user_model()
@@ -793,135 +794,287 @@ class NotificationForm(forms.Form):
 
 
 class AdminCarEditForm(forms.ModelForm):
-    """Form for admin to edit car details"""
+    """Enhanced form for admin to edit all car details"""
+
+    # Additional fields for fallback names
+    brand_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter brand name if not in dropdown'
+        }),
+        help_text='Use only if brand is not available in dropdown'
+    )
+
+    model_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter model name if not in dropdown'
+        }),
+        help_text='Use only if model is not available in dropdown'
+    )
+
+    condition_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter condition if not in dropdown'
+        }),
+        help_text='Use only if condition is not available in dropdown'
+    )
+
+    # Admin notes field
+    admin_notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-input',
+            'rows': 3,
+            'placeholder': 'Add notes about approval, rejection, or special instructions...'
+        }),
+        help_text='Internal notes for admin reference and vendor communication'
+    )
+
+    # Hot deal fields
+    hot_deal_discount = forms.IntegerField(
+        required=False,
+        min_value=5,
+        max_value=50,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter discount percentage (5-50%)'
+        }),
+        help_text='Discount percentage for hot deals'
+    )
+
+    hot_deal_days = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=30,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter number of days (1-30)'
+        }),
+        help_text='Number of days for hot deal duration'
+    )
+
+    # Featured until field
+    featured_until = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-input',
+            'type': 'datetime-local'
+        }),
+        help_text='When featuring expires'
+    )
 
     class Meta:
         model = Car
         fields = [
-            'title', 'brand', 'model', 'year', 'condition', 'engine_size',
-            'fuel_type', 'transmission', 'mileage', 'color', 'price',
-            'description', 'features', 'listing_type', 'status', 'is_approved',
-            'negotiable', 'is_hot_deal', 'is_featured', 'is_certified', 'star_rating'
+            # Basic Information
+            'title', 'description', 'features',
+
+            # Vehicle Identification
+            'brand', 'model', 'brand_name', 'model_name', 'year', 'color',
+
+            # Vehicle Condition & Specifications
+            'condition', 'condition_name', 'mileage', 'engine_size',
+            'fuel_type', 'transmission',
+
+            # Pricing
+            'price', 'negotiable',
+
+            # Listing Information
+            'listing_type', 'status',
+
+            # Location
+            'area', 'city', 'country',
+
+            # Admin Controls
+            'is_approved', 'star_rating',
+
+            # Promotional Features
+            'is_featured', 'featured_until', 'auto_featured',
+            'is_hot_deal', 'is_certified',
+
+            # Images
+            'main_image'
         ]
+
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-input',
-                'placeholder': 'Enter car title'
-            }),
-            'brand': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'model': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'year': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': 1900,
-                'max': 2025
-            }),
-            'condition': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'engine_size': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'e.g., 2.0L, 1.8L'
-            }),
-            'fuel_type': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'transmission': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'mileage': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '0'
-            }),
-            'color': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Enter car color'
-            }),
-            'price': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '0'
+                'placeholder': 'e.g., Toyota Camry 2020 - Excellent Condition'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-input',
                 'rows': 4,
-                'placeholder': 'Enter car description'
+                'placeholder': 'Detailed description of the car\'s condition, history, and features...'
             }),
             'features': forms.Textarea(attrs={
                 'class': 'form-input',
                 'rows': 3,
-                'placeholder': 'Enter features separated by commas'
+                'placeholder': 'Air conditioning, Leather seats, Sunroof, Navigation system...'
             }),
-            'listing_type': forms.Select(attrs={
-                'class': 'form-input'
+            'brand': forms.Select(attrs={'class': 'form-input'}),
+            'model': forms.Select(attrs={'class': 'form-input'}),
+            'year': forms.NumberInput(attrs={
+                'class': 'form-input',
+                'min': 1900,
+                'max': 2030
             }),
-            'status': forms.Select(attrs={
-                'class': 'form-input'
+            'color': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'e.g., White, Black, Silver'
             }),
-            'is_approved': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
+            'condition': forms.Select(attrs={'class': 'form-input'}),
+            'mileage': forms.NumberInput(attrs={
+                'class': 'form-input',
+                'min': 0,
+                'step': 1000
+            }),
+            'engine_size': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'e.g., 2.0L, 1800cc'
+            }),
+            'fuel_type': forms.Select(attrs={'class': 'form-input'}),
+            'transmission': forms.Select(attrs={'class': 'form-input'}),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-input price-format',
+                'min': 0,
+                'step': 1000
+            }),
+            'listing_type': forms.Select(attrs={'class': 'form-input'}),
+            'status': forms.Select(attrs={'class': 'form-input'}),
+            'area': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'e.g., Westlands, Karen, CBD'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'e.g., Nairobi, Mombasa, Kisumu'
+            }),
+            'country': forms.Select(attrs={'class': 'form-input'}),
+            'star_rating': forms.Select(attrs={'class': 'form-input'}),
+            'main_image': forms.FileInput(attrs={
+                'class': 'form-input',
+                'accept': 'image/*'
             }),
             'negotiable': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
+                'class': 'form-checkbox text-harrier-red focus:ring-harrier-red'
             }),
-            'is_hot_deal': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
+            'is_approved': forms.CheckboxInput(attrs={
+                'class': 'form-checkbox text-green-600 focus:ring-green-500'
             }),
             'is_featured': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
+                'class': 'form-checkbox text-purple-600 focus:ring-purple-500'
+            }),
+            'auto_featured': forms.CheckboxInput(attrs={
+                'class': 'form-checkbox text-blue-600 focus:ring-blue-500'
+            }),
+            'is_hot_deal': forms.CheckboxInput(attrs={
+                'class': 'form-checkbox text-red-600 focus:ring-red-500'
             }),
             'is_certified': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'
+                'class': 'form-checkbox text-green-600 focus:ring-green-500'
             }),
-            'star_rating': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '0',
-                'max': '5'
-            })
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set queryset for brand and model
-        self.fields['brand'].queryset = CarBrand.objects.filter(is_active=True)
-        if self.instance and self.instance.brand:
-            self.fields['model'].queryset = CarModel.objects.filter(brand=self.instance.brand, is_active=True)
-        else:
-            self.fields['model'].queryset = CarModel.objects.none()
 
-    def clean(self):
-        """Enhanced validation for hot deal fields"""
-        cleaned_data = super().clean()
-        is_hot_deal = cleaned_data.get('is_hot_deal')
-        price = cleaned_data.get('price')
+        # Populate brand choices
+        self.fields['brand'].queryset = CarBrand.objects.filter(is_active=True).order_by('name')
+        self.fields['brand'].empty_label = "Select Brand"
 
-        # If hot deal is enabled, we'll validate the hot deal fields in the view
-        # since they're not part of the form fields but are POST parameters
+        # Populate model choices (will be filtered by brand via JavaScript)
+        self.fields['model'].queryset = CarModel.objects.filter(is_active=True).order_by('name')
+        self.fields['model'].empty_label = "Select Model"
 
-        return cleaned_data
+        # Populate condition choices
+        self.fields['condition'].queryset = VehicleCondition.objects.filter(is_active=True).order_by('display_order')
+        self.fields['condition'].empty_label = "Select Condition"
+
+        # Set star rating choices
+        self.fields['star_rating'].choices = [
+            ('', 'No Rating'),
+            (1, '⭐ 1 Star'),
+            (2, '⭐⭐ 2 Stars'),
+            (3, '⭐⭐⭐ 3 Stars'),
+            (4, '⭐⭐⭐⭐ 4 Stars'),
+            (5, '⭐⭐⭐⭐⭐ 5 Stars'),
+        ]
+
+        # Set country choices (prioritizing East African countries)
+        country_choices = [
+            ('', 'Select Country'),
+            ('Kenya', 'Kenya'),
+            ('Uganda', 'Uganda'),
+            ('Tanzania', 'Tanzania'),
+            ('Rwanda', 'Rwanda'),
+            ('Burundi', 'Burundi'),
+            ('South Sudan', 'South Sudan'),
+            ('Ethiopia', 'Ethiopia'),
+            ('Somalia', 'Somalia'),
+            ('Djibouti', 'Djibouti'),
+            ('Eritrea', 'Eritrea'),
+            # Add more countries as needed
+        ]
+        self.fields['country'].choices = country_choices
+
+        # Make certain fields required
+        self.fields['title'].required = True
+        self.fields['price'].required = True
+        self.fields['year'].required = True
+        self.fields['color'].required = True
+        self.fields['fuel_type'].required = True
+        self.fields['transmission'].required = True
+        self.fields['mileage'].required = True
+        self.fields['listing_type'].required = True
+        self.fields['status'].required = True
+        self.fields['description'].required = True
 
     def clean_price(self):
-        """Validate price field"""
         price = self.cleaned_data.get('price')
-        if price is not None and price <= 0:
-            raise forms.ValidationError("Price must be greater than zero.")
+        if price is not None:
+            if price <= 0:
+                raise forms.ValidationError("Price must be greater than 0")
+            if price > 1000000000:  # 1 billion limit
+                raise forms.ValidationError("Price cannot exceed 1 billion")
         return price
 
     def clean_year(self):
-        """Validate year field"""
         year = self.cleaned_data.get('year')
-        from datetime import datetime
-        current_year = datetime.now().year
-
-        if year and (year < 1900 or year > current_year + 1):
-            raise forms.ValidationError(f"Year must be between 1900 and {current_year + 1}.")
+        if year is not None:
+            current_year = timezone.now().year
+            if year < 1900 or year > current_year + 1:
+                raise forms.ValidationError(f"Year must be between 1900 and {current_year + 1}")
         return year
 
     def clean_mileage(self):
-        """Validate mileage field"""
         mileage = self.cleaned_data.get('mileage')
         if mileage is not None and mileage < 0:
-            raise forms.ValidationError("Mileage cannot be negative.")
+            raise forms.ValidationError("Mileage cannot be negative")
         return mileage
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Validate that either brand or brand_name is provided
+        brand = cleaned_data.get('brand')
+        brand_name = cleaned_data.get('brand_name')
+        if not brand and not brand_name:
+            raise forms.ValidationError("Please select a brand or enter a brand name")
+
+        # Validate hot deal fields if hot deal is enabled
+        is_hot_deal = cleaned_data.get('is_hot_deal')
+        if is_hot_deal:
+            hot_deal_discount = cleaned_data.get('hot_deal_discount')
+            hot_deal_days = cleaned_data.get('hot_deal_days')
+
+            if not hot_deal_discount:
+                self.add_error('hot_deal_discount', 'Discount percentage is required for hot deals')
+            if not hot_deal_days:
+                self.add_error('hot_deal_days', 'Duration in days is required for hot deals')
+
+        return cleaned_data

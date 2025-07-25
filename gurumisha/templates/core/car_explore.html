@@ -1,0 +1,860 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+{% load promotion_tags %}
+
+{% block title %}Explore Cars - Gurumisha{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/car-listing-enhancements.css' %}">
+<style>
+    /* Enhanced explore page styles */
+    .explore-hero {
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .explore-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/car-image-1-1200x600.jpg" %}') center/cover;
+        opacity: 0.2;
+        z-index: 1;
+    }
+
+    .explore-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .glassmorphism-filter {
+        background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(248, 250, 252, 0.9) 50%,
+            rgba(241, 245, 249, 0.85) 100%);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(220, 38, 38, 0.1);
+        box-shadow:
+            0 25px 50px -12px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(220, 38, 38, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .pill-category {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #6b7280;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pill-category.active {
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+        border-color: #DC2626;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+    }
+
+    .pill-category:hover {
+        border-color: #DC2626;
+        color: #DC2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+
+    .pill-category.active:hover {
+        color: white;
+    }
+
+    .admin-request-add-btn {
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif;
+        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);
+    }
+
+    .admin-request-add-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 12px 32px rgba(220, 38, 38, 0.5), 0 6px 16px rgba(31, 41, 55, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .car-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+
+    .car-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .filter-section {
+        background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.9) 0%,
+            rgba(248, 250, 252, 0.8) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 1rem;
+        border: 1px solid rgba(220, 38, 38, 0.08);
+        box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(220, 38, 38, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .filter-section:hover {
+        transform: translateY(-1px);
+        box-shadow:
+            0 8px 12px -2px rgba(0, 0, 0, 0.15),
+            0 4px 8px -2px rgba(220, 38, 38, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        border-color: rgba(220, 38, 38, 0.12);
+    }
+
+    .filter-section h3 {
+        color: #1f2937;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        position: relative;
+    }
+
+    .filter-section h3::after {
+        content: '';
+        position: absolute;
+        bottom: -0.25rem;
+        left: 0;
+        width: 2rem;
+        height: 2px;
+        background: linear-gradient(90deg, #DC2626 0%, #B91C1C 100%);
+        border-radius: 1px;
+    }
+
+    .form-select, .form-input {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1.5px solid rgba(229, 231, 235, 0.8);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-select:focus, .form-input:focus {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: #DC2626;
+        box-shadow:
+            0 0 0 3px rgba(220, 38, 38, 0.1),
+            0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        outline: none;
+        transform: translateY(-1px);
+    }
+
+    .form-select:hover, .form-input:hover {
+        border-color: rgba(220, 38, 38, 0.3);
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Price Slider Styles */
+    .price-slider-container {
+        position: relative;
+        padding: 1rem 0;
+    }
+
+    .price-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
+        outline: none;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .price-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%);
+        cursor: pointer;
+        pointer-events: all;
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .price-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(220, 38, 38, 0.4);
+    }
+
+    .price-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%);
+        cursor: pointer;
+        pointer-events: all;
+        border: none;
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+    }
+
+    .price-slider-min {
+        z-index: 1;
+    }
+
+    .price-slider-max {
+        z-index: 2;
+    }
+
+    /* Mobile Responsive Filters */
+    @media (max-width: 768px) {
+        .filter-section {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-select, .form-input {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .glassmorphism-filter {
+            position: relative !important;
+            top: auto !important;
+        }
+    }
+
+    /* Animation for mobile filter toggle */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="explore-hero py-20">
+    <div class="explore-hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center text-white">
+            <h1 class="text-4xl md:text-6xl font-bold font-montserrat mb-6">
+                Explore Our
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
+                    Premium Cars
+                </span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto font-raleway">
+                Discover your perfect vehicle from our extensive collection of quality cars
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Pill Categories Section -->
+<section class="py-8 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap justify-center gap-4">
+            <button class="pill-category px-6 py-3 rounded-full font-semibold font-montserrat {% if not current_filters.listing_type %}active{% endif %}"
+                    onclick="filterByType('')">
+                All Listings
+                <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs" id="count-all">{{ total_cars }}</span>
+            </button>
+            <button class="pill-category px-6 py-3 rounded-full font-semibold font-montserrat {% if current_filters.listing_type == 'imported' %}active{% endif %}"
+                    onclick="filterByType('imported')">
+                Imported Cars
+                <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs" id="count-imported">{{ imported_count }}</span>
+            </button>
+            <button class="pill-category px-6 py-3 rounded-full font-semibold font-montserrat {% if current_filters.listing_type == 'sell_behalf' %}active{% endif %}"
+                    onclick="filterByType('sell_behalf')">
+                Sell on Behalf
+                <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs" id="count-sell-behalf">{{ sell_behalf_count }}</span>
+            </button>
+            <button class="pill-category px-6 py-3 rounded-full font-semibold font-montserrat {% if current_filters.listing_type == 'auction' %}active{% endif %}"
+                    onclick="filterByType('auction')">
+                Auctioned Cars
+                <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs" id="count-auction">{{ auction_count }}</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content -->
+<section class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Left Sidebar Filters -->
+            <div class="lg:col-span-1">
+                <div class="glassmorphism-filter rounded-2xl p-6 sticky top-6">
+                    <!-- Mobile Filter Toggle -->
+                    <div class="lg:hidden mb-4">
+                        <button type="button" id="mobile-filter-toggle"
+                                class="w-full admin-request-add-btn justify-center"
+                                onclick="toggleMobileFilters()">
+                            <i class="fas fa-filter mr-2"></i>
+                            <span id="filter-toggle-text">Show Filters</span>
+                            <i class="fas fa-chevron-down ml-2 transition-transform duration-300" id="filter-toggle-icon"></i>
+                        </button>
+                    </div>
+
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 font-montserrat hidden lg:block">
+                        <i class="fas fa-filter mr-3 text-red-600"></i>REFINE YOUR SEARCH
+                    </h2>
+
+                    <div id="filters-container" class="hidden lg:block">
+                        <form method="GET" id="filter-form"
+                              hx-get="{% url 'core:car_explore' %}"
+                              hx-target="#cars-results"
+                              hx-trigger="change, submit"
+                              hx-indicator="#loading-indicator"
+                              hx-push-url="true"
+                              class="space-y-6">
+
+                        <!-- Hidden input for listing type -->
+                        <input type="hidden" name="listing_type" value="{{ current_filters.listing_type }}">
+
+                        <!-- Search -->
+                        <div class="filter-section">
+                            <h3>Search</h3>
+                            <input type="text" name="search" value="{{ current_filters.search }}" 
+                                   placeholder="Search cars..." 
+                                   class="form-input w-full">
+                        </div>
+
+                        <!-- Brand Filter -->
+                        <div class="filter-section">
+                            <h3>Brand</h3>
+                            <select name="brand" class="form-select w-full"
+                                    hx-get="{% url 'core:htmx_models_by_brand' %}"
+                                    hx-target="#model-options"
+                                    hx-include="[name='brand']">
+                                <option value="">All Brands</option>
+                                {% for brand in car_brands %}
+                                    <option value="{{ brand.id }}" {% if current_filters.brand == brand.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ brand.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Model Filter -->
+                        <div class="filter-section">
+                            <h3>Model</h3>
+                            <select name="model" class="form-select w-full" id="model-options">
+                                <option value="">All Models</option>
+                                {% for model in car_models %}
+                                    {% if not current_filters.brand or model.brand.id|stringformat:"s" == current_filters.brand %}
+                                        <option value="{{ model.id }}" {% if current_filters.model == model.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ model.name }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Enhanced Price Range Slider with Accessibility -->
+                        <div class="filter-section" role="group" aria-labelledby="price-range-label">
+                            <h3 id="price-range-label">Price Range (KSH)</h3>
+                            <div class="price-slider-container">
+                                <div class="flex justify-between text-sm text-gray-600 mb-2" aria-hidden="true">
+                                    <span>100,000</span>
+                                    <span>100,000,000</span>
+                                </div>
+                                <div class="relative">
+                                    <input type="range" name="min_price" id="min-price-slider"
+                                           min="100000" max="100000000" step="100000"
+                                           value="{{ current_filters.min_price|default:'100000' }}"
+                                           class="price-slider price-slider-min"
+                                           aria-label="Minimum price"
+                                           aria-describedby="min-price-display"
+                                           role="slider"
+                                           aria-valuemin="100000"
+                                           aria-valuemax="100000000"
+                                           aria-valuenow="{{ current_filters.min_price|default:'100000' }}">
+                                    <input type="range" name="max_price" id="max-price-slider"
+                                           min="100000" max="100000000" step="100000"
+                                           value="{{ current_filters.max_price|default:'100000000' }}"
+                                           class="price-slider price-slider-max"
+                                           aria-label="Maximum price"
+                                           aria-describedby="max-price-display"
+                                           role="slider"
+                                           aria-valuemin="100000"
+                                           aria-valuemax="100000000"
+                                           aria-valuenow="{{ current_filters.max_price|default:'100000000' }}">
+                                </div>
+                                <div class="flex justify-between mt-3">
+                                    <div class="text-center">
+                                        <label for="min-price-slider" class="text-xs text-gray-500">Min Price</label>
+                                        <div class="text-sm font-semibold text-red-600 price-format" id="min-price-display" aria-live="polite">
+                                            KSh {{ current_filters.min_price|default:'100000'|currency_ksh_no_decimals }}
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <label for="max-price-slider" class="text-xs text-gray-500">Max Price</label>
+                                        <div class="text-sm font-semibold text-red-600 price-format" id="max-price-display" aria-live="polite">
+                                            KSh {{ current_filters.max_price|default:'100000000'|currency_ksh_no_decimals }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Screen Reader Price Range Summary -->
+                                <div class="sr-only" aria-live="polite" aria-atomic="true" id="price-range-summary">
+                                    Price range: KSh {{ current_filters.min_price|default:'100000'|currency_ksh_no_decimals }} to KSh {{ current_filters.max_price|default:'100000000'|currency_ksh_no_decimals }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Body Type -->
+                        <div class="filter-section">
+                            <h3>Body Type</h3>
+                            <select name="body_type" class="form-select w-full">
+                                <option value="">All Body Types</option>
+                                {% for value, label in body_types %}
+                                    <option value="{{ value }}" {% if current_filters.body_type == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Condition -->
+                        <div class="filter-section">
+                            <h3>Condition</h3>
+                            <select name="condition" class="form-select w-full">
+                                <option value="">Any Condition</option>
+                                {% for condition in vehicle_conditions %}
+                                    <option value="{{ condition.name }}" {% if current_filters.condition == condition.name %}selected{% endif %}>
+                                        {{ condition.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Fuel Type -->
+                        <div class="filter-section">
+                            <h3>Fuel Type</h3>
+                            <select name="fuel_type" class="form-select w-full">
+                                <option value="">Any Fuel</option>
+                                {% for value, label in fuel_types %}
+                                    <option value="{{ value }}" {% if current_filters.fuel_type == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Transmission -->
+                        <div class="filter-section">
+                            <h3>Transmission</h3>
+                            <select name="transmission" class="form-select w-full">
+                                <option value="">Any Transmission</option>
+                                {% for value, label in transmission_types %}
+                                    <option value="{{ value }}" {% if current_filters.transmission == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Year Range -->
+                        <div class="filter-section">
+                            <h3>Year Range</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <select name="min_year" class="form-select">
+                                    <option value="">From Year</option>
+                                    {% for year in year_range %}
+                                        <option value="{{ year }}" {% if current_filters.min_year == year|stringformat:"s" %}selected{% endif %}>
+                                            {{ year }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <select name="max_year" class="form-select">
+                                    <option value="">To Year</option>
+                                    {% for year in year_range %}
+                                        <option value="{{ year }}" {% if current_filters.max_year == year|stringformat:"s" %}selected{% endif %}>
+                                            {{ year }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Mileage Range -->
+                        <div class="filter-section">
+                            <h3>Mileage Range (KM)</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <select name="min_mileage" class="form-select">
+                                    <option value="">Min Mileage</option>
+                                    <option value="0" {% if current_filters.min_mileage == "0" %}selected{% endif %}>0 KM</option>
+                                    <option value="10000" {% if current_filters.min_mileage == "10000" %}selected{% endif %}>10,000 KM</option>
+                                    <option value="25000" {% if current_filters.min_mileage == "25000" %}selected{% endif %}>25,000 KM</option>
+                                    <option value="50000" {% if current_filters.min_mileage == "50000" %}selected{% endif %}>50,000 KM</option>
+                                    <option value="100000" {% if current_filters.min_mileage == "100000" %}selected{% endif %}>100,000 KM</option>
+                                </select>
+                                <select name="max_mileage" class="form-select">
+                                    <option value="">Max Mileage</option>
+                                    <option value="25000" {% if current_filters.max_mileage == "25000" %}selected{% endif %}>25,000 KM</option>
+                                    <option value="50000" {% if current_filters.max_mileage == "50000" %}selected{% endif %}>50,000 KM</option>
+                                    <option value="100000" {% if current_filters.max_mileage == "100000" %}selected{% endif %}>100,000 KM</option>
+                                    <option value="200000" {% if current_filters.max_mileage == "200000" %}selected{% endif %}>200,000 KM</option>
+                                    <option value="500000" {% if current_filters.max_mileage == "500000" %}selected{% endif %}>500,000+ KM</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Location Filters -->
+                        <div class="filter-section">
+                            <h3>Location</h3>
+                            <div class="space-y-3">
+                                <select name="city" class="form-select w-full">
+                                    <option value="">Any City</option>
+                                    {% for city in cities %}
+                                        <option value="{{ city }}" {% if current_filters.city == city %}selected{% endif %}>
+                                            {{ city }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <select name="country" class="form-select w-full">
+                                    <option value="">Any Country</option>
+                                    {% for country in countries %}
+                                        <option value="{{ country }}" {% if current_filters.country == country %}selected{% endif %}>
+                                            {{ country }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Special Filters -->
+                        <div class="filter-section">
+                            <h3>Special</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="featured_only" value="1" 
+                                           {% if current_filters.featured_only %}checked{% endif %}
+                                           class="mr-2 text-red-600">
+                                    <span class="text-sm font-medium">Featured Only</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="hot_deals" value="1" 
+                                           {% if current_filters.hot_deals %}checked{% endif %}
+                                           class="mr-2 text-red-600">
+                                    <span class="text-sm font-medium">Hot Deals</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sort Options -->
+                        <div class="filter-section">
+                            <h3>Sort By</h3>
+                            <select name="sort" class="form-select w-full">
+                                <option value="featured" {% if current_filters.sort == "featured" %}selected{% endif %}>Featured First</option>
+                                <option value="price_low" {% if current_filters.sort == "price_low" %}selected{% endif %}>Price: Low to High</option>
+                                <option value="price_high" {% if current_filters.sort == "price_high" %}selected{% endif %}>Price: High to Low</option>
+                                <option value="year_new" {% if current_filters.sort == "year_new" %}selected{% endif %}>Year: Newest First</option>
+                                <option value="year_old" {% if current_filters.sort == "year_old" %}selected{% endif %}>Year: Oldest First</option>
+                                <option value="mileage_low" {% if current_filters.sort == "mileage_low" %}selected{% endif %}>Mileage: Low to High</option>
+                                <option value="mileage_high" {% if current_filters.sort == "mileage_high" %}selected{% endif %}>Mileage: High to Low</option>
+                                <option value="rating" {% if current_filters.sort == "rating" %}selected{% endif %}>Highest Rated</option>
+                            </select>
+                        </div>
+
+                        <!-- Clear Filters Button -->
+                        <div class="pt-4">
+                            <a href="{% url 'core:car_explore' %}" class="admin-request-add-btn w-full justify-center">
+                                <i class="fas fa-times mr-2"></i>Clear All Filters
+                            </a>
+                        </div>
+                    </form>
+                    </div> <!-- Close filters-container -->
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="lg:col-span-3">
+                <div id="cars-results">
+                    {% include 'core/partials/car_explore_results.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WhatsApp Floating Button -->
+<a href="https://api.whatsapp.com/send/?phone=254720557457&text&type=phone_number&app_absent=0" 
+   class="whatsapp-float" 
+   target="_blank" 
+   rel="noopener noreferrer"
+   aria-label="Contact us on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+</a>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    // Enhanced HTMX event listeners for compare functionality
+    document.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.xhr.status === 200) {
+            try {
+                const response = JSON.parse(event.detail.xhr.responseText);
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            } catch (e) {
+                // Response is HTML (button replacement), no need to parse JSON
+            }
+        }
+    });
+
+    // Notification system
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+
+        // Base classes for modern design
+        notification.className = `fixed top-6 right-6 z-50 max-w-sm w-full bg-white/95 backdrop-blur-lg border border-gray-200 rounded-2xl shadow-2xl transform translate-x-full transition-all duration-500 ease-out`;
+
+        // Type-specific styling
+        let iconClass, borderColor, iconBg;
+        switch(type) {
+            case 'success':
+                iconClass = 'fas fa-check-circle';
+                borderColor = 'border-green-500';
+                iconBg = 'bg-green-500';
+                break;
+            case 'error':
+                iconClass = 'fas fa-times-circle';
+                borderColor = 'border-red-500';
+                iconBg = 'bg-red-500';
+                break;
+            default:
+                iconClass = 'fas fa-info-circle';
+                borderColor = 'border-blue-500';
+                iconBg = 'bg-blue-500';
+        }
+
+        notification.classList.add(borderColor);
+
+        notification.innerHTML = `
+            <div class="p-4">
+                <div class="flex items-start space-x-3">
+                    <div class="${iconBg} text-white rounded-full p-2 flex-shrink-0">
+                        <i class="${iconClass} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 font-montserrat">${message}</p>
+                    </div>
+                    <button onclick="removeNotification(this)" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Slide in animation
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            const button = notification.querySelector('button');
+            if (button) removeNotification(button);
+        }, 5000);
+    }
+
+    // Function to remove notification with animation
+    function removeNotification(button) {
+        const notification = button.closest('.fixed');
+        if (notification) {
+            notification.classList.add('translate-x-full');
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 500);
+        }
+    }
+<script>
+    function filterByType(type) {
+        // Update hidden input
+        document.querySelector('input[name="listing_type"]').value = type;
+
+        // Update active pill
+        document.querySelectorAll('.pill-category').forEach(pill => {
+            pill.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Trigger form submission
+        document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+    }
+
+    // Enhanced price slider functionality with accessibility
+    function formatPrice(value) {
+        return window.priceFormatter ?
+               window.priceFormatter.formatPriceNoDecimals(value) :
+               new Intl.NumberFormat('en-KE').format(value);
+    }
+
+    function formatPriceWithCurrency(value) {
+        return window.priceFormatter ?
+               window.priceFormatter.formatPrice(value) :
+               `KSh ${new Intl.NumberFormat('en-KE').format(value)}`;
+    }
+
+    function initializePriceSliders() {
+        const minSlider = document.getElementById('min-price-slider');
+        const maxSlider = document.getElementById('max-price-slider');
+        const minDisplay = document.getElementById('min-price-display');
+        const maxDisplay = document.getElementById('max-price-display');
+
+        function updateSliders() {
+            const minVal = parseInt(minSlider.value);
+            const maxVal = parseInt(maxSlider.value);
+
+            // Ensure min doesn't exceed max
+            if (minVal >= maxVal) {
+                minSlider.value = maxVal - 100000;
+            }
+
+            // Ensure max doesn't go below min
+            if (maxVal <= minVal) {
+                maxSlider.value = minVal + 100000;
+            }
+
+            // Update displays with consistent formatting
+            const formattedMin = formatPriceWithCurrency(minSlider.value);
+            const formattedMax = formatPriceWithCurrency(maxSlider.value);
+
+            minDisplay.textContent = formattedMin;
+            maxDisplay.textContent = formattedMax;
+
+            // Update ARIA attributes for accessibility
+            minSlider.setAttribute('aria-valuenow', minSlider.value);
+            maxSlider.setAttribute('aria-valuenow', maxSlider.value);
+
+            // Update screen reader summary
+            const summaryElement = document.getElementById('price-range-summary');
+            if (summaryElement) {
+                summaryElement.textContent = `Price range: ${formattedMin} to ${formattedMax}`;
+            }
+
+            // Update slider track colors
+            updateSliderTrack();
+        }
+
+        function updateSliderTrack() {
+            const minVal = parseInt(minSlider.value);
+            const maxVal = parseInt(maxSlider.value);
+            const min = parseInt(minSlider.min);
+            const max = parseInt(minSlider.max);
+
+            const minPercent = ((minVal - min) / (max - min)) * 100;
+            const maxPercent = ((maxVal - min) / (max - min)) * 100;
+
+            const gradient = `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${minPercent}%, #DC2626 ${minPercent}%, #DC2626 ${maxPercent}%, #e5e7eb ${maxPercent}%, #e5e7eb 100%)`;
+
+            minSlider.style.background = gradient;
+            maxSlider.style.background = gradient;
+        }
+
+        minSlider.addEventListener('input', updateSliders);
+        maxSlider.addEventListener('input', updateSliders);
+
+        // Initialize on page load
+        updateSliders();
+    }
+
+    // Handle HTMX events
+    document.addEventListener('htmx:afterRequest', function(event) {
+        // Scroll to top of results after filter
+        document.getElementById('cars-results').scrollIntoView({ behavior: 'smooth' });
+
+        // Reinitialize price sliders if they exist
+        if (document.getElementById('min-price-slider')) {
+            initializePriceSliders();
+        }
+    });
+
+    // Mobile filter toggle functionality
+    function toggleMobileFilters() {
+        const filtersContainer = document.getElementById('filters-container');
+        const toggleText = document.getElementById('filter-toggle-text');
+        const toggleIcon = document.getElementById('filter-toggle-icon');
+
+        if (filtersContainer.classList.contains('hidden')) {
+            // Show filters
+            filtersContainer.classList.remove('hidden');
+            filtersContainer.classList.add('animate-fade-in-up');
+            toggleText.textContent = 'Hide Filters';
+            toggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+            // Hide filters
+            filtersContainer.classList.add('hidden');
+            filtersContainer.classList.remove('animate-fade-in-up');
+            toggleText.textContent = 'Show Filters';
+            toggleIcon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('min-price-slider')) {
+            initializePriceSliders();
+        }
+    });
+</script>
+{% endblock %}

@@ -3,542 +3,1194 @@
 
 {% block title %}{{ post.title }} - Gurumisha Resources{% endblock %}
 
-{% block meta_description %}{{ post.meta_description|default:post.excerpt|default:post.content|truncatewords:25 }}{% endblock %}
+{% block meta_description %}{{ post.meta_description|default:post.excerpt|default:post.content|striptags|truncatewords:25 }}{% endblock %}
 
 {% block extra_css %}
 {{ block.super }}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" rel="stylesheet">
 <style>
-    /* Revolutionary Article Design System */
-    :root {
-        --gradient-primary: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
-        --gradient-secondary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        --gradient-accent: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
-        --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
-        --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
-        --border-radius-lg: 20px;
-        --border-radius-xl: 24px;
-        --animation-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
+/* Enhanced Article Detail Styles */
+.article-hero {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+    position: relative;
+    overflow: hidden;
+    padding: 4rem 0 2rem;
+}
 
-    /* Enhanced Article Container */
-    .article-container {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        min-height: 100vh;
-    }
+.article-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('{% static "images/car-pattern.svg" %}') repeat;
+    opacity: 0.03;
+    z-index: 1;
+}
 
-    /* Revolutionary Hero Section */
-    .article-hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-        position: relative;
-        overflow: hidden;
-        padding: 4rem 0 6rem;
-    }
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
 
-    .article-hero::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background:
-            radial-gradient(circle at 20% 80%, rgba(220, 38, 38, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(220, 38, 38, 0.2) 0%, transparent 50%);
-        z-index: 0;
-    }
+.content-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    border-radius: 50px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1.5rem;
+}
 
-    .article-hero::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background:
-            linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(15, 23, 42, 0.9) 100%),
-            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        z-index: 1;
-    }
+.article-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
 
-    .hero-content {
-        position: relative;
-        z-index: 2;
-        max-width: 4xl;
-        margin: 0 auto;
-        padding: 0 2rem;
-        text-align: center;
-    }
+.article-meta {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    font-family: 'Raleway', sans-serif;
+    flex-wrap: wrap;
+}
 
-    /* Content Type Badge */
-    .content-type-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        background: rgba(220, 38, 38, 0.9);
-        color: white;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 2rem;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-    }
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
 
-    /* Enhanced Article Title */
-    .article-title {
-        font-size: clamp(2.5rem, 6vw, 4rem);
-        font-weight: 900;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #e2e8f0 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        line-height: 1.1;
-        margin-bottom: 1.5rem;
-        font-family: 'Montserrat', sans-serif;
-        letter-spacing: -0.02em;
-    }
+.meta-item i {
+    color: #dc2626;
+}
 
-    /* Article Meta */
-    .article-meta {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+/* Content Container */
+.article-container {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: 100vh;
+}
+
+.content-wrapper {
+    max-width: 4xl;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 3rem;
+}
+
+.main-content {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.content-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+}
+
+.content-body {
+    padding: 3rem;
+}
+
+/* Typography */
+.prose-content {
+    font-family: 'Raleway', sans-serif;
+    line-height: 1.8;
+    color: #374151;
+    font-size: 1.1rem;
+}
+
+.prose-content h1,
+.prose-content h2,
+.prose-content h3,
+.prose-content h4,
+.prose-content h5,
+.prose-content h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: #1f2937;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.prose-content h1 { font-size: 2.5rem; }
+.prose-content h2 { font-size: 2rem; }
+.prose-content h3 { font-size: 1.75rem; }
+.prose-content h4 { font-size: 1.5rem; }
+.prose-content h5 { font-size: 1.25rem; }
+.prose-content h6 { font-size: 1.125rem; }
+
+.prose-content p {
+    margin-bottom: 1.5rem;
+}
+
+.prose-content ul,
+.prose-content ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+}
+
+.prose-content li {
+    margin-bottom: 0.5rem;
+}
+
+.prose-content blockquote {
+    border-left: 4px solid #dc2626;
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0 10px 10px 0;
+}
+
+.prose-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 2rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.prose-content a {
+    color: #dc2626;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.prose-content a:hover {
+    color: #991b1b;
+    text-decoration: underline;
+}
+
+.prose-content code {
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #dc2626;
+}
+
+.prose-content pre {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 2rem 0;
+}
+
+/* Sidebar */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.sidebar-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.sidebar-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+/* Content Type Specific Sections */
+.content-type-section {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 15px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #92400e;
+    margin-bottom: 1rem;
+}
+
+.section-description {
+    color: #92400e;
+    font-family: 'Raleway', sans-serif;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+/* Action Buttons */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    border-radius: 50px;
+    text-decoration: none;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+    color: white;
+}
+
+.action-btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+.action-btn-secondary:hover {
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
+}
+
+/* Engagement Section */
+.engagement-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-radius: 15px;
+    margin: 2rem 0;
+}
+
+.engagement-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.stat-label {
+    font-family: 'Raleway', sans-serif;
+    color: #6b7280;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.engagement-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.engagement-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 50px;
+    color: #6b7280;
+    text-decoration: none;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.engagement-btn:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.engagement-btn.active {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+/* Tags Section */
+.tags-section {
+    margin: 2rem 0;
+}
+
+.tags-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tag-item {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+    color: #374151;
+    border-radius: 50px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.tag-item:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+}
+
+/* Related Content */
+.related-content {
+    margin-top: 3rem;
+    padding-top: 3rem;
+    border-top: 2px solid #e5e7eb;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.related-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.related-card:hover {
+    transform: translateY(-5px);
+}
+
+.related-image {
+    height: 150px;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.related-content-body {
+    padding: 1.5rem;
+}
+
+.related-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.related-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.related-title a:hover {
+    color: #dc2626;
+}
+
+.related-meta {
+    font-family: 'Raleway', sans-serif;
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .content-wrapper {
+        grid-template-columns: 1fr;
         gap: 2rem;
-        flex-wrap: wrap;
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1rem;
-        margin-bottom: 2rem;
-        font-family: 'Raleway', sans-serif;
     }
-
-    .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        backdrop-filter: blur(10px);
+    
+    .sidebar {
+        order: -1;
     }
+}
 
-    /* Author Section */
-    .author-section {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .author-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 1.5rem;
-        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-    }
-
-    .author-info h4 {
-        color: white;
-        font-weight: 700;
-        font-size: 1.125rem;
-        margin: 0;
-        font-family: 'Montserrat', sans-serif;
-    }
-
-    .author-info p {
-        color: rgba(255, 255, 255, 0.8);
-        margin: 0;
-        font-size: 0.875rem;
-    }
-
-    /* Enhanced Content Section */
-    .content-section {
-        background: white;
-        margin: -3rem 2rem 0;
-        border-radius: 30px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1);
-        position: relative;
-        z-index: 3;
-        overflow: hidden;
-    }
-
-    /* Featured Image */
-    .featured-image-container {
-        position: relative;
-        height: 400px;
-        overflow: hidden;
-        border-radius: 30px 30px 0 0;
-    }
-
-    .featured-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.6s ease;
-    }
-
-    .featured-image-container:hover .featured-image {
-        transform: scale(1.05);
-    }
-
-    /* Content Body */
-    .content-body {
-        padding: 3rem;
-    }
-
-    /* Enhanced Typography */
-    .content-body h1,
-    .content-body h2,
-    .content-body h3,
-    .content-body h4,
-    .content-body h5,
-    .content-body h6 {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        color: #1f2937;
-        margin: 2rem 0 1rem;
-        line-height: 1.3;
-    }
-
-    .content-body h1 {
-        font-size: 2.5rem;
-        color: #dc2626;
-        text-align: center;
-        margin-bottom: 2rem;
-        position: relative;
-    }
-
-    .content-body h1::after {
-        content: '';
-        position: absolute;
-        bottom: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100px;
-        height: 4px;
-        background: linear-gradient(90deg, transparent 0%, #dc2626 50%, transparent 100%);
-        border-radius: 2px;
-    }
-
-    .content-body h2 {
+@media (max-width: 768px) {
+    .article-title {
         font-size: 2rem;
-        color: #dc2626;
-        border-bottom: 3px solid #dc2626;
-        padding-bottom: 0.5rem;
-        margin-top: 3rem;
     }
-
-    .content-body h3 {
-        font-size: 1.5rem;
-        color: #374151;
-        margin-top: 2.5rem;
+    
+    .article-meta {
+        gap: 1rem;
     }
-
-    .content-body h4 {
-        font-size: 1.25rem;
-        color: #4b5563;
+    
+    .content-wrapper {
+        padding: 2rem 1rem;
     }
-
-    .content-body p {
-        font-family: 'Raleway', sans-serif;
-        font-size: 1.125rem;
-        line-height: 1.8;
-        color: #374151;
-        margin: 1.5rem 0;
-        text-align: justify;
-    }
-
-    .content-body ul,
-    .content-body ol {
-        font-family: 'Raleway', sans-serif;
-        font-size: 1.125rem;
-        line-height: 1.8;
-        color: #374151;
-        margin: 2rem 0;
-        padding-left: 0;
-    }
-
-    .content-body li {
-        margin: 1rem 0;
-        position: relative;
-        padding-left: 2rem;
-        list-style: none;
-    }
-
-    .content-body ul li::before {
-        content: '▶';
-        color: #dc2626;
-        font-weight: bold;
-        position: absolute;
-        left: 0;
-        top: 0;
-    }
-
-    .content-body ol {
-        counter-reset: item;
-    }
-
-    .content-body ol li::before {
-        content: counter(item) '.';
-        counter-increment: item;
-        color: #dc2626;
-        font-weight: bold;
-        position: absolute;
-        left: 0;
-        top: 0;
-    }
-
-    /* Enhanced Blockquotes */
-    .content-body blockquote {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border-left: 5px solid #dc2626;
+    
+    .content-body {
         padding: 2rem;
-        margin: 2rem 0;
-        border-radius: 0 15px 15px 0;
-        font-style: italic;
-        font-size: 1.25rem;
-        color: #92400e;
-        position: relative;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
-
-    .content-body blockquote::before {
-        content: '"';
-        font-size: 4rem;
-        color: #dc2626;
-        position: absolute;
-        top: -1rem;
-        left: 1rem;
-        font-family: serif;
-        opacity: 0.7;
+    
+    .engagement-section {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
     }
-
-    /* Code Blocks */
-    .content-body pre,
-    .content-body code {
-        background: #1f2937;
-        color: #f9fafb;
-        border-radius: 8px;
-        font-family: 'Courier New', monospace;
+    
+    .engagement-stats {
+        justify-content: center;
     }
+}
 
-    .content-body pre {
+@media (max-width: 480px) {
+    .article-title {
+        font-size: 1.75rem;
+    }
+    
+    .content-body {
         padding: 1.5rem;
-        overflow-x: auto;
-        margin: 2rem 0;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
-
-    .content-body code {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
+    
+    .prose-content {
+        font-size: 1rem;
     }
-
-    /* Tables */
-    .content-body table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 2rem 0;
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    
+    .engagement-stats {
+        gap: 1rem;
     }
-
-    .content-body th,
-    .content-body td {
-        padding: 1rem;
-        text-align: left;
-        border-bottom: 1px solid #e5e7eb;
+    
+    .related-grid {
+        grid-template-columns: 1fr;
     }
+}
 
-    .content-body th {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        color: white;
-        font-weight: 700;
-        font-family: 'Montserrat', sans-serif;
+/* Animations */
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
     }
-
-    .content-body tr:hover {
-        background: #f9fafb;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .article-hero {
-            padding: 2rem 0 4rem;
-        }
-
-        .hero-content {
-            padding: 0 1rem;
-        }
-
-        .article-title {
-            font-size: 2rem;
-        }
-
-        .article-meta {
-            gap: 1rem;
-            font-size: 0.875rem;
-        }
-
-        .content-section {
-            margin: -2rem 1rem 0;
-        }
-
-        .content-body {
-            padding: 2rem 1.5rem;
-        }
-
-        .content-body h1 { font-size: 2rem; }
-        .content-body h2 { font-size: 1.5rem; }
-        .content-body p { font-size: 1rem; }
-    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="article-container">
-    <!-- Revolutionary Hero Section -->
+    <!-- Enhanced Hero Section -->
     <section class="article-hero">
-        <div class="hero-content">
-            <!-- Content Type Badge -->
-            <div class="content-type-badge">
-                <i class="fas fa-{{ post.content_type|default:'newspaper' }}"></i>
-                <span>{{ post.get_content_type_display|default:'Article' }}</span>
+        <div class="container mx-auto px-4">
+            <div class="hero-content animate-fade-in-up max-w-4xl mx-auto text-center">
+                <!-- Content Type Badge -->
+                <div class="content-type-badge">
+                    <i class="{{ post.get_content_type_icon }}"></i>
+                    <span>{{ post.get_content_type_display }}</span>
+                </div>
+
+                <!-- Article Title -->
+                <h1 class="article-title">{{ post.title }}</h1>
+
+                <!-- Article Meta -->
+                <div class="article-meta justify-center">
+                    <div class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{ post.published_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ post.estimated_read_time|default:5 }} min read</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-eye"></i>
+                        <span>{{ post.views_count|default:0 }} views</span>
+                    </div>
+                    {% if post.difficulty_level %}
+                    <div class="meta-item">
+                        <i class="fas fa-signal"></i>
+                        <span>{{ post.get_difficulty_level_display }}</span>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Article Title -->
-            <h1 class="article-title">{{ post.title }}</h1>
-
-            <!-- Article Meta -->
-            <div class="article-meta">
-                <div class="meta-item">
-                    <i class="fas fa-calendar"></i>
-                    <span>{{ post.published_at|date:"M d, Y" }}</span>
+    <!-- Main Content Area -->
+    <div class="content-wrapper animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Content Header -->
+            <div class="content-header">
+                {% if post.author %}
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {{ post.author.get_full_name|default:post.author.username|first|upper }}
+                    </div>
+                    <div>
+                        <div class="font-semibold text-white">{{ post.author.get_full_name|default:post.author.username }}</div>
+                        <div class="text-white/80 text-sm">Author</div>
+                    </div>
                 </div>
-                <div class="meta-item">
-                    <i class="fas fa-clock"></i>
-                    <span>{{ post.estimated_read_time|default:5 }} min read</span>
-                </div>
-                <div class="meta-item">
-                    <i class="fas fa-eye"></i>
-                    <span>{{ post.views_count|default:0 }} views</span>
-                </div>
-                {% if post.difficulty_level %}
-                <div class="meta-item">
-                    <i class="fas fa-signal"></i>
-                    <span>{{ post.get_difficulty_level_display }}</span>
+                {% endif %}
+                
+                {% if post.excerpt %}
+                <div class="text-white/90 text-lg font-raleway leading-relaxed">
+                    {{ post.excerpt }}
                 </div>
                 {% endif %}
             </div>
 
-            <!-- Author Section -->
-            {% if post.author %}
-            <div class="author-section">
-                <div class="author-avatar">
-                    {{ post.author.first_name|first|default:post.author.username|first }}{{ post.author.last_name|first|default:"" }}
+            <!-- Content Body -->
+            <div class="content-body">
+                <!-- Featured Image -->
+                {% if post.featured_image %}
+                <div class="mb-8">
+                    <img src="{{ post.featured_image.url }}" 
+                         alt="{{ post.featured_image_alt|default:post.title }}" 
+                         class="w-full h-64 md:h-96 object-cover rounded-xl shadow-lg">
                 </div>
-                <div class="author-info">
-                    <h4>{{ post.author.get_full_name|default:post.author.username }}</h4>
-                    <p>Author & Automotive Expert</p>
+                {% endif %}
+
+                <!-- Content Type Specific Sections -->
+                {% if post.content_type == 'guide' and post.has_pdf %}
+                    {% include 'core/components/guide_pdf_section.html' %}
+                {% elif post.content_type == 'infographic' and post.has_chart_data %}
+                    {% include 'core/components/infographic_chart_section.html' %}
+                {% elif post.content_type == 'opinion' and post.has_poll %}
+                    {% include 'core/components/opinion_poll.html' with poll=post.poll %}
+                {% elif post.content_type == 'news' %}
+                    {% include 'core/components/news_timeline_section.html' %}
+                {% endif %}
+
+                <!-- Main Content -->
+                <div class="prose-content">
+                    {{ post.content|safe }}
+                </div>
+
+                <!-- Tags Section -->
+                {% if post.tags.all %}
+                <div class="tags-section">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 font-montserrat">Tags</h3>
+                    <div class="tags-list">
+                        {% for tag in post.tags.all %}
+                        <a href="{% url 'core:resources_filter_by_tag' tag.slug %}" class="tag-item">
+                            {{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- User Interactions -->
+                {% include 'core/components/user_interactions.html' %}
+
+                <!-- Mobile Optimizations -->
+                {% include 'core/components/mobile_optimizations.html' %}
+            </div>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Table of Contents -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">Table of Contents</h3>
+                <div id="table-of-contents">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Related Articles -->
+            {% if related_posts %}
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">Related Articles</h3>
+                <div class="space-y-4">
+                    {% for related_post in related_posts %}
+                    <div class="flex gap-3">
+                        {% if related_post.featured_image %}
+                        <img src="{{ related_post.featured_image.url }}" 
+                             alt="{{ related_post.title }}" 
+                             class="w-16 h-16 object-cover rounded-lg">
+                        {% else %}
+                        <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="{{ related_post.get_content_type_icon }} text-gray-400"></i>
+                        </div>
+                        {% endif %}
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-sm text-gray-800 line-clamp-2 mb-1">
+                                <a href="{% url 'core:resource_detail' related_post.slug %}" class="hover:text-red-600 transition-colors">
+                                    {{ related_post.title }}
+                                </a>
+                            </h4>
+                            <p class="text-xs text-gray-600">{{ related_post.published_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
             {% endif %}
+
+            <!-- Newsletter Signup -->
+            <div class="sidebar-card bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                <h3 class="sidebar-title text-red-800">Stay Updated</h3>
+                <p class="text-red-700 text-sm mb-4">Get the latest automotive insights delivered to your inbox.</p>
+                <div class="space-y-3">
+                    <input type="email" 
+                           placeholder="Enter your email" 
+                           class="w-full px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <button class="w-full action-btn text-sm">
+                        <i class="fas fa-envelope mr-2"></i>Subscribe
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Related Content Section -->
+    {% if related_posts %}
+    <section class="related-content container mx-auto px-4 max-w-6xl">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-2 font-montserrat">Related Content</h2>
+        <p class="text-gray-600 text-center mb-8 font-raleway">Explore more articles in this category</p>
+        
+        <div class="related-grid">
+            {% for related_post in related_posts %}
+            <article class="related-card">
+                <div class="related-image">
+                    {% if related_post.featured_image %}
+                        <img src="{{ related_post.featured_image.url }}" 
+                             alt="{{ related_post.title }}" 
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <i class="{{ related_post.get_content_type_icon }} text-gray-400 text-4xl"></i>
+                    {% endif %}
+                </div>
+                <div class="related-content-body">
+                    <h3 class="related-title">
+                        <a href="{% url 'core:resource_detail' related_post.slug %}">
+                            {{ related_post.title }}
+                        </a>
+                    </h3>
+                    <div class="related-meta">
+                        {{ related_post.published_at|date:"M d, Y" }} • {{ related_post.estimated_read_time|default:5 }} min read
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
         </div>
     </section>
-
-    <!-- Enhanced Content Section -->
-    <section class="content-section">
-        <!-- Featured Image -->
-        {% if post.featured_image %}
-        <div class="featured-image-container">
-            <img src="{{ post.featured_image.url }}" alt="{{ post.featured_image_alt|default:post.title }}" class="featured-image">
-        </div>
-        {% endif %}
-
-        <!-- Content Body -->
-        <div class="content-body">
-            <!-- Excerpt -->
-            {% if post.excerpt %}
-            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 2rem; border-radius: 15px; margin-bottom: 3rem; border-left: 5px solid #dc2626; font-size: 1.25rem; font-style: italic; color: #92400e; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
-                {{ post.excerpt }}
-            </div>
-            {% endif %}
-
-            <!-- Main Content -->
-            <div class="prose-content">
-                {{ post.content|safe }}
-            </div>
-        </div>
-
-        <!-- Tags Section -->
-        {% if post.tags.all %}
-        <div style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px; border: 1px solid rgba(220, 38, 38, 0.1);">
-            <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: #374151; margin-bottom: 1rem; font-size: 1.25rem;">Related Topics</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-                {% for tag in post.tags.all %}
-                <span style="display: inline-flex; align-items: center; padding: 0.5rem 1rem; background: rgba(220, 38, 38, 0.1); color: #dc2626; border-radius: 25px; font-size: 0.875rem; font-weight: 600; transition: all 0.3s ease; cursor: pointer;">
-                    <i class="fas fa-tag" style="margin-right: 0.5rem; font-size: 0.75rem;"></i>
-                    {{ tag.name }}
-                </span>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Share Section -->
-        <div style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 20px; text-align: center;">
-            <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: white; margin-bottom: 1.5rem; font-size: 1.25rem;">Share This Article</h3>
-            <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-                <a href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ request.build_absolute_uri }}"
-                   target="_blank"
-                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(29, 161, 242, 0.3);">
-                    <i class="fab fa-twitter" style="font-size: 1.25rem;"></i>
-                </a>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
-                   target="_blank"
-                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #4267B2 0%, #365899 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(66, 103, 178, 0.3);">
-                    <i class="fab fa-facebook-f" style="font-size: 1.25rem;"></i>
-                </a>
-                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}"
-                   target="_blank"
-                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #0077b5 0%, #005885 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);">
-                    <i class="fab fa-linkedin-in" style="font-size: 1.25rem;"></i>
-                </a>
-                <a href="https://wa.me/?text={{ post.title|urlencode }}%20{{ request.build_absolute_uri }}"
-                   target="_blank"
-                   style="display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; border-radius: 50%; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
-                    <i class="fab fa-whatsapp" style="font-size: 1.25rem;"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- Navigation Section -->
-        <div style="margin: 3rem 0; text-align: center;">
-            <a href="{% url 'core:resources' %}"
-               style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 1rem 2rem; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; border-radius: 15px; text-decoration: none; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);">
-                <i class="fas fa-arrow-left"></i>
-                <span>Back to Resources</span>
-            </a>
-        </div>
-    </section>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+// Enhanced Article Detail JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize article features
+    initializeArticleFeatures();
+
+    // Generate table of contents
+    generateTableOfContents();
+
+    // Setup reading progress
+    setupReadingProgress();
+
+    // Initialize content interactions
+    initializeContentInteractions();
+
+    // Setup social sharing
+    setupSocialSharing();
+});
+
+function initializeArticleFeatures() {
+    console.log('Initializing Enhanced Article Features...');
+
+    // Setup HTMX event listeners for engagement actions
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.target.classList.contains('engagement-btn')) {
+            // Update button state after successful request
+            if (evt.detail.xhr.status === 200) {
+                const btn = evt.target;
+                btn.classList.add('active');
+
+                // Add success animation
+                btn.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    btn.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+    });
+
+    // Setup smooth scrolling for anchor links
+    const anchorLinks = document.querySelectorAll('a[href^="#"]');
+    anchorLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+}
+
+function generateTableOfContents() {
+    const contentArea = document.querySelector('.prose-content');
+    const tocContainer = document.getElementById('table-of-contents');
+
+    if (!contentArea || !tocContainer) return;
+
+    const headings = contentArea.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+    if (headings.length === 0) {
+        tocContainer.innerHTML = '<p class="text-gray-500 text-sm">No headings found</p>';
+        return;
+    }
+
+    let tocHTML = '<ul class="space-y-2 text-sm">';
+
+    headings.forEach((heading, index) => {
+        // Add ID to heading if it doesn't have one
+        if (!heading.id) {
+            heading.id = `heading-${index}`;
+        }
+
+        const level = parseInt(heading.tagName.substring(1));
+        const indent = (level - 1) * 1; // 1rem per level
+
+        tocHTML += `
+            <li style="margin-left: ${indent}rem;">
+                <a href="#${heading.id}"
+                   class="text-gray-600 hover:text-red-600 transition-colors block py-1 border-l-2 border-transparent hover:border-red-600 pl-2">
+                    ${heading.textContent}
+                </a>
+            </li>
+        `;
+    });
+
+    tocHTML += '</ul>';
+    tocContainer.innerHTML = tocHTML;
+}
+
+function setupReadingProgress() {
+    // Create reading progress bar
+    const progressBar = document.createElement('div');
+    progressBar.id = 'reading-progress';
+    progressBar.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 3px;
+        background: linear-gradient(90deg, #dc2626, #991b1b);
+        z-index: 1000;
+        transition: width 0.3s ease;
+    `;
+    document.body.appendChild(progressBar);
+
+    // Update progress on scroll
+    window.addEventListener('scroll', function() {
+        const contentArea = document.querySelector('.prose-content');
+        if (!contentArea) return;
+
+        const contentTop = contentArea.offsetTop;
+        const contentHeight = contentArea.offsetHeight;
+        const windowHeight = window.innerHeight;
+        const scrollTop = window.pageYOffset;
+
+        const progress = Math.min(
+            Math.max((scrollTop - contentTop + windowHeight) / contentHeight, 0),
+            1
+        );
+
+        progressBar.style.width = (progress * 100) + '%';
+    });
+}
+
+function initializeContentInteractions() {
+    // Highlight code blocks
+    const codeBlocks = document.querySelectorAll('pre code');
+    codeBlocks.forEach(block => {
+        // Add copy button to code blocks
+        const copyBtn = document.createElement('button');
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+        copyBtn.className = 'absolute top-2 right-2 px-2 py-1 bg-gray-700 text-white text-xs rounded hover:bg-gray-600 transition-colors';
+        copyBtn.onclick = () => copyToClipboard(block.textContent);
+
+        const pre = block.closest('pre');
+        if (pre) {
+            pre.style.position = 'relative';
+            pre.appendChild(copyBtn);
+        }
+    });
+
+    // Add zoom functionality to images
+    const images = document.querySelectorAll('.prose-content img');
+    images.forEach(img => {
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', function() {
+            openImageModal(this.src, this.alt);
+        });
+    });
+
+    // Setup newsletter subscription
+    const newsletterForm = document.querySelector('.sidebar-card input[type="email"]');
+    const subscribeBtn = document.querySelector('.sidebar-card .action-btn');
+
+    if (newsletterForm && subscribeBtn) {
+        subscribeBtn.addEventListener('click', function() {
+            const email = newsletterForm.value.trim();
+            if (email && isValidEmail(email)) {
+                subscribeToNewsletter(email);
+            } else {
+                showToast('Please enter a valid email address', 'error');
+            }
+        });
+
+        newsletterForm.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                subscribeBtn.click();
+            }
+        });
+    }
+}
+
+function setupSocialSharing() {
+    // Add social sharing functionality
+    window.shareContent = function() {
+        if (navigator.share) {
+            // Use native sharing if available
+            navigator.share({
+                title: '{{ post.title|escapejs }}',
+                text: '{{ post.excerpt|default:post.content|striptags|truncatewords:20|escapejs }}',
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            // Fallback to custom sharing modal
+            showSharingModal();
+        }
+    };
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Code copied to clipboard!', 'success');
+    }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Code copied to clipboard!', 'success');
+    });
+}
+
+function openImageModal(src, alt) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+    modal.style.background = 'rgba(0, 0, 0, 0.9)';
+
+    modal.innerHTML = `
+        <div class="relative max-w-full max-h-full">
+            <img src="${src}" alt="${alt}" class="max-w-full max-h-full object-contain rounded-lg">
+            <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300 transition-colors"
+                    onclick="this.closest('.fixed').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+
+    // Close on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+        }
+    }, { once: true });
+
+    document.body.appendChild(modal);
+}
+
+function showSharingModal() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+    modal.style.background = 'rgba(0, 0, 0, 0.8)';
+
+    const currentUrl = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent('{{ post.title|escapejs }}');
+    const text = encodeURIComponent('{{ post.excerpt|default:post.content|striptags|truncatewords:20|escapejs }}');
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-800 font-montserrat">Share Article</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <a href="https://twitter.com/intent/tweet?text=${title}&url=${currentUrl}"
+                   target="_blank"
+                   class="flex items-center gap-2 p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fab fa-twitter"></i>
+                    <span>Twitter</span>
+                </a>
+
+                <a href="https://www.facebook.com/sharer/sharer.php?u=${currentUrl}"
+                   target="_blank"
+                   class="flex items-center gap-2 p-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors">
+                    <i class="fab fa-facebook"></i>
+                    <span>Facebook</span>
+                </a>
+
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url=${currentUrl}"
+                   target="_blank"
+                   class="flex items-center gap-2 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fab fa-linkedin"></i>
+                    <span>LinkedIn</span>
+                </a>
+
+                <a href="https://wa.me/?text=${title}%20${currentUrl}"
+                   target="_blank"
+                   class="flex items-center gap-2 p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>WhatsApp</span>
+                </a>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" value="${window.location.href}" readonly
+                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm">
+                <button onclick="copyToClipboard('${window.location.href}')"
+                        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Close on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    document.body.appendChild(modal);
+}
+
+function subscribeToNewsletter(email) {
+    const subscribeBtn = document.querySelector('.sidebar-card .action-btn');
+    const originalText = subscribeBtn.innerHTML;
+
+    subscribeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Subscribing...';
+    subscribeBtn.disabled = true;
+
+    // Simulate subscription (replace with actual implementation)
+    setTimeout(() => {
+        showToast('Successfully subscribed to our newsletter!', 'success');
+        document.querySelector('.sidebar-card input[type="email"]').value = '';
+        subscribeBtn.innerHTML = originalText;
+        subscribeBtn.disabled = false;
+    }, 1500);
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Utility function for toast notifications
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content flex items-center gap-3">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 400px;
+    `;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Auto remove
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Initialize content type specific features
+{% if post.content_type == 'infographic' and post.has_chart_data %}
+// Initialize charts for infographics
+document.addEventListener('DOMContentLoaded', function() {
+    initializeInfographicCharts();
+});
+
+function initializeInfographicCharts() {
+    const chartContainer = document.getElementById('infographic-chart');
+    if (!chartContainer) return;
+
+    // Fetch chart data and configuration
+    fetch('{% url "core:infographic_chart_data" post.id %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const ctx = chartContainer.getContext('2d');
+                new Chart(ctx, data.chart_config);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading chart data:', error);
+            chartContainer.innerHTML = '<p class="text-center text-gray-500">Error loading chart data</p>';
+        });
+}
+{% endif %}
+
+{% if post.content_type == 'opinion' and post.has_poll %}
+// Initialize poll functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializePollFeatures();
+});
+
+function initializePollFeatures() {
+    const pollForm = document.getElementById('poll-form');
+    if (!pollForm) return;
+
+    // Setup poll submission
+    pollForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Voting...';
+        submitBtn.disabled = true;
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Vote submitted successfully!', 'success');
+                // Reload poll results
+                location.reload();
+            } else {
+                showToast(data.message || 'Error submitting vote', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting vote:', error);
+            showToast('Error submitting vote. Please try again.', 'error');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+}
+{% endif %}
+</script>
 {% endblock %}

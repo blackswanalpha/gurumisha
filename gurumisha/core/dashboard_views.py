@@ -19,7 +19,7 @@ import json
 from io import StringIO
 
 from .models import (
-    Car, CarBrand, CarModel, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
+    Car, CarBrand, CarModel, CarImage, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
     Inquiry, Testimonial, BlogPost, Vendor, User,
     Supplier, PurchaseOrder, StockMovement, InventoryAlert,
     Order, OrderItem, Payment, SparePartCategory, Notification, SystemSetting,
@@ -2231,18 +2231,38 @@ def admin_car_detail_view(request, car_id):
 
 @login_required
 def admin_car_edit_view(request, car_id):
-    """Enhanced admin car edit modal view with robust HTMX handling"""
+    """Enhanced admin car edit modal view with comprehensive field handling"""
     if request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    car = get_object_or_404(Car, id=car_id)
+    car = get_object_or_404(Car.objects.select_related('brand', 'model', 'condition', 'vendor__user'), id=car_id)
     original_approval_status = car.is_approved
 
     if request.method == 'POST':
-        form = AdminCarEditForm(request.POST, instance=car)
+        form = AdminCarEditForm(request.POST, request.FILES, instance=car)
 
         if form.is_valid():
-            updated_car = form.save()
+            # Save the main form
+            updated_car = form.save(commit=False)
+
+            # Handle approval status change
+            if updated_car.is_approved != original_approval_status:
+                if updated_car.is_approved:
+                    updated_car.approval_date = timezone.now()
+                else:
+                    updated_car.approval_date = None
+
+            # Handle featured until date
+            featured_until = request.POST.get('featured_until')
+            if featured_until:
+                try:
+                    from datetime import datetime
+                    updated_car.featured_until = datetime.fromisoformat(featured_until.replace('T', ' '))
+                except ValueError:
+                    pass
+
+            # Save the car
+            updated_car.save()
 
             # Handle hot deals creation/update with enhanced validation
             hot_deal_errors = []
@@ -2385,7 +2405,16 @@ def admin_car_edit_view(request, car_id):
     else:
         form = AdminCarEditForm(instance=car)
 
-    return render(request, 'core/modals/admin_car_edit.html', {'form': form, 'car': car})
+    # Prepare context with all necessary data
+    context = {
+        'form': form,
+        'car': car,
+        'car_brands': CarBrand.objects.filter(is_active=True).order_by('name'),
+        'car_models': CarModel.objects.filter(is_active=True).order_by('name'),
+        'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order'),
+    }
+
+    return render(request, 'core/modals/admin_car_edit.html', context)
 
 
 @login_required
@@ -2624,7 +2653,7 @@ def admin_car_delete_view(request, car_id):
     try:
         car = get_object_or_404(Car, id=car_id)
         car_title = car.title
-        was_featured = car.is_featured()
+        was_featured = car.is_featured
 
         # Store information before deletion
         vendor = car.vendor
@@ -2707,7 +2736,7 @@ def admin_analytics_view(request):
     total_inquiries = Inquiry.objects.count()
 
     # Promotion metrics
-    featured_cars_count = Car.objects.exclude(featured_tier='none').count()
+    featured_cars_count = Car.objects.filter(is_featured=True).count()
     active_hot_deals = HotDeal.objects.filter(is_active=True).count()
     avg_rating = CarRating.objects.filter(
         created_at__date__gte=start_date,
@@ -2718,7 +2747,7 @@ def admin_analytics_view(request):
     featured_performance = analytics.get_featured_cars_performance(days)
     hot_deals_performance = analytics.get_hot_deals_performance(days)
     rating_distribution = analytics.get_rating_distribution(days)
-    tier_comparison = analytics.get_tier_comparison()
+    featured_comparison = analytics.get_featured_comparison()
     daily_metrics = analytics.get_daily_metrics(days)
     conversion_funnel = analytics.get_conversion_funnel(days)
 
@@ -2744,7 +2773,7 @@ def admin_analytics_view(request):
         is_approved=True
     ).annotate(
         car_count=Count('cars', filter=Q(cars__is_approved=True)),
-        featured_count=Count('cars', filter=Q(cars__featured_tier__in=['bronze', 'silver', 'gold', 'platinum'])),
+        featured_count=Count('cars', filter=Q(cars__is_featured=True)),
         avg_rating=Avg('cars__calculated_rating', filter=Q(cars__is_approved=True))
     ).order_by('-featured_count', '-car_count')[:10]
 
@@ -2759,7 +2788,7 @@ def admin_analytics_view(request):
         'featured_performance': featured_performance,
         'hot_deals_performance': hot_deals_performance,
         'rating_distribution': rating_distribution,
-        'tier_comparison': tier_comparison,
+        'featured_comparison': featured_comparison,
         'daily_metrics': daily_metrics,
         'conversion_funnel': conversion_funnel,
         'monthly_data': monthly_data,
@@ -2773,6 +2802,188 @@ def admin_analytics_view(request):
     }
 
     return render(request, 'core/dashboard/admin_analytics.html', context)
+
+
+# Enhanced Image Gallery Management Views
+
+@login_required
+@require_http_methods(["POST"])
+def car_image_upload(request, car_id):
+    """Upload new images to car gallery via HTMX"""
+    car = get_object_or_404(Car, id=car_id)
+
+    # Check permissions
+    if request.user.role == 'vendor' and car.vendor.user != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    elif request.user.role not in ['admin', 'vendor']:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    if 'images' not in request.FILES:
+        return JsonResponse({'error': 'No images provided'}, status=400)
+
+    uploaded_images = []
+    errors = []
+
+    # Get the highest order number for new images
+    max_order = car.images.aggregate(models.Max('order'))['order__max'] or 0
+
+    for i, image_file in enumerate(request.FILES.getlist('images')):
+        try:
+            # Use image optimization validation
+            from .utils.image_optimization import validate_car_image
+
+            # Validate image
+            is_valid, error_msg = validate_car_image(image_file)
+            if not is_valid:
+                errors.append(f"Image {image_file.name}: {error_msg}")
+                continue
+
+            # Create CarImage instance (optimization happens in model save)
+            car_image = CarImage.objects.create(
+                car=car,
+                image=image_file,
+                caption=request.POST.get(f'caption_{i}', ''),
+                order=max_order + i + 1
+            )
+
+            uploaded_images.append({
+                'id': car_image.id,
+                'url': car_image.image.url,
+                'caption': car_image.caption,
+                'order': car_image.order,
+                'is_primary': car_image.is_primary
+            })
+
+        except Exception as e:
+            errors.append(f"Error uploading {image_file.name}: {str(e)}")
+
+    if request.headers.get('HX-Request'):
+        # Return updated gallery HTML
+        context = {
+            'car': car,
+            'car_images': car.images.all().order_by('order'),
+            'uploaded_count': len(uploaded_images),
+            'errors': errors
+        }
+        return render(request, 'core/partials/car_image_gallery.html', context)
+
+    return JsonResponse({
+        'success': True,
+        'uploaded_images': uploaded_images,
+        'errors': errors
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def car_image_delete(request, car_id, image_id):
+    """Delete a car image via HTMX"""
+    car = get_object_or_404(Car, id=car_id)
+    image = get_object_or_404(CarImage, id=image_id, car=car)
+
+    # Check permissions
+    if request.user.role == 'vendor' and car.vendor.user != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    elif request.user.role not in ['admin', 'vendor']:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    try:
+        # Delete the image file
+        if image.image:
+            image.image.delete(save=False)
+
+        # Delete the database record
+        image.delete()
+
+        if request.headers.get('HX-Request'):
+            # Return updated gallery HTML
+            context = {
+                'car': car,
+                'car_images': car.images.all().order_by('order')
+            }
+            return render(request, 'core/partials/car_image_gallery.html', context)
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def car_image_set_primary(request, car_id, image_id):
+    """Set an image as primary via HTMX"""
+    car = get_object_or_404(Car, id=car_id)
+    image = get_object_or_404(CarImage, id=image_id, car=car)
+
+    # Check permissions
+    if request.user.role == 'vendor' and car.vendor.user != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    elif request.user.role not in ['admin', 'vendor']:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    try:
+        # Set this image as primary (model handles unsetting others)
+        image.is_primary = True
+        image.save()
+
+        if request.headers.get('HX-Request'):
+            # Return updated gallery HTML
+            context = {
+                'car': car,
+                'car_images': car.images.all().order_by('order')
+            }
+            return render(request, 'core/partials/car_image_gallery.html', context)
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def car_image_reorder(request, car_id):
+    """Reorder car images via HTMX"""
+    car = get_object_or_404(Car, id=car_id)
+
+    # Check permissions
+    if request.user.role == 'vendor' and car.vendor.user != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    elif request.user.role not in ['admin', 'vendor']:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    try:
+        # Get the new order from request
+        image_orders = request.POST.get('image_orders', '')
+        if not image_orders:
+            return JsonResponse({'error': 'No order data provided'}, status=400)
+
+        # Parse the order data (expected format: "id1:order1,id2:order2,...")
+        orders = {}
+        for item in image_orders.split(','):
+            if ':' in item:
+                img_id, order = item.split(':')
+                orders[int(img_id)] = int(order)
+
+        # Update the order for each image
+        for image in car.images.all():
+            if image.id in orders:
+                image.order = orders[image.id]
+                image.save(update_fields=['order'])
+
+        if request.headers.get('HX-Request'):
+            # Return updated gallery HTML
+            context = {
+                'car': car,
+                'car_images': car.images.all().order_by('order')
+            }
+            return render(request, 'core/partials/car_image_gallery.html', context)
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -5420,46 +5631,72 @@ def admin_spare_part_edit_modal_view(request, part_id):
 
 
 @login_required
+@require_http_methods(["POST"])
 def admin_spare_part_edit_view(request, part_id):
     """Handle editing spare part"""
     if request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    if request.method == 'POST':
-        try:
-            spare_part = SparePart.objects.get(id=part_id)
+    try:
+        spare_part = SparePart.objects.get(id=part_id)
 
-            # Update spare part
-            spare_part.name = request.POST.get('name')
-            spare_part.part_number = request.POST.get('part_number')
-            spare_part.sku = request.POST.get('sku')
-            spare_part.barcode = request.POST.get('barcode')
-            spare_part.category_new_id = request.POST.get('category_new')
-            spare_part.condition = request.POST.get('condition', 'new')
-            spare_part.supplier_id = request.POST.get('supplier') if request.POST.get('supplier') else None
-            spare_part.price = request.POST.get('price')
-            spare_part.cost_price = request.POST.get('cost_price')
-            spare_part.discount_price = request.POST.get('discount_price')
-            spare_part.stock_quantity = request.POST.get('stock_quantity', 0)
-            spare_part.minimum_stock = request.POST.get('minimum_stock')
-            spare_part.maximum_stock = request.POST.get('maximum_stock')
-            spare_part.reorder_point = request.POST.get('reorder_point')
-            spare_part.description = request.POST.get('description')
-            spare_part.specifications = request.POST.get('specifications')
+        # Use the SparePartForm for validation
+        from .forms import SparePartForm
+        form = SparePartForm(request.POST, request.FILES, instance=spare_part)
 
-            spare_part.save()
+        if form.is_valid():
+            updated_part = form.save()
 
-            messages.success(request, f'Spare part "{spare_part.name}" updated successfully!')
+            # Create stock movement if stock quantity changed
+            old_quantity = spare_part.stock_quantity
+            new_quantity = updated_part.stock_quantity
 
-            # Return updated table
+            if old_quantity != new_quantity:
+                from .models import StockMovement
+                StockMovement.objects.create(
+                    spare_part=updated_part,
+                    movement_type='adjustment',
+                    reason='manual_adjustment',
+                    quantity=abs(new_quantity - old_quantity),
+                    quantity_before=old_quantity,
+                    quantity_after=new_quantity,
+                    notes=f'Stock adjusted via edit form from {old_quantity} to {new_quantity}',
+                    created_by=request.user
+                )
+
+            messages.success(request, f'Spare part "{updated_part.name}" updated successfully!')
+
+            # Handle HTMX requests
+            if request.headers.get('HX-Request'):
+                # Return updated table content
+                spare_parts = SparePart.objects.all().order_by('-created_at')[:10]
+                context = {'spare_parts': spare_parts}
+                return render(request, 'core/partials/admin_spare_shop_table.html', context)
+
+            return redirect('core:admin_spare_shop')
+        else:
+            # Handle form errors
+            if request.headers.get('HX-Request'):
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                })
+
+            messages.error(request, 'Please correct the errors in the form.')
             return redirect('core:admin_spare_shop')
 
-        except SparePart.DoesNotExist:
-            messages.error(request, 'Spare part not found')
-        except Exception as e:
-            messages.error(request, f'Error updating spare part: {str(e)}')
-
-    return redirect('core:admin_spare_shop')
+    except SparePart.DoesNotExist:
+        error_msg = 'Spare part not found'
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('core:admin_spare_shop')
+    except Exception as e:
+        error_msg = f'Error updating spare part: {str(e)}'
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('core:admin_spare_shop')
 
 
 @login_required
@@ -5484,48 +5721,92 @@ def admin_spare_part_restock_modal_view(request, part_id):
 
 
 @login_required
+@require_http_methods(["POST"])
 def admin_spare_part_restock_view(request, part_id):
     """Handle restocking spare part"""
     if request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    if request.method == 'POST':
-        try:
-            spare_part = SparePart.objects.get(id=part_id)
-            quantity = int(request.POST.get('quantity', 0))
+    try:
+        spare_part = SparePart.objects.get(id=part_id)
 
-            if quantity <= 0:
-                messages.error(request, 'Quantity must be greater than 0')
-                return redirect('core:admin_spare_shop')
-
-            # Update stock quantity
-            spare_part.stock_quantity += quantity
-            spare_part.save()
-
-            # Create stock movement record if StockMovement model exists
-            try:
-                StockMovement.objects.create(
-                    spare_part=spare_part,
-                    movement_type=request.POST.get('movement_type', 'purchase'),
-                    quantity=quantity,
-                    unit_cost=request.POST.get('unit_cost'),
-                    supplier_id=request.POST.get('supplier') if request.POST.get('supplier') else None,
-                    notes=request.POST.get('notes'),
-                    created_by=request.user
-                )
-            except:
-                pass  # StockMovement model might not exist
-
-            messages.success(request, f'Added {quantity} units to "{spare_part.name}". New stock: {spare_part.stock_quantity}')
-
+        # Validate input
+        quantity = request.POST.get('quantity')
+        if not quantity:
+            error_msg = 'Quantity is required'
+            if request.headers.get('HX-Request'):
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
             return redirect('core:admin_spare_shop')
 
-        except SparePart.DoesNotExist:
-            messages.error(request, 'Spare part not found')
-        except Exception as e:
-            messages.error(request, f'Error restocking spare part: {str(e)}')
+        try:
+            quantity = int(quantity)
+        except ValueError:
+            error_msg = 'Quantity must be a valid number'
+            if request.headers.get('HX-Request'):
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
+            return redirect('core:admin_spare_shop')
 
-    return redirect('core:admin_spare_shop')
+        if quantity <= 0:
+            error_msg = 'Quantity must be greater than 0'
+            if request.headers.get('HX-Request'):
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
+            return redirect('core:admin_spare_shop')
+
+        # Store old quantity for stock movement
+        old_quantity = spare_part.stock_quantity
+
+        # Update stock quantity
+        spare_part.stock_quantity += quantity
+        spare_part.save()
+
+        # Create stock movement record
+        from .models import StockMovement
+        movement_type = request.POST.get('movement_type', 'in')
+        reason = request.POST.get('reason', 'purchase')
+        unit_cost = request.POST.get('unit_cost')
+        supplier_id = request.POST.get('supplier') if request.POST.get('supplier') else None
+        notes = request.POST.get('notes', '')
+
+        StockMovement.objects.create(
+            spare_part=spare_part,
+            movement_type=movement_type,
+            reason=reason,
+            quantity=quantity,
+            quantity_before=old_quantity,
+            quantity_after=spare_part.stock_quantity,
+            unit_cost=unit_cost if unit_cost else None,
+            supplier_id=supplier_id,
+            notes=notes,
+            created_by=request.user
+        )
+
+        success_msg = f'Added {quantity} units to "{spare_part.name}". New stock: {spare_part.stock_quantity}'
+
+        # Handle HTMX requests
+        if request.headers.get('HX-Request'):
+            # Return updated table content
+            spare_parts = SparePart.objects.all().order_by('-created_at')[:10]
+            context = {'spare_parts': spare_parts}
+            return render(request, 'core/partials/admin_spare_shop_table.html', context)
+
+        messages.success(request, success_msg)
+        return redirect('core:admin_spare_shop')
+
+    except SparePart.DoesNotExist:
+        error_msg = 'Spare part not found'
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('core:admin_spare_shop')
+    except Exception as e:
+        error_msg = f'Error restocking spare part: {str(e)}'
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('core:admin_spare_shop')
 
 
 @login_required
@@ -5556,25 +5837,70 @@ def admin_spare_part_view_modal_view(request, part_id):
 
 
 @login_required
+@require_http_methods(["POST"])
 def admin_spare_part_delete_view(request, part_id):
     """Handle deleting spare part"""
     if request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    if request.method == 'POST':
-        try:
-            spare_part = SparePart.objects.get(id=part_id)
-            part_name = spare_part.name
-            spare_part.delete()
+    try:
+        spare_part = SparePart.objects.get(id=part_id)
 
-            messages.success(request, f'Spare part "{part_name}" deleted successfully!')
+        # Check if spare part has related orders
+        from .models import OrderItem
+        related_orders = OrderItem.objects.filter(spare_part=spare_part).exists()
 
-        except SparePart.DoesNotExist:
-            messages.error(request, 'Spare part not found')
-        except Exception as e:
-            messages.error(request, f'Error deleting spare part: {str(e)}')
+        if related_orders:
+            # Don't allow deletion if there are related orders
+            error_msg = f'Cannot delete "{spare_part.name}" because it has associated orders. Consider marking it as inactive instead.'
+            if request.headers.get('HX-Request'):
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
+            return redirect('core:admin_spare_shop')
 
-    return redirect('core:admin_spare_shop')
+        part_name = spare_part.name
+
+        # Create a final stock movement record before deletion
+        from .models import StockMovement
+        if spare_part.stock_quantity > 0:
+            StockMovement.objects.create(
+                spare_part=spare_part,
+                movement_type='out',
+                reason='deletion',
+                quantity=spare_part.stock_quantity,
+                quantity_before=spare_part.stock_quantity,
+                quantity_after=0,
+                notes=f'Stock cleared due to part deletion: {part_name}',
+                created_by=request.user
+            )
+
+        # Delete the spare part (this will cascade to related stock movements)
+        spare_part.delete()
+
+        success_msg = f'Spare part "{part_name}" deleted successfully!'
+
+        # Handle HTMX requests
+        if request.headers.get('HX-Request'):
+            # Return updated table content
+            spare_parts = SparePart.objects.all().order_by('-created_at')[:10]
+            context = {'spare_parts': spare_parts}
+            return render(request, 'core/partials/admin_spare_shop_table.html', context)
+
+        messages.success(request, success_msg)
+        return redirect('core:admin_spare_shop')
+
+    except SparePart.DoesNotExist:
+        error_msg = 'Spare part not found'
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('core:admin_spare_shop')
+    except Exception as e:
+        error_msg = f'Error deleting spare part: {str(e)}'
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('core:admin_spare_shop')
 
 
 @login_required
@@ -6477,8 +6803,64 @@ def admin_sales_management_view(request):
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
+    from django.db.models import Sum, Count, Avg
+    from datetime import datetime, timedelta
+    from .models import Order, OrderItem, Payment, SparePart
+
+    # Calculate date ranges
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+
+    # Sales statistics
+    total_sales = Order.objects.filter(
+        items__spare_part__isnull=False,
+        status='completed'
+    ).aggregate(
+        total_amount=Sum('total_amount'),
+        total_orders=Count('id', distinct=True)
+    )
+
+    weekly_sales = Order.objects.filter(
+        items__spare_part__isnull=False,
+        status='completed',
+        created_at__gte=week_ago
+    ).aggregate(
+        total_amount=Sum('total_amount'),
+        total_orders=Count('id', distinct=True)
+    )
+
+    monthly_sales = Order.objects.filter(
+        items__spare_part__isnull=False,
+        status='completed',
+        created_at__gte=month_ago
+    ).aggregate(
+        total_amount=Sum('total_amount'),
+        total_orders=Count('id', distinct=True)
+    )
+
+    # Recent sales
+    recent_sales = Order.objects.filter(
+        items__spare_part__isnull=False
+    ).select_related('customer').prefetch_related('items__spare_part').order_by('-created_at')[:10]
+
+    # Top selling parts
+    top_selling_parts = OrderItem.objects.filter(
+        spare_part__isnull=False,
+        order__status='completed'
+    ).values(
+        'spare_part__name', 'spare_part__id'
+    ).annotate(
+        total_sold=Sum('quantity'),
+        total_revenue=Sum('total_price')
+    ).order_by('-total_sold')[:10]
+
     context = {
-        # Add sales data context here
+        'total_sales': total_sales,
+        'weekly_sales': weekly_sales,
+        'monthly_sales': monthly_sales,
+        'recent_sales': recent_sales,
+        'top_selling_parts': top_selling_parts,
     }
 
     return render(request, 'core/dashboard/admin_sales_management.html', context)
@@ -6491,8 +6873,52 @@ def admin_order_management_view(request):
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
+    from django.db.models import Sum, Count, Q
+    from datetime import datetime, timedelta
+    from .models import Order, OrderItem, Payment, SparePart
+
+    # Filter parameters
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+
+    # Base queryset for spare parts orders
+    orders = Order.objects.filter(
+        items__spare_part__isnull=False
+    ).select_related('customer').prefetch_related('items__spare_part', 'payments').distinct()
+
+    # Apply filters
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+    if search_query:
+        orders = orders.filter(
+            Q(order_number__icontains=search_query) |
+            Q(customer__first_name__icontains=search_query) |
+            Q(customer__last_name__icontains=search_query) |
+            Q(customer__email__icontains=search_query)
+        )
+
+    # Order statistics
+    order_stats = {
+        'total_orders': orders.count(),
+        'pending_orders': orders.filter(status='pending').count(),
+        'processing_orders': orders.filter(status='processing').count(),
+        'completed_orders': orders.filter(status='completed').count(),
+        'cancelled_orders': orders.filter(status='cancelled').count(),
+    }
+
+    # Recent orders (paginated)
+    from django.core.paginator import Paginator
+    paginator = Paginator(orders.order_by('-created_at'), 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        # Add order data context here
+        'orders': page_obj,
+        'order_stats': order_stats,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'status_choices': Order.STATUS_CHOICES,
     }
 
     return render(request, 'core/dashboard/admin_order_management.html', context)
@@ -7180,6 +7606,173 @@ def admin_resource_toggle_published(request, post_id):
             })
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def admin_resource_statistics(request):
+    """HTMX endpoint for refreshing resource management statistics"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        # Get current statistics
+        total_content = BlogPost.objects.count()
+        published_content = BlogPost.objects.filter(is_published=True).count()
+        draft_content = BlogPost.objects.filter(is_published=False).count()
+        featured_content = BlogPost.objects.filter(is_featured=True).count()
+
+        stats = {
+            'total_content': total_content,
+            'published_content': published_content,
+            'draft_content': draft_content,
+            'featured_content': featured_content,
+        }
+
+        return JsonResponse({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+def admin_resource_export(request):
+    """Export resource management data to Excel"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from django.utils import timezone
+        import io
+
+        # Create workbook
+        wb = openpyxl.Workbook()
+
+        # Remove default sheet
+        wb.remove(wb.active)
+
+        # Create sheets for different content types
+        sheets_data = {
+            'All Content': BlogPost.objects.all(),
+            'Articles': BlogPost.objects.filter(content_type='article'),
+            'Guides': BlogPost.objects.filter(content_type='guide'),
+            'Infographics': BlogPost.objects.filter(content_type='infographic'),
+            'Opinions': BlogPost.objects.filter(content_type='opinion'),
+            'News': BlogPost.objects.filter(content_type='news'),
+        }
+
+        for sheet_name, queryset in sheets_data.items():
+            ws = wb.create_sheet(title=sheet_name)
+
+            # Headers
+            headers = [
+                'ID', 'Title', 'Content Type', 'Author', 'Category',
+                'Status', 'Featured', 'Views', 'Likes', 'Comments',
+                'Created Date', 'Updated Date', 'Tags'
+            ]
+
+            # Style headers
+            header_font = Font(bold=True, color='FFFFFF')
+            header_fill = PatternFill(start_color='DC2626', end_color='DC2626', fill_type='solid')
+            header_alignment = Alignment(horizontal='center', vertical='center')
+
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+
+            # Data rows
+            for row, post in enumerate(queryset.select_related('author', 'category').prefetch_related('tags'), 2):
+                ws.cell(row=row, column=1, value=post.id)
+                ws.cell(row=row, column=2, value=post.title)
+                ws.cell(row=row, column=3, value=post.get_content_type_display())
+                ws.cell(row=row, column=4, value=post.author.get_full_name() if post.author else 'N/A')
+                ws.cell(row=row, column=5, value=post.category.name if post.category else 'N/A')
+                ws.cell(row=row, column=6, value='Published' if post.is_published else 'Draft')
+                ws.cell(row=row, column=7, value='Yes' if post.is_featured else 'No')
+                ws.cell(row=row, column=8, value=post.views_count or 0)
+                ws.cell(row=row, column=9, value=post.likes_count or 0)
+                ws.cell(row=row, column=10, value=post.comment_count or 0)
+                ws.cell(row=row, column=11, value=post.created_at.strftime('%Y-%m-%d %H:%M'))
+                ws.cell(row=row, column=12, value=post.updated_at.strftime('%Y-%m-%d %H:%M'))
+                ws.cell(row=row, column=13, value=', '.join([tag.name for tag in post.tags.all()]))
+
+            # Auto-adjust column widths
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Save to memory
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Create response
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        filename = f'gurumisha_resources_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        return response
+
+    except ImportError:
+        return JsonResponse({
+            'error': 'openpyxl library not installed. Please install it to use export functionality.'
+        }, status=500)
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Export failed: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def admin_resource_toggle_publish(request, post_id):
+    """Toggle publish status of a resource"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        post = get_object_or_404(BlogPost, id=post_id)
+
+        # Toggle publish status
+        post.is_published = not post.is_published
+        post.save()
+
+        # Return the updated tab content
+        return admin_resource_all_content_tab(request)
+
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Failed to toggle publish status: {str(e)}'
+        }, status=500)
 
 
 @login_required

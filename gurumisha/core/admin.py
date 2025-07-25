@@ -158,7 +158,7 @@ class CarAdmin(admin.ModelAdmin):
             'fields': ('price', 'status', 'listing_type', 'negotiable', 'is_approved')
         }),
         ('Promotion System', {
-            'fields': ('featured_tier', 'featured_until', 'auto_featured', 'is_hot_deal', 'star_rating', 'calculated_rating', 'last_rating_update'),
+            'fields': ('is_featured', 'featured_until', 'auto_featured', 'is_certified', 'is_hot_deal', 'star_rating', 'calculated_rating', 'last_rating_update'),
             'classes': ('collapse',)
         }),
         ('Performance Metrics', {

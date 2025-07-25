@@ -13,6 +13,41 @@
     overflow: hidden;
 }
 
+/* Modern Button Animations */
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.3); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.3); }
+    70% { transform: scale(1); }
+}
+
+@keyframes scaleBalance {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.1) rotate(-5deg); }
+    75% { transform: scale(1.1) rotate(5deg); }
+}
+
+.animate-heartbeat {
+    animation: heartBeat 1.5s ease-in-out infinite;
+}
+
+.animate-scale-balance {
+    animation: scaleBalance 2s ease-in-out infinite;
+}
+
+/* Enhanced Glassmorphism Effects */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Progress Bar Animation */
+.notification-progress {
+    transition: width 5s linear;
+}
+
 .car-detail-hero::before {
     content: '';
     position: absolute;
@@ -76,6 +111,66 @@
 .thumbnail.active {
     border-color: #DC2626;
     box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+/* Fixed Gallery Styles */
+.fixed-image-gallery {
+    /* Custom scrollbar for webkit browsers */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+}
+
+.scrollbar-thumb-harrier-red::-webkit-scrollbar-thumb {
+    background-color: #DC2626;
+    border-radius: 3px;
+}
+
+.scrollbar-track-gray-200::-webkit-scrollbar-track {
+    background-color: #E5E7EB;
+    border-radius: 3px;
+}
+
+.border-3 {
+    border-width: 3px;
+}
+
+.main-image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    transition: all 0.3s ease;
+}
+
+.main-image-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.3);
+}
+
+.thumbnail.active {
+    border-color: #DC2626 !important;
+    box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.3) !important;
+    transform: scale(1.05) !important;
+}
+
+.thumbnail:hover {
+    border-color: rgba(220, 38, 38, 0.5) !important;
+    transform: scale(1.05) !important;
+}
+
+#image-modal {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+#image-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .car-badge {
@@ -369,33 +464,96 @@
                         {% endif %}
                     </div>
 
-                    <!-- Main Image -->
-                    <div class="relative">
-                        {% if car.main_image %}
-                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}"
-                                 class="w-full main-image" id="main-image">
-                        {% else %}
-                            <div class="w-full main-image bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                <i class="fas fa-car text-gray-400 text-8xl"></i>
+                    <!-- Fixed Image Gallery -->
+                    <div class="fixed-image-gallery">
+                        <!-- Main Image Display -->
+                        <div class="main-image-container relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-gray-100 to-gray-200">
+                            <div class="relative group">
+                                <!-- Main Image -->
+                                {% if car.main_image %}
+                                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}"
+                                         class="w-full h-96 md:h-[500px] object-cover transition-all duration-500 cursor-zoom-in main-image"
+                                         id="main-image"
+                                         onclick="openImageModal(this.src)">
+                                {% elif car.images.all %}
+                                    {% with car.images.all.0 as first_image %}
+                                        <img src="{{ first_image.image.url }}" alt="{{ first_image.caption|default:car.title }}"
+                                             class="w-full h-96 md:h-[500px] object-cover transition-all duration-500 cursor-zoom-in main-image"
+                                             id="main-image"
+                                             onclick="openImageModal(this.src)">
+                                    {% endwith %}
+                                {% else %}
+                                    <div class="w-full h-96 md:h-[500px] bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                        <div class="text-center text-gray-400">
+                                            <i class="fas fa-car text-8xl mb-4"></i>
+                                            <p class="text-xl font-montserrat">No Images Available</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Image Counter -->
+                                {% if car.images.all.count > 0 or car.main_image %}
+                                    <div class="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+                                        <span id="current-image-index">1</span> / <span id="total-images">{{ car.images.all.count|add:1 }}</span>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Fullscreen Button -->
+                                <button onclick="openImageModal(document.getElementById('main-image').src)"
+                                        class="absolute top-4 left-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-300 transform hover:scale-110 backdrop-blur-sm">
+                                    <i class="fas fa-expand text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Thumbnail Gallery -->
+                        {% if car.images.all.count > 0 or car.main_image %}
+                            <div class="thumbnail-gallery mt-6">
+                                <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-harrier-red scrollbar-track-gray-200">
+                                    <!-- Main Image Thumbnail -->
+                                    {% if car.main_image %}
+                                        <div class="flex-shrink-0">
+                                            <img src="{{ car.main_image.url }}"
+                                                 alt="{{ car.title }}"
+                                                 class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-xl cursor-pointer transition-all duration-300 border-3 thumbnail active"
+                                                 onclick="changeMainImage('{{ car.main_image.url }}', this, 'Main Image', 1)"
+                                                 data-index="1">
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Gallery Image Thumbnails -->
+                                    {% for image in car.images.all %}
+                                        <div class="flex-shrink-0">
+                                            <img src="{{ image.image.url }}"
+                                                 alt="{{ image.caption|default:'Gallery Image' }}"
+                                                 class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-xl cursor-pointer transition-all duration-300 border-3 thumbnail {% if not car.main_image and forloop.first %}active{% endif %}"
+                                                 onclick="changeMainImage('{{ image.image.url }}', this, '{{ image.caption|default:'Gallery Image' }}', {{ forloop.counter|add:1 }})"
+                                                 data-index="{% if car.main_image %}{{ forloop.counter|add:1 }}{% else %}{{ forloop.counter }}{% endif %}">
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         {% endif %}
+
+                        <!-- Image Caption -->
+                        <div id="image-caption" class="mt-4 text-center" style="display: none;">
+                            <p class="text-gray-600 font-raleway italic"></p>
+                        </div>
                     </div>
 
-                    <!-- Enhanced Thumbnail Gallery -->
-                    {% if car.images.all or car.main_image %}
-                        <div class="thumbnail-gallery">
-                            {% if car.main_image %}
-                                <img src="{{ car.main_image.url }}" alt="{{ car.title }}"
-                                     class="thumbnail active object-cover"
-                                     onclick="changeMainImage('{{ car.main_image.url }}', this)">
-                            {% endif %}
-                            {% for image in car.images.all %}
-                                <img src="{{ image.image.url }}" alt="{{ image.caption }}"
-                                     class="thumbnail object-cover"
-                                     onclick="changeMainImage('{{ image.image.url }}', this)">
-                            {% endfor %}
+                    <!-- Fullscreen Modal -->
+                    <div id="image-modal" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 hidden">
+                        <!-- Close Button -->
+                        <button onclick="closeImageModal()"
+                                class="absolute top-4 right-4 p-3 text-white hover:text-harrier-red transition-colors z-10">
+                            <i class="fas fa-times text-3xl"></i>
+                        </button>
+
+                        <!-- Fullscreen Image -->
+                        <div class="relative max-w-full max-h-full">
+                            <img id="modal-image" src="" alt="Car Image" class="max-w-full max-h-full object-contain">
                         </div>
-                    {% endif %}
+                    </div>
                 </div>
 
                 <!-- Comprehensive Vehicle Location Information -->
@@ -584,19 +742,45 @@
                         </div>
                     </div>
 
-                    <!-- Enhanced Price Display -->
-                    <div class="mb-8">
+                    <!-- Enhanced Price Display with Accessibility -->
+                    <div class="mb-8" role="region" aria-labelledby="price-heading">
                         <div class="flex items-baseline space-x-2 mb-2">
-                            <span class="text-lg text-gray-600 font-raleway">Starting from</span>
+                            <span id="price-heading" class="text-lg text-gray-600 font-raleway">Price</span>
                         </div>
-                        <div class="price-display">
-                            {{ car.price|currency_ksh_no_decimals }}
-                        </div>
-                        {% if car.is_hot_deal %}
-                            <div class="flex items-center text-orange-600 font-semibold font-raleway">
-                                <i class="fas fa-fire mr-2"></i>
-                                <span>Hot Deal - Limited Time Offer!</span>
+
+                        {% if car.is_hot_deal and car.hot_deal_details %}
+                            <!-- Hot Deal Price Display -->
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-3">
+                                    <span class="price-display text-red-600" aria-label="Discounted price">
+                                        {{ car.hot_deal_details.discounted_price|currency_ksh_with_symbol }}
+                                    </span>
+                                    <span class="text-xl text-gray-500 line-through font-raleway" aria-label="Original price">
+                                        {{ car.hot_deal_details.original_price|currency_ksh_with_symbol }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-tag mr-1" aria-hidden="true"></i>
+                                        Save {{ car.hot_deal_details.original_price|sub:car.hot_deal_details.discounted_price|currency_ksh_with_symbol }}
+                                    </span>
+                                    <div class="flex items-center text-orange-600 font-semibold font-raleway">
+                                        <i class="fas fa-fire mr-2" aria-hidden="true"></i>
+                                        <span>Hot Deal - Limited Time!</span>
+                                    </div>
+                                </div>
                             </div>
+                        {% else %}
+                            <!-- Regular Price Display -->
+                            <div class="price-display" aria-label="Car price">
+                                {{ car.price|currency_ksh_with_symbol }}
+                            </div>
+                            {% if car.negotiable %}
+                                <p class="text-sm text-gray-600 mt-1 font-raleway">
+                                    <i class="fas fa-handshake mr-1" aria-hidden="true"></i>
+                                    Price negotiable
+                                </p>
+                            {% endif %}
                         {% endif %}
                     </div>
 
@@ -660,9 +844,9 @@
                                         <i class="fas fa-building text-harrier-red mr-2"></i>Dealer
                                     </td>
                                     <td class="value-spec">
-                                        <a href="{% url 'core:dealer_profile' car.vendor.id %}" class="text-harrier-red hover:text-red-600 font-semibold">
-                                            {{ car.vendor.company_name }}
-                                        </a>
+                                        <span class="text-harrier-red font-semibold">
+                                            Gurumisha Motors LTD
+                                        </span>
                                     </td>
                                 </tr>
                                 <tr>
@@ -677,16 +861,15 @@
 
                     <!-- Enhanced Action Buttons -->
                     <div class="space-y-4 mb-8">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button onclick="addToWishlist({{ car.id }})" class="action-button-secondary">
-                                <i class="fas fa-heart"></i>Add to Wishlist
-                            </button>
-                            <button onclick="addToCompare({{ car.id }})" class="action-button-secondary">
-                                <i class="fas fa-balance-scale"></i>Add to Compare
-                            </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- Modern Wishlist Button -->
+                            {% include 'components/wishlist_button.html' with car=car in_wishlist=in_wishlist %}
+
+                            <!-- Modern Compare Button -->
+                            {% include 'components/compare_button.html' with car=car in_compare=in_compare compare_count=compare_count %}
                         </div>
                         <button onclick="openInquiryModal()" class="action-button w-full justify-center">
-                            <i class="fas fa-envelope"></i>Contact Dealer
+                            <i class="fas fa-envelope"></i>Contact Gurumisha Motors
                         </button>
                     </div>
                 </div>
@@ -813,7 +996,7 @@
                         <h3 class="font-semibold text-midnight mb-2 truncate">{{ related_car.title }}</h3>
                         <p class="text-sm text-gray-600 mb-3">{{ related_car.year }} • {{ related_car.mileage|floatformat:0 }} km</p>
                         <div class="flex justify-between items-center">
-                            <span class="text-lg font-bold text-crimson">KSh {{ related_car.price|floatformat:0 }}</span>
+                            <span class="text-lg font-bold text-crimson">{{ related_car.price|currency_ksh_no_decimals }}</span>
                             <a href="{% url 'core:car_detail' related_car.pk %}" class="text-sm bg-crimson text-white px-3 py-1 rounded hover:bg-electric-red transition-colors">View</a>
                         </div>
                     </div>
@@ -829,7 +1012,7 @@
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold">Contact Dealer</h3>
+                <h3 class="text-xl font-semibold">Contact Gurumisha Motors</h3>
                 <button onclick="closeInquiryModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -871,20 +1054,103 @@
 
 {% block extra_js %}
 <script>
-    // Enhanced image gallery functionality
-    function changeMainImage(src, thumbnail) {
-        document.getElementById('main-image').src = src;
+    // Fixed Image Gallery functionality
+    function changeMainImage(src, thumbnail, caption, index) {
+        const mainImage = document.getElementById('main-image');
+        const currentIndexElement = document.getElementById('current-image-index');
+        const captionElement = document.getElementById('image-caption');
+
+        if (mainImage) {
+            mainImage.src = src;
+            mainImage.alt = caption || 'Car Image';
+        }
+
+        // Update current image index
+        if (currentIndexElement) {
+            currentIndexElement.textContent = index;
+        }
+
+        // Update caption
+        if (captionElement && caption && caption !== 'Main Image') {
+            captionElement.querySelector('p').textContent = caption;
+            captionElement.style.display = 'block';
+        } else {
+            captionElement.style.display = 'none';
+        }
 
         // Update thumbnail active states
         document.querySelectorAll('.thumbnail').forEach(thumb => {
             thumb.classList.remove('active');
+            thumb.classList.remove('border-harrier-red');
+            thumb.classList.remove('shadow-lg');
+            thumb.classList.remove('scale-105');
+            thumb.classList.add('border-transparent');
         });
 
         // Add active class to clicked thumbnail
         if (thumbnail) {
             thumbnail.classList.add('active');
+            thumbnail.classList.add('border-harrier-red');
+            thumbnail.classList.add('shadow-lg');
+            thumbnail.classList.add('scale-105');
+            thumbnail.classList.remove('border-transparent');
         }
     }
+
+    // Fullscreen modal functionality
+    function openImageModal(src) {
+        const modal = document.getElementById('image-modal');
+        const modalImage = document.getElementById('modal-image');
+
+        if (modal && modalImage) {
+            modalImage.src = src;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById('image-modal');
+
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // Keyboard navigation for modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+
+    // Click outside modal to close
+    document.getElementById('image-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeImageModal();
+        }
+    });
+
+    // Initialize gallery on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial total images count
+        const totalImagesElement = document.getElementById('total-images');
+        if (totalImagesElement) {
+            const mainImageExists = {{ car.main_image|yesno:"true,false" }};
+            const galleryImagesCount = {{ car.images.all.count }};
+            const totalImages = mainImageExists ? galleryImagesCount + 1 : galleryImagesCount;
+            totalImagesElement.textContent = totalImages;
+        }
+
+        // Set initial image index
+        const currentIndexElement = document.getElementById('current-image-index');
+        if (currentIndexElement) {
+            currentIndexElement.textContent = '1';
+        }
+
+        console.log('Image gallery initialized successfully');
+    });
 
     function openInquiryModal() {
         document.getElementById('inquiryModal').classList.remove('hidden');
@@ -896,13 +1162,48 @@
         document.body.style.overflow = 'auto';
     }
 
-    // Add to wishlist functionality
-    function addToWishlist(carId) {
-        // Implement wishlist functionality
-        console.log('Adding car to wishlist:', carId);
-        // You can implement HTMX call here
-        showNotification('Added to wishlist!', 'success');
-    }
+    // Enhanced HTMX event listeners for wishlist and compare
+    document.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.xhr.status === 200) {
+            try {
+                const response = JSON.parse(event.detail.xhr.responseText);
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                } else {
+                    showNotification(response.message, 'error');
+
+                    // Handle redirect for authentication with delay for toast visibility
+                    if (response.redirect) {
+                        setTimeout(() => {
+                            window.location.href = response.redirect;
+                        }, 1500); // Give time for user to see the toast
+                    }
+                }
+            } catch (e) {
+                // Response is HTML (button replacement), no need to parse JSON
+                // This is expected for successful HTMX button swaps
+            }
+        } else if (event.detail.xhr.status === 401 || event.detail.xhr.status === 403) {
+            // Handle authentication errors
+            showNotification('Please log in to continue', 'error');
+            setTimeout(() => {
+                window.location.href = '/login/';
+            }, 1500);
+        } else {
+            // Handle other errors
+            showNotification('Something went wrong. Please try again.', 'error');
+        }
+    });
+
+    // Handle HTMX errors
+    document.addEventListener('htmx:responseError', function(event) {
+        showNotification('Network error. Please check your connection.', 'error');
+    });
+
+    // Handle HTMX timeouts
+    document.addEventListener('htmx:timeout', function(event) {
+        showNotification('Request timed out. Please try again.', 'warning');
+    });
 
     // Add to compare functionality
     function addToCompare(carId) {
@@ -948,46 +1249,88 @@
 
 
 
-    // Notification system
+    // Enhanced Modern Notification System
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg text-white font-semibold transform translate-x-full transition-transform duration-300`;
 
+        // Base classes for modern design
+        notification.className = `fixed top-6 right-6 z-50 max-w-sm w-full bg-white/95 backdrop-blur-lg border border-gray-200 rounded-2xl shadow-2xl transform translate-x-full transition-all duration-500 ease-out`;
+
+        // Type-specific styling
+        let iconClass, borderColor, iconBg;
         switch(type) {
             case 'success':
-                notification.classList.add('bg-green-500');
+                iconClass = 'fas fa-check-circle';
+                borderColor = 'border-green-500';
+                iconBg = 'bg-green-500';
                 break;
             case 'warning':
-                notification.classList.add('bg-yellow-500');
+                iconClass = 'fas fa-exclamation-triangle';
+                borderColor = 'border-yellow-500';
+                iconBg = 'bg-yellow-500';
                 break;
             case 'error':
-                notification.classList.add('bg-red-500');
+                iconClass = 'fas fa-times-circle';
+                borderColor = 'border-red-500';
+                iconBg = 'bg-red-500';
                 break;
             default:
-                notification.classList.add('bg-blue-500');
+                iconClass = 'fas fa-info-circle';
+                borderColor = 'border-blue-500';
+                iconBg = 'bg-blue-500';
         }
 
+        notification.classList.add(borderColor);
+
         notification.innerHTML = `
-            <div class="flex items-center">
-                <span>${message}</span>
-                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
-                    <i class="fas fa-times"></i>
-                </button>
+            <div class="p-4">
+                <div class="flex items-start space-x-3">
+                    <div class="${iconBg} text-white rounded-full p-2 flex-shrink-0">
+                        <i class="${iconClass} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 font-montserrat">${message}</p>
+                    </div>
+                    <button onclick="removeNotification(this)" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
             </div>
+            <div class="absolute bottom-0 left-0 h-1 ${iconBg} rounded-b-2xl transition-all duration-5000 ease-linear notification-progress" style="width: 100%;"></div>
         `;
 
         document.body.appendChild(notification);
 
-        // Animate in
+        // Slide in animation
         setTimeout(() => {
             notification.classList.remove('translate-x-full');
         }, 100);
 
+        // Start progress bar animation
+        const progressBar = notification.querySelector('.notification-progress');
+        setTimeout(() => {
+            progressBar.style.width = '0%';
+        }, 200);
+
         // Auto remove after 5 seconds
         setTimeout(() => {
-            notification.classList.add('translate-x-full');
-            setTimeout(() => notification.remove(), 300);
+            const button = notification.querySelector('button');
+            if (button) removeNotification(button);
         }, 5000);
+    }
+
+    // Function to remove notification with animation
+    function removeNotification(button) {
+        const notification = button.closest('.fixed');
+        if (notification) {
+            notification.classList.add('translate-x-full');
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 500);
+        }
     }
 
     // Update compare button with count

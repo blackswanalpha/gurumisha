@@ -136,23 +136,18 @@ class Command(BaseCommand):
         
         featured_count = 0
         for car in high_performing_cars:
-            # Determine tier based on performance
-            if car.calculated_rating >= 4.5 and car.views_count >= 500:
-                new_tier = 'silver'
-            elif car.calculated_rating >= 4.0 and car.views_count >= 200:
-                new_tier = 'bronze'
-            else:
-                continue
-            
-            if car.featured_tier != new_tier:
+            # Check if car meets criteria for featuring
+            should_feature = (car.calculated_rating >= 4.0 and car.views_count >= 200)
+
+            if should_feature and not car.is_featured:
                 if not dry_run:
-                    car.featured_tier = new_tier
+                    car.is_featured = True
                     car.auto_featured = True
-                    car.save(update_fields=['featured_tier', 'auto_featured'])
-                
+                    car.save(update_fields=['is_featured', 'auto_featured'])
+
                 featured_count += 1
                 self.stdout.write(
-                    f'{"[DRY RUN] " if dry_run else ""}Auto-featured {car.title} as {new_tier}'
+                    f'{"[DRY RUN] " if dry_run else ""}Auto-featured {car.title}'
                 )
         
         self.stdout.write(
@@ -171,16 +166,16 @@ class Command(BaseCommand):
         # Clean up expired featured cars
         expired_featured = Car.objects.filter(
             featured_until__lt=now,
-            featured_tier__in=['bronze', 'silver', 'gold', 'platinum']
+            is_featured=True
         )
-        
+
         for car in expired_featured:
             if not dry_run:
-                car.featured_tier = 'none'
+                car.is_featured = False
                 car.featured_until = None
                 car.auto_featured = False
-                car.save(update_fields=['featured_tier', 'featured_until', 'auto_featured'])
-            
+                car.save(update_fields=['is_featured', 'featured_until', 'auto_featured'])
+
             cleanup_count += 1
             self.stdout.write(
                 f'{"[DRY RUN] " if dry_run else ""}Removed expired featuring from {car.title}'
