@@ -1,0 +1,264 @@
+<!-- Admin Query Reply Modal -->
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat">Reply to Customer Inquiry</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">{{ inquiry.subject }}</p>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-4">
+            <form hx-post="{% url 'core:admin_query_reply' inquiry.id %}" 
+                  hx-target="#modal-container" 
+                  hx-swap="innerHTML"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="space-y-6">
+                    <!-- Customer Info Summary -->
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ inquiry.customer.first_name|first|default:inquiry.customer.username|first|upper }}
+                            </div>
+                            <div>
+                                <p class="font-medium text-blue-900">{{ inquiry.customer.get_full_name|default:inquiry.customer.username }}</p>
+                                <p class="text-sm text-blue-700">{{ inquiry.customer.email }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Content -->
+                    <div>
+                        <label for="{{ form.response_content.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Response to Customer <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.response_content }}
+                        {% if form.response_content.help_text %}
+                            <p class="mt-1 text-sm text-gray-500">{{ form.response_content.help_text }}</p>
+                        {% endif %}
+                        {% if form.response_content.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {{ form.response_content.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Internal Notes -->
+                    <div>
+                        <label for="{{ form.internal_notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Internal Notes
+                        </label>
+                        {{ form.internal_notes }}
+                        {% if form.internal_notes.help_text %}
+                            <p class="mt-1 text-sm text-gray-500">{{ form.internal_notes.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status and Priority Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Update Status
+                            </label>
+                            {{ form.status }}
+                        </div>
+                        <div>
+                            <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Priority Level
+                            </label>
+                            {{ form.priority }}
+                        </div>
+                    </div>
+
+                    <!-- Assignment -->
+                    <div>
+                        <label for="{{ form.assign_to_admin.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Admin
+                        </label>
+                        {{ form.assign_to_admin }}
+                        {% if form.assign_to_admin.help_text %}
+                            <p class="mt-1 text-sm text-gray-500">{{ form.assign_to_admin.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Follow-up Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            {{ form.requires_followup }}
+                            <label for="{{ form.requires_followup.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                                Requires follow-up
+                            </label>
+                        </div>
+                        <div>
+                            <label for="{{ form.followup_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Follow-up Date
+                            </label>
+                            {{ form.followup_date }}
+                        </div>
+                    </div>
+
+                    <!-- Email Notification -->
+                    <div class="flex items-center">
+                        {{ form.send_email }}
+                        <label for="{{ form.send_email.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                            Send email notification to customer
+                        </label>
+                    </div>
+
+                    <!-- File Attachment -->
+                    <div>
+                        <label for="{{ form.attachment.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Attach File
+                        </label>
+                        {{ form.attachment }}
+                        {% if form.attachment.help_text %}
+                            <p class="mt-1 text-sm text-gray-500">{{ form.attachment.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Quick Response Templates -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Response Templates</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <button type="button" onclick="insertTemplate('acknowledgment')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
+                                <div class="font-medium text-gray-900">Acknowledgment</div>
+                                <div class="text-gray-600 text-xs">Thank you for contacting us...</div>
+                            </button>
+                            <button type="button" onclick="insertTemplate('information_request')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
+                                <div class="font-medium text-gray-900">Request More Info</div>
+                                <div class="text-gray-600 text-xs">We need additional information...</div>
+                            </button>
+                            <button type="button" onclick="insertTemplate('resolution')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
+                                <div class="font-medium text-gray-900">Resolution</div>
+                                <div class="text-gray-600 text-xs">Your issue has been resolved...</div>
+                            </button>
+                            <button type="button" onclick="insertTemplate('escalation')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
+                                <div class="font-medium text-gray-900">Escalation</div>
+                                <div class="text-gray-600 text-xs">We're escalating your inquiry...</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex justify-between items-center pt-6 mt-6 border-t border-gray-200">
+                    <button type="button" onclick="closeModal()" class="btn-admin-secondary">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="saveDraft()" class="btn-admin-secondary">
+                            <i class="fas fa-save mr-2"></i>Save Draft
+                        </button>
+                        <button type="submit" class="btn-admin-primary">
+                            <i class="fas fa-paper-plane mr-2"></i>Send Response
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Response templates
+const templates = {
+    acknowledgment: `Dear {{ inquiry.customer.get_full_name|default:inquiry.customer.username }},
+
+Thank you for contacting Gurumisha Motors. We have received your inquiry regarding "{{ inquiry.subject }}" and appreciate you taking the time to reach out to us.
+
+We are currently reviewing your request and will get back to you within 24 hours with a detailed response.
+
+If you have any urgent questions in the meantime, please don't hesitate to contact us directly.
+
+Best regards,
+Gurumisha Motors Support Team`,
+
+    information_request: `Dear {{ inquiry.customer.get_full_name|default:inquiry.customer.username }},
+
+Thank you for your inquiry regarding "{{ inquiry.subject }}".
+
+To better assist you, we would appreciate if you could provide us with some additional information:
+
+- [Please specify what information you need]
+
+Once we receive this information, we'll be able to provide you with a comprehensive response.
+
+Thank you for your patience and cooperation.
+
+Best regards,
+Gurumisha Motors Support Team`,
+
+    resolution: `Dear {{ inquiry.customer.get_full_name|default:inquiry.customer.username }},
+
+We're pleased to inform you that your inquiry regarding "{{ inquiry.subject }}" has been resolved.
+
+[Please provide details of the resolution]
+
+If you have any further questions or concerns, please don't hesitate to contact us. We're here to help!
+
+Thank you for choosing Gurumisha Motors.
+
+Best regards,
+Gurumisha Motors Support Team`,
+
+    escalation: `Dear {{ inquiry.customer.get_full_name|default:inquiry.customer.username }},
+
+Thank you for your patience regarding your inquiry about "{{ inquiry.subject }}".
+
+We are escalating your case to our senior support team to ensure you receive the best possible assistance. A senior representative will contact you within the next 24 hours.
+
+We apologize for any inconvenience and appreciate your understanding.
+
+Best regards,
+Gurumisha Motors Support Team`
+};
+
+function insertTemplate(templateType) {
+    const textarea = document.getElementById('{{ form.response_content.id_for_label }}');
+    const template = templates[templateType];
+    
+    if (textarea && template) {
+        textarea.value = template;
+        textarea.focus();
+        
+        // Auto-adjust textarea height
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+}
+
+function saveDraft() {
+    // Implementation for saving draft
+    showToast('Draft saved successfully', 'success');
+}
+
+// Auto-resize textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('{{ form.response_content.id_for_label }}');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    }
+});
+
+// Handle form submission
+document.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.successful && event.detail.xhr.responseURL.includes('reply')) {
+        closeModal();
+        showToast('Response sent successfully!', 'success');
+        // Refresh the page to show updated data
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
+});
+</script>

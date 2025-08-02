@@ -125,11 +125,22 @@ function initializeCollapsibleSections() {
  * Initialize real-time updates for sidebar stats
  */
 function initializeRealTimeUpdates() {
-    // Update sidebar stats every 30 seconds
-    setInterval(updateSidebarStats, 30000);
+    // Update sidebar stats every 2 minutes (reduced frequency)
+    setInterval(() => {
+        // Check if modal operations are in progress before updating
+        if (window.modalButtonPersistence?.modalOperationInProgress) {
+            console.log('📊 Skipping stats update - modal operation in progress');
+            return;
+        }
+        updateSidebarStats();
+    }, 120000);
 
-    // Update immediately on page load
-    updateSidebarStats();
+    // Update immediately on page load with delay to avoid conflicts
+    setTimeout(() => {
+        if (!window.modalButtonPersistence?.modalOperationInProgress) {
+            updateSidebarStats();
+        }
+    }, 2000);
 
     // Initialize HTMX-powered real-time updates
     initializeHTMXUpdates();
@@ -157,10 +168,49 @@ function initializeHTMXUpdates() {
     });
 }
 
+// Request throttling
+let statsUpdateInProgress = false;
+let lastStatsUpdate = 0;
+const STATS_UPDATE_COOLDOWN = 10000; // 10 seconds minimum between updates
+
 /**
  * Enhanced sidebar statistics update
  */
 function updateSidebarStats() {
+    // Check if stats updates are disabled due to errors
+    if (window.statsUpdateDisabled) {
+        return;
+    }
+
+    // Throttle requests to prevent conflicts
+    const now = Date.now();
+    if (statsUpdateInProgress || (now - lastStatsUpdate) < STATS_UPDATE_COOLDOWN) {
+        console.log('📊 Stats update throttled - too frequent');
+        return;
+    }
+
+    // CRITICAL: Check for tracking management page and modal operations
+    if (window.isTrackingManagementPage) {
+        const modalOpen = document.querySelector('.modal-open') ||
+                         document.querySelector('[role="dialog"]:not(.hidden)') ||
+                         document.querySelector('button[aria-busy="true"]');
+
+        if (modalOpen) {
+            console.log('📊 Skipping stats update - tracking management modal operation detected');
+            return;
+        }
+    }
+
+    // Check for any modal operations in progress
+    if (window.modalButtonPersistence?.modalOperationInProgress) {
+        console.log('📊 Skipping stats update - modal operation in progress');
+        return;
+    }
+
+    statsUpdateInProgress = true;
+    lastStatsUpdate = now;
+    console.log('📊 Updating sidebar stats...');
+
     // Update tracking stats
     fetch('/dashboard/htmx/tracking-stats/', {
         headers: {
@@ -198,12 +248,59 @@ function updateSidebarStats() {
             'HX-Request': 'true'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Expected JSON but received ${contentType}. Response may be HTML.`);
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return response.json();
+    })
     .then(data => {
-        updateGeneralBadges(data);
+        // Validate data structure
+        if (data && typeof data === 'object') {
+            updateGeneralBadges(data);
+        } else {
+            console.warn('⚠️ Invalid data structure received for general stats');
+        }
     })
     .catch(error => {
-        console.log('General stats update failed:', error);
+        // Silently handle stats update errors to prevent console spam
+        if (!window.statsUpdateErrorCount) {
+            window.statsUpdateErrorCount = 0;
+        }
+
+        window.statsUpdateErrorCount++;
+
+        // Only log the first few errors, then go silent
+        if (window.statsUpdateErrorCount <= 3) {
+            console.warn(`⚠️ Stats update failed (${window.statsUpdateErrorCount}/3):`, error.message);
+
+            if (window.statsUpdateErrorCount === 3) {
+                console.warn('📊 Suppressing further stats update error messages to prevent spam');
+            }
+        }
+
+        // If too many errors, disable stats updates temporarily
+        if (window.statsUpdateErrorCount >= 10) {
+            console.warn('📊 Too many stats update errors, disabling for 5 minutes');
+            window.statsUpdateDisabled = true;
+
+            setTimeout(() => {
+                window.statsUpdateDisabled = false;
+                window.statsUpdateErrorCount = 0;
+                console.log('📊 Stats updates re-enabled');
+            }, 300000); // 5 minutes
+        }
+    })
+    .finally(() => {
+        // Reset throttling flag
+        statsUpdateInProgress = false;
     });
 }
 

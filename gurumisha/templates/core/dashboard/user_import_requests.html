@@ -182,16 +182,34 @@
                                                 </a>
                                             {% endif %}
                                             
-                                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                                            <a href="{% url 'core:customer_import_request_detail' request.id %}"
+                                               class="bg-harrier-red hover:bg-harrier-red-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
                                                 <i class="fas fa-eye mr-2"></i>
                                                 View Details
-                                            </button>
+                                            </a>
                                             
-                                            {% if request.status == 'pending' %}
-                                                <button class="bg-harrier-red hover:bg-harrier-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
-                                                    <i class="fas fa-edit mr-2"></i>
-                                                    Edit
-                                                </button>
+                                            {% if request.status == 'pending' and not request.admin_notes and not request.estimated_cost %}
+                                                {% load tz %}
+                                                {% now "U" as current_timestamp %}
+                                                {% with request.created_at|add:"86400"|date:"U" as deadline_timestamp %}
+                                                    {% if current_timestamp|add:"0" < deadline_timestamp|add:"0" %}
+                                                        <a href="{% url 'core:customer_import_request_edit' request.id %}"
+                                                           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
+                                                            <i class="fas fa-edit mr-2"></i>
+                                                            Edit
+                                                        </a>
+                                                    {% else %}
+                                                        <span class="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed flex items-center">
+                                                            <i class="fas fa-clock mr-2"></i>
+                                                            Expired
+                                                        </span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% elif request.status == 'pending' %}
+                                                <span class="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed flex items-center">
+                                                    <i class="fas fa-cog mr-2"></i>
+                                                    Processing
+                                                </span>
                                             {% endif %}
                                         </div>
                                     </div>

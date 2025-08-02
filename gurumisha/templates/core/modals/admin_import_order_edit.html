@@ -50,14 +50,14 @@
             
             <!-- Modal Body -->
             <div class="bg-gradient-to-br from-gray-50 to-white px-6 py-6 max-h-96 overflow-y-auto modal-body">
-                <form id="edit-import-order-form"
-                      hx-post="{% url 'core:admin_import_order_edit' import_order.id %}"
-                      hx-target="#tracking-management-table"
-                      hx-swap="outerHTML"
-                      hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }"
-                      class="space-y-6"
-                      x-data="{ isSubmitting: false }"
-                      @submit="isSubmitting = true">
+                <div x-data="{ isSubmitting: false }">
+                    <form id="edit-import-order-form"
+                          hx-post="{% url 'core:admin_import_order_edit' import_order.id %}"
+                          hx-target="#tracking-management-table"
+                          hx-swap="outerHTML"
+                          hx-on::after-request="if(event.detail.successful) { show = false; setTimeout(() => $el.closest('.fixed').remove(), 200); }"
+                          class="space-y-6"
+                          @submit="isSubmitting = true">
                     {% csrf_token %}
                     
                     <!-- Customer Information (Read-only) -->
@@ -251,14 +251,32 @@
                                       placeholder="Add any relevant notes about this import order...">{{ import_order.admin_notes }}</textarea>
                         </div>
                     </div>
+
+                    <!-- Submit Button (moved inside form) -->
+                    <div class="flex justify-end mt-6">
+                        <button type="submit"
+                                class="enhanced-btn enhanced-btn-submit"
+                                x-bind:disabled="isSubmitting"
+                                x-bind:class="{ 'opacity-75 cursor-not-allowed': isSubmitting }">
+                            <div class="btn-content">
+                                <div class="btn-icon-wrapper">
+                                    <i class="btn-icon fas fa-save" x-show="!isSubmitting"></i>
+                                    <i class="btn-icon fas fa-spinner fa-spin" x-show="isSubmitting"></i>
+                                </div>
+                                <span class="btn-text" x-text="isSubmitting ? 'Saving...' : 'Save Changes'"></span>
+                            </div>
+                            <div class="btn-ripple"></div>
+                            <div class="btn-shine"></div>
+                        </button>
+                    </div>
                 </form>
             </div>
-            
+
             <!-- Modal Footer -->
             <div class="bg-gradient-to-r from-gray-50 via-white to-gray-50 px-6 py-6 rounded-b-2xl border-t border-gray-200">
                 <div class="flex flex-col sm:flex-row justify-end items-center gap-3">
                     <!-- Cancel Button -->
-                    <button type="button" 
+                    <button type="button"
                             class="enhanced-btn enhanced-btn-cancel"
                             @click="show = false; setTimeout(() => $el.closest('.fixed').remove(), 200)">
                         <div class="btn-content">
@@ -269,24 +287,8 @@
                         </div>
                         <div class="btn-ripple"></div>
                     </button>
-                    
-                    <!-- Submit Button -->
-                    <button type="submit" 
-                            form="edit-import-order-form"
-                            class="enhanced-btn enhanced-btn-submit"
-                            x-bind:disabled="isSubmitting"
-                            x-bind:class="{ 'opacity-75 cursor-not-allowed': isSubmitting }">
-                        <div class="btn-content">
-                            <div class="btn-icon-wrapper">
-                                <i class="btn-icon fas fa-save" x-show="!isSubmitting"></i>
-                                <i class="btn-icon fas fa-spinner fa-spin" x-show="isSubmitting"></i>
-                            </div>
-                            <span class="btn-text" x-text="isSubmitting ? 'Saving...' : 'Save Changes'"></span>
-                        </div>
-                        <div class="btn-ripple"></div>
-                        <div class="btn-shine"></div>
-                    </button>
                 </div>
+                </div> <!-- Close Alpine.js wrapper -->
             </div>
         </div>
     </div>

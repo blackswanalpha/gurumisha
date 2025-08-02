@@ -6,7 +6,7 @@
         <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         
         <!-- Widget Content -->
-        <div class="relative z-10 p-4">
+        <div id="floating-compare-widget-content" class="relative z-10 p-4">
             <!-- Header -->
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center space-x-2">
@@ -36,11 +36,15 @@
                                 {% endif %}
                             </div>
                             <!-- Remove button -->
-                            <button 
+                            <button
                                 hx-post="{% url 'core:remove_from_compare' car.id %}"
                                 hx-target="#floating-compare-widget"
                                 hx-swap="outerHTML"
-                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-300 hover:bg-red-600">
+                                hx-indicator="#htmx-global-loading"
+                                hx-on:htmx:before-request="this.setAttribute('aria-busy', 'true')"
+                                hx-on:htmx:after-request="this.setAttribute('aria-busy', 'false')"
+                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-300 hover:bg-red-600"
+                                title="Remove from comparison">
                                 <i class="fas fa-times text-xs"></i>
                             </button>
                         </div>
@@ -73,11 +77,18 @@
                     <i class="fas fa-eye text-xs"></i>
                     <span>Compare</span>
                 </a>
-                <button 
+                <button
                     hx-post="{% url 'core:clear_compare' %}"
-                    hx-target="#floating-compare-widget"
-                    hx-swap="outerHTML"
-                    class="bg-red-500/80 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-300">
+                    hx-target="#floating-compare-widget-content"
+                    hx-swap="innerHTML"
+                    hx-indicator="#htmx-global-loading"
+                    hx-confirm="Are you sure you want to clear all comparisons?"
+                    hx-preserve="true"
+                    hx-preserve-id="clear-compare-btn"
+                    hx-on:htmx:before-request="this.setAttribute('aria-busy', 'true')"
+                    hx-on:htmx:after-request="this.setAttribute('aria-busy', 'false')"
+                    class="bg-red-500/80 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-300"
+                    title="Clear all comparisons">
                     <i class="fas fa-trash text-xs"></i>
                 </button>
             </div>

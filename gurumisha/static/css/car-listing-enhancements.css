@@ -1,57 +1,167 @@
 /* Car Listing Page Enhancements */
 
-/* Enhanced Mobile Responsiveness */
+/* Enhanced Mobile Responsiveness with Animation Optimizations */
 @media (max-width: 768px) {
     /* Hero Section Mobile Optimizations */
     .hero-content h1 {
         font-size: 2.5rem !important;
         line-height: 1.2;
     }
-    
+
     .hero-content p {
         font-size: 1.125rem !important;
     }
-    
+
+    /* Enhanced Hero Section Mobile */
+    .main-banner {
+        min-height: 70vh;
+    }
+
+    .main-banner .bg-white\/10 {
+        padding: 1rem !important;
+        margin: 0.5rem;
+    }
+
     /* Filter Sidebar Mobile */
     #filter-container {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease-in-out;
     }
-    
+
     #filter-container.show {
         max-height: 2000px;
     }
-    
+
     /* Car Grid Mobile */
     #cars-grid {
         grid-template-columns: 1fr !important;
         gap: 1rem;
     }
-    
+
     /* Brand Section Mobile */
     .brand-grid {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 1rem;
     }
+
+    /* Enhanced BROWSE BY CATEGORY Mobile */
+    .enhanced-pill-button {
+        min-width: 80px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .pill-icon-wrapper {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+
+    .pill-label {
+        font-size: 0.625rem;
+    }
+
+    .enhanced-pill-count {
+        font-size: 0.5rem;
+        padding: 0.125rem 0.375rem;
+    }
+
+    /* Glassmorphism Mobile Optimizations */
+    .glassmorphism-light,
+    .glassmorphism-dark,
+    .glassmorphism-red {
+        backdrop-filter: blur(5px); /* Reduced blur for better mobile performance */
+    }
+
+    /* Animation Performance Optimizations for Mobile */
+    .card-animate:hover,
+    .card-animate-red:hover {
+        transform: translateY(-4px); /* Reduced movement for mobile */
+    }
+
+    .hover-lift:hover,
+    .hover-lift-sm:hover {
+        transform: translateY(-2px); /* Reduced lift for mobile */
+    }
 }
 
 @media (max-width: 480px) {
-    /* Extra small screens */
+    /* Extra small screens with enhanced optimizations */
     .hero-content h1 {
         font-size: 2rem !important;
     }
-    
+
     .hero-content .bg-white\/10 {
         padding: 1rem !important;
     }
-    
+
     .hero-content form {
         flex-direction: column !important;
     }
-    
+
     .hero-content button {
         margin-top: 0.5rem;
+    }
+
+    /* Enhanced BROWSE BY CATEGORY for very small screens */
+    .enhanced-pill-button {
+        min-width: 70px;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.625rem;
+        gap: 0.25rem;
+    }
+
+    .pill-icon-wrapper {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .pill-label {
+        font-size: 0.5rem;
+        line-height: 1.1;
+    }
+
+    .enhanced-pill-count {
+        font-size: 0.375rem;
+        padding: 0.125rem 0.25rem;
+        min-width: 1rem;
+    }
+
+    /* Hero section stats mobile optimization */
+    .main-banner .grid-cols-1 {
+        gap: 1rem;
+    }
+
+    .main-banner .bg-white\/10 {
+        padding: 0.75rem !important;
+        margin: 0.25rem;
+    }
+
+    /* Reduce animation intensity on very small screens */
+    .animate-fade-in-up,
+    .animate-slide-up,
+    .animate-entrance {
+        transform: translateY(20px); /* Reduced initial offset */
+    }
+
+    /* Compact category description cards */
+    .card-glassmorphism {
+        padding: 1rem !important;
+    }
+
+    .card-glassmorphism h3 {
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-glassmorphism p {
+        font-size: 0.75rem;
+        line-height: 1.3;
+    }
+
+    .card-glassmorphism .w-16 {
+        width: 3rem;
+        height: 3rem;
     }
 }
 
@@ -340,7 +450,133 @@ a:focus {
     }
 }
 
-/* Pill Section Styles */
+/* Enhanced Pill Section Styles for White Background */
+.enhanced-pill-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.875rem 1.25rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 9999px;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    gap: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    white-space: nowrap;
+    min-width: fit-content;
+    flex-shrink: 0;
+}
+
+.enhanced-pill-button:hover {
+    background: #f9fafb;
+    border-color: #DC2626;
+    color: #DC2626;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.1), 0 4px 6px -2px rgba(220, 38, 38, 0.05);
+}
+
+.enhanced-pill-button.enhanced-pill-active {
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    border-color: #DC2626;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3);
+    transform: translateY(-2px);
+}
+
+.pill-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.enhanced-pill-button:hover .pill-icon-wrapper {
+    color: #DC2626;
+    transform: scale(1.1);
+}
+
+.enhanced-pill-active .pill-icon-wrapper {
+    color: white;
+    transform: scale(1.1);
+}
+
+.pill-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.pill-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.enhanced-pill-count {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.enhanced-pill-button:hover .enhanced-pill-count {
+    background: #fef2f2;
+    color: #DC2626;
+}
+
+.enhanced-pill-active .enhanced-pill-count {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+/* Pill Container Layout */
+.pill-navigation-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* Enhanced Pill Button Shimmer Animation for White Background */
+.enhanced-pill-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.1), transparent);
+    transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enhanced-pill-button:hover::before {
+    left: 100%;
+}
+
+/* Legacy Pill Button Styles (for backward compatibility) */
 .pill-button {
     display: inline-flex;
     align-items: center;
@@ -395,7 +631,7 @@ a:focus {
     color: #6b7280;
 }
 
-/* Pill Button Animation */
+/* Legacy Pill Button Animation */
 .pill-button::before {
     content: '';
     position: absolute;
@@ -411,8 +647,62 @@ a:focus {
     left: 100%;
 }
 
-/* Responsive Pill Buttons */
+/* Enhanced Responsive Pill Buttons */
+@media (max-width: 768px) {
+    .enhanced-pill-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        gap: 0.375rem;
+        min-width: 100px;
+        flex-shrink: 0;
+    }
+
+    .pill-icon-wrapper {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .pill-content {
+        gap: 0.375rem;
+    }
+
+    .pill-label {
+        font-size: 0.75rem;
+    }
+
+    .enhanced-pill-count {
+        font-size: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        min-width: 1.25rem;
+    }
+}
+
 @media (max-width: 640px) {
+    .enhanced-pill-button {
+        padding: 0.5rem 0.75rem;
+        min-width: 90px;
+        font-size: 0.625rem;
+        gap: 0.25rem;
+    }
+
+    .pill-icon-wrapper {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .pill-label {
+        font-size: 0.625rem;
+        line-height: 1.2;
+    }
+
+    .enhanced-pill-count {
+        font-size: 0.5rem;
+        padding: 0.125rem 0.25rem;
+        min-width: 1rem;
+    }
+}
+
+    /* Legacy responsive styles */
     .pill-button {
         padding: 0.5rem 1rem;
         font-size: 0.75rem;
@@ -482,3 +772,90 @@ a:focus {
         display: none !important;
     }
 }
+
+/* Recently Viewed Section Enhancements */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+}
+
+.recently-viewed-card {
+    min-width: 320px;
+    flex-shrink: 0;
+}
+
+.recently-viewed-card:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Category Card Enhancements */
+.category-card {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-card:hover {
+    box-shadow: 0 25px 50px -12px rgba(220, 38, 38, 0.25);
+}
+
+/* Line Clamp Utility */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Enhanced Glassmorphism Effects */
+.backdrop-blur-lg {
+    backdrop-filter: blur(16px);
+}
+
+.backdrop-blur-md {
+    backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+}
+
+/* Enhanced Shadow Effects */
+.shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Smooth Transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced Hover Effects */
+.group:hover .group-hover\:scale-110 {
+    transform: scale(1.1);
+}
+
+.group:hover .group-hover\:text-red-600 {
+    color: #dc2626;
+}
+
+/* Enhanced Card Animations */
+.card-animate {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-entrance {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+.animate-delay-600 { animation-delay: 0.6s; }

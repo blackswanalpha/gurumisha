@@ -327,3 +327,209 @@ def send_password_reset_code_email(user, verification_code):
     except Exception as e:
         print(f"Failed to send password reset code email: {e}")
         return False
+
+
+# ============================================================================
+# INQUIRY EMAIL NOTIFICATIONS
+# ============================================================================
+
+def send_inquiry_response_email(inquiry, response):
+    """
+    Send email notification to customer when admin responds to their inquiry
+    """
+    try:
+        from django.core.mail import EmailMultiAlternatives
+
+        # Email subject
+        subject = f"Response to your inquiry: {inquiry.subject}"
+
+        # Email context
+        context = {
+            'inquiry': inquiry,
+            'response': response,
+            'customer': inquiry.customer,
+            'admin': response.sender,
+            'site_name': 'Gurumisha Motors',
+            'site_url': getattr(settings, 'SITE_URL', 'https://gurumisha.com'),
+            'inquiry_url': f"{getattr(settings, 'SITE_URL', 'https://gurumisha.com')}/dashboard/customer/inquiries/{inquiry.id}/",
+        }
+
+        # Render email templates
+        text_content = render_to_string('emails/inquiry_response.txt', context)
+        html_content = render_to_string('emails/inquiry_response.html', context)
+
+        # Create email message
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'kamandembugua18@gmail.com'),
+            to=[inquiry.customer.email],
+            reply_to=[getattr(settings, 'SUPPORT_EMAIL', 'kamandembugua18@gmail.com')]
+        )
+
+        # Attach HTML version
+        email.attach_alternative(html_content, "text/html")
+
+        # Send email
+        email.send()
+
+        print(f"Inquiry response email sent to {inquiry.customer.email} for inquiry {inquiry.id}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to send inquiry response email: {e}")
+        return False
+
+
+def send_inquiry_status_update_email(inquiry, old_status, new_status):
+    """
+    Send email notification when inquiry status changes
+    """
+    try:
+        from django.core.mail import EmailMultiAlternatives
+
+        # Only send for significant status changes
+        significant_statuses = ['resolved', 'closed']
+        if new_status not in significant_statuses:
+            return True
+
+        # Email subject
+        subject_map = {
+            'resolved': f"Your inquiry has been resolved: {inquiry.subject}",
+            'closed': f"Your inquiry has been closed: {inquiry.subject}",
+        }
+        subject = subject_map.get(new_status, f"Status update for your inquiry: {inquiry.subject}")
+
+        # Email context
+        context = {
+            'inquiry': inquiry,
+            'old_status': old_status,
+            'new_status': new_status,
+            'customer': inquiry.customer,
+            'site_name': 'Gurumisha Motors',
+            'site_url': getattr(settings, 'SITE_URL', 'https://gurumisha.com'),
+            'inquiry_url': f"{getattr(settings, 'SITE_URL', 'https://gurumisha.com')}/dashboard/customer/inquiries/{inquiry.id}/",
+        }
+
+        # Create simple email for now
+        message = f"""
+Dear {inquiry.customer.get_full_name() or inquiry.customer.username},
+
+Your inquiry "{inquiry.subject}" has been {new_status}.
+
+You can view the details at: {context['inquiry_url']}
+
+Best regards,
+Gurumisha Motors Team
+        """
+
+        # Send email
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'kamandembugua18@gmail.com'),
+            recipient_list=[inquiry.customer.email],
+            fail_silently=False,
+        )
+
+        print(f"Inquiry status update email sent to {inquiry.customer.email} for inquiry {inquiry.id}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to send inquiry status update email: {e}")
+        return False
+
+
+def send_inquiry_assignment_notification(inquiry, admin_user):
+    """
+    Send email notification to admin when inquiry is assigned to them
+    """
+    try:
+        # Email subject
+        subject = f"New inquiry assigned to you: {inquiry.subject}"
+
+        # Email message
+        message = f"""
+Dear {admin_user.get_full_name() or admin_user.username},
+
+A new inquiry has been assigned to you:
+
+Subject: {inquiry.subject}
+Customer: {inquiry.customer.get_full_name() or inquiry.customer.username}
+Priority: {inquiry.get_priority_display()}
+Type: {inquiry.get_inquiry_type_display()}
+
+Please review and respond at: {getattr(settings, 'SITE_URL', 'https://gurumisha.com')}/dashboard/admin/queries/{inquiry.id}/
+
+Best regards,
+Gurumisha Motors System
+        """
+
+        # Send email
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'kamandembugua18@gmail.com'),
+            recipient_list=[admin_user.email],
+            fail_silently=False,
+        )
+
+        print(f"Inquiry assignment email sent to {admin_user.email} for inquiry {inquiry.id}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to send inquiry assignment email: {e}")
+        return False
+
+
+def send_new_inquiry_notification(inquiry):
+    """
+    Send email notification to admins when new inquiry is created
+    """
+    try:
+        # Get all admin users
+        from .models import User
+        admin_users = User.objects.filter(role='admin', is_active=True)
+
+        if not admin_users.exists():
+            return True
+
+        # Email subject
+        subject = f"New customer inquiry: {inquiry.subject}"
+
+        # Email message
+        message = f"""
+A new customer inquiry has been received:
+
+Subject: {inquiry.subject}
+Customer: {inquiry.customer.get_full_name() or inquiry.customer.username}
+Email: {inquiry.customer.email}
+Type: {inquiry.get_inquiry_type_display()}
+Priority: {inquiry.get_priority_display()}
+
+Message:
+{inquiry.message}
+
+Please review and respond at: {getattr(settings, 'SITE_URL', 'https://gurumisha.com')}/dashboard/admin/queries/{inquiry.id}/
+
+Best regards,
+Gurumisha Motors System
+        """
+
+        # Send to all admin users
+        admin_emails = [admin.email for admin in admin_users]
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'kamandembugua18@gmail.com'),
+            recipient_list=admin_emails,
+            fail_silently=False,
+        )
+
+        print(f"New inquiry notification emails sent for inquiry {inquiry.id}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to send new inquiry notification emails: {e}")
+        return False

@@ -5,6 +5,25 @@
 {% block page_title %}Profile Settings{% endblock %}
 {% block page_description %}Manage your personal information and account settings{% endblock %}
 
+{% block extra_head %}
+<!-- Immediate Function Definitions to prevent "not defined" errors -->
+<script>
+window.scrollToSection = function(sectionId) {
+    console.log('Scrolling to section:', sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const tabName = sectionId.replace('-tab', '');
+        if (typeof switchToTab === 'function') {
+            setTimeout(() => switchToTab(tabName), 300);
+        }
+    } else {
+        console.error('Section not found:', sectionId);
+    }
+};
+</script>
+{% endblock %}
+
 {% block extra_css %}
 <!-- Preload critical fonts -->
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Raleway:wght@300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -437,11 +456,12 @@
         <!-- Enhanced Tab Navigation with Improved Visibility -->
         <div class="tab-navigation-container mb-8">
             <!-- Desktop Tab Navigation -->
-            <nav class="tab-navigation hidden lg:flex" role="tablist">
+            <nav class="tab-navigation hidden lg:flex" role="tablist" data-tab-container id="profile-tabs">
                 <!-- Personal Information Tab -->
                 <button type="button"
                         class="nav-tab active"
                         data-tab="personal"
+                        data-preserve-state="true"
                         role="tab"
                         aria-selected="true"
                         aria-controls="personal-tab">
@@ -461,6 +481,7 @@
                 <button type="button"
                         class="nav-tab"
                         data-tab="contact"
+                        data-preserve-state="true"
                         role="tab"
                         aria-selected="false"
                         aria-controls="contact-tab">
@@ -1980,13 +2001,7 @@
 
 <!-- Enhanced JavaScript for Profile Management -->
 <script>
-// Global variables
-window.showToast = null;
-window.handleStatClick = null;
-window.handleContactClick = null;
-window.handleBadgeClick = null;
-
-// Define scrollToSection function immediately for onclick handlers
+// Define scrollToSection function IMMEDIATELY for onclick handlers
 function scrollToSection(sectionId) {
     console.log('Scrolling to section:', sectionId);
 
@@ -2012,6 +2027,12 @@ function scrollToSection(sectionId) {
 
 // Make scrollToSection immediately available
 window.scrollToSection = scrollToSection;
+
+// Global variables
+window.showToast = null;
+window.handleStatClick = null;
+window.handleContactClick = null;
+window.handleBadgeClick = null;
 
 // Define other essential functions early for onclick handlers
 function handleContactClick(type, value) {
@@ -2141,13 +2162,12 @@ function simpleShowToast(message, type) {
     if (type === 'error') bgColor = 'bg-red-500';
     if (type === 'warning') bgColor = 'bg-yellow-500';
 
-    toast.className = `${bgColor} text-white p-4 rounded-lg shadow-lg mb-2`;
-    toast.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200 text-xl">&times;</button>
-        </div>
-    `;
+    toast.className = bgColor + ' text-white p-4 rounded-lg shadow-lg mb-2';
+    toast.innerHTML =
+        '<div class="flex items-center justify-between">' +
+            '<span>' + message + '</span>' +
+            '<button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200 text-xl">&times;</button>' +
+        '</div>';
 
     container.appendChild(toast);
     setTimeout(() => {
@@ -3353,12 +3373,6 @@ function validateField(field) {
             return false;
         }
 
-        const usernameRegex = /^[a-zA-Z0-9_-]+$/;
-        if (!usernameRegex.test(field.value)) {
-            showFieldError(field, 'Username can only contain letters, numbers, hyphens, and underscores');
-            return false;
-        }
-
         showFieldSuccess(field, 'Username looks good');
         return true;
     }
@@ -4017,19 +4031,18 @@ function getTargetDimensions(originalWidth, originalHeight, imageType) {
 
 // Upload progress functions
 function showUploadProgress(imageType, percentage) {
-    const progressId = `${imageType}UploadProgress`;
+    const progressId = imageType + 'UploadProgress';
     let progressContainer = document.getElementById(progressId);
 
     if (!progressContainer) {
         progressContainer = document.createElement('div');
         progressContainer.id = progressId;
         progressContainer.className = 'upload-progress-container';
-        progressContainer.innerHTML = `
-            <div class="upload-progress-bar">
-                <div class="upload-progress-fill" style="width: 0%"></div>
-            </div>
-            <div class="upload-progress-text">Uploading... 0%</div>
-        `;
+        progressContainer.innerHTML =
+            '<div class="upload-progress-bar">' +
+                '<div class="upload-progress-fill" style="width: 0%"></div>' +
+            '</div>' +
+            '<div class="upload-progress-text">Uploading... 0%</div>';
 
         const targetContainer = imageType === 'profile'
             ? document.querySelector('.profile-picture-section')
@@ -4044,12 +4057,12 @@ function showUploadProgress(imageType, percentage) {
     const progressText = progressContainer.querySelector('.upload-progress-text');
 
     if (progressFill) {
-        progressFill.style.width = `${percentage}%`;
+        progressFill.style.width = percentage + '%';
     }
 
     if (progressText) {
         if (percentage < 100) {
-            progressText.textContent = `Uploading... ${percentage}%`;
+            progressText.textContent = 'Uploading... ' + percentage + '%';
         } else {
             progressText.textContent = 'Upload complete!';
         }
@@ -4057,7 +4070,7 @@ function showUploadProgress(imageType, percentage) {
 }
 
 function hideUploadProgress(imageType) {
-    const progressId = `${imageType}UploadProgress`;
+    const progressId = imageType + 'UploadProgress';
     const progressContainer = document.getElementById(progressId);
 
     if (progressContainer) {

@@ -1,0 +1,551 @@
+<!-- Admin User Edit Modal -->
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+     x-data="modalManager()"
+     x-show="show"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     @click.self="closeModal()"
+     x-init="initModal()">
+    
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+         x-show="show"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         @click.stop>
+        
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-harrier-red to-harrier-red-dark p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-user-edit text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold font-montserrat">Edit User</h2>
+                        <p class="text-blue-100 text-sm">Update user profile information</p>
+                    </div>
+                </div>
+                <button type="button"
+                        class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+                        @click="closeModal()">
+                    <i class="fas fa-times text-white"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <form method="post" 
+                  enctype="multipart/form-data"
+                  hx-post="{% url 'core:admin_user_edit_modal' user_profile.id %}"
+                  hx-target="this"
+                  hx-swap="outerHTML"
+                  hx-indicator="#edit-modal-loading">
+                {% csrf_token %}
+                
+                <!-- Loading Indicator -->
+                <div id="edit-modal-loading" class="htmx-indicator mb-4">
+                    <div class="flex items-center justify-center py-4">
+                        <i class="fas fa-spinner fa-spin mr-2 text-harrier-red"></i>
+                        <span class="text-gray-600">Updating user...</span>
+                    </div>
+                </div>
+
+                <!-- Form Errors -->
+                {% if user_form.non_field_errors %}
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        <span class="text-red-700 font-medium">Please correct the following errors:</span>
+                    </div>
+                    <ul class="mt-2 text-red-600 text-sm list-disc list-inside">
+                        {% for error in user_form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Basic Information Section -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4 flex items-center">
+                        <i class="fas fa-user mr-2 text-harrier-red"></i>
+                        Basic Information
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- First Name -->
+                        <div class="form-group">
+                            <label for="{{ user_form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user mr-1 text-harrier-red"></i>First Name
+                            </label>
+                            {{ user_form.first_name }}
+                            {% if user_form.first_name.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.first_name.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="form-group">
+                            <label for="{{ user_form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user mr-1 text-harrier-red"></i>Last Name
+                            </label>
+                            {{ user_form.last_name }}
+                            {% if user_form.last_name.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.last_name.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Username -->
+                        <div class="form-group">
+                            <label for="{{ user_form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-at mr-1 text-purple-500"></i>Username
+                            </label>
+                            {{ user_form.username }}
+                            {% if user_form.username.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.username.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label for="{{ user_form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-envelope mr-1 text-blue-500"></i>Email Address
+                            </label>
+                            {{ user_form.email }}
+                            {% if user_form.email.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.email.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="form-group">
+                            <label for="{{ user_form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-phone mr-1 text-green-500"></i>Phone Number
+                            </label>
+                            {{ user_form.phone }}
+                            {% if user_form.phone.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.phone.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Role -->
+                        <div class="form-group">
+                            <label for="{{ user_form.role.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user-tag mr-1 text-indigo-500"></i>Role
+                            </label>
+                            {{ user_form.role }}
+                            {% if user_form.role.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.role.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Status -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4 flex items-center">
+                        <i class="fas fa-shield-alt mr-2 text-harrier-red"></i>
+                        Account Status
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Active Status -->
+                        <div class="form-group">
+                            <div class="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                {{ user_form.is_active }}
+                                <label for="{{ user_form.is_active.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                    <i class="fas fa-user-check mr-2 text-green-500"></i>Account Active
+                                    <div class="text-xs text-gray-500 mt-1">User can log in and access the system</div>
+                                </label>
+                            </div>
+                            {% if user_form.is_active.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.is_active.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Staff Status -->
+                        <div class="form-group">
+                            <div class="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                {{ user_form.is_staff }}
+                                <label for="{{ user_form.is_staff.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                    <i class="fas fa-user-tie mr-2 text-blue-500"></i>Staff Access
+                                    <div class="text-xs text-gray-500 mt-1">User can access admin dashboard</div>
+                                </label>
+                            </div>
+                            {% if user_form.is_staff.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.is_staff.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4 flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2 text-harrier-red"></i>
+                        Location Information
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- City -->
+                        <div class="form-group">
+                            <label for="{{ user_form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-city mr-1 text-teal-500"></i>City
+                            </label>
+                            {{ user_form.city }}
+                            {% if user_form.city.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.city.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Country -->
+                        <div class="form-group" x-data="countryPicker()" x-ref="countryPicker">
+                            <label for="{{ user_form.country.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-flag mr-1 text-red-500"></i>Country
+                            </label>
+                            <div class="relative">
+                                <!-- Hidden actual form field -->
+                                <input type="hidden"
+                                       name="{{ user_form.country.name }}"
+                                       :value="selectedCountry"
+                                       x-ref="countryInput">
+
+                                <!-- Custom Country Picker -->
+                                <div class="relative">
+                                    <button type="button"
+                                            class="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-harrier-red focus:border-harrier-red"
+                                            @click="isOpen = !isOpen"
+                                            :class="{ 'ring-2 ring-harrier-red border-harrier-red': isOpen }">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <span x-text="getCountryFlag(selectedCountry)" class="mr-2 text-lg"></span>
+                                                <span x-text="selectedCountry || 'Select a country'"
+                                                      :class="{ 'text-gray-400': !selectedCountry, 'text-gray-900': selectedCountry }"></span>
+                                            </div>
+                                            <i class="fas fa-chevron-down text-gray-400 transition-transform"
+                                               :class="{ 'rotate-180': isOpen }"></i>
+                                        </div>
+                                    </button>
+
+                                    <!-- Dropdown -->
+                                    <div x-show="isOpen"
+                                         x-transition:enter="transition ease-out duration-200"
+                                         x-transition:enter-start="opacity-0 scale-95"
+                                         x-transition:enter-end="opacity-100 scale-100"
+                                         x-transition:leave="transition ease-in duration-150"
+                                         x-transition:leave-start="opacity-100 scale-100"
+                                         x-transition:leave-end="opacity-0 scale-95"
+                                         @click.away="isOpen = false"
+                                         class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg country-picker-dropdown">
+
+                                        <!-- Search -->
+                                        <div class="p-2 border-b border-gray-200">
+                                            <input type="text"
+                                                   x-model="searchQuery"
+                                                   placeholder="Search countries..."
+                                                   @keydown.escape="isOpen = false"
+                                                   @keydown.enter.prevent="selectFirstFiltered()"
+                                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-harrier-red focus:border-harrier-red">
+                                        </div>
+
+                                        <!-- Country List -->
+                                        <div class="py-1">
+                                            <template x-for="country in filteredCountries" :key="country">
+                                                <button type="button"
+                                                        class="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none flex items-center"
+                                                        @click="selectCountry(country)"
+                                                        :class="{ 'bg-harrier-red text-white hover:bg-harrier-red': selectedCountry === country }">
+                                                    <span x-text="getCountryFlag(country)" class="mr-2 text-lg"></span>
+                                                    <span x-text="country" class="text-sm"></span>
+                                                </button>
+                                            </template>
+
+                                            <!-- No results -->
+                                            <div x-show="filteredCountries.length === 0" class="px-3 py-2 text-sm text-gray-500 text-center">
+                                                No countries found
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if user_form.country.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in user_form.country.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200">
+                    <button type="button"
+                            class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                            @click="closeModal()">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-3 bg-gradient-to-r from-harrier-red to-harrier-red-dark text-white rounded-lg font-medium hover:shadow-lg transition-all">
+                        <i class="fas fa-save mr-2"></i>Update User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal-specific styles */
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: white;
+}
+
+/* Select field specific styling */
+.form-group select {
+    appearance: none;
+    background-image: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+/* Country picker specific styles */
+.country-picker-dropdown {
+    max-height: 240px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #dc2626 #f3f4f6;
+}
+
+.country-picker-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.country-picker-dropdown::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+}
+
+.country-picker-dropdown::-webkit-scrollbar-thumb {
+    background: #dc2626;
+    border-radius: 3px;
+}
+
+.country-picker-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #b91c1c;
+}
+
+/* Rotation animation for chevron */
+.rotate-180 {
+    transform: rotate(180deg);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="tel"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Checkbox styling */
+.form-group input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.form-group input[type="checkbox"]:checked {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e");
+}
+
+.form-group input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+</style>
+
+<script>
+// Modal Manager Alpine.js Component
+function modalManager() {
+    return {
+        show: true,
+
+        initModal() {
+            // Set initial country value if available
+            const countryField = document.querySelector('input[name="country"]');
+            if (countryField && countryField.value) {
+                // Find the country picker component and set its value
+                setTimeout(() => {
+                    const countryPicker = this.$refs.countryPicker;
+                    if (countryPicker && countryPicker.__x) {
+                        countryPicker.__x.$data.selectedCountry = countryField.value;
+                    }
+                }, 100);
+            }
+        },
+
+        closeModal() {
+            try {
+                this.show = false;
+                // Remove modal from DOM after transition
+                setTimeout(() => {
+                    const modal = document.querySelector('.fixed.inset-0');
+                    if (modal && modal.parentNode) {
+                        modal.parentNode.removeChild(modal);
+                    }
+                }, 300);
+            } catch (error) {
+                console.warn('Error closing modal:', error);
+                // Fallback: try to remove any modal elements
+                const modals = document.querySelectorAll('.fixed.inset-0');
+                modals.forEach(modal => {
+                    if (modal && modal.parentNode) {
+                        modal.parentNode.removeChild(modal);
+                    }
+                });
+            }
+        }
+    }
+}
+
+// Country Picker Alpine.js Component
+function countryPicker() {
+    return {
+        isOpen: false,
+        searchQuery: '',
+        selectedCountry: '{{ user_profile.country|default:"" }}',
+
+        countries: [
+            // Primary Market - Kenya
+            'Kenya',
+            // East African Community
+            'Uganda', 'Tanzania', 'Rwanda', 'Burundi', 'South Sudan',
+            // Other East African Countries
+            'Ethiopia', 'Somalia', 'Djibouti', 'Eritrea',
+            // Major African Markets
+            'South Africa', 'Nigeria', 'Egypt', 'Morocco', 'Ghana', 'Algeria', 'Tunisia', 'Libya',
+            // Other Countries (Alphabetical)
+            'Afghanistan', 'Albania', 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium',
+            'Brazil', 'Canada', 'China', 'Denmark', 'Finland', 'France', 'Germany', 'India',
+            'Indonesia', 'Italy', 'Japan', 'Malaysia', 'Netherlands', 'Norway', 'Pakistan',
+            'Philippines', 'Poland', 'Portugal', 'Russia', 'Saudi Arabia', 'Singapore', 'Spain',
+            'Sweden', 'Switzerland', 'Thailand', 'Turkey', 'United Arab Emirates', 'United Kingdom',
+            'United States', 'Other'
+        ],
+
+        get filteredCountries() {
+            if (!this.searchQuery) {
+                return this.countries;
+            }
+            return this.countries.filter(country =>
+                country.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+        },
+
+        selectCountry(country) {
+            this.selectedCountry = country;
+            this.isOpen = false;
+            this.searchQuery = '';
+        },
+
+        selectFirstFiltered() {
+            if (this.filteredCountries.length > 0) {
+                this.selectCountry(this.filteredCountries[0]);
+            }
+        },
+
+        getCountryFlag(country) {
+            const flagMap = {
+                'Kenya': '🇰🇪', 'Uganda': '🇺🇬', 'Tanzania': '🇹🇿', 'Rwanda': '🇷🇼',
+                'Burundi': '🇧🇮', 'South Sudan': '🇸🇸', 'Ethiopia': '🇪🇹', 'Somalia': '🇸🇴',
+                'Djibouti': '🇩🇯', 'Eritrea': '🇪🇷', 'South Africa': '🇿🇦', 'Nigeria': '🇳🇬',
+                'Egypt': '🇪🇬', 'Morocco': '🇲🇦', 'Ghana': '🇬🇭', 'Algeria': '🇩🇿',
+                'Tunisia': '🇹🇳', 'Libya': '🇱🇾', 'United States': '🇺🇸', 'United Kingdom': '🇬🇧',
+                'Canada': '🇨🇦', 'Australia': '🇦🇺', 'Germany': '🇩🇪', 'France': '🇫🇷',
+                'Italy': '🇮🇹', 'Spain': '🇪🇸', 'Japan': '🇯🇵', 'China': '🇨🇳',
+                'India': '🇮🇳', 'Brazil': '🇧🇷', 'Russia': '🇷🇺', 'Other': '🌍'
+            };
+            return flagMap[country] || '🏳️';
+        }
+    }
+}
+
+// Initialize Alpine.js components when DOM is ready
+document.addEventListener('alpine:init', () => {
+    Alpine.data('modalManager', modalManager);
+    Alpine.data('countryPicker', countryPicker);
+});
+</script>

@@ -338,6 +338,247 @@
     margin-top: 0.5rem !important;
 }
 
+/* Enhanced Form Validation Styles */
+.auth-input-wrapper {
+    position: relative;
+     display: block;
+    width: 100%;
+}
+
+.auth-input-wrapper .auth-form-input {
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+     width: 100%;
+    display: block;
+}
+
+.auth-input-wrapper.password-wrapper .auth-form-input {
+    padding-right: 6rem !important;
+}
+
+.auth-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6B7280;
+    font-size: 1rem;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 2;
+}
+
+.auth-form-group.focused .auth-input-icon,
+.auth-form-input:focus + .auth-input-icon {
+    color: #DC2626;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.auth-form-input.success + .auth-input-icon {
+    color: #10B981;
+}
+
+.auth-form-input.error + .auth-input-icon {
+    color: #EF4444;
+}
+
+/* Enhanced Password Toggle */
+.password-toggle-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none !important;
+    border: none !important;
+    color: #6B7280 !important;
+    cursor: pointer !important;
+    padding: 0.5rem !important;
+    border-radius: 0.375rem !important;
+    transition: all 0.25s ease;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.password-toggle-btn:hover {
+    color: #DC2626 !important;
+    background: rgba(220, 38, 38, 0.1) !important;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle-btn:focus {
+    outline: 2px solid #DC2626 !important;
+    outline-offset: 2px;
+}
+
+.password-toggle-btn.active {
+    color: #DC2626 !important;
+    background: rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Validation Error Styles */
+.auth-validation-error {
+    color: #EF4444 !important;
+    font-size: 0.875rem !important;
+    margin-top: 0.5rem !important;
+    font-family: 'Raleway', sans-serif !important;
+    animation: slideDown 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auth-validation-error i {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Success Indicator Styles */
+.auth-success-indicator {
+    color: #10B981 !important;
+    font-size: 0.875rem !important;
+    margin-top: 0.5rem !important;
+    font-family: 'Raleway', sans-serif !important;
+    animation: slideDown 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auth-success-indicator i {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Enhanced Error Message Styles */
+.auth-error-message {
+    color: #EF4444 !important;
+    font-size: 0.875rem !important;
+    margin-top: 0.5rem !important;
+    font-family: 'Raleway', sans-serif !important;
+    animation: slideDown 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 0.375rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.auth-error-message i {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Form-level Error Styles */
+.auth-form-errors {
+    color: #EF4444 !important;
+    font-size: 0.875rem !important;
+    margin-top: 1rem !important;
+    font-family: 'Raleway', sans-serif !important;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    animation: slideDown 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Help Text Styles */
+.auth-help-text {
+    color: #6B7280 !important;
+    font-size: 0.75rem !important;
+    margin-top: 0.5rem !important;
+    font-family: 'Raleway', sans-serif !important;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auth-help-text i {
+    font-size: 0.625rem;
+    flex-shrink: 0;
+}
+
+/* Enhanced Submit Button */
+.auth-submit-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-submit-btn:disabled {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.auth-submit-btn .btn-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+}
+
+/* Real-time Validation States */
+.auth-form-input.validating {
+    border-color: #F59E0B !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
+}
+
+.auth-form-input.valid {
+    border-color: #10B981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2310b981'%3e%3cpath d='M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 3.5rem center;
+    background-size: 1rem;
+}
+
+.password-wrapper .auth-form-input.valid {
+    background-position: right 6.5rem center;
+}
+
+.auth-form-input.invalid {
+    border-color: #EF4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ef4444'%3e%3cpath d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z'/%3e%3cpath d='M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 3.5rem center;
+    background-size: 1rem;
+}
+
+.password-wrapper .auth-form-input.invalid {
+    background-position: right 6.5rem center;
+}
+
+/* Animation Keyframes */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 100px;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .auth-hero {
@@ -396,6 +637,26 @@
     .auth-trust-number {
         font-size: 2rem !important;
     }
+
+    .auth-input-wrapper .auth-form-input {
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
+
+    .auth-input-wrapper.password-wrapper .auth-form-input {
+        padding-right: 5rem !important;
+    }
+
+    .auth-input-icon {
+        left: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .password-toggle-btn {
+        right: 0.75rem;
+        width: 2rem;
+        height: 2rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -440,12 +701,78 @@
         grid-template-columns: 1fr !important;
         gap: 1.5rem !important;
     }
+
+    .auth-input-wrapper .auth-form-input {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    .auth-input-wrapper.password-wrapper .auth-form-input {
+        padding-right: 4rem !important;
+    }
+
+    .auth-input-icon {
+        left: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .password-toggle-btn {
+        right: 0.5rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.75rem;
+    }
+
+    .auth-validation-error,
+    .auth-success-indicator,
+    .auth-error-message {
+        font-size: 0.75rem !important;
+        padding: 0.375rem;
+    }
+
+    .auth-help-text {
+        font-size: 0.625rem !important;
+    }
 }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/auth-enhancements.js' %}"></script>
+<script>
+// Enhanced form validation initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize toast notifications for Django messages
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                if (window.showError) {
+                    showError('{{ message|escapejs }}', { duration: 6000 });
+                }
+            {% elif message.tags == 'success' %}
+                if (window.showSuccess) {
+                    showSuccess('{{ message|escapejs }}', { duration: 4000 });
+                }
+            {% elif message.tags == 'warning' %}
+                if (window.showWarning) {
+                    showWarning('{{ message|escapejs }}', { duration: 5000 });
+                }
+            {% elif message.tags == 'info' %}
+                if (window.showInfo) {
+                    showInfo('{{ message|escapejs }}', { duration: 4000 });
+                }
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    // Focus first input field
+    const firstInput = document.querySelector('.auth-form-input');
+    if (firstInput) {
+        firstInput.focus();
+    }
+});
+</script>
 {% endblock %}
 
 {% block content %}
@@ -488,58 +815,93 @@
                             <p class="auth-form-subtitle">Sign in to your account to continue your automotive journey</p>
                         </div>
 
-                        <!-- Display Messages -->
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
+                        <!-- Toast Messages Integration -->
+                        {% load core_extras %}
+                        {% render_toast_messages %}
 
-                        <form method="post" class="space-y-6" id="login-form">
+                        <form method="post" class="space-y-6" id="login-form" novalidate>
                             {% csrf_token %}
 
                             <!-- Email Field -->
-                            <div class="auth-form-group">
+                            <div class="auth-form-group" data-field="email">
                                 <label for="{{ form.username.id_for_label }}" class="auth-form-label">
                                     <i class="fas fa-envelope mr-2"></i>Email Address
                                 </label>
-                                <input type="email"
-                                       name="{{ form.username.name }}"
-                                       id="{{ form.username.id_for_label }}"
-                                       class="auth-form-input {% if form.username.errors %}error{% endif %}"
-                                       placeholder="Enter your email address"
-                                       value="{{ form.username.value|default:'' }}"
-                                       required>
+                                <div class="auth-input-wrapper">
+                                    <input type="email"
+                                           name="{{ form.username.name }}"
+                                           id="{{ form.username.id_for_label }}"
+                                           class="auth-form-input {% if form.username.errors %}error{% endif %}"
+                                           placeholder="Enter your email address"
+                                           value="{{ form.username.value|default:'' }}"
+                                           autocomplete="email"
+                                           data-validation="email"
+                                           required>
+                                    <div class="auth-input-icon">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                </div>
+                                {% if form.username.help_text %}
+                                    <p class="auth-help-text">
+                                        <i class="fas fa-info-circle mr-1"></i>{{ form.username.help_text }}
+                                    </p>
+                                {% endif %}
+                                <!-- Client-side validation error -->
+                                <div class="auth-validation-error" style="display: none;">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <span class="error-text"></span>
+                                </div>
+                                <!-- Server-side validation error -->
                                 {% if form.username.errors %}
                                     <div class="auth-error-message">
                                         <i class="fas fa-exclamation-circle mr-1"></i>{{ form.username.errors.0 }}
                                     </div>
                                 {% endif %}
-                                {% if form.username.help_text %}
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        <i class="fas fa-info-circle mr-1"></i>{{ form.username.help_text }}
-                                    </p>
-                                {% endif %}
+                                <!-- Success indicator -->
+                                <div class="auth-success-indicator" style="display: none;">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <span>Valid email address</span>
+                                </div>
+                                
                             </div>
 
                             <!-- Password Field -->
-                            <div class="auth-form-group">
+                            <div class="auth-form-group" data-field="password">
                                 <label for="{{ form.password.id_for_label }}" class="auth-form-label">
                                     <i class="fas fa-lock mr-2"></i>Password
                                 </label>
-                                <input type="password"
-                                       name="{{ form.password.name }}"
-                                       id="{{ form.password.id_for_label }}"
-                                       class="auth-form-input {% if form.password.errors %}error{% endif %}"
-                                       placeholder="Enter your password"
-                                       required>
+                                <div class="auth-input-wrapper ">
+                                    <input type="password"
+                                           name="{{ form.password.name }}"
+                                           id="{{ form.password.id_for_label }}"
+                                           class="auth-form-input {% if form.password.errors %}error{% endif %}"
+                                           placeholder="Enter your password"
+                                           autocomplete="current-password"
+                                           data-validation="password"
+                                           required>
+                                    <div class="auth-input-icon">
+                                        <i class="fas fa-lock"></i>
+                                    </div>
+                                    <button type="button" class="password-toggle-btn" aria-label="Show password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <!-- Client-side validation error -->
+                                <div class="auth-validation-error" style="display: none;">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <span class="error-text"></span>
+                                </div>
+                                <!-- Server-side validation error -->
                                 {% if form.password.errors %}
                                     <div class="auth-error-message">
                                         <i class="fas fa-exclamation-circle mr-1"></i>{{ form.password.errors.0 }}
                                     </div>
                                 {% endif %}
+                                <!-- Success indicator -->
+                                <div class="auth-success-indicator" style="display: none;">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <span>Password entered</span>
+                                </div>
                             </div>
 
                             <!-- Enhanced Remember Me Section -->
@@ -570,13 +932,18 @@
                             </div>
 
                             <!-- Submit Button -->
-                            <button type="submit" class="auth-submit-btn">
-                                <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Your Account
+                            <button type="submit" class="auth-submit-btn" id="login-submit-btn">
+                                <span class="btn-text">
+                                    <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Your Account
+                                </span>
+                                <span class="btn-loading" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Signing In...
+                                </span>
                             </button>
 
-                            <!-- Non-field errors -->
+                            <!-- Form-level errors -->
                             {% if form.non_field_errors %}
-                                <div class="auth-error-message text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="auth-form-errors">
                                     <i class="fas fa-exclamation-triangle mr-2"></i>{{ form.non_field_errors.0 }}
                                 </div>
                             {% endif %}
@@ -597,8 +964,8 @@
                     <div class="auth-side-panel">
                         <div class="auth-side-content">
                             <div class="mb-8">
-                                <h3 class="auth-side-title">Join Gurumisha Motors</h3>
-                                <p class="auth-side-description">
+                                <h3 class="auth-side-title text-white">Join Gurumisha Motors</h3>
+                                <p class="auth-side-description text-white">
                                     Access exclusive features and manage your automotive journey with Kenya's most trusted marketplace.
                                 </p>
                             </div>
@@ -606,41 +973,41 @@
                             <ul class="auth-features-list">
                                 <li class="auth-features-item">
                                     <div class="auth-features-icon">
-                                        <i class="fas fa-car"></i>
+                                        <i class="fas fa-car text-white"></i>
                                     </div>
                                     <div>
-                                        <h4 class="font-semibold mb-1">Buy & Sell Cars</h4>
-                                        <p class="text-sm opacity-80">List your car for sale or browse our extensive inventory</p>
+                                        <h4 class="font-semibold mb-1 text-white">Buy & Sell Cars</h4>
+                                        <p class="text-sm opacity-80 text-white">List your car for sale or browse our extensive inventory</p>
                                     </div>
                                 </li>
 
                                 <li class="auth-features-item">
                                     <div class="auth-features-icon">
-                                        <i class="fas fa-ship"></i>
+                                        <i class="fas fa-ship text-white"></i>
                                     </div>
                                     <div>
-                                        <h4 class="font-semibold mb-1">Import Services</h4>
-                                        <p class="text-sm opacity-80">Request car imports from Japan, Germany, UK and more</p>
+                                        <h4 class="font-semibold mb-1 text-white">Import Services</h4>
+                                        <p class="text-sm opacity-80 text-white">Request car imports from Japan, Germany, UK and more</p>
                                     </div>
                                 </li>
 
                                 <li class="auth-features-item">
                                     <div class="auth-features-icon">
-                                        <i class="fas fa-tools"></i>
+                                        <i class="fas fa-tools text-white"></i>
                                     </div>
                                     <div>
-                                        <h4 class="font-semibold mb-1">Spare Parts</h4>
-                                        <p class="text-sm opacity-80">Find genuine spare parts for your vehicle</p>
+                                        <h4 class="font-semibold mb-1 text-white">Spare Parts</h4>
+                                        <p class="text-sm opacity-80 text-white">Find genuine spare parts for your vehicle</p>
                                     </div>
                                 </li>
 
                                 <li class="auth-features-item">
                                     <div class="auth-features-icon">
-                                        <i class="fas fa-user-shield"></i>
+                                        <i class="fas fa-user-shield text-white"></i>
                                     </div>
                                     <div>
-                                        <h4 class="font-semibold mb-1">Trusted Platform</h4>
-                                        <p class="text-sm opacity-80">Verified dealers and secure transactions</p>
+                                        <h4 class="font-semibold mb-1 text-white">Trusted Platform</h4>
+                                        <p class="text-sm opacity-80 text-white">Verified dealers and secure transactions</p>
                                     </div>
                                 </li>
                             </ul>

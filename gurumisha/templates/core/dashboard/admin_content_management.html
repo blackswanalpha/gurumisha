@@ -122,52 +122,66 @@
     <!-- Enhanced Content Tabs with Harrier Design -->
     <div class="animate-fade-in-up" style="animation-delay: 0.3s;">
         <div class="glassmorphism-card p-2">
-            <nav class="flex flex-wrap gap-2">
-                <button class="content-tab active" data-tab="content-posts"
+            <nav class="flex flex-wrap gap-2" data-tab-container id="content-management-tabs">
+                <button class="content-tab active"
+                        data-tab="content-posts"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_posts_tab' %}"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-newspaper mr-2"></i>
                     <span>Content Posts</span>
                 </button>
-                <button class="content-tab" data-tab="resources"
+                <button class="content-tab"
+                        data-tab="resources"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_posts_tab' %}?content_type=article,guide,infographic"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-book mr-2"></i>
                     <span>Resources</span>
                 </button>
-                <button class="content-tab" data-tab="opinions"
+                <button class="content-tab"
+                        data-tab="opinions"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_posts_tab' %}?content_type=opinion"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-comment-alt mr-2"></i>
                     <span>Opinions</span>
                 </button>
-                <button class="content-tab" data-tab="categories"
+                <button class="content-tab"
+                        data-tab="categories"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_categories_tab' %}"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-folder mr-2"></i>
                     <span>Categories</span>
                 </button>
-                <button class="content-tab" data-tab="analytics"
+                <button class="content-tab"
+                        data-tab="analytics"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_analytics_tab' %}"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-chart-line mr-2"></i>
                     <span>Analytics</span>
                 </button>
-                <button class="content-tab" data-tab="testimonials"
+                <button class="content-tab"
+                        data-tab="testimonials"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_testimonials_tab' %}"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-star mr-2"></i>
                     <span>Testimonials</span>
                 </button>
-                <button class="content-tab" data-tab="static-pages"
+                <button class="content-tab"
+                        data-tab="static-pages"
+                        data-preserve-state="true"
                         hx-get="{% url 'core:admin_content_static_pages_tab' %}"
-                        hx-target="#tab-content"
+                        hx-target="#tab-content-container"
                         hx-swap="innerHTML">
                     <i class="fas fa-file-alt mr-2"></i>
                     <span>Static Pages</span>
@@ -178,7 +192,8 @@
 
     <!-- Enhanced Tab Content Area -->
     <div class="mt-8">
-        <div id="tab-content" class="min-h-[600px]">
+        <div id="tab-content-container" class="min-h-[600px]">
+            <div id="tab-content">
             <!-- Default content will be loaded via HTMX -->
             <div class="glassmorphism-card p-8 text-center">
                 <div class="animate-pulse">
@@ -825,6 +840,7 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -1307,26 +1323,27 @@ function updateResultsCount(count) {
 // Initialize search on page load
 document.addEventListener('DOMContentLoaded', setupSearch);
 
-// Enhanced Tab functionality with HTMX
+// Enhanced Tab functionality with Tab Preservation System
 document.addEventListener('DOMContentLoaded', function() {
-    const tabs = document.querySelectorAll('.content-tab');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Remove active class from all tabs
-            tabs.forEach(t => t.classList.remove('active'));
-
-            // Add active class to clicked tab
-            this.classList.add('active');
-        });
-    });
-
+    // Tab preservation system will handle all tab functionality
     // Load default tab content on page load
     const defaultTab = document.querySelector('.content-tab.active');
     if (defaultTab) {
         // Trigger HTMX request for default tab
-        htmx.trigger(defaultTab, 'click');
+        setTimeout(() => {
+            htmx.trigger(defaultTab, 'click');
+        }, 100);
     }
+
+    // Listen for tab changes
+    document.addEventListener('tab:changed', function(event) {
+        console.log('Tab changed to:', event.detail.activeTab);
+
+        // Update URL without page reload
+        const url = new URL(window.location);
+        url.searchParams.set('tab', event.detail.activeTab);
+        window.history.replaceState({}, '', url);
+    });
 });
 
 // Preview Site Function

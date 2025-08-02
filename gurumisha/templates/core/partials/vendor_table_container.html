@@ -1,0 +1,148 @@
+<!-- Enhanced Vendors Table Container - Partial for HTMX Updates -->
+<div class="enhanced-vendor-table-container" 
+     id="vendor-table-container"
+     hx-get="{% url 'core:admin_vendors' %}"
+     hx-trigger="refresh from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
+    <div class="table-header">
+        <div class="flex items-center justify-between">
+            <div class="table-title-section">
+                <h3 class="table-title">Vendor Management</h3>
+                <p class="table-subtitle">Manage vendor applications and business profiles</p>
+            </div>
+            <div class="table-actions">
+                <button class="refresh-table-btn" 
+                        hx-get="{% url 'core:admin_vendors' %}"
+                        hx-target="#vendor-table-container"
+                        hx-swap="outerHTML"
+                        hx-indicator="#refresh-loading">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span>
+                </button>
+                <div id="refresh-loading" class="htmx-indicator">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="enhanced-vendor-table">
+            <thead class="table-head">
+                <tr>
+                    <th class="table-header-cell vendor-details-header">
+                        <div class="header-content">
+                            <i class="fas fa-building header-icon"></i>
+                            <span>Vendor Details</span>
+                        </div>
+                    </th>
+                    <th class="table-header-cell contact-info-header">
+                        <div class="header-content">
+                            <i class="fas fa-address-book header-icon"></i>
+                            <span>Contact Information</span>
+                        </div>
+                    </th>
+                    <th class="table-header-cell status-header">
+                        <div class="header-content">
+                            <i class="fas fa-check-circle header-icon"></i>
+                            <span>Status</span>
+                        </div>
+                    </th>
+                    <th class="table-header-cell date-header">
+                        <div class="header-content">
+                            <i class="fas fa-calendar header-icon"></i>
+                            <span>Registration Date</span>
+                        </div>
+                    </th>
+                    <th class="table-header-cell actions-header">
+                        <div class="header-content">
+                            <i class="fas fa-eye header-icon"></i>
+                            <span>View</span>
+                        </div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="table-body">
+                {% for vendor in vendors %}
+                    {% include 'core/partials/vendor_table_row.html' with vendor=vendor %}
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="text-gray-500">
+                                <i class="fas fa-store text-4xl mb-4"></i>
+                                <p class="text-lg">No vendors found</p>
+                                <p class="text-sm">No vendor applications match your current filters.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Enhanced Pagination -->
+    {% if vendors.has_other_pages %}
+        <div class="pagination-container">
+            <div class="pagination-info">
+                <span class="pagination-text">
+                    Showing {{ vendors.start_index }} to {{ vendors.end_index }} of {{ vendors.paginator.count }} vendors
+                </span>
+            </div>
+
+            <div class="pagination-controls">
+                <!-- Previous Button -->
+                {% if vendors.has_previous %}
+                    <a href="?page={{ vendors.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                       class="pagination-btn prev-btn" title="Previous Page">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Previous</span>
+                    </a>
+                {% else %}
+                    <span class="pagination-btn prev-btn disabled">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Previous</span>
+                    </span>
+                {% endif %}
+
+                <!-- Page Numbers -->
+                <div class="page-numbers">
+                    {% for num in vendors.paginator.page_range %}
+                        {% if num == vendors.number %}
+                            <span class="page-btn current-page">{{ num }}</span>
+                        {% elif num > vendors.number|add:'-3' and num < vendors.number|add:'3' %}
+                            <a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                               class="page-btn">{{ num }}</a>
+                        {% elif num == 1 and vendors.number > 4 %}
+                            <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                               class="page-btn">1</a>
+                            {% if vendors.number > 5 %}
+                                <span class="page-ellipsis">...</span>
+                            {% endif %}
+                        {% elif num == vendors.paginator.num_pages and vendors.number < vendors.paginator.num_pages|add:'-3' %}
+                            {% if vendors.number < vendors.paginator.num_pages|add:'-4' %}
+                                <span class="page-ellipsis">...</span>
+                            {% endif %}
+                            <a href="?page={{ vendors.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                               class="page-btn">{{ vendors.paginator.num_pages }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Next Button -->
+                {% if vendors.has_next %}
+                    <a href="?page={{ vendors.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.business_type %}&business_type={{ request.GET.business_type }}{% endif %}"
+                       class="pagination-btn next-btn" title="Next Page">
+                        <span>Next</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% else %}
+                    <span class="pagination-btn next-btn disabled">
+                        <span>Next</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>

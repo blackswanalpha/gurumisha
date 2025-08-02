@@ -1,10 +1,13 @@
 <!-- Compact Compare Button for Car Listing Pages -->
-<button 
-    id="compare-btn-{{ car.id }}"
-    hx-post="{% if in_compare %}{% url 'core:remove_from_compare' car.id %}{% else %}{% url 'core:add_to_compare' car.id %}{% endif %}"
-    hx-target="#compare-btn-{{ car.id }}"
-    hx-swap="outerHTML"
-    hx-trigger="click"
+<div id="compare-btn-container-{{ car.id }}" class="compare-btn-compact-wrapper">
+    <button
+        id="compare-btn-{{ car.id }}"
+        hx-post="{% if in_compare %}{% url 'core:remove_from_compare' car.id %}{% else %}{% url 'core:add_to_compare' car.id %}{% endif %}"
+        hx-target="#compare-btn-container-{{ car.id }}"
+        hx-swap="innerHTML"
+        hx-trigger="click"
+        hx-preserve="true"
+        hx-preserve-id="compare-btn-compact-{{ car.id }}"
     class="group relative w-10 h-10 bg-white/90 backdrop-blur-sm border-2 {% if in_compare %}border-blue-500 text-blue-600 shadow-lg shadow-blue-500/20{% else %}border-gray-300 text-gray-600{% endif %} rounded-lg flex items-center justify-center transition-all duration-500 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
     title="{% if in_compare %}Remove from Compare{% else %}Add to Compare{% endif %}">
     
@@ -32,4 +35,5 @@
     <div class="absolute inset-0 rounded-lg overflow-hidden">
         <div class="absolute inset-0 bg-blue-500/30 scale-0 group-active:scale-100 transition-transform duration-300 rounded-lg"></div>
     </div>
-</button>
+    </button>
+</div>

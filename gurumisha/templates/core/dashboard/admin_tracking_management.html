@@ -15,10 +15,11 @@
         
         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             <!-- Filter by Stage Dropdown -->
-            <div class="relative" x-data="{ open: false }">
+            <div class="relative" x-data="{ open: false }" x-init="console.log('Filter dropdown initialized')">
                 <button @click="open = !open"
                         class="btn-admin-secondary text-sm flex items-center justify-between min-w-48"
-                        :class="{ 'bg-harrier-red text-white': open }">
+                        :class="{ 'bg-harrier-red text-white': open }"
+                        type="button">
                     <span class="flex items-center">
                         <i class="fas fa-filter mr-2"></i>
                         <span id="filter-text">
@@ -33,6 +34,7 @@
                     </span>
                     <i class="fas fa-chevron-down ml-2 transition-transform duration-200"
                        :class="{ 'rotate-180': open }"></i>
+                    <i class="fas fa-spinner fa-spin ml-2 hidden" id="filter-loading"></i>
                 </button>
 
                 <div x-show="open"
@@ -43,14 +45,17 @@
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
                      @click.away="open = false"
+                     x-cloak
                      class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
 
                     <!-- All Stages Option -->
-                    <button class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 flex items-center border-b border-gray-100"
-                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}"
-                            hx-target="#tracking-management-table"
+                    <button type="button"
+                            class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 flex items-center border-b border-gray-100"
+                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
+                            hx-target="#tracking-table-content"
                             hx-swap="innerHTML"
-                            @click="open = false; document.getElementById('filter-text').textContent = 'All Stages'">
+                            hx-indicator="#filter-loading"
+                            @click="open = false; $nextTick(() => { document.getElementById('filter-text').textContent = 'All Stages'; })">
                         <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
                             <i class="fas fa-list text-gray-600"></i>
                         </div>
@@ -62,11 +67,13 @@
 
                     <!-- Individual Stage Options -->
                     {% for stage in workflow_stages %}
-                    <button class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 flex items-center {% if not forloop.last %}border-b border-gray-100{% endif %}"
-                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?status={{ stage.key }}"
-                            hx-target="#tracking-management-table"
+                    <button type="button"
+                            class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 flex items-center {% if not forloop.last %}border-b border-gray-100{% endif %}"
+                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1&status={{ stage.key }}"
+                            hx-target="#tracking-table-content"
                             hx-swap="innerHTML"
-                            @click="open = false; document.getElementById('filter-text').textContent = '{{ stage.name }}'">
+                            hx-indicator="#filter-loading"
+                            @click="open = false; $nextTick(() => { document.getElementById('filter-text').textContent = '{{ stage.name }}'; })">
                         <div class="w-8 h-8 bg-{{ stage.color }}-100 rounded-lg flex items-center justify-center mr-3">
                             <i class="{{ stage.icon }} text-{{ stage.color }}-600"></i>
                         </div>
@@ -262,20 +269,38 @@
                     {% endif %}
                 </div>
                 <div class="flex space-x-2">
+                    <!-- Loading Indicator for Filters -->
+                    <div class="flex items-center">
+                        <i class="fas fa-spinner fa-spin text-harrier-red hidden" id="filter-loading"></i>
+                    </div>
+
                     <!-- Export Dropdown -->
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" type="button" class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50">
+                    <div class="relative" x-data="{ open: false }" x-init="console.log('Export dropdown initialized')">
+                        <button @click="open = !open"
+                                type="button"
+                                class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50">
                             <i class="fas fa-download mr-1"></i>Export
-                            <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                            <i class="fas fa-chevron-down ml-1 text-xs" :class="{ 'rotate-180': open }"></i>
                         </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                        <div x-show="open"
+                             @click.away="open = false"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             x-cloak
+                             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                             <div class="py-1">
                                 <a href="{% url 'core:admin_tracking_management_export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                                   @click="open = false">
                                     <i class="fas fa-file-csv mr-2 text-green-600"></i>Export as CSV
                                 </a>
                                 <a href="{% url 'core:admin_tracking_management_export_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                                   @click="open = false">
                                     <i class="fas fa-file-excel mr-2 text-green-600"></i>Export as Excel
                                 </a>
                             </div>
@@ -284,11 +309,13 @@
 
                     <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-50"
                             hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page={{ page_obj.number|default:1 }}{% if current_filter %}&status={{ current_filter }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
-                            hx-target="#tracking-management-table"
-                            hx-swap="outerHTML"
+                            hx-target="#tracking-table-content"
+                            hx-swap="innerHTML"
                             hx-indicator="#refresh-indicator"
+                            data-user-initiated="true"
                             title="Refresh table data">
-                        <i class="fas fa-sync mr-1" id="refresh-indicator"></i>Refresh
+                        <i class="fas fa-sync mr-1" id="refresh-icon"></i>Refresh
+                        <i class="fas fa-spinner fa-spin ml-1 hidden" id="refresh-indicator"></i>
                     </button>
                 </div>
             </div>
@@ -308,11 +335,13 @@
                                placeholder="Search by order number, customer, brand, model, chassis number..."
                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red sm:text-sm transition-colors duration-200"
                                hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
-                               hx-target="#tracking-management-table"
-                               hx-swap="outerHTML"
-                               hx-trigger="keyup changed delay:500ms"
-                               hx-include="[name='status'], [name='date_from'], [name='date_to']"
-                               hx-indicator="#search-indicator">
+                               hx-target="#tracking-table-content"
+                               hx-swap="innerHTML"
+                               hx-trigger="keyup changed delay:500ms, search"
+                               hx-include="[name='date_from'], [name='date_to']"
+                               hx-indicator="#search-indicator"
+                               hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
+                               autocomplete="off">
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-spinner fa-spin text-gray-400 hidden" id="search-indicator"></i>
                         </div>
@@ -326,20 +355,24 @@
                            value="{{ current_date_from }}"
                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
-                           hx-target="#tracking-management-table"
-                           hx-swap="outerHTML"
+                           hx-target="#tracking-table-content"
+                           hx-swap="innerHTML"
                            hx-trigger="change"
-                           hx-include="[name='search'], [name='status'], [name='date_to']"
+                           hx-include="[name='search'], [name='date_to']"
+                           hx-indicator="#filter-loading"
+                           hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
                            placeholder="From date">
                     <input type="date"
                            name="date_to"
                            value="{{ current_date_to }}"
                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red text-sm"
                            hx-get="{% url 'core:admin_tracking_management_table_partial' %}?page=1"
-                           hx-target="#tracking-management-table"
-                           hx-swap="outerHTML"
+                           hx-target="#tracking-table-content"
+                           hx-swap="innerHTML"
                            hx-trigger="change"
-                           hx-include="[name='search'], [name='status'], [name='date_from']"
+                           hx-include="[name='search'], [name='date_from']"
+                           hx-indicator="#filter-loading"
+                           hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
                            placeholder="To date">
                 </div>
 
@@ -363,22 +396,23 @@
 </div>
 
 <!-- Status Update Modal -->
-<div id="status-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+<div id="status-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="status-modal-title" aria-hidden="true">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4" role="document">
         <div class="bg-gradient-to-r from-harrier-red to-harrier-dark p-6 rounded-t-xl">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-white font-montserrat">Update Tracking Status</h3>
-                <button onclick="closeStatusModal()" class="text-white hover:text-gray-200 transition-colors">
+                <h3 id="status-modal-title" class="text-lg font-semibold text-white font-montserrat">Update Tracking Status</h3>
+                <button type="button" onclick="closeStatusModal()" class="text-white hover:text-gray-200 transition-colors" aria-label="Close modal">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
         </div>
 
-        <form id="status-form" class="p-6">
+        <form id="status-form" class="p-6" novalidate>
+            {% csrf_token %}
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">New Status</label>
-                    <select id="status-select" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red">
+                    <label for="status-select" class="block text-sm font-medium text-gray-700 mb-2 font-raleway">New Status</label>
+                    <select id="status-select" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red" required>
                         {% for stage in workflow_stages %}
                         <option value="{{ stage.key }}">{{ stage.name }}</option>
                         {% endfor %}
@@ -386,8 +420,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Notes (Optional)</label>
-                    <textarea name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red" placeholder="Add any relevant notes about this status update..."></textarea>
+                    <label for="status-notes" class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Notes (Optional)</label>
+                    <textarea id="status-notes" name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red" placeholder="Add any relevant notes about this status update..."></textarea>
                 </div>
             </div>
 
@@ -395,7 +429,7 @@
                 <button type="button" onclick="closeStatusModal()" class="flex-1 btn-admin-secondary">
                     Cancel
                 </button>
-                <button type="submit" class="flex-1 btn-admin-primary">
+                <button type="submit" class="flex-1 btn-admin-primary" id="status-submit-btn">
                     Update Status
                 </button>
             </div>
@@ -407,6 +441,21 @@
 {% block extra_css %}
 {{ block.super }}
 <style>
+    /* Alpine.js cloak styles - hide elements until Alpine.js loads */
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* Loading states */
+    .htmx-request {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .htmx-request .fa-spinner {
+        animation: spin 1s linear infinite;
+    }
+
     /* Tracking Management specific styles */
     .workflow-stage {
         transform: translateY(0);
@@ -470,8 +519,20 @@
     }
 
     /* HTMX Loading Indicators */
+    .htmx-request #refresh-icon {
+        display: none;
+    }
+
     .htmx-request #refresh-indicator {
-        animation: spin 1s linear infinite;
+        display: inline-block !important;
+    }
+
+    .htmx-request #search-indicator {
+        display: inline-block !important;
+    }
+
+    .htmx-request #filter-loading {
+        display: inline-block !important;
     }
 
     @keyframes spin {
@@ -559,26 +620,775 @@
 </style>
 
 <script>
+// Global variables
 let currentOrderId = null;
 
+// Enhanced modal management functions with comprehensive error handling
 function openStatusModal(orderId, currentStatus) {
-    currentOrderId = orderId;
-    document.getElementById('status-select').value = currentStatus;
-    document.getElementById('status-modal').classList.remove('hidden');
+    console.log('📝 Opening status modal for order:', orderId);
+
+    try {
+        // Validate inputs
+        if (!orderId) {
+            throw new Error('Order ID is required to open status modal');
+        }
+
+        currentOrderId = orderId;
+        const statusSelect = document.getElementById('status-select');
+        const statusModal = document.getElementById('status-modal');
+
+        // Check if modal elements exist
+        if (!statusSelect) {
+            throw new Error('Status select element not found');
+        }
+        if (!statusModal) {
+            throw new Error('Status modal element not found');
+        }
+
+        // Set status value with validation
+        if (currentStatus && statusSelect.querySelector(`option[value="${currentStatus}"]`)) {
+            statusSelect.value = currentStatus;
+        } else {
+            console.warn('⚠️ Current status not found in options, using default');
+            statusSelect.selectedIndex = 0;
+        }
+
+        // Show modal with error handling
+        statusModal.classList.remove('hidden');
+        statusModal.setAttribute('aria-hidden', 'false');
+
+        // Enhanced focus management with error handling
+        const firstInput = statusModal.querySelector('select, input, textarea, button');
+        if (firstInput) {
+            setTimeout(() => {
+                try {
+                    firstInput.focus();
+                } catch (focusError) {
+                    console.warn('⚠️ Could not focus on modal element:', focusError);
+                }
+            }, 100);
+        }
+
+        // Trigger custom event for modal opened
+        document.dispatchEvent(new CustomEvent('statusModalOpened', {
+            detail: { orderId, currentStatus }
+        }));
+
+        console.log('✅ Status modal opened successfully');
+
+    } catch (error) {
+        console.error('❌ Error opening status modal:', error);
+
+        // Show user-friendly error message
+        const errorMessage = 'Unable to open status modal. Please refresh the page and try again.';
+        if (window.modalErrorCatcher) {
+            window.modalErrorCatcher.showModalError(errorMessage);
+        } else if (window.showError) {
+            window.showError(errorMessage);
+        } else {
+            alert(errorMessage);
+        }
+
+        // Reset state on error
+        currentOrderId = null;
+    }
 }
 
 function closeStatusModal() {
-    currentOrderId = null;
-    document.getElementById('status-modal').classList.add('hidden');
-    document.getElementById('status-form').reset();
+    console.log('❌ Closing status modal');
+
+    try {
+        // Reset global state first
+        currentOrderId = null;
+
+        const statusModal = document.getElementById('status-modal');
+        const statusForm = document.getElementById('status-form');
+
+        if (!statusModal) {
+            console.warn('⚠️ Status modal element not found during close');
+            return;
+        }
+
+        // Hide modal with error handling
+        statusModal.classList.add('hidden');
+        statusModal.setAttribute('aria-hidden', 'true');
+
+        // Reset form with validation
+        if (statusForm) {
+            try {
+                statusForm.reset();
+            } catch (resetError) {
+                console.warn('⚠️ Could not reset status form:', resetError);
+                // Manual reset as fallback
+                const inputs = statusForm.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    try {
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            input.checked = false;
+                        } else {
+                            input.value = '';
+                        }
+                    } catch (inputError) {
+                        console.warn('⚠️ Could not reset input:', inputError);
+                    }
+                });
+            }
+        }
+
+        // Trigger custom event for modal closed
+        document.dispatchEvent(new CustomEvent('statusModalClosed'));
+
+        console.log('✅ Status modal closed successfully');
+
+    } catch (error) {
+        console.error('❌ Error closing status modal:', error);
+
+        // Force close as fallback
+        try {
+            const statusModal = document.getElementById('status-modal');
+            if (statusModal) {
+                statusModal.style.display = 'none';
+                statusModal.setAttribute('aria-hidden', 'true');
+            }
+            currentOrderId = null;
+        } catch (fallbackError) {
+            console.error('❌ Fallback close also failed:', fallbackError);
+        }
+    }
 }
 
-// Handle status form submission - with null checks
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait for Alpine.js to be ready
-    if (window.Alpine) {
-        Alpine.start();
+// Enhanced initialization with proper dependency management
+function initializeTrackingManagement() {
+    console.log('🚀 Initializing Admin Tracking Management');
+
+    // CRITICAL: Stop badge update conflicts immediately
+    stopBadgeUpdateConflicts();
+
+    // Check for required dependencies
+    const dependencies = {
+        htmx: typeof htmx !== 'undefined',
+        alpine: typeof Alpine !== 'undefined',
+        hydrationManager: typeof window.hydrationManager !== 'undefined'
+    };
+
+    console.log('📋 Dependencies check:', dependencies);
+
+    // Check Alpine.js status (don't start it manually as it's loaded with defer)
+    if (dependencies.alpine) {
+        console.log('🏔️ Alpine.js is available and will auto-start');
+    } else {
+        console.warn('⚠️ Alpine.js not yet available, waiting for auto-initialization');
     }
+
+    // Initialize components
+    initializeStatusForm();
+    initializeHTMXListeners();
+    initializeSearchEnhancements();
+    initializeTableEnhancements();
+
+    // CRITICAL: Protect tracking management buttons
+    protectTrackingManagementButtons();
+
+    // Setup modal event listeners for button restoration
+    setupModalEventListeners();
+
+    // Start periodic button health check
+    startButtonHealthCheck();
+
+    // Setup page visibility recovery
+    setupPageVisibilityRecovery();
+
+    // Setup HTMX error suppression
+    setupHTMXErrorSuppression();
+
+    // Setup automatic emergency detection
+    setupEmergencyDetection();
+
+    // Mark as initialized
+    window.trackingManagementInitialized = true;
+    console.log('✅ Admin Tracking Management initialized');
+}
+
+// CRITICAL: Stop badge update conflicts that cause button disappearing
+function stopBadgeUpdateConflicts() {
+    console.log('🛡️ Stopping badge update conflicts for tracking management');
+
+    // Mark this page as tracking management to prevent badge conflicts
+    window.isTrackingManagementPage = true;
+
+    // Override badge update functions to prevent conflicts
+    if (window.updateSidebarStats) {
+        const originalUpdateStats = window.updateSidebarStats;
+        window.updateSidebarStats = function() {
+            // Check if modal operations are in progress
+            if (window.modalButtonPersistence?.modalOperationInProgress) {
+                console.log('🛡️ Skipping badge update - modal operation in progress');
+                return;
+            }
+
+            // Check if buttons are busy
+            const busyButtons = document.querySelectorAll('button[aria-busy="true"]');
+            if (busyButtons.length > 0) {
+                console.log('🛡️ Skipping badge update - buttons are busy');
+                return;
+            }
+
+            // Proceed with original function
+            originalUpdateStats();
+        };
+    }
+
+    // Stop excessive badge polling
+    const badgeElements = document.querySelectorAll('[id*="badge"], [class*="badge"]');
+    badgeElements.forEach(badge => {
+        // Remove any polling attributes that cause excessive updates
+        badge.removeAttribute('hx-trigger');
+        badge.removeAttribute('hx-get');
+
+        // Mark as protected from updates during tracking operations
+        badge.setAttribute('data-update-protected', 'true');
+    });
+
+    // Intercept HTMX requests to badge endpoints
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        const url = event.detail.requestConfig?.path || '';
+
+        // Block badge update requests during tracking operations
+        if (url.includes('badge') || url.includes('count')) {
+            const modalOpen = document.querySelector('.modal-open') ||
+                            document.querySelector('[role="dialog"]:not(.hidden)');
+
+            if (modalOpen || window.modalButtonPersistence?.modalOperationInProgress) {
+                console.log('🛡️ Blocking badge update request during modal operation');
+                event.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    console.log('✅ Badge update conflicts stopped');
+}
+
+// Enhanced button protection specifically for tracking management
+function protectTrackingManagementButtons() {
+    console.log('🔘 Protecting tracking management buttons');
+
+    // Find all modal buttons in the tracking table
+    const modalButtons = document.querySelectorAll('button[hx-get*="modal"], button[data-modal-button="true"]');
+
+    modalButtons.forEach(button => {
+        // Ensure button has proper protection attributes
+        if (!button.id) {
+            const orderId = button.getAttribute('data-order-id') || 'unknown';
+            const action = button.className.includes('edit') ? 'edit' :
+                          button.className.includes('timeline') ? 'timeline' :
+                          button.className.includes('location') ? 'location' : 'view';
+            button.id = `tracking-${action}-btn-${orderId}`;
+        }
+
+        // Add protection attributes
+        button.setAttribute('data-protected', 'true');
+        button.setAttribute('data-tracking-button', 'true');
+
+        // Store original state
+        if (!button.hasAttribute('data-original-html')) {
+            button.setAttribute('data-original-html', button.innerHTML);
+            button.setAttribute('data-original-class', button.className);
+            button.setAttribute('data-original-disabled', button.disabled);
+        }
+
+        // Add click protection
+        button.addEventListener('click', function(event) {
+            console.log(`🔘 Tracking button clicked: ${this.id}`);
+
+            // Mark modal operation in progress
+            if (window.modalButtonPersistence) {
+                window.modalButtonPersistence.modalOperationInProgress = true;
+            }
+
+            // Set loading state
+            this.setAttribute('aria-busy', 'true');
+            this.disabled = true;
+
+            const loadingText = this.getAttribute('data-loading-text') || 'Loading...';
+            this.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>${loadingText}`;
+
+            // Auto-restore after timeout
+            setTimeout(() => {
+                restoreTrackingButton(this);
+            }, 10000);
+        });
+    });
+
+    console.log(`🔘 Protected ${modalButtons.length} tracking management buttons`);
+}
+
+// Restore tracking button to original state
+function restoreTrackingButton(button) {
+    if (!button) return;
+
+    const originalHtml = button.getAttribute('data-original-html');
+    const originalClass = button.getAttribute('data-original-class');
+    const originalDisabled = button.getAttribute('data-original-disabled') === 'true';
+
+    if (originalHtml) {
+        button.innerHTML = originalHtml;
+        button.className = originalClass;
+        button.disabled = originalDisabled;
+        button.removeAttribute('aria-busy');
+
+        console.log(`🔘 Restored tracking button: ${button.id}`);
+    }
+
+    // Clear modal operation flag
+    if (window.modalButtonPersistence) {
+        window.modalButtonPersistence.modalOperationInProgress = false;
+    }
+}
+
+// Restore all tracking buttons
+function restoreAllTrackingButtons() {
+    const trackingButtons = document.querySelectorAll('button[data-tracking-button="true"]');
+    trackingButtons.forEach(button => restoreTrackingButton(button));
+    console.log(`🔘 Restored ${trackingButtons.length} tracking buttons`);
+}
+
+// Setup modal event listeners for button restoration
+function setupModalEventListeners() {
+    console.log('🔄 Setting up modal event listeners for button restoration');
+
+    // Listen for modal open events
+    document.addEventListener('htmx:afterSwap', function(event) {
+        const target = event.detail.target;
+
+        // If a modal was loaded, restore button states
+        if (target.hasAttribute('role') && target.getAttribute('role') === 'dialog') {
+            console.log('🔄 Modal opened, restoring button states');
+            setTimeout(() => {
+                restoreAllTrackingButtons();
+            }, 500);
+        }
+    });
+
+    // Listen for modal close events
+    document.addEventListener('htmx:beforeSwap', function(event) {
+        const target = event.detail.target;
+
+        // If modal is being removed, restore buttons
+        if (target.hasAttribute('role') && target.getAttribute('role') === 'dialog') {
+            console.log('🔄 Modal closing, restoring button states');
+            restoreAllTrackingButtons();
+        }
+    });
+
+    // Listen for custom modal events
+    document.addEventListener('modalOpened', function() {
+        console.log('🔄 Custom modal opened event, restoring buttons');
+        setTimeout(() => {
+            restoreAllTrackingButtons();
+        }, 500);
+    });
+
+    document.addEventListener('modalClosed', function() {
+        console.log('🔄 Custom modal closed event, restoring buttons');
+        restoreAllTrackingButtons();
+    });
+
+    // Listen for escape key to restore buttons
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            console.log('🔄 Escape key pressed, restoring buttons');
+            setTimeout(() => {
+                restoreAllTrackingButtons();
+            }, 100);
+        }
+    });
+
+    console.log('✅ Modal event listeners setup complete');
+}
+
+// Periodic button health check for tracking management
+function startButtonHealthCheck() {
+    console.log('🏥 Starting button health check for tracking management');
+
+    // Check button health every 10 seconds
+    setInterval(() => {
+        const trackingButtons = document.querySelectorAll('button[data-tracking-button="true"]');
+        let restoredCount = 0;
+
+        trackingButtons.forEach(button => {
+            // Check if button is broken (empty, hidden, or stuck in loading state)
+            const isBroken = button.innerHTML === '' ||
+                           button.style.display === 'none' ||
+                           (button.innerHTML.includes('fa-spinner') && button.getAttribute('aria-busy') === 'true');
+
+            if (isBroken) {
+                console.log(`🏥 Healing broken button: ${button.id}`);
+                restoreTrackingButton(button);
+                restoredCount++;
+            }
+        });
+
+        if (restoredCount > 0) {
+            console.log(`🏥 Healed ${restoredCount} broken buttons`);
+        }
+    }, 10000); // Every 10 seconds
+
+    console.log('✅ Button health check started');
+}
+
+// Global functions for manual button recovery
+window.fixTrackingButtons = function() {
+    console.log('🔧 Manual tracking button fix initiated');
+    restoreAllTrackingButtons();
+    protectTrackingManagementButtons();
+    return 'Tracking buttons fixed and re-protected';
+};
+
+window.getTrackingButtonStatus = function() {
+    const trackingButtons = document.querySelectorAll('button[data-tracking-button="true"]');
+    const busyButtons = document.querySelectorAll('button[data-tracking-button="true"][aria-busy="true"]');
+    const brokenButtons = Array.from(trackingButtons).filter(btn =>
+        btn.innerHTML === '' || btn.style.display === 'none'
+    );
+
+    return {
+        total: trackingButtons.length,
+        busy: busyButtons.length,
+        broken: brokenButtons.length,
+        healthy: trackingButtons.length - busyButtons.length - brokenButtons.length
+    };
+};
+
+window.emergencyButtonRestore = function() {
+    console.log('🚨 Emergency button restore initiated');
+
+    // Force restore all buttons
+    restoreAllTrackingButtons();
+
+    // Re-protect all buttons
+    protectTrackingManagementButtons();
+
+    // Clear all modal operation flags
+    if (window.modalButtonPersistence) {
+        window.modalButtonPersistence.modalOperationInProgress = false;
+    }
+
+    // Clear all busy states
+    const busyButtons = document.querySelectorAll('button[aria-busy="true"]');
+    busyButtons.forEach(btn => {
+        btn.removeAttribute('aria-busy');
+        btn.disabled = false;
+    });
+
+    return `Emergency restore complete. Fixed ${busyButtons.length} buttons.`;
+};
+
+// Comprehensive test function for tracking management buttons
+window.testTrackingButtons = function() {
+    console.log('🧪 Testing tracking management button protection...');
+
+    const results = {
+        badgeConflictsStopped: window.isTrackingManagementPage === true,
+        buttonProtectionActive: typeof protectTrackingManagementButtons === 'function',
+        modalEventListenersActive: typeof setupModalEventListeners === 'function',
+        healthCheckActive: typeof startButtonHealthCheck === 'function',
+        htmxErrorSuppressionActive: typeof setupHTMXErrorSuppression === 'function',
+        emergencyDetectionActive: typeof setupEmergencyDetection === 'function',
+        statsUpdatesDisabled: window.statsUpdateDisabled === true,
+        buttonStats: window.getTrackingButtonStatus(),
+        errorCounts: {
+            statsErrors: window.statsUpdateErrorCount || 0,
+            htmxErrors: window.htmxErrorCount || 0
+        },
+        allPassed: false
+    };
+
+    // Check if all protection systems are working
+    results.allPassed = results.badgeConflictsStopped &&
+                       results.buttonProtectionActive &&
+                       results.modalEventListenersActive &&
+                       results.healthCheckActive &&
+                       results.htmxErrorSuppressionActive &&
+                       results.emergencyDetectionActive &&
+                       results.buttonStats.total > 0;
+
+    console.log('🧪 Tracking Button Test Results:', results);
+
+    if (results.allPassed) {
+        console.log('🎉 All tracking button protections are working correctly!');
+
+        if (results.statsUpdatesDisabled) {
+            console.log('📊 Stats updates are disabled (this is good for button stability)');
+        }
+
+        if (results.errorCounts.statsErrors === 0 && results.errorCounts.htmxErrors === 0) {
+            console.log('✅ No errors detected - system is clean');
+        }
+    } else {
+        console.warn('⚠️ Some tracking button protections may need attention');
+
+        // Auto-fix if possible
+        if (results.buttonStats.broken > 0) {
+            console.log('🔧 Auto-fixing broken buttons...');
+            window.fixTrackingButtons();
+        }
+
+        // Suggest emergency mode if too many errors
+        if (results.errorCounts.statsErrors > 5 || results.errorCounts.htmxErrors > 5) {
+            console.warn('🚨 High error count detected. Consider running window.emergencyCleanSlate()');
+        }
+    }
+
+    return results;
+};
+
+// Setup page visibility recovery
+function setupPageVisibilityRecovery() {
+    console.log('👁️ Setting up page visibility recovery');
+
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            console.log('👁️ Page became visible, checking button health');
+
+            // Wait a moment for any ongoing operations to complete
+            setTimeout(() => {
+                const status = window.getTrackingButtonStatus();
+
+                if (status.broken > 0 || status.busy > status.total * 0.5) {
+                    console.log('👁️ Detected button issues, performing recovery');
+                    window.fixTrackingButtons();
+                }
+            }, 1000);
+        }
+    });
+
+    console.log('✅ Page visibility recovery setup complete');
+}
+
+// Setup HTMX error suppression for tracking management
+function setupHTMXErrorSuppression() {
+    console.log('🔇 Setting up HTMX error suppression for tracking management');
+
+    // Suppress HTMX target errors that don't affect functionality
+    document.addEventListener('htmx:targetError', function(event) {
+        const target = event.detail.target;
+        const xhr = event.detail.xhr;
+
+        // Suppress errors for badge updates and stats
+        if (xhr && xhr.responseURL &&
+            (xhr.responseURL.includes('badge') ||
+             xhr.responseURL.includes('stats') ||
+             xhr.responseURL.includes('quick-actions'))) {
+
+            console.log('🔇 Suppressing HTMX target error for stats/badge update');
+            event.stopPropagation();
+            event.preventDefault();
+            return false;
+        }
+
+        // Log other errors but don't spam
+        if (!window.htmxErrorCount) {
+            window.htmxErrorCount = 0;
+        }
+
+        window.htmxErrorCount++;
+
+        if (window.htmxErrorCount <= 3) {
+            console.warn(`⚠️ HTMX target error (${window.htmxErrorCount}/3):`, event.detail);
+
+            if (window.htmxErrorCount === 3) {
+                console.warn('🔇 Suppressing further HTMX error messages');
+            }
+        }
+    });
+
+    // Suppress response errors for stats endpoints
+    document.addEventListener('htmx:responseError', function(event) {
+        const xhr = event.detail.xhr;
+
+        if (xhr && xhr.responseURL &&
+            (xhr.responseURL.includes('badge') ||
+             xhr.responseURL.includes('stats') ||
+             xhr.responseURL.includes('quick-actions'))) {
+
+            console.log('🔇 Suppressing HTMX response error for stats/badge update');
+            event.stopPropagation();
+            event.preventDefault();
+            return false;
+        }
+    });
+
+    console.log('✅ HTMX error suppression setup complete');
+}
+
+// Emergency stats disable function
+window.disableStatsUpdates = function() {
+    console.log('🚨 Emergency: Disabling all stats updates');
+
+    // Disable stats updates globally
+    window.statsUpdateDisabled = true;
+
+    // Clear any existing intervals
+    if (window.statsUpdateInterval) {
+        clearInterval(window.statsUpdateInterval);
+        window.statsUpdateInterval = null;
+    }
+
+    // Override the update function
+    if (window.updateSidebarStats) {
+        window.updateSidebarStats = function() {
+            console.log('📊 Stats updates disabled');
+            return;
+        };
+    }
+
+    // Remove HTMX triggers from badge elements
+    const badgeElements = document.querySelectorAll('[hx-trigger*="every"], [hx-get*="badge"], [hx-get*="stats"]');
+    badgeElements.forEach(element => {
+        element.removeAttribute('hx-trigger');
+        element.removeAttribute('hx-get');
+        console.log('🚨 Removed HTMX triggers from badge element');
+    });
+
+    return 'Stats updates completely disabled';
+};
+
+// Emergency clean slate function
+window.emergencyCleanSlate = function() {
+    console.log('🚨 Emergency: Complete clean slate');
+
+    // Disable stats updates
+    window.disableStatsUpdates();
+
+    // Restore all buttons
+    window.emergencyButtonRestore();
+
+    // Clear all error flags
+    window.statsUpdateErrorLogged = false;
+    window.statsUpdateErrorCount = 0;
+    window.htmxErrorCount = 0;
+
+    // Clear modal operation flags
+    if (window.modalButtonPersistence) {
+        window.modalButtonPersistence.modalOperationInProgress = false;
+    }
+
+    return 'Emergency clean slate complete - all systems reset';
+};
+
+// Automatic emergency detection
+function setupEmergencyDetection() {
+    console.log('🚨 Setting up automatic emergency detection');
+
+    let errorCount = 0;
+    let lastErrorTime = 0;
+
+    // Monitor console errors
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+        const now = Date.now();
+
+        // Check for JSON parsing errors or HTMX errors
+        const errorMessage = args.join(' ');
+        if (errorMessage.includes('JSON') ||
+            errorMessage.includes('htmx') ||
+            errorMessage.includes('Unexpected token')) {
+
+            errorCount++;
+            lastErrorTime = now;
+
+            // If too many errors in short time, trigger emergency mode
+            if (errorCount >= 5 && (now - lastErrorTime) < 30000) {
+                console.log('🚨 Too many errors detected, triggering emergency mode');
+                window.emergencyCleanSlate();
+                errorCount = 0; // Reset counter
+            }
+        }
+
+        // Reset error count if no errors for 1 minute
+        if ((now - lastErrorTime) > 60000) {
+            errorCount = 0;
+        }
+
+        // Call original console.error
+        originalConsoleError.apply(console, args);
+    };
+
+    console.log('✅ Emergency detection setup complete');
+}
+
+// Quick fix function for immediate relief
+window.quickFixTrackingPage = function() {
+    console.log('⚡ Quick fix for tracking page initiated');
+
+    const fixes = [];
+
+    // 1. Disable problematic stats updates immediately
+    if (!window.statsUpdateDisabled) {
+        window.disableStatsUpdates();
+        fixes.push('Disabled stats updates');
+    }
+
+    // 2. Restore all buttons
+    const buttonStatus = window.getTrackingButtonStatus();
+    if (buttonStatus.broken > 0 || buttonStatus.busy > 0) {
+        window.emergencyButtonRestore();
+        fixes.push(`Restored ${buttonStatus.broken + buttonStatus.busy} buttons`);
+    }
+
+    // 3. Clear error flags
+    window.statsUpdateErrorLogged = false;
+    window.statsUpdateErrorCount = 0;
+    window.htmxErrorCount = 0;
+    fixes.push('Cleared error flags');
+
+    // 4. Remove problematic HTMX triggers
+    const problematicElements = document.querySelectorAll('[hx-trigger*="every"], [hx-get*="badge"], [hx-get*="stats"]');
+    if (problematicElements.length > 0) {
+        problematicElements.forEach(el => {
+            el.removeAttribute('hx-trigger');
+            el.removeAttribute('hx-get');
+        });
+        fixes.push(`Removed ${problematicElements.length} problematic HTMX triggers`);
+    }
+
+    // 5. Clear modal operation flags
+    if (window.modalButtonPersistence) {
+        window.modalButtonPersistence.modalOperationInProgress = false;
+        fixes.push('Cleared modal operation flags');
+    }
+
+    console.log('⚡ Quick fix complete:', fixes);
+    return `Quick fix applied: ${fixes.join(', ')}`;
+};
+
+// DOM ready handler with retry mechanism
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM Content Loaded');
+
+    // Wait for all scripts to load before initializing
+    let retryCount = 0;
+    const maxRetries = 10;
+
+    function tryInitialize() {
+        if (typeof htmx !== 'undefined') {
+            initializeTrackingManagement();
+        } else if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`⏳ Waiting for dependencies... (${retryCount}/${maxRetries})`);
+            setTimeout(tryInitialize, 100);
+        } else {
+            console.warn('⚠️ Some dependencies not loaded, initializing anyway');
+            initializeTrackingManagement();
+        }
+    }
+
+    tryInitialize();
+});
+
+// Status form initialization with improved error handling
+function initializeStatusForm() {
     const statusForm = document.getElementById('status-form');
     const statusModal = document.getElementById('status-modal');
 
@@ -586,65 +1396,127 @@ document.addEventListener('DOMContentLoaded', function() {
         statusForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (!currentOrderId) return;
+            if (!currentOrderId) {
+                console.warn('No order ID set for status update');
+                return;
+            }
 
             const formData = new FormData(this);
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ||
+                            document.querySelector('meta[name="csrf-token"]');
 
             if (!csrfToken) {
                 console.error('CSRF token not found');
+                const errorMsg = 'Security token not found. Please refresh the page.';
                 if (window.showError) {
-                    showError('Security token not found. Please refresh the page.');
+                    showError(errorMsg);
                 } else {
-                    alert('Security token not found. Please refresh the page.');
+                    alert(errorMsg);
                 }
                 return;
             }
+
+            // Add loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
 
             fetch(`/dashboard/admin/tracking/update-status/${currentOrderId}/`, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': csrfToken.value
+                    'X-CSRFToken': csrfToken.value || csrfToken.getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Show success message using toast manager if available
+                    // Show success message
                     if (window.showSuccess) {
                         showSuccess('Status updated successfully!');
                     } else {
                         alert('Status updated successfully!');
                     }
-                    // Reload the page to show updated status
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    if (window.showError) {
-                        showError('Error: ' + data.error);
+
+                    // Close modal and refresh table
+                    closeStatusModal();
+
+                    // Refresh the table using HTMX
+                    const refreshBtn = document.querySelector('[title="Refresh table data"]');
+                    if (refreshBtn) {
+                        refreshBtn.click();
                     } else {
-                        alert('Error: ' + data.error);
+                        // Fallback: trigger HTMX refresh directly
+                        htmx.ajax('GET', '{% url "core:admin_tracking_management_table_partial" %}?page=1', {
+                            target: '#tracking-table-content',
+                            swap: 'innerHTML'
+                        });
+                    }
+                } else {
+                    const errorMsg = data.error || 'Unknown error occurred';
+                    if (window.showError) {
+                        showError('Error: ' + errorMsg);
+                    } else {
+                        alert('Error: ' + errorMsg);
                     }
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                if (window.showError) {
-                    showError('An error occurred while updating the status.');
-                } else {
-                    alert('An error occurred while updating the status.');
-                }
-            });
+                console.error('❌ Status update error:', error);
 
-            closeStatusModal();
+                // Enhanced error handling with specific messages
+                let errorMsg = 'An error occurred while updating the status.';
+
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg = 'Network error. Please check your connection and try again.';
+                } else if (error.message.includes('500')) {
+                    errorMsg = 'Server error occurred. Please try again in a moment.';
+                } else if (error.message.includes('404')) {
+                    errorMsg = 'Order not found. It may have been deleted.';
+                } else if (error.message.includes('403')) {
+                    errorMsg = 'You do not have permission to update this order.';
+                } else if (error.message.includes('timeout')) {
+                    errorMsg = 'Request timed out. Please try again.';
+                }
+
+                // Use modal error catcher if available
+                if (window.modalErrorCatcher) {
+                    window.modalErrorCatcher.showModalError(errorMsg);
+                } else if (window.showError) {
+                    showError(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+
+                // Log error for debugging
+                if (window.modalErrorCatcher) {
+                    window.modalErrorCatcher.handleModalError({
+                        type: 'status_update_error',
+                        error: error,
+                        message: error.message,
+                        orderId: currentOrderId,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            })
+            .finally(() => {
+                // Restore button state
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
         });
     }
 
     // Close modal on escape key
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && !document.querySelector('.modal-open')) {
             closeStatusModal();
         }
     });
@@ -657,139 +1529,577 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+}
 
-// Filter by workflow stage function
+// Initialize HTMX event listeners for better error handling and hydration
+function initializeHTMXListeners() {
+    // HTMX request start
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        console.log('🔄 HTMX request starting:', evt.detail.requestConfig.path);
+
+        // Show loading indicators
+        const indicator = document.getElementById(evt.detail.requestConfig.indicatorId);
+        if (indicator) {
+            indicator.classList.remove('hidden');
+        }
+    });
+
+    // HTMX request complete
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        console.log('✅ HTMX request completed:', evt.detail.xhr.status);
+
+        // Hide loading indicators
+        document.querySelectorAll('.fa-spinner').forEach(spinner => {
+            if (spinner.id.includes('indicator') || spinner.id.includes('loading')) {
+                spinner.classList.add('hidden');
+            }
+        });
+
+        // Handle errors
+        if (evt.detail.xhr.status >= 400) {
+            console.error('HTMX request failed:', evt.detail.xhr.status);
+            if (window.showError) {
+                showError('Request failed. Please try again.');
+            }
+        }
+    });
+
+    // HTMX content swap with enhanced hydration
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        console.log('🔄 HTMX content swapped, triggering hydration');
+
+        // Use hydration manager if available
+        if (window.hydrationManager) {
+            console.log('🔧 Using hydration manager for content swap');
+            window.hydrationManager.hydrateElement(evt.detail.target);
+        } else {
+            console.log('🔧 Fallback: Manual Alpine.js initialization');
+            // Fallback to manual Alpine.js initialization
+            if (typeof Alpine !== 'undefined' && evt.detail.target) {
+                const alpineElements = evt.detail.target.querySelectorAll('[x-data]');
+                alpineElements.forEach(element => {
+                    if (!element._x_dataStack) {
+                        console.log('🏔️ Initializing Alpine component after swap');
+                        try {
+                            Alpine.initTree(element);
+                        } catch (error) {
+                            console.warn('Alpine initialization error:', error);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Re-initialize any custom components
+        initializeTableEnhancements(evt.detail.target);
+
+        // Re-initialize pagination if table was swapped
+        if (evt.detail.target.id === 'tracking-management-table') {
+            initializePaginationEnhancements();
+        }
+    });
+
+    // HTMX error handling
+    document.body.addEventListener('htmx:responseError', function(evt) {
+        console.error('❌ HTMX Response Error:', evt.detail);
+        if (window.showError) {
+            showError('Failed to load content. Please try again.');
+        } else {
+            alert('Failed to load content. Please try again.');
+        }
+    });
+
+    // HTMX network error handling
+    document.body.addEventListener('htmx:sendError', function(evt) {
+        console.error('❌ HTMX Network Error:', evt.detail);
+        if (window.showError) {
+            showError('Network error. Please check your connection.');
+        } else {
+            alert('Network error. Please check your connection.');
+        }
+    });
+}
+
+// Enhanced filter by workflow stage function with better error handling
 function filterByStage(stageKey, stageName) {
-    // Update filter text
-    document.getElementById('filter-text').textContent = stageName;
+    console.log('🔍 Filtering by stage:', stageKey, stageName);
 
-    // Make HTMX request to filter table, reset to page 1
-    const url = stageKey === 'all'
-        ? '/dashboard/admin/tracking-management/table/?page=1'
-        : `/dashboard/admin/tracking-management/table/?page=1&status=${stageKey}`;
+    try {
+        // Update filter text
+        const filterText = document.getElementById('filter-text');
+        if (filterText) {
+            filterText.textContent = stageName;
+        }
 
-    htmx.ajax('GET', url, {
-        target: '#tracking-management-table',
-        swap: 'outerHTML'
-    });
+        // Show loading indicator
+        const loadingIndicator = document.getElementById('filter-loading');
+        if (loadingIndicator) {
+            loadingIndicator.classList.remove('hidden');
+        }
 
-    // Add visual feedback to clicked stage
-    document.querySelectorAll('.workflow-stage-enhanced').forEach(stage => {
-        stage.classList.remove('active-stage');
-    });
+        // Build URL with current search and date filters
+        const searchInput = document.getElementById('tracking-search');
+        const dateFromInput = document.querySelector('[name="date_from"]');
+        const dateToInput = document.querySelector('[name="date_to"]');
 
-    if (stageKey !== 'all') {
-        document.querySelector(`[data-stage="${stageKey}"]`).classList.add('active-stage');
+        let url = '/dashboard/admin/tracking-management/table/?page=1';
+
+        if (stageKey !== 'all') {
+            url += `&status=${encodeURIComponent(stageKey)}`;
+        }
+
+        if (searchInput && searchInput.value.trim()) {
+            url += `&search=${encodeURIComponent(searchInput.value.trim())}`;
+        }
+
+        if (dateFromInput && dateFromInput.value) {
+            url += `&date_from=${encodeURIComponent(dateFromInput.value)}`;
+        }
+
+        if (dateToInput && dateToInput.value) {
+            url += `&date_to=${encodeURIComponent(dateToInput.value)}`;
+        }
+
+        // Make HTMX request
+        if (typeof htmx !== 'undefined') {
+            htmx.ajax('GET', url, {
+                target: '#tracking-management-table',
+                swap: 'outerHTML',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(() => {
+                console.log('✅ Filter request completed');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                }
+            }).catch(error => {
+                console.error('❌ Filter request failed:', error);
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                }
+                if (window.showError) {
+                    showError('Failed to filter results. Please try again.');
+                }
+            });
+        } else {
+            console.error('HTMX not available');
+            if (window.showError) {
+                showError('Page functionality not fully loaded. Please refresh.');
+            }
+        }
+
+        // Add visual feedback to clicked stage
+        document.querySelectorAll('.workflow-stage-enhanced').forEach(stage => {
+            stage.classList.remove('active-stage');
+        });
+
+        if (stageKey !== 'all') {
+            const targetStage = document.querySelector(`[data-stage="${stageKey}"]`);
+            if (targetStage) {
+                targetStage.classList.add('active-stage');
+            }
+        }
+    } catch (error) {
+        console.error('Error in filterByStage:', error);
+        if (window.showError) {
+            showError('An error occurred while filtering. Please try again.');
+        }
     }
 }
 
-// Clear all filters function
+// Enhanced clear all filters function
 function clearFilters() {
-    // Clear search input
-    const searchInput = document.getElementById('tracking-search');
-    if (searchInput) {
-        searchInput.value = '';
-    }
+    console.log('🧹 Clearing all filters');
 
-    // Clear date inputs
-    const dateFromInput = document.querySelector('[name="date_from"]');
-    const dateToInput = document.querySelector('[name="date_to"]');
-    if (dateFromInput) dateFromInput.value = '';
-    if (dateToInput) dateToInput.value = '';
+    try {
+        // Clear search input
+        const searchInput = document.getElementById('tracking-search');
+        if (searchInput) {
+            searchInput.value = '';
+        }
 
-    // Reload table without filters, reset to page 1
-    htmx.ajax('GET', '/dashboard/admin/tracking-management/table/?page=1', {
-        target: '#tracking-management-table',
-        swap: 'outerHTML'
-    });
+        // Clear date inputs
+        const dateFromInput = document.querySelector('[name="date_from"]');
+        const dateToInput = document.querySelector('[name="date_to"]');
+        if (dateFromInput) dateFromInput.value = '';
+        if (dateToInput) dateToInput.value = '';
 
-    // Reload page to clear URL parameters
-    setTimeout(() => {
+        // Reset filter text
+        const filterText = document.getElementById('filter-text');
+        if (filterText) {
+            filterText.textContent = 'All Stages';
+        }
+
+        // Remove active stage styling
+        document.querySelectorAll('.workflow-stage-enhanced').forEach(stage => {
+            stage.classList.remove('active-stage');
+        });
+
+        // Show loading indicator
+        const loadingIndicator = document.getElementById('filter-loading');
+        if (loadingIndicator) {
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        // Reload table without filters using HTMX
+        if (typeof htmx !== 'undefined') {
+            htmx.ajax('GET', '/dashboard/admin/tracking-management/table/?page=1', {
+                target: '#tracking-management-table',
+                swap: 'outerHTML',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(() => {
+                console.log('✅ Filters cleared successfully');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                }
+
+                // Update URL without page reload
+                if (window.history && window.history.pushState) {
+                    window.history.pushState({}, '', '/dashboard/admin/tracking-management/');
+                }
+            }).catch(error => {
+                console.error('❌ Clear filters failed:', error);
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                }
+                // Fallback to page reload
+                window.location.href = '/dashboard/admin/tracking-management/';
+            });
+        } else {
+            // Fallback if HTMX not available
+            window.location.href = '/dashboard/admin/tracking-management/';
+        }
+    } catch (error) {
+        console.error('Error in clearFilters:', error);
+        // Fallback to page reload
         window.location.href = '/dashboard/admin/tracking-management/';
-    }, 500);
+    }
 }
 
-// Enhanced search functionality
-document.addEventListener('DOMContentLoaded', function() {
+// Enhanced search functionality initialization
+function initializeSearchEnhancements() {
     const searchInput = document.getElementById('tracking-search');
     if (searchInput) {
+        console.log('🔍 Initializing search enhancements');
+
         // Add search icon animation
         searchInput.addEventListener('focus', function() {
-            this.parentElement.querySelector('.fa-search').classList.add('text-harrier-red');
+            const searchIcon = this.parentElement.querySelector('.fa-search');
+            if (searchIcon) {
+                searchIcon.classList.add('text-harrier-red');
+            }
         });
 
         searchInput.addEventListener('blur', function() {
-            this.parentElement.querySelector('.fa-search').classList.remove('text-harrier-red');
+            const searchIcon = this.parentElement.querySelector('.fa-search');
+            if (searchIcon) {
+                searchIcon.classList.remove('text-harrier-red');
+            }
         });
 
-        // Show/hide search indicator
+        // Enhanced search with debouncing
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const searchIndicator = document.getElementById('search-indicator');
+
+            searchTimeout = setTimeout(() => {
+                if (searchIndicator) {
+                    searchIndicator.classList.remove('hidden');
+                }
+
+                // Trigger HTMX search
+                if (typeof htmx !== 'undefined') {
+                    htmx.trigger(this, 'keyup');
+                }
+            }, 300); // 300ms debounce
+        });
+
+        // Show/hide search indicator for HTMX requests
         document.addEventListener('htmx:beforeRequest', function(event) {
             if (event.target === searchInput) {
-                document.getElementById('search-indicator').classList.remove('hidden');
+                const searchIndicator = document.getElementById('search-indicator');
+                if (searchIndicator) {
+                    searchIndicator.classList.remove('hidden');
+                }
             }
         });
 
         document.addEventListener('htmx:afterRequest', function(event) {
             if (event.target === searchInput) {
-                document.getElementById('search-indicator').classList.add('hidden');
+                const searchIndicator = document.getElementById('search-indicator');
+                if (searchIndicator) {
+                    searchIndicator.classList.add('hidden');
+                }
             }
         });
     }
 
     // Enhanced pagination experience
     initializePaginationEnhancements();
-});
+}
 
-// Initialize pagination enhancements
+// Enhanced pagination initialization with better error handling
 function initializePaginationEnhancements() {
+    console.log('📄 Initializing pagination enhancements');
+
     // Add loading states to pagination buttons
     document.addEventListener('htmx:beforeRequest', function(event) {
         if (event.target.classList.contains('pagination-btn') ||
-            event.target.classList.contains('pagination-btn-mobile')) {
+            event.target.classList.contains('pagination-btn-mobile') ||
+            event.target.classList.contains('pagination-btn-nav') ||
+            event.target.classList.contains('pagination-btn-number')) {
             event.target.style.opacity = '0.6';
             event.target.style.pointerEvents = 'none';
+            event.target.setAttribute('data-loading', 'true');
         }
     });
 
     document.addEventListener('htmx:afterRequest', function(event) {
-        // Re-enable pagination buttons after request
-        document.querySelectorAll('.pagination-btn, .pagination-btn-mobile').forEach(btn => {
+        // Re-enable all pagination buttons after request
+        document.querySelectorAll('[data-loading="true"]').forEach(btn => {
             btn.style.opacity = '1';
             btn.style.pointerEvents = 'auto';
+            btn.removeAttribute('data-loading');
         });
 
-        // Scroll to top of table after pagination
+        // Scroll to top of table after pagination with smooth animation
         if (event.target.id === 'tracking-management-table') {
             const tableContainer = document.getElementById('tracking-management-table');
             if (tableContainer) {
-                tableContainer.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+                // Small delay to ensure content is rendered
+                setTimeout(() => {
+                    tableContainer.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 100);
             }
         }
     });
 
-    // Keyboard navigation for pagination
+    // Enhanced keyboard navigation for pagination
     document.addEventListener('keydown', function(event) {
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-            return; // Don't interfere with form inputs
+        // Don't interfere with form inputs or when modals are open
+        if (event.target.tagName === 'INPUT' ||
+            event.target.tagName === 'TEXTAREA' ||
+            event.target.tagName === 'SELECT' ||
+            document.querySelector('.modal:not(.hidden)')) {
+            return;
         }
 
-        const currentPage = parseInt(document.querySelector('.pagination-btn-active')?.textContent || '1');
-        const totalPages = parseInt(document.querySelector('.pagination-btn:last-of-type')?.textContent || '1');
+        try {
+            const currentPageElement = document.querySelector('.pagination-btn-active');
+            const currentPage = currentPageElement ? parseInt(currentPageElement.textContent) : 1;
 
-        if (event.key === 'ArrowLeft' && currentPage > 1) {
-            event.preventDefault();
-            const prevBtn = document.querySelector('.pagination-btn-nav[title="Previous page"]');
-            if (prevBtn) prevBtn.click();
-        } else if (event.key === 'ArrowRight' && currentPage < totalPages) {
-            event.preventDefault();
-            const nextBtn = document.querySelector('.pagination-btn-nav[title="Next page"]');
-            if (nextBtn) nextBtn.click();
+            // Find total pages more reliably
+            const pageButtons = document.querySelectorAll('.pagination-btn-number');
+            let totalPages = 1;
+            pageButtons.forEach(btn => {
+                const pageNum = parseInt(btn.textContent);
+                if (pageNum > totalPages) totalPages = pageNum;
+            });
+
+            if (event.key === 'ArrowLeft' && currentPage > 1) {
+                event.preventDefault();
+                const prevBtn = document.querySelector('.pagination-btn-nav[title="Previous page"]');
+                if (prevBtn && !prevBtn.disabled) {
+                    prevBtn.click();
+                }
+            } else if (event.key === 'ArrowRight' && currentPage < totalPages) {
+                event.preventDefault();
+                const nextBtn = document.querySelector('.pagination-btn-nav[title="Next page"]');
+                if (nextBtn && !nextBtn.disabled) {
+                    nextBtn.click();
+                }
+            }
+        } catch (error) {
+            console.warn('Pagination keyboard navigation error:', error);
         }
     });
+}
+
+// Initialize table enhancements for dynamically loaded content
+function initializeTableEnhancements(container = document) {
+    console.log('📊 Initializing table enhancements');
+
+    try {
+        // Re-initialize action button hover effects
+        const actionButtons = container.querySelectorAll('.action-btn');
+        actionButtons.forEach(btn => {
+            // Remove existing listeners to prevent duplicates
+            btn.removeEventListener('mouseenter', handleActionButtonHover);
+            btn.removeEventListener('mouseleave', handleActionButtonLeave);
+
+            // Add new listeners
+            btn.addEventListener('mouseenter', handleActionButtonHover);
+            btn.addEventListener('mouseleave', handleActionButtonLeave);
+        });
+
+        // Re-initialize pagination if not already done
+        if (!container.querySelector('.pagination-enhanced')) {
+            initializePaginationEnhancements();
+        }
+
+        console.log('✅ Table enhancements initialized');
+    } catch (error) {
+        console.error('Error initializing table enhancements:', error);
+    }
+}
+
+// Action button hover handlers
+function handleActionButtonHover() {
+    this.style.transform = 'translateY(-1px)';
+}
+
+function handleActionButtonLeave() {
+    this.style.transform = 'translateY(0)';
+}
+
+// Global error handler for unhandled promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+    if (window.showError) {
+        showError('An unexpected error occurred. Please try again.');
+    }
+    event.preventDefault();
+});
+
+// Global error handler for JavaScript errors
+window.addEventListener('error', function(event) {
+    console.error('JavaScript error:', event.error);
+    // Don't show user-facing errors for script loading issues
+    if (!event.filename.includes('static/js/')) {
+        if (window.showError) {
+            showError('A technical error occurred. Please refresh the page.');
+        }
+    }
+});
+
+// Setup enhanced HTMX event handlers for tracking management
+function setupTrackingHTMXHandlers() {
+    console.log('🔄 Setting up tracking HTMX handlers...');
+
+    // Handle table content updates
+    document.addEventListener('htmx:afterSwap', function(event) {
+        const target = event.detail.target;
+
+        // If the tracking table content was updated
+        if (target.id === 'tracking-table-content' || target.closest('#tracking-table-content')) {
+            console.log('🔄 Table content updated, re-initializing components...');
+
+            // Check if modal operation is in progress
+            const modalOperationInProgress = window.modalButtonPersistence?.modalOperationInProgress || false;
+
+            if (modalOperationInProgress) {
+                console.log('🔘 Modal operation in progress, preserving button states...');
+            }
+
+            // Re-initialize any Alpine.js components in the new content using safe utilities
+            if (window.safeAlpineBatchInit) {
+                window.safeAlpineBatchInit(target);
+            } else if (window.isAlpineReady && window.isAlpineReady()) {
+                // Fallback to direct initialization if safe utilities not available
+                try {
+                    const alpineElements = target.querySelectorAll('[x-data]');
+                    alpineElements.forEach(element => {
+                        if (!element._x_dataStack || element._x_dataStack.length === 0) {
+                            Alpine.initTree(element);
+                        }
+                    });
+                } catch (error) {
+                    console.warn('⚠️ Could not initialize Alpine.js component:', error);
+                }
+            } else {
+                console.warn('⚠️ Alpine.js not ready for component initialization');
+            }
+
+            // Re-register any new buttons with enhanced HTMX integration
+            if (window.enhancedHTMXIntegration) {
+                window.enhancedHTMXIntegration.registerButtonsInElement(target);
+            }
+
+            // Re-initialize modal management for new buttons
+            if (window.enhancedModalManager) {
+                const modals = target.querySelectorAll('[role="dialog"], [id*="modal"]');
+                modals.forEach(modal => {
+                    window.enhancedModalManager.handleNewModal(modal);
+                });
+            }
+
+            // Re-protect modal buttons
+            if (window.modalButtonPersistence) {
+                window.modalButtonPersistence.protectModalButtonsInElement(target);
+            }
+
+            // CRITICAL: Re-protect tracking management buttons after table update
+            protectTrackingManagementButtons();
+        }
+    });
+
+    // Handle HTMX before request to prevent conflicts during modal operations
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        const target = event.detail.target;
+        const elt = event.detail.elt;
+
+        // Check if this is a table refresh during modal operation
+        if ((target.id === 'tracking-table-content' || target.closest('#tracking-table-content')) &&
+            window.modalButtonPersistence?.modalOperationInProgress) {
+
+            // Check if this is an automatic refresh (not user-initiated)
+            if (!elt.hasAttribute('data-user-initiated')) {
+                console.log('🔘 Preventing automatic table refresh during modal operation');
+                event.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    // Handle HTMX errors specifically for tracking management
+    document.addEventListener('htmx:responseError', function(event) {
+        const target = event.detail.target;
+
+        // Only handle errors for tracking-related requests
+        if (target && (target.id === 'tracking-table-content' || target.closest('#tracking-management-table'))) {
+            console.error('🚨 HTMX Error in tracking management:', event.detail);
+
+            // Show user-friendly error message
+            const errorMessage = event.detail.xhr.status === 500 ?
+                'Server error occurred. Please refresh the page and try again.' :
+                'Request failed. Please check your connection and try again.';
+
+            if (window.modalErrorCatcher) {
+                window.modalErrorCatcher.showModalError(errorMessage);
+            } else if (window.showError) {
+                window.showError(errorMessage);
+            } else {
+                alert(errorMessage);
+            }
+        }
+    });
+
+    console.log('✅ Tracking HTMX handlers setup complete');
+}
+
+// Prevent multiple initialization
+if (window.trackingManagementLoaded) {
+    console.warn('⚠️ Tracking management already loaded, skipping initialization');
+} else {
+    window.trackingManagementLoaded = true;
+
+    // Make functions globally available for inline event handlers
+    window.openStatusModal = openStatusModal;
+    window.closeStatusModal = closeStatusModal;
+    window.filterByStage = filterByStage;
+    window.clearFilters = clearFilters;
+
+    // Setup enhanced HTMX event handlers
+    setupTrackingHTMXHandlers();
+
+    console.log('🌐 Global functions exposed');
 }
 </script>
 {% endblock %}

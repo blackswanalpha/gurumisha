@@ -49,44 +49,44 @@ class ResourceSystemTestCase(TestCase):
             slug='test-article',
             content='This is a test article content.',
             content_type='article',
-            status='published',
+            is_published=True,
             author=self.admin_user,
             excerpt='Test article excerpt',
             reading_time=5
         )
         self.article_post.tags.add(self.test_tag)
-        
+
         self.guide_post = BlogPost.objects.create(
             title='Test Guide',
             slug='test-guide',
             content='This is a test guide content.',
             content_type='guide',
-            status='published',
+            is_published=True,
             author=self.admin_user,
             excerpt='Test guide excerpt',
             reading_time=10,
             pdf_file_size=1024000,
             pdf_download_count=5
         )
-        
+
         self.infographic_post = BlogPost.objects.create(
             title='Test Infographic',
             slug='test-infographic',
             content='This is a test infographic content.',
             content_type='infographic',
-            status='published',
+            is_published=True,
             author=self.admin_user,
             chart_type='bar',
             chart_title='Test Chart',
             chart_data='{"labels": ["A", "B", "C"], "data": [10, 20, 30]}'
         )
-        
+
         self.opinion_post = BlogPost.objects.create(
             title='Test Opinion',
             slug='test-opinion',
             content='This is a test opinion content.',
             content_type='opinion',
-            status='published',
+            is_published=True,
             author=self.admin_user
         )
         
@@ -113,7 +113,7 @@ class ResourceSystemTestCase(TestCase):
             slug='test-news',
             content='This is a test news content.',
             content_type='news',
-            status='published',
+            is_published=True,
             author=self.admin_user,
             news_source='Test Source',
             news_location='Test Location',

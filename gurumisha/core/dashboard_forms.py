@@ -150,6 +150,135 @@ class UserProfileForm(forms.ModelForm):
         return phone
 
 
+class AdminUserEditForm(forms.ModelForm):
+    """Admin-specific user edit form with role management"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Set country choices with Kenya at top and East African countries prominently featured
+        self.fields['country'].choices = [
+            ('', 'Select a country'),
+            # Primary Market - Kenya
+            ('Kenya', 'Kenya'),
+            # East African Community
+            ('Uganda', 'Uganda'),
+            ('Tanzania', 'Tanzania'),
+            ('Rwanda', 'Rwanda'),
+            ('Burundi', 'Burundi'),
+            ('South Sudan', 'South Sudan'),
+            # Other East African Countries
+            ('Ethiopia', 'Ethiopia'),
+            ('Somalia', 'Somalia'),
+            ('Djibouti', 'Djibouti'),
+            ('Eritrea', 'Eritrea'),
+            # Major African Markets
+            ('South Africa', 'South Africa'),
+            ('Nigeria', 'Nigeria'),
+            ('Egypt', 'Egypt'),
+            ('Morocco', 'Morocco'),
+            ('Ghana', 'Ghana'),
+            ('Algeria', 'Algeria'),
+            ('Tunisia', 'Tunisia'),
+            ('Libya', 'Libya'),
+            # Other Countries (Alphabetical)
+            ('Afghanistan', 'Afghanistan'),
+            ('Albania', 'Albania'),
+            ('Argentina', 'Argentina'),
+            ('Australia', 'Australia'),
+            ('Austria', 'Austria'),
+            ('Bangladesh', 'Bangladesh'),
+            ('Belgium', 'Belgium'),
+            ('Brazil', 'Brazil'),
+            ('Canada', 'Canada'),
+            ('China', 'China'),
+            ('Denmark', 'Denmark'),
+            ('Finland', 'Finland'),
+            ('France', 'France'),
+            ('Germany', 'Germany'),
+            ('India', 'India'),
+            ('Indonesia', 'Indonesia'),
+            ('Italy', 'Italy'),
+            ('Japan', 'Japan'),
+            ('Malaysia', 'Malaysia'),
+            ('Netherlands', 'Netherlands'),
+            ('Norway', 'Norway'),
+            ('Pakistan', 'Pakistan'),
+            ('Philippines', 'Philippines'),
+            ('Poland', 'Poland'),
+            ('Portugal', 'Portugal'),
+            ('Russia', 'Russia'),
+            ('Saudi Arabia', 'Saudi Arabia'),
+            ('Singapore', 'Singapore'),
+            ('Spain', 'Spain'),
+            ('Sweden', 'Sweden'),
+            ('Switzerland', 'Switzerland'),
+            ('Thailand', 'Thailand'),
+            ('Turkey', 'Turkey'),
+            ('United Arab Emirates', 'United Arab Emirates'),
+            ('United Kingdom', 'United Kingdom'),
+            ('United States', 'United States'),
+            ('Other', 'Other'),
+        ]
+
+    class Meta:
+        model = User
+        fields = [
+            'first_name', 'last_name', 'email', 'phone', 'username', 'role',
+            'city', 'country', 'is_active', 'is_staff'
+        ]
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter last name'
+            }),
+            'username': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter username'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter email address'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter phone number'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter city'
+            }),
+            'country': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'role': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            # Check if email is already taken by another user
+            existing_user = User.objects.filter(email=email).exclude(pk=self.instance.pk).first()
+            if existing_user:
+                raise ValidationError("This email address is already in use.")
+        return email
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            # Check if username is already taken by another user
+            existing_user = User.objects.filter(username=username).exclude(pk=self.instance.pk).first()
+            if existing_user:
+                raise ValidationError("This username is already taken.")
+        return username
+
+
 class VendorProfileForm(forms.ModelForm):
     """Form for updating vendor profile information"""
 
@@ -627,6 +756,307 @@ class InquiryResponseForm(forms.ModelForm):
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red'
             })
         }
+
+
+class AdminInquiryReplyForm(forms.Form):
+    """Enhanced form for admin replies to customer inquiries"""
+
+    response_content = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-input',
+            'placeholder': 'Type your response to the customer...',
+            'rows': 6,
+            'required': True
+        }),
+        label='Response to Customer',
+        help_text='This response will be sent to the customer via email'
+    )
+
+    internal_notes = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-input',
+            'placeholder': 'Add internal notes (not visible to customer)...',
+            'rows': 3
+        }),
+        required=False,
+        label='Internal Notes',
+        help_text='These notes are only visible to admin users'
+    )
+
+    status = forms.ChoiceField(
+        choices=Inquiry.STATUS_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        label='Update Status'
+    )
+
+    priority = forms.ChoiceField(
+        choices=Inquiry.PRIORITY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        label='Priority Level'
+    )
+
+    assign_to_admin = forms.ModelChoiceField(
+        queryset=None,  # Will be set in __init__
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='Assign to Admin',
+        help_text='Assign this inquiry to a specific admin user'
+    )
+
+    send_email = forms.BooleanField(
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        required=False,
+        initial=True,
+        label='Send email notification to customer'
+    )
+
+    requires_followup = forms.BooleanField(
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        required=False,
+        label='Requires follow-up'
+    )
+
+    followup_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-input',
+            'type': 'datetime-local'
+        }),
+        required=False,
+        label='Follow-up Date'
+    )
+
+    attachment = forms.FileField(
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'
+        }),
+        required=False,
+        label='Attach File',
+        help_text='Attach supporting documents (PDF, DOC, images)'
+    )
+
+    def __init__(self, *args, **kwargs):
+        inquiry = kwargs.pop('inquiry', None)
+        super().__init__(*args, **kwargs)
+
+        # Set admin users queryset
+        from .models import User
+        self.fields['assign_to_admin'].queryset = User.objects.filter(
+            role='admin', is_active=True
+        ).order_by('first_name', 'last_name')
+
+        # Set initial values if inquiry is provided
+        if inquiry:
+            self.fields['status'].initial = inquiry.status
+            self.fields['priority'].initial = inquiry.priority
+            self.fields['assign_to_admin'].initial = inquiry.assigned_admin
+            self.fields['requires_followup'].initial = inquiry.requires_followup
+            self.fields['followup_date'].initial = inquiry.followup_date
+
+
+class AdminInquiryStatusForm(forms.ModelForm):
+    """Quick form for updating inquiry status and priority"""
+
+    class Meta:
+        model = Inquiry
+        fields = ['status', 'priority', 'assigned_admin', 'requires_followup']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'form-input text-sm'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-input text-sm'
+            }),
+            'assigned_admin': forms.Select(attrs={
+                'class': 'form-input text-sm'
+            }),
+            'requires_followup': forms.CheckboxInput(attrs={
+                'class': 'form-checkbox'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter admin users
+        from .models import User
+        self.fields['assigned_admin'].queryset = User.objects.filter(
+            role='admin', is_active=True
+        ).order_by('first_name', 'last_name')
+        self.fields['assigned_admin'].empty_label = "Unassigned"
+
+
+class AdminInquiryBulkActionForm(forms.Form):
+    """Form for bulk actions on multiple inquiries"""
+
+    ACTION_CHOICES = [
+        ('', 'Select Action'),
+        ('assign', 'Assign to Admin'),
+        ('status_change', 'Change Status'),
+        ('priority_change', 'Change Priority'),
+        ('mark_urgent', 'Mark as Urgent'),
+        ('remove_urgent', 'Remove Urgent Flag'),
+        ('export', 'Export Selected'),
+        ('delete', 'Delete Selected'),
+    ]
+
+    action = forms.ChoiceField(
+        choices=ACTION_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input',
+            'onchange': 'toggleBulkActionFields(this.value)'
+        }),
+        label='Bulk Action'
+    )
+
+    assign_to_admin = forms.ModelChoiceField(
+        queryset=None,  # Will be set in __init__
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='Assign to Admin'
+    )
+
+    new_status = forms.ChoiceField(
+        choices=Inquiry.STATUS_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='New Status'
+    )
+
+    new_priority = forms.ChoiceField(
+        choices=Inquiry.PRIORITY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='New Priority'
+    )
+
+    selected_inquiries = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set admin users queryset
+        from .models import User
+        self.fields['assign_to_admin'].queryset = User.objects.filter(
+            role='admin', is_active=True
+        ).order_by('first_name', 'last_name')
+
+
+class AdminInquiryFilterForm(forms.Form):
+    """Advanced filter form for admin inquiry management"""
+
+    search = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Search by subject, customer, or content...'
+        }),
+        required=False,
+        label='Search'
+    )
+
+    status = forms.ChoiceField(
+        choices=[('', 'All Statuses')] + Inquiry.STATUS_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='Status'
+    )
+
+    priority = forms.ChoiceField(
+        choices=[('', 'All Priorities')] + Inquiry.PRIORITY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='Priority'
+    )
+
+    inquiry_type = forms.ChoiceField(
+        choices=[('', 'All Types')] + Inquiry.INQUIRY_TYPE_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='Type'
+    )
+
+    assigned_admin = forms.ModelChoiceField(
+        queryset=None,  # Will be set in __init__
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+        required=False,
+        label='Assigned Admin'
+    )
+
+    date_from = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'class': 'form-input',
+            'type': 'date'
+        }),
+        required=False,
+        label='From Date'
+    )
+
+    date_to = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'class': 'form-input',
+            'type': 'date'
+        }),
+        required=False,
+        label='To Date'
+    )
+
+    is_urgent = forms.BooleanField(
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        required=False,
+        label='Urgent Only'
+    )
+
+    is_overdue = forms.BooleanField(
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        required=False,
+        label='Overdue Only'
+    )
+
+    unassigned_only = forms.BooleanField(
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        required=False,
+        label='Unassigned Only'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set admin users queryset
+        from .models import User
+        self.fields['assigned_admin'].queryset = User.objects.filter(
+            role='admin', is_active=True
+        ).order_by('first_name', 'last_name')
+        self.fields['assigned_admin'].empty_label = "All Admins"
 
 
 class CarApprovalForm(forms.ModelForm):

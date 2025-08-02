@@ -4,7 +4,7 @@
 <!-- Enhanced Admin Car Edit Modal with Proper Hydration -->
 <div class="fixed inset-0 z-50 overflow-y-auto"
      id="edit-car-modal"
-     x-data="editCarModal()"
+     x-data="getAlpineComponent('editCarModal')()"
      x-init="initModal()"
      x-show="show"
      x-transition:enter="ease-out duration-300"
@@ -16,6 +16,8 @@
      role="dialog"
      aria-labelledby="modal-title"
      aria-describedby="modal-description"
+     aria-modal="true"
+     data-dynamic="true"
      @keydown.escape="closeModal()">
 
     <!-- Modal Backdrop -->
@@ -73,7 +75,7 @@
                       hx-swap="innerHTML"
                       hx-indicator="#loading-indicator"
                       class="space-y-8"
-                      @submit="isSubmitting = true"
+                      @submit="window.safeAlpineSet ? window.safeAlpineSet('isSubmitting', true, this) : (isSubmitting = true)"
                       hx-on::before-request="handleBeforeSubmit(event)"
                       hx-on::after-request="handleAfterSubmit(event)"
                       hx-on::response-error="handleSubmitError(event)"

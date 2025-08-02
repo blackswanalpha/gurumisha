@@ -160,99 +160,168 @@
     </div>
 </section>
 
-<!-- Enhanced Popular Import Destinations with Glassmorphism -->
-<section class="py-16 relative overflow-hidden">
-    <!-- Background with Red-to-Black Gradient -->
-    <div class="absolute inset-0 bg-gradient-to-br from-harrier-red via-red-800 to-harrier-dark"></div>
-    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+<!-- Enhanced Popular Import Destinations with White Background -->
+<section class="py-14 relative overflow-hidden bg-white">
+    <!-- Subtle Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(220,38,38,0.3) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
 
-    <!-- Animated Background Elements -->
+    <!-- Enhanced Animated Background Elements -->
     <div class="absolute inset-0 overflow-hidden">
-        <div class="absolute -top-40 -right-40 w-80 h-80 bg-white bg-opacity-5 rounded-full blur-3xl animate-pulse"></div>
-        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-white bg-opacity-5 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-red-500 to-transparent opacity-5 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-red-600 to-transparent opacity-5 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-red-500 via-transparent to-red-700 opacity-3 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
     </div>
 
     <div class="container mx-auto px-4 relative z-10">
         <!-- Enhanced Section Header -->
-        <div class="text-center mb-12 animate-entrance">
-            <div class="inline-flex items-center justify-center w-14 h-14 bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-full mb-4 border border-white border-opacity-20">
-                <i class="fas fa-globe-americas text-white text-xl"></i>
+        <div class="text-center mb-10 animate-entrance">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full mb-3 shadow-lg">
+                <i class="fas fa-globe-americas text-white text-lg"></i>
             </div>
-            <h2 class="text-3xl md:text-4xl font-montserrat font-bold text-white mb-4 tracking-tight">
+            <h2 class="text-2xl md:text-3xl font-montserrat font-bold text-harrier-dark mb-3 tracking-tight">
                 POPULAR IMPORT DESTINATIONS
             </h2>
-            <p class="text-lg text-white text-opacity-90 max-w-4xl mx-auto font-raleway leading-relaxed">
+            <p class="text-base text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">
                 We have established partnerships with trusted dealers and auction houses worldwide to bring you the best vehicles
             </p>
         </div>
 
+        <!-- Enhanced Partnership Trust Indicators -->
+        <div class="flex flex-wrap justify-center items-center gap-4 mb-8 animate-slide-up">
+            <div class="trust-indicator flex items-center space-x-2 rounded-full px-3 py-2 shadow-sm">
+                <i class="fas fa-handshake text-green-500 text-sm"></i>
+                <span class="text-gray-700 text-sm font-raleway">50+ Trusted Partners</span>
+            </div>
+            <div class="trust-indicator flex items-center space-x-2 rounded-full px-3 py-2 shadow-sm">
+                <i class="fas fa-shield-alt text-blue-500 text-sm"></i>
+                <span class="text-gray-700 text-sm font-raleway">Verified Dealers</span>
+            </div>
+            <div class="trust-indicator flex items-center space-x-2 rounded-full px-3 py-2 shadow-sm">
+                <i class="fas fa-award text-yellow-500 text-sm"></i>
+                <span class="text-gray-700 text-sm font-raleway">Quality Assured</span>
+            </div>
+        </div>
+
         <!-- Enhanced Destination Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {% for import in popular_imports %}
                 <div class="destination-card group cursor-pointer" data-country="{{ import.country }}">
-                    <!-- Glassmorphism Card Container -->
-                    <div class="relative bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-2xl overflow-hidden border border-white border-opacity-20 shadow-2xl transition-all duration-500 hover:transform hover:scale-105 hover:bg-opacity-15">
+                    <!-- Enhanced Card Container with White Background -->
+                    <div class="destination-card-white relative bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg">
 
-                        <!-- Image Section with Overlay -->
-                        <div class="relative h-56 overflow-hidden">
-                            <!-- Country Flag/Image Background -->
-                            <div class="absolute inset-0 bg-gradient-to-br from-white from-opacity-10 to-black to-opacity-30"></div>
+                        <!-- Enhanced Image Section with Gradient Background -->
+                        <div class="relative h-44 overflow-hidden bg-gradient-to-br from-red-500 to-red-700">
+                            <!-- Subtle Pattern Overlay -->
+                            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 20px 20px;"></div>
 
                             <!-- Country Icon and Name -->
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="text-center text-white transform transition-transform duration-500 group-hover:scale-110">
+                                <div class="country-icon-wrapper text-center text-white">
                                     {% if import.country == 'Japan' %}
-                                        <i class="fas fa-torii-gate text-5xl mb-4 drop-shadow-lg"></i>
+                                        <div class="w-14 h-14 mx-auto mb-3 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white border-opacity-30">
+                                            <i class="fas fa-torii-gate text-xl text-white drop-shadow-lg"></i>
+                                        </div>
                                     {% elif import.country == 'Germany' %}
-                                        <i class="fas fa-car text-5xl mb-4 drop-shadow-lg"></i>
+                                        <div class="w-14 h-14 mx-auto mb-3 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white border-opacity-30">
+                                            <i class="fas fa-car text-xl text-white drop-shadow-lg"></i>
+                                        </div>
                                     {% elif import.country == 'UK' %}
-                                        <i class="fas fa-crown text-5xl mb-4 drop-shadow-lg"></i>
+                                        <div class="w-14 h-14 mx-auto mb-3 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white border-opacity-30">
+                                            <i class="fas fa-crown text-xl text-white drop-shadow-lg"></i>
+                                        </div>
                                     {% elif import.country == 'USA' %}
-                                        <i class="fas fa-flag-usa text-5xl mb-4 drop-shadow-lg"></i>
+                                        <div class="w-14 h-14 mx-auto mb-3 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white border-opacity-30">
+                                            <i class="fas fa-flag-usa text-xl text-white drop-shadow-lg"></i>
+                                        </div>
                                     {% else %}
-                                        <i class="fas fa-flag text-5xl mb-4 drop-shadow-lg"></i>
+                                        <div class="w-14 h-14 mx-auto mb-3 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white border-opacity-30">
+                                            <i class="fas fa-flag text-xl text-white drop-shadow-lg"></i>
+                                        </div>
                                     {% endif %}
-                                    <h3 class="text-xl font-montserrat font-bold tracking-wide drop-shadow-lg">{{ import.country }}</h3>
+                                    <h3 class="text-lg font-montserrat font-bold tracking-wide drop-shadow-lg">{{ import.country }}</h3>
                                 </div>
                             </div>
 
-                            <!-- Hover Overlay -->
-                            <div class="absolute inset-0 bg-harrier-red bg-opacity-0 transition-all duration-500 group-hover:bg-opacity-20"></div>
+                            <!-- Enhanced Hover Overlay -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 transition-opacity duration-300 group-hover:bg-opacity-10 pointer-events-none"></div>
                         </div>
 
-                        <!-- Content Section -->
-                        <div class="p-5 relative">
-                            <p class="text-white text-opacity-90 mb-6 font-raleway leading-relaxed">{{ import.description }}</p>
+                        <!-- Enhanced Content Section -->
+                        <div class="p-4 relative bg-white">
+                            <p class="text-gray-600 mb-4 font-raleway leading-relaxed text-sm">{{ import.description }}</p>
 
-                            <!-- Action Section -->
+                            <!-- Enhanced Stats Section -->
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                {% if import.country == 'Japan' %}
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Avg. Age</div>
+                                        <div class="text-sm font-bold text-gray-800">5-8 Years</div>
+                                    </div>
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Quality</div>
+                                        <div class="text-sm font-bold text-green-600">Excellent</div>
+                                    </div>
+                                {% elif import.country == 'Germany' %}
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Luxury</div>
+                                        <div class="text-sm font-bold text-yellow-600">Premium</div>
+                                    </div>
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Tech</div>
+                                        <div class="text-sm font-bold text-blue-600">Advanced</div>
+                                    </div>
+                                {% elif import.country == 'UK' %}
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Drive</div>
+                                        <div class="text-sm font-bold text-gray-800">RHD</div>
+                                    </div>
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Heritage</div>
+                                        <div class="text-sm font-bold text-purple-600">Classic</div>
+                                    </div>
+                                {% elif import.country == 'USA' %}
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Power</div>
+                                        <div class="text-sm font-bold text-red-600">Muscle</div>
+                                    </div>
+                                    <div class="text-center p-2 bg-gray-50 rounded-lg">
+                                        <div class="text-xs text-gray-500 font-raleway">Size</div>
+                                        <div class="text-sm font-bold text-orange-600">Large</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Enhanced Action Section -->
                             <div class="flex items-center justify-between">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                    <i class="fas fa-star text-yellow-400 mr-1"></i>
-                                    Popular Choice
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-red-500 to-red-700 text-white shadow-sm">
+                                    <i class="fas fa-star text-yellow-300 mr-1 text-xs"></i>
+                                    Popular
                                 </span>
                                 <a href="{% url 'core:import_request' %}"
-                                   class="inline-flex items-center justify-center w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full text-white transition-all duration-300 hover:transform hover:scale-110 border border-white border-opacity-30"
+                                   class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 rounded-full text-white transition-all duration-300 hover:transform hover:scale-110 shadow-lg"
                                    aria-label="Start import request for {{ import.country }}">
-                                    <i class="fas fa-arrow-right text-sm"></i>
+                                    <i class="fas fa-arrow-right text-xs"></i>
                                 </a>
                             </div>
                         </div>
 
-                        <!-- Glassmorphism Border Glow Effect -->
-                        <div class="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-white via-transparent to-white bg-clip-border opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
+                        <!-- Enhanced Border Glow Effect -->
+                        <div class="absolute inset-0 rounded-xl border-2 border-transparent bg-gradient-to-r from-red-500 via-transparent to-red-700 bg-clip-border opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"></div>
                     </div>
                 </div>
             {% endfor %}
         </div>
 
-        <!-- Enhanced CTA Button -->
-        <div class="text-center mt-12">
+        <!-- Enhanced CTA Section -->
+        <div class="text-center mt-10">
             <a href="{% url 'core:import_request' %}"
-               class="inline-flex items-center px-8 py-4 bg-white bg-opacity-10 hover:bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl text-white font-montserrat font-semibold text-lg transition-all duration-500 hover:transform hover:scale-105 border border-white border-opacity-30 shadow-2xl group"
+               class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 rounded-lg text-white font-montserrat font-semibold text-base transition-all duration-500 hover:transform hover:scale-105 shadow-xl group"
                aria-label="Explore all import destinations">
-                <i class="fas fa-compass mr-3 text-xl group-hover:rotate-12 transition-transform duration-300"></i>
+                <i class="fas fa-compass mr-2 text-lg group-hover:rotate-12 transition-transform duration-300"></i>
                 EXPLORE ALL DESTINATIONS
-                <i class="fas fa-arrow-right ml-3 group-hover:translate-x-1 transition-transform duration-300"></i>
+                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
             </a>
         </div>
     </div>
@@ -437,195 +506,166 @@
 </section>
 {% endif %}
 
-<!-- Enhanced Why Choose Our Import Service with Glassmorphism Stats -->
-<section class="py-16 relative overflow-hidden bg-gradient-to-br from-harrier-dark via-gray-900 to-black">
-    <!-- Animated Background Elements -->
-    <div class="absolute inset-0 overflow-hidden">
-        <div class="absolute top-20 left-10 w-64 h-64 bg-harrier-red bg-opacity-10 rounded-full blur-3xl animate-pulse"></div>
-        <div class="absolute bottom-20 right-10 w-80 h-80 bg-red-600 bg-opacity-10 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-harrier-red bg-opacity-5 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
-    </div>
-
-    <!-- Subtle Grid Pattern -->
-    <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: linear-gradient(rgba(220,38,38,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.1) 1px, transparent 1px); background-size: 50px 50px;"></div>
+<!-- Why Choose Our Import Service - Clean White Background -->
+<section class="py-16 bg-white">
+    <!-- Subtle Background Pattern -->
+    <div class="absolute inset-0 opacity-3">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(220,38,38,0.2) 1px, transparent 0); background-size: 40px 40px;"></div>
     </div>
 
     <div class="container mx-auto px-4 relative z-10">
-        <!-- Enhanced Section Header -->
-        <div class="text-center mb-16 animate-entrance">
-            <div class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-harrier-red to-red-800 rounded-full mb-4 shadow-2xl">
-                <i class="fas fa-award text-white text-xl"></i>
+        <!-- Clean Section Header -->
+        <div class="text-center mb-12 animate-entrance">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full mb-4 shadow-lg">
+                <i class="fas fa-award text-white text-lg"></i>
             </div>
-            <h2 class="text-3xl md:text-4xl font-montserrat font-bold text-white mb-4 tracking-tight">
+            <h2 class="text-2xl md:text-3xl font-montserrat font-bold text-harrier-dark mb-4 tracking-tight">
                 WHY CHOOSE OUR IMPORT SERVICE?
             </h2>
-            <p class="text-lg text-gray-300 max-w-4xl mx-auto font-raleway leading-relaxed">
+            <p class="text-base text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">
                 We've helped thousands of customers import their dream cars with complete peace of mind
             </p>
         </div>
 
-        <!-- Enhanced Stats Grid with Glassmorphism -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <!-- Clean Features Grid - No Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 max-w-6xl mx-auto">
             <!-- Trusted & Secure -->
-            <div class="glassmorphism-stat-card group">
-                <div class="relative">
-                    <!-- Icon Container -->
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-harrier-red to-red-800 rounded-2xl mx-auto mb-4 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <i class="fas fa-shield-alt text-white text-2xl"></i>
-                    </div>
+            <div class="text-center group">
+                <!-- Icon Container -->
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full mx-auto mb-4 shadow-lg transition-all duration-300 group-hover:scale-110">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
 
-                    <!-- Content -->
-                    <div class="text-center">
-                        <h3 class="text-xl font-montserrat font-bold text-white mb-3 group-hover:text-harrier-red transition-colors duration-300">
-                            Trusted & Secure
-                        </h3>
-                        <p class="text-gray-300 font-raleway leading-relaxed mb-6">
-                            All transactions are secure and we work only with verified dealers and auction houses worldwide.
-                        </p>
+                <!-- Content -->
+                <h3 class="text-lg font-montserrat font-bold text-harrier-dark mb-3">
+                    Trusted & Secure
+                </h3>
+                <p class="text-gray-600 font-raleway leading-relaxed mb-4">
+                    All transactions are secure and we work only with verified dealers and auction houses worldwide.
+                </p>
 
-                        <!-- Stat Number -->
-                        <div class="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20">
-                            <i class="fas fa-check-circle text-green-400 mr-2"></i>
-                            <span class="text-white font-semibold">100% Verified</span>
-                        </div>
-                    </div>
+                <!-- Stat Badge -->
+                <div class="inline-flex items-center px-3 py-1 bg-green-50 rounded-full border border-green-200">
+                    <i class="fas fa-check-circle text-green-600 mr-2 text-sm"></i>
+                    <span class="text-green-700 font-semibold text-sm">100% Verified</span>
                 </div>
             </div>
 
             <!-- Transparent Pricing -->
-            <div class="glassmorphism-stat-card group">
-                <div class="relative">
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-harrier-red to-red-800 rounded-2xl mx-auto mb-4 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <i class="fas fa-dollar-sign text-white text-2xl"></i>
-                    </div>
+            <div class="text-center group">
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full mx-auto mb-4 shadow-lg transition-all duration-300 group-hover:scale-110">
+                    <i class="fas fa-dollar-sign text-white text-xl"></i>
+                </div>
 
-                    <div class="text-center">
-                        <h3 class="text-xl font-montserrat font-bold text-white mb-3 group-hover:text-harrier-red transition-colors duration-300">
-                            Transparent Pricing
-                        </h3>
-                        <p class="text-gray-300 font-raleway leading-relaxed mb-4">
-                            No hidden costs. We provide detailed breakdown of all charges including shipping and customs.
-                        </p>
+                <h3 class="text-lg font-montserrat font-bold text-harrier-dark mb-3">
+                    Transparent Pricing
+                </h3>
+                <p class="text-gray-600 font-raleway leading-relaxed mb-4">
+                    No hidden costs. We provide detailed breakdown of all charges including shipping and customs.
+                </p>
 
-                        <div class="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20">
-                            <i class="fas fa-eye text-blue-400 mr-2"></i>
-                            <span class="text-white font-semibold">No Hidden Fees</span>
-                        </div>
-                    </div>
+                <div class="inline-flex items-center px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
+                    <i class="fas fa-eye text-blue-600 mr-2 text-sm"></i>
+                    <span class="text-blue-700 font-semibold text-sm">No Hidden Fees</span>
                 </div>
             </div>
 
             <!-- Expert Support -->
-            <div class="glassmorphism-stat-card group">
-                <div class="relative">
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-harrier-red to-red-800 rounded-2xl mx-auto mb-4 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <i class="fas fa-headset text-white text-2xl"></i>
-                    </div>
+            <div class="text-center group">
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full mx-auto mb-4 shadow-lg transition-all duration-300 group-hover:scale-110">
+                    <i class="fas fa-headset text-white text-xl"></i>
+                </div>
 
-                    <div class="text-center">
-                        <h3 class="text-xl font-montserrat font-bold text-white mb-3 group-hover:text-harrier-red transition-colors duration-300">
-                            Expert Support
-                        </h3>
-                        <p class="text-gray-300 font-raleway leading-relaxed mb-4">
-                            Our experienced team guides you through every step of the import process.
-                        </p>
+                <h3 class="text-lg font-montserrat font-bold text-harrier-dark mb-3">
+                    Expert Support
+                </h3>
+                <p class="text-gray-600 font-raleway leading-relaxed mb-4">
+                    Our experienced team guides you through every step of the import process.
+                </p>
 
-                        <div class="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20">
-                            <i class="fas fa-clock text-yellow-400 mr-2"></i>
-                            <span class="text-white font-semibold">24/7 Support</span>
-                        </div>
-                    </div>
+                <div class="inline-flex items-center px-3 py-1 bg-yellow-50 rounded-full border border-yellow-200">
+                    <i class="fas fa-clock text-yellow-600 mr-2 text-sm"></i>
+                    <span class="text-yellow-700 font-semibold text-sm">24/7 Support</span>
                 </div>
             </div>
 
             <!-- Fast Processing -->
-            <div class="glassmorphism-stat-card group">
-                <div class="relative">
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-harrier-red to-red-800 rounded-2xl mx-auto mb-4 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <i class="fas fa-clock text-white text-2xl"></i>
-                    </div>
+            <div class="text-center group">
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full mx-auto mb-4 shadow-lg transition-all duration-300 group-hover:scale-110">
+                    <i class="fas fa-bolt text-white text-xl"></i>
+                </div>
 
-                    <div class="text-center">
-                        <h3 class="text-xl font-montserrat font-bold text-white mb-3 group-hover:text-harrier-red transition-colors duration-300">
-                            Fast Processing
-                        </h3>
-                        <p class="text-gray-300 font-raleway leading-relaxed mb-4">
-                            Quick response times and efficient processing to get your car to you faster.
-                        </p>
+                <h3 class="text-lg font-montserrat font-bold text-harrier-dark mb-3">
+                    Fast Processing
+                </h3>
+                <p class="text-gray-600 font-raleway leading-relaxed mb-4">
+                    Quick response times and efficient processing to get your car to you faster.
+                </p>
 
-                        <div class="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20">
-                            <i class="fas fa-bolt text-yellow-400 mr-2"></i>
-                            <span class="text-white font-semibold">48hr Response</span>
-                        </div>
-                    </div>
+                <div class="inline-flex items-center px-3 py-1 bg-orange-50 rounded-full border border-orange-200">
+                    <i class="fas fa-bolt text-orange-600 mr-2 text-sm"></i>
+                    <span class="text-orange-700 font-semibold text-sm">48hr Response</span>
                 </div>
             </div>
 
             <!-- Complete Documentation -->
-            <div class="glassmorphism-stat-card group">
-                <div class="relative">
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-harrier-red to-red-800 rounded-2xl mx-auto mb-4 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <i class="fas fa-file-alt text-white text-2xl"></i>
-                    </div>
+            <div class="text-center group">
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full mx-auto mb-4 shadow-lg transition-all duration-300 group-hover:scale-110">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
 
-                    <div class="text-center">
-                        <h3 class="text-xl font-montserrat font-bold text-white mb-3 group-hover:text-harrier-red transition-colors duration-300">
-                            Complete Documentation
-                        </h3>
-                        <p class="text-gray-300 font-raleway leading-relaxed mb-4">
-                            We handle all paperwork, customs clearance, and registration processes.
-                        </p>
+                <h3 class="text-lg font-montserrat font-bold text-harrier-dark mb-3">
+                    Complete Documentation
+                </h3>
+                <p class="text-gray-600 font-raleway leading-relaxed mb-4">
+                    We handle all paperwork, customs clearance, and registration processes.
+                </p>
 
-                        <div class="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20">
-                            <i class="fas fa-clipboard-check text-green-400 mr-2"></i>
-                            <span class="text-white font-semibold">Full Service</span>
-                        </div>
-                    </div>
+                <div class="inline-flex items-center px-3 py-1 bg-green-50 rounded-full border border-green-200">
+                    <i class="fas fa-clipboard-check text-green-600 mr-2 text-sm"></i>
+                    <span class="text-green-700 font-semibold text-sm">Full Service</span>
                 </div>
             </div>
 
             <!-- Door-to-Door Delivery -->
-            <div class="glassmorphism-stat-card group">
-                <div class="relative">
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-harrier-red to-red-800 rounded-2xl mx-auto mb-4 shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <i class="fas fa-truck text-white text-2xl"></i>
-                    </div>
+            <div class="text-center group">
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-full mx-auto mb-4 shadow-lg transition-all duration-300 group-hover:scale-110">
+                    <i class="fas fa-truck text-white text-xl"></i>
+                </div>
 
-                    <div class="text-center">
-                        <h3 class="text-xl font-montserrat font-bold text-white mb-3 group-hover:text-harrier-red transition-colors duration-300">
-                            Door-to-Door Delivery
-                        </h3>
-                        <p class="text-gray-300 font-raleway leading-relaxed mb-4">
-                            We deliver your imported car directly to your preferred location in Kenya.
-                        </p>
+                <h3 class="text-lg font-montserrat font-bold text-harrier-dark mb-3">
+                    Door-to-Door Delivery
+                </h3>
+                <p class="text-gray-600 font-raleway leading-relaxed mb-4">
+                    We deliver your imported car directly to your preferred location in Kenya.
+                </p>
 
-                        <div class="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20">
-                            <i class="fas fa-map-marker-alt text-red-400 mr-2"></i>
-                            <span class="text-white font-semibold">Nationwide</span>
-                        </div>
-                    </div>
+                <div class="inline-flex items-center px-3 py-1 bg-red-50 rounded-full border border-red-200">
+                    <i class="fas fa-map-marker-alt text-red-600 mr-2 text-sm"></i>
+                    <span class="text-red-700 font-semibold text-sm">Nationwide</span>
                 </div>
             </div>
         </div>
 
         <!-- Success Stats Row -->
-        <div class="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            <div class="text-center">
-                <div class="text-4xl font-montserrat font-bold text-harrier-red mb-2">5000+</div>
-                <div class="text-gray-300 font-raleway">Cars Imported</div>
-            </div>
-            <div class="text-center">
-                <div class="text-4xl font-montserrat font-bold text-harrier-red mb-2">98%</div>
-                <div class="text-gray-300 font-raleway">Customer Satisfaction</div>
-            </div>
-            <div class="text-center">
-                <div class="text-4xl font-montserrat font-bold text-harrier-red mb-2">15+</div>
-                <div class="text-gray-300 font-raleway">Countries</div>
-            </div>
-            <div class="text-center">
-                <div class="text-4xl font-montserrat font-bold text-harrier-red mb-2">24/7</div>
-                <div class="text-gray-300 font-raleway">Support</div>
+        <div class="mt-16 pt-12 border-t border-gray-200">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-montserrat font-bold text-red-600 mb-2">5000+</div>
+                    <div class="text-gray-600 font-raleway text-sm">Cars Imported</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-montserrat font-bold text-red-600 mb-2">98%</div>
+                    <div class="text-gray-600 font-raleway text-sm">Customer Satisfaction</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-montserrat font-bold text-red-600 mb-2">15+</div>
+                    <div class="text-gray-600 font-raleway text-sm">Countries</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-montserrat font-bold text-red-600 mb-2">24/7</div>
+                    <div class="text-gray-600 font-raleway text-sm">Support</div>
+                </div>
             </div>
         </div>
     </div>

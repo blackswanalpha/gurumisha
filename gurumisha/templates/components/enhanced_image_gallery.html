@@ -1,7 +1,7 @@
 {% load static %}
 
 <!-- Enhanced Image Gallery Component -->
-<div class="enhanced-image-gallery" x-data="imageGallery()" x-init="init()">
+<div class="enhanced-image-gallery" x-data="getAlpineComponent('imageGallery')()" x-init="init()">
     <!-- Main Image Display -->
     <div class="main-image-container relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-gray-100 to-gray-200">
         <div class="relative group">
@@ -154,66 +154,14 @@
 }
 </style>
 
+<!-- Image Gallery JavaScript is now handled by alpine-components.js -->
 <script>
-function imageGallery() {
-    return {
-        images: [],
-        currentIndex: 0,
-        currentImage: null,
-        loading: true,
-        fullscreenOpen: false,
-        
-        init() {
-            // Initialize with images passed from parent template
-            if (window.galleryImages) {
-                this.images = window.galleryImages;
-                this.setCurrentImage(0);
-            }
-        },
-        
-        setCurrentImage(index) {
-            if (index >= 0 && index < this.images.length) {
-                this.currentIndex = index;
-                this.currentImage = this.images[index];
-                this.loading = true;
-            }
-        },
-        
-        nextImage() {
-            if (this.currentIndex < this.images.length - 1) {
-                this.setCurrentImage(this.currentIndex + 1);
-            }
-        },
-        
-        previousImage() {
-            if (this.currentIndex > 0) {
-                this.setCurrentImage(this.currentIndex - 1);
-            }
-        },
-        
-        openFullscreen() {
-            this.fullscreenOpen = true;
-            document.body.style.overflow = 'hidden';
-        },
-        
-        closeFullscreen() {
-            this.fullscreenOpen = false;
-            document.body.style.overflow = 'auto';
-        },
-        
-        handleImageError() {
-            this.loading = false;
-            console.error('Failed to load image:', this.currentImage?.url);
-        }
-    }
-}
-
-// Keyboard navigation
+// Keyboard navigation for image gallery
 document.addEventListener('keydown', function(e) {
     const gallery = document.querySelector('[x-data*="imageGallery"]');
     if (gallery && gallery._x_dataStack && gallery._x_dataStack[0]) {
         const galleryData = gallery._x_dataStack[0];
-        
+
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
             galleryData.previousImage();

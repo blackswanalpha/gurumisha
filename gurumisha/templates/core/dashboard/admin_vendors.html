@@ -187,14 +187,14 @@
     </div>
 
     <!-- Enhanced Filters and Search -->
-    <div class="enhanced-filter-container">
+    <div class="enhanced-filter-container" x-data="vendorFilters()" x-init="initFilters()">
         <div class="filter-header">
             <div class="filter-title-section">
                 <h4 class="filter-title">Filter & Search Vendors</h4>
                 <p class="filter-subtitle">Use filters to find specific vendor types and statuses</p>
             </div>
             <div class="filter-actions">
-                <button class="clear-filters-btn" onclick="clearAllFilters()">
+                <button class="clear-filters-btn" @click="clearAllFilters()">
                     <i class="fas fa-times"></i>
                     <span>Clear Filters</span>
                 </button>
@@ -210,17 +210,14 @@
                         <span>Approval Status</span>
                     </label>
                     <div class="enhanced-select-wrapper">
-                        <select class="enhanced-select" id="statusFilter" onchange="applyFilters()">
+                        <select class="enhanced-select"
+                                id="statusFilter"
+                                x-model="filters.status"
+                                @change="applyFilters()">
                             <option value="">All Statuses</option>
-                            <option value="approved" {% if current_filter == 'approved' %}selected{% endif %}>
-                                <span class="option-icon">✅</span> Approved Vendors
-                            </option>
-                            <option value="pending" {% if current_filter == 'pending' %}selected{% endif %}>
-                                <span class="option-icon">⏳</span> Pending Approval
-                            </option>
-                            <option value="suspended" {% if current_filter == 'suspended' %}selected{% endif %}>
-                                <span class="option-icon">🚫</span> Suspended Accounts
-                            </option>
+                            <option value="approved">✅ Approved Vendors</option>
+                            <option value="pending">⏳ Pending Approval</option>
+                            <option value="suspended">🚫 Suspended Accounts</option>
                         </select>
                         <div class="select-arrow">
                             <i class="fas fa-chevron-down"></i>
@@ -235,23 +232,16 @@
                         <span>Business Type</span>
                     </label>
                     <div class="enhanced-select-wrapper">
-                        <select class="enhanced-select" id="businessTypeFilter" onchange="applyFilters()">
+                        <select class="enhanced-select"
+                                id="businessTypeFilter"
+                                x-model="filters.businessType"
+                                @change="applyFilters()">
                             <option value="">All Business Types</option>
-                            <option value="dealership" {% if request.GET.business_type == 'dealership' %}selected{% endif %}>
-                                Car Dealership
-                            </option>
-                            <option value="spare_parts" {% if request.GET.business_type == 'spare_parts' %}selected{% endif %}>
-                                Spare Parts Seller
-                            </option>
-                            <option value="both" {% if request.GET.business_type == 'both' %}selected{% endif %}>
-                                Cars & Spare Parts
-                            </option>
-                            <option value="service_center" {% if request.GET.business_type == 'service_center' %}selected{% endif %}>
-                                Service Center
-                            </option>
-                            <option value="individual" {% if request.GET.business_type == 'individual' %}selected{% endif %}>
-                                Individual Seller
-                            </option>
+                            <option value="dealership">Car Dealership</option>
+                            <option value="spare_parts">Spare Parts Seller</option>
+                            <option value="both">Cars & Spare Parts</option>
+                            <option value="service_center">Service Center</option>
+                            <option value="individual">Individual Seller</option>
                         </select>
                         <div class="select-arrow">
                             <i class="fas fa-chevron-down"></i>
@@ -291,14 +281,19 @@
                         <input type="text"
                                id="vendorSearch"
                                placeholder="Search by company name, owner, email, or license..."
-                               value="{{ request.GET.search }}"
+                               x-model="filters.search"
+                               @input="updateSearchClear()"
+                               @keydown.enter.prevent="performSearch()"
                                class="enhanced-search-input"
                                autocomplete="off">
-                        <div class="search-clear" onclick="clearSearch()" style="display: {% if request.GET.search %}block{% else %}none{% endif %};">
+                        <div class="search-clear"
+                             @click="clearSearch()"
+                             x-show="filters.search.length > 0"
+                             x-transition>
                             <i class="fas fa-times"></i>
                         </div>
                     </div>
-                    <button class="search-submit-btn" onclick="performSearch()">
+                    <button class="search-submit-btn" @click="performSearch()">
                         <i class="fas fa-search"></i>
                         <span>Search</span>
                     </button>
@@ -339,7 +334,12 @@
     </div>
 
     <!-- Enhanced Vendors Table -->
-    <div class="enhanced-vendor-table-container">
+    <div class="enhanced-vendor-table-container"
+         id="vendor-table-container"
+         hx-get="{% url 'core:admin_vendors' %}"
+         hx-trigger="refresh from:body"
+         hx-target="this"
+         hx-swap="outerHTML">
         <div class="table-header">
             <div class="flex items-center justify-between">
                 <div class="table-title-section">
@@ -347,10 +347,17 @@
                     <p class="table-subtitle">Manage vendor applications and business profiles</p>
                 </div>
                 <div class="table-actions">
-                    <button class="refresh-table-btn" onclick="refreshVendorTable()">
+                    <button class="refresh-table-btn"
+                            hx-get="{% url 'core:admin_vendors' %}"
+                            hx-target="#vendor-table-container"
+                            hx-swap="outerHTML"
+                            hx-indicator="#refresh-loading">
                         <i class="fas fa-sync-alt"></i>
                         <span>Refresh</span>
                     </button>
+                    <div id="refresh-loading" class="htmx-indicator">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -393,7 +400,7 @@
                 </thead>
                 <tbody class="table-body">
                     {% for vendor in vendors %}
-                        <tr class="vendor-table-row" data-vendor-id="{{ vendor.id }}">
+                        <tr id="vendor-row-{{ vendor.id }}" class="vendor-table-row" data-vendor-id="{{ vendor.id }}">
                             <td class="vendor-details-cell">
                                 <div class="vendor-profile-section">
                                     <div class="vendor-avatar-container">
@@ -491,19 +498,35 @@
                                 <div class="action-buttons-container">
                                     <!-- Primary Action Button -->
                                     {% if not vendor.is_approved %}
-                                        <button onclick="approveVendor({{ vendor.id }})"
+                                        <button type="button"
                                                 class="pill-action-btn pill-btn-approve"
-                                                title="Approve Vendor">
+                                                title="Approve Vendor"
+                                                hx-post="{% url 'core:approve_vendor' vendor.id %}"
+                                                hx-confirm="Are you sure you want to approve this vendor?"
+                                                hx-target="#vendor-row-{{ vendor.id }}"
+                                                hx-swap="outerHTML"
+                                                hx-indicator="#approve-loading-{{ vendor.id }}">
                                             <i class="fas fa-check"></i>
                                             <span>Approve</span>
                                         </button>
+                                        <div id="approve-loading-{{ vendor.id }}" class="htmx-indicator">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </div>
                                     {% else %}
-                                        <button onclick="disapproveVendor({{ vendor.id }})"
+                                        <button type="button"
                                                 class="pill-action-btn pill-btn-revoke"
-                                                title="Revoke Approval">
+                                                title="Revoke Approval"
+                                                hx-post="{% url 'core:disapprove_vendor' vendor.id %}"
+                                                hx-confirm="Are you sure you want to revoke approval for this vendor?"
+                                                hx-target="#vendor-row-{{ vendor.id }}"
+                                                hx-swap="outerHTML"
+                                                hx-indicator="#revoke-loading-{{ vendor.id }}">
                                             <i class="fas fa-times"></i>
                                             <span>Revoke</span>
                                         </button>
+                                        <div id="revoke-loading-{{ vendor.id }}" class="htmx-indicator">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </div>
                                     {% endif %}
 
                                     <!-- Profile Button -->
@@ -1908,6 +1931,33 @@
     background: rgba(220, 38, 38, 0.2);
 }
 
+/* HTMX Indicators */
+.htmx-indicator {
+    display: none;
+    color: var(--harrier-red);
+    font-size: 0.875rem;
+    margin-left: 0.5rem;
+}
+
+.htmx-request .htmx-indicator {
+    display: inline-block;
+}
+
+.htmx-indicator i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Loading states */
+.htmx-request {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
 /* High contrast mode */
 @media (prefers-contrast: high) {
     .enhanced-vendor-stat-card,
@@ -1969,54 +2019,84 @@ function refreshVendorTable() {
     }, 1000);
 }
 
-// Vendor approval functions
+// HTMX Event Handlers for Vendor Management
+document.addEventListener('htmx:afterRequest', function(event) {
+    const xhr = event.detail.xhr;
+    const target = event.detail.target;
+
+    // Handle successful responses
+    if (xhr.status >= 200 && xhr.status < 300) {
+        // Check for success messages in response headers
+        const successMessage = xhr.getResponseHeader('X-Toast-Success');
+        if (successMessage && window.showToast) {
+            window.showToast(successMessage, 'success');
+        }
+
+        // Handle vendor approval/disapproval updates
+        if (target && target.id && target.id.startsWith('vendor-row-')) {
+            // Vendor row was updated successfully
+            console.log('Vendor row updated successfully');
+        }
+    } else if (xhr.status >= 400) {
+        // Handle error responses
+        const errorMessage = xhr.getResponseHeader('X-Toast-Error') ||
+                           'An error occurred. Please try again.';
+        if (window.showToast) {
+            window.showToast(errorMessage, 'error');
+        }
+    }
+});
+
+// Handle HTMX errors
+document.addEventListener('htmx:responseError', function(event) {
+    const xhr = event.detail.xhr;
+    let errorMessage = 'An error occurred. Please try again.';
+
+    if (xhr.status === 403) {
+        errorMessage = 'Access denied. You do not have permission to perform this action.';
+    } else if (xhr.status === 404) {
+        errorMessage = 'Resource not found.';
+    } else if (xhr.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+    }
+
+    if (window.showToast) {
+        window.showToast(errorMessage, 'error');
+    }
+});
+
+// Legacy functions for backward compatibility (now using HTMX)
 function approveVendor(vendorId) {
+    console.warn('approveVendor function is deprecated. Use HTMX buttons instead.');
+    // Fallback for any remaining onclick handlers
     if (confirm('Are you sure you want to approve this vendor?')) {
-        fetch(`/dashboard/admin/approve-vendor/${vendorId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'approved') {
-                showToast('Vendor approved successfully!', 'success');
-                setTimeout(() => location.reload(), 1000);
+        const button = document.querySelector(`button[onclick="approveVendor(${vendorId})"]`);
+        if (button) {
+            // Trigger HTMX request if button has hx-post
+            if (button.hasAttribute('hx-post')) {
+                htmx.trigger(button, 'click');
             } else {
-                showToast('Failed to approve vendor.', 'error');
+                // Fallback to page reload
+                window.location.reload();
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred while approving the vendor.', 'error');
-        });
+        }
     }
 }
 
 function disapproveVendor(vendorId) {
+    console.warn('disapproveVendor function is deprecated. Use HTMX buttons instead.');
+    // Fallback for any remaining onclick handlers
     if (confirm('Are you sure you want to revoke approval for this vendor?')) {
-        fetch(`/dashboard/admin/disapprove-vendor/${vendorId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'disapproved') {
-                showToast('Vendor approval revoked successfully!', 'success');
-                setTimeout(() => location.reload(), 1000);
+        const button = document.querySelector(`button[onclick="disapproveVendor(${vendorId})"]`);
+        if (button) {
+            // Trigger HTMX request if button has hx-post
+            if (button.hasAttribute('hx-post')) {
+                htmx.trigger(button, 'click');
             } else {
-                showToast('Failed to revoke vendor approval.', 'error');
+                // Fallback to page reload
+                window.location.reload();
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred while revoking vendor approval.', 'error');
-        });
+        }
     }
 }
 
@@ -2091,107 +2171,154 @@ function viewVendorAnalytics(vendorId) {
     window.location.href = `/dashboard/admin/vendors/${vendorId}/analytics/`;
 }
 
-// Enhanced Filter and Search Functions
+// Alpine.js Vendor Filters Component
+function vendorFilters() {
+    return {
+        filters: {
+            status: '{{ current_filter|default:"" }}',
+            businessType: '{{ request.GET.business_type|default:"" }}',
+            dateRange: '{{ request.GET.date_range|default:"" }}',
+            search: '{{ request.GET.search|default:"" }}'
+        },
+
+        initFilters() {
+            // Initialize filter values from URL parameters
+            const params = new URLSearchParams(window.location.search);
+            this.filters.status = params.get('status') || '';
+            this.filters.businessType = params.get('business_type') || '';
+            this.filters.dateRange = params.get('date_range') || '';
+            this.filters.search = params.get('search') || '';
+        },
+
+        applyFilters() {
+            const params = new URLSearchParams();
+
+            if (this.filters.status) params.set('status', this.filters.status);
+            if (this.filters.businessType) params.set('business_type', this.filters.businessType);
+            if (this.filters.dateRange) params.set('date_range', this.filters.dateRange);
+            if (this.filters.search) params.set('search', this.filters.search);
+
+            const queryString = params.toString();
+            const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+
+            // Use HTMX to update the table
+            htmx.ajax('GET', newUrl, {
+                target: '#vendor-table-container',
+                swap: 'outerHTML',
+                headers: {
+                    'HX-Request': 'true'
+                }
+            });
+
+            // Update browser URL without reload
+            window.history.pushState({}, '', newUrl);
+        },
+
+        performSearch() {
+            this.applyFilters();
+        },
+
+        clearSearch() {
+            this.filters.search = '';
+            this.applyFilters();
+        },
+
+        clearAllFilters() {
+            if (confirm('Are you sure you want to clear all filters and search criteria?')) {
+                this.filters = {
+                    status: '',
+                    businessType: '',
+                    dateRange: '',
+                    search: ''
+                };
+                this.applyFilters();
+            }
+        },
+
+        removeFilter(filterType) {
+            this.filters[filterType] = '';
+            this.applyFilters();
+        },
+
+        updateSearchClear() {
+            // This method is called on input to show/hide clear button
+            // The x-show directive handles the visibility automatically
+        }
+    }
+}
+
+// Legacy functions for backward compatibility
 function applyFilters() {
-    const statusFilter = document.getElementById('statusFilter').value;
-    const businessTypeFilter = document.getElementById('businessTypeFilter').value;
-    const dateRangeFilter = document.getElementById('dateRangeFilter').value;
-    const searchValue = document.getElementById('vendorSearch').value;
-
-    const params = new URLSearchParams();
-
-    if (statusFilter) params.set('status', statusFilter);
-    if (businessTypeFilter) params.set('business_type', businessTypeFilter);
-    if (dateRangeFilter) params.set('date_range', dateRangeFilter);
-    if (searchValue) params.set('search', searchValue);
-
-    const queryString = params.toString();
-    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
-
-    window.location.href = newUrl;
+    console.warn('applyFilters function is deprecated. Use Alpine.js component instead.');
 }
 
 function performSearch() {
-    const searchValue = document.getElementById('vendorSearch').value.trim();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const businessTypeFilter = document.getElementById('businessTypeFilter').value;
-
-    const params = new URLSearchParams();
-
-    if (searchValue) params.set('search', searchValue);
-    if (statusFilter) params.set('status', statusFilter);
-    if (businessTypeFilter) params.set('business_type', businessTypeFilter);
-
-    const queryString = params.toString();
-    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
-
-    window.location.href = newUrl;
+    console.warn('performSearch function is deprecated. Use Alpine.js component instead.');
 }
 
 function clearSearch() {
-    const searchInput = document.getElementById('vendorSearch');
-    const clearBtn = document.querySelector('.search-clear');
-
-    searchInput.value = '';
-    clearBtn.style.display = 'none';
-
-    // Apply filters without search
-    applyFilters();
+    console.warn('clearSearch function is deprecated. Use Alpine.js component instead.');
 }
 
 function clearAllFilters() {
-    if (confirm('Are you sure you want to clear all filters and search criteria?')) {
-        window.location.href = window.location.pathname;
-    }
+    console.warn('clearAllFilters function is deprecated. Use Alpine.js component instead.');
 }
 
 function removeFilter(filterType) {
-    const params = new URLSearchParams(window.location.search);
-    params.delete(filterType);
-
-    const queryString = params.toString();
-    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
-
-    window.location.href = newUrl;
+    console.warn('removeFilter function is deprecated. Use Alpine.js component instead.');
 }
 
-// Real-time search functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('vendorSearch');
-    const clearBtn = document.querySelector('.search-clear');
-
-    if (searchInput) {
-        // Show/hide clear button based on input value
-        searchInput.addEventListener('input', function() {
-            if (this.value.trim()) {
-                clearBtn.style.display = 'block';
-            } else {
-                clearBtn.style.display = 'none';
-            }
-        });
-
-        // Handle Enter key for search
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                performSearch();
-            }
-        });
-    }
-
-    // Update active filters display
-    updateActiveFiltersDisplay();
+// Initialize Alpine.js components
+document.addEventListener('alpine:init', () => {
+    Alpine.data('vendorFilters', vendorFilters);
 });
 
-function updateActiveFiltersDisplay() {
-    const activeFiltersContainer = document.getElementById('activeFilters');
-    const params = new URLSearchParams(window.location.search);
+// Enhanced initialization and hydration management
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin Vendors page initialized');
 
-    const hasFilters = params.has('status') || params.has('business_type') || params.has('search') || params.has('date_range');
+    // Initialize HTMX indicators
+    const indicators = document.querySelectorAll('.htmx-indicator');
+    indicators.forEach(indicator => {
+        indicator.style.display = 'none';
+    });
 
-    if (activeFiltersContainer) {
-        activeFiltersContainer.style.display = hasFilters ? 'flex' : 'none';
+    // Add HTMX request/response logging for debugging
+    document.addEventListener('htmx:beforeRequest', function(event) {
+        console.log('HTMX Request:', event.detail);
+    });
+
+    document.addEventListener('htmx:afterRequest', function(event) {
+        console.log('HTMX Response:', event.detail);
+    });
+
+    // Ensure toast manager is available
+    if (typeof window.showToast === 'undefined') {
+        console.warn('Toast manager not loaded, creating fallback');
+        window.showToast = function(message, type) {
+            console.log(`Toast (${type}): ${message}`);
+            alert(`${type.toUpperCase()}: ${message}`);
+        };
     }
+});
+
+// Hydration management for dynamic content
+document.addEventListener('htmx:afterSwap', function(event) {
+    console.log('HTMX content swapped, re-initializing components');
+
+    // Re-initialize any dynamic components after HTMX swap
+    const newContent = event.detail.target;
+
+    // Re-initialize tooltips, dropdowns, etc. if needed
+    if (newContent) {
+        // Add any component re-initialization here
+        console.log('Components re-initialized for:', newContent);
+    }
+});
+
+// Legacy function for backward compatibility
+function updateActiveFiltersDisplay() {
+    console.warn('updateActiveFiltersDisplay function is deprecated. Alpine.js handles this automatically.');
 }
 
 // Toast notification function

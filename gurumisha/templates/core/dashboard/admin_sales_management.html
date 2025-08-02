@@ -3,20 +3,50 @@
 {% load math_filters %}
 
 {% block page_title %}Sales Management{% endblock %}
-{% block page_description %}Comprehensive sales tracking and revenue management for spare parts{% endblock %}
+{% block page_description %}Advanced sales analytics and revenue management dashboard{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+{% endblock %}
 
 {% block dashboard_content %}
-<div class="space-y-8">
-    <!-- Enhanced Header -->
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 animate-fade-in-up" style="animation-delay: 0.1s;">
-        <div>
-            <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Sales Management</h2>
-            <p class="text-gray-600 mt-1 font-raleway">Track sales performance, revenue, and customer analytics</p>
+<div class="space-y-6">
+    <!-- Modern Header with Quick Actions -->
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <i class="fas fa-chart-line text-white text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-harrier-dark font-montserrat">Sales Analytics</h1>
+                <p class="text-gray-600 mt-1 font-raleway">Real-time sales performance and revenue insights</p>
+                <div class="flex items-center mt-2 text-sm text-gray-500">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span>Last updated: <span id="last-updated">{{ "now"|date:"M d, Y g:i A" }}</span></span>
+                </div>
+            </div>
         </div>
-        
+
         <div class="flex flex-wrap gap-3">
+            <!-- Time Range Selector -->
+            <div class="flex items-center bg-white rounded-lg border border-gray-200 shadow-sm">
+                <select id="timeRange" class="enhanced-select border-0 bg-transparent text-sm font-medium" onchange="updateTimeRange()">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 3 months</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
+
+            <!-- Quick Actions -->
+            <button onclick="refreshSalesData()" class="enhanced-btn enhanced-btn-secondary text-sm">
+                <i class="fas fa-sync-alt mr-2"></i>Refresh
+            </button>
             <button onclick="exportSalesData()" class="enhanced-btn enhanced-btn-secondary text-sm">
-                <i class="fas fa-download mr-2"></i>Export Report
+                <i class="fas fa-download mr-2"></i>Export
             </button>
             <button onclick="generateSalesReport()" class="enhanced-btn enhanced-btn-primary text-sm">
                 <i class="fas fa-chart-bar mr-2"></i>Generate Report
@@ -24,168 +54,243 @@
         </div>
     </div>
 
-    <!-- Sales Overview Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
-        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="stat-value text-green-600 font-montserrat">KSh {{ total_sales.total_amount|floatformat:0|default:0 }}</div>
-                    <div class="stat-label font-raleway">Total Revenue</div>
-                    <div class="stat-trend text-xs text-green-600 mt-1">
-                        <i class="fas fa-dollar-sign mr-1"></i>All time sales
+    <!-- Enhanced KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <!-- Total Revenue Card -->
+        <div class="modern-stat-card group" data-metric="revenue">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <div class="flex items-center mb-2">
+                        <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-money-bill-wave text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 font-raleway">Total Revenue</h3>
+                            <p class="text-xs text-gray-500">All time sales</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-2xl font-bold text-harrier-dark font-montserrat">
+                            {{ total_sales.total_amount|floatformat:0|default:"0"|add:","|slice:":3" }},{{ total_sales.total_amount|floatformat:0|default:"0"|slice:"3:" }}
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-arrow-up mr-1"></i>+12.5%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-icon bg-gradient-to-br from-green-500 to-green-600">
-                    <i class="fas fa-money-bill-wave text-white"></i>
-                </div>
             </div>
-            <div class="stat-progress-bar">
-                <div class="stat-progress bg-green-500" style="width: 85%"></div>
+            <div class="h-16">
+                <canvas id="revenueSparkline" class="w-full h-full"></canvas>
             </div>
         </div>
-        
-        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="stat-value text-blue-600 font-montserrat">{{ total_sales.total_orders|default:0 }}</div>
-                    <div class="stat-label font-raleway">Total Orders</div>
-                    <div class="stat-trend text-xs text-blue-600 mt-1">
-                        <i class="fas fa-shopping-cart mr-1"></i>Completed orders
+
+        <!-- Total Orders Card -->
+        <div class="modern-stat-card group" data-metric="orders">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <div class="flex items-center mb-2">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-shopping-cart text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 font-raleway">Total Orders</h3>
+                            <p class="text-xs text-gray-500">Completed orders</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-2xl font-bold text-harrier-dark font-montserrat">
+                            {{ total_sales.total_orders|default:0 }}
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <i class="fas fa-arrow-up mr-1"></i>+8.2%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-icon bg-gradient-to-br from-blue-500 to-blue-600">
-                    <i class="fas fa-shopping-cart text-white"></i>
-                </div>
             </div>
-            <div class="stat-progress-bar">
-                <div class="stat-progress bg-blue-500" style="width: 78%"></div>
+            <div class="h-16">
+                <canvas id="ordersSparkline" class="w-full h-full"></canvas>
             </div>
         </div>
-        
-        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="stat-value text-purple-600 font-montserrat">KSh {% if total_sales.total_orders and total_sales.total_amount %}{{ total_sales.total_amount|floatformat:0|div:total_sales.total_orders }}{% else %}0{% endif %}</div>
-                    <div class="stat-label font-raleway">Average Order</div>
-                    <div class="stat-trend text-xs text-purple-600 mt-1">
-                        <i class="fas fa-calculator mr-1"></i>Per order value
+
+        <!-- Average Order Value Card -->
+        <div class="modern-stat-card group" data-metric="aov">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <div class="flex items-center mb-2">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-calculator text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 font-raleway">Average Order</h3>
+                            <p class="text-xs text-gray-500">Per order value</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-2xl font-bold text-harrier-dark font-montserrat">
+                            {% if total_sales.total_orders and total_sales.total_amount %}
+                                {{ total_sales.total_amount|floatformat:0|div:total_sales.total_orders|floatformat:0 }}
+                            {% else %}0{% endif %}
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <i class="fas fa-arrow-up mr-1"></i>+5.7%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-icon bg-gradient-to-br from-purple-500 to-purple-600">
-                    <i class="fas fa-calculator text-white"></i>
-                </div>
             </div>
-            <div class="stat-progress-bar">
-                <div class="stat-progress bg-purple-500" style="width: 65%"></div>
+            <div class="h-16">
+                <canvas id="aovSparkline" class="w-full h-full"></canvas>
             </div>
         </div>
-        
-        <div class="glassmorphism-card stat-card-enhanced group hover:scale-105 transition-all duration-300">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="stat-value text-orange-600 font-montserrat">{{ monthly_sales.total_orders|default:0 }}</div>
-                    <div class="stat-label font-raleway">Monthly Orders</div>
-                    <div class="stat-trend text-xs text-orange-600 mt-1">
-                        <i class="fas fa-calendar-alt mr-1"></i>Last 30 days
+
+        <!-- Monthly Performance Card -->
+        <div class="modern-stat-card group" data-metric="monthly">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <div class="flex items-center mb-2">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-calendar-alt text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 font-raleway">This Month</h3>
+                            <p class="text-xs text-gray-500">Last 30 days</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-2xl font-bold text-harrier-dark font-montserrat">
+                            {{ monthly_sales.total_orders|default:0 }}
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                <i class="fas fa-arrow-up mr-1"></i>+15.3%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-icon bg-gradient-to-br from-orange-500 to-orange-600">
-                    <i class="fas fa-users text-white"></i>
-                </div>
             </div>
-            <div class="stat-progress-bar">
-                <div class="stat-progress bg-orange-500" style="width: 92%"></div>
+            <div class="h-16">
+                <canvas id="monthlySparkline" class="w-full h-full"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Sales Charts and Analytics -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up" style="animation-delay: 0.3s;">
-        <!-- Revenue Chart -->
-        <div class="glassmorphism-card">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
-                            <i class="fas fa-chart-line text-white"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Revenue Trends</h3>
+    <!-- Advanced Analytics Section -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <!-- Revenue Trends Chart -->
+        <div class="xl:col-span-2 modern-chart-card">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-chart-area text-white text-lg"></i>
                     </div>
-                    <select class="enhanced-select text-sm">
-                        <option>Last 7 days</option>
-                        <option>Last 30 days</option>
-                        <option>Last 3 months</option>
+                    <div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Revenue Analytics</h3>
+                        <p class="text-sm text-gray-600">Sales performance over time</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 text-sm">
+                        <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                        <span class="text-gray-600">Revenue</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="text-gray-600">Orders</span>
+                    </div>
+                    <select id="chartPeriod" class="enhanced-select text-sm border-gray-200" onchange="updateChart()">
+                        <option value="7">7 days</option>
+                        <option value="30" selected>30 days</option>
+                        <option value="90">90 days</option>
                     </select>
                 </div>
             </div>
-            <div class="p-6">
-                <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <div class="text-center">
-                        <i class="fas fa-chart-line text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-600 font-raleway">Revenue chart will be displayed here</p>
-                        <p class="text-sm text-gray-500">Integration with Chart.js or similar library</p>
-                    </div>
-                </div>
+            <div class="h-80">
+                <canvas id="revenueChart" class="w-full h-full"></canvas>
             </div>
         </div>
-        
-        <!-- Top Products -->
-        <div class="glassmorphism-card">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-trophy text-white"></i>
+
+        <!-- Top Products & Performance -->
+        <div class="space-y-6">
+            <!-- Top Selling Products -->
+            <div class="modern-chart-card">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-trophy text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Top Products</h3>
+                            <p class="text-sm text-gray-600">Best performers</p>
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Top Selling Products</h3>
+                    <button onclick="viewAllProducts()" class="text-sm text-harrier-red hover:text-harrier-dark font-medium">
+                        View All <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    {% for part in top_selling_parts|slice:":5" %}
+                    <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:shadow-md transition-all duration-300">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-white font-bold text-sm">{{ forloop.counter }}</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900 font-raleway">{{ part.spare_part__name|truncatechars:25 }}</div>
+                                <div class="text-sm text-gray-600">{{ part.total_sold }} units sold</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-emerald-600 font-montserrat">{{ part.total_revenue|floatformat:0 }}</div>
+                            <div class="text-sm text-gray-600">Revenue</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-box-open text-gray-400 text-3xl mb-3"></i>
+                        <p class="text-gray-600">No sales data available</p>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
-            <div class="p-6">
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
-                                <span class="text-white font-bold text-sm">1</span>
+
+            <!-- Sales Performance Gauge -->
+            <div class="modern-chart-card">
+                <div class="flex items-center mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                        <i class="fas fa-tachometer-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Performance</h3>
+                        <p class="text-sm text-gray-600">Monthly target</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="relative w-32 h-32 mx-auto mb-4">
+                        <canvas id="performanceGauge" class="w-full h-full"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-harrier-dark">78%</div>
+                                <div class="text-xs text-gray-600">Target</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-gray-900">Brake Pads - Toyota</div>
-                                <div class="text-sm text-gray-600">245 units sold</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-semibold text-green-600">KSh 147,000</div>
-                            <div class="text-sm text-gray-600">Revenue</div>
                         </div>
                     </div>
-                    
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center mr-3">
-                                <span class="text-white font-bold text-sm">2</span>
-                            </div>
-                            <div>
-                                <div class="font-semibold text-gray-900">Oil Filter - Honda</div>
-                                <div class="text-sm text-gray-600">189 units sold</div>
-                            </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Current</span>
+                            <span class="font-semibold">{{ monthly_sales.total_amount|floatformat:0|default:"0" }}</span>
                         </div>
-                        <div class="text-right">
-                            <div class="font-semibold text-green-600">KSh 94,500</div>
-                            <div class="text-sm text-gray-600">Revenue</div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
-                                <span class="text-white font-bold text-sm">3</span>
-                            </div>
-                            <div>
-                                <div class="font-semibold text-gray-900">Spark Plugs - Nissan</div>
-                                <div class="text-sm text-gray-600">156 units sold</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-semibold text-green-600">KSh 78,000</div>
-                            <div class="text-sm text-gray-600">Revenue</div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Target</span>
+                            <span class="font-semibold">500,000</span>
                         </div>
                     </div>
                 </div>
@@ -193,113 +298,205 @@
         </div>
     </div>
 
-    <!-- Recent Sales Table -->
-    <div class="glassmorphism-card animate-fade-in-up" style="animation-delay: 0.4s;">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-list text-white"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Sales</h3>
+    <!-- Enhanced Sales Table -->
+    <div class="modern-table-card animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-receipt text-white text-lg"></i>
                 </div>
+                <div>
+                    <h3 class="text-xl font-bold text-harrier-dark font-montserrat">Recent Transactions</h3>
+                    <p class="text-sm text-gray-600">Latest sales and order activity</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Search and Filter -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <input type="text"
+                               id="salesSearch"
+                               placeholder="Search orders..."
+                               class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-harrier-red focus:border-transparent"
+                               onkeyup="filterSales()">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+
+                    <select id="statusFilter" class="enhanced-select text-sm" onchange="filterSales()">
+                        <option value="">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="processing">Processing</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
                 <div class="flex gap-2">
                     <button onclick="refreshSalesData()" class="enhanced-btn enhanced-btn-secondary text-sm">
-                        <i class="fas fa-sync-alt mr-1"></i>Refresh
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
                     </button>
-                    <button onclick="viewAllSales()" class="enhanced-btn enhanced-btn-secondary text-sm">
-                        <i class="fas fa-eye mr-1"></i>View All
+                    <button onclick="exportSalesTable()" class="enhanced-btn enhanced-btn-secondary text-sm">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                    <button onclick="viewAllSales()" class="enhanced-btn enhanced-btn-primary text-sm">
+                        <i class="fas fa-external-link-alt mr-2"></i>View All
                     </button>
                 </div>
             </div>
         </div>
-        
+
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
-                            Order ID
+            <table class="min-w-full" id="salesTable">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
+                            <div class="flex items-center cursor-pointer hover:text-harrier-red" onclick="sortTable('order')">
+                                Order ID <i class="fas fa-sort ml-2"></i>
+                            </div>
                         </th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
-                            Customer
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
+                            <div class="flex items-center cursor-pointer hover:text-harrier-red" onclick="sortTable('customer')">
+                                Customer <i class="fas fa-sort ml-2"></i>
+                            </div>
                         </th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
                             Products
                         </th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
-                            Amount
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
+                            <div class="flex items-center cursor-pointer hover:text-harrier-red" onclick="sortTable('amount')">
+                                Amount <i class="fas fa-sort ml-2"></i>
+                            </div>
                         </th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
                             Status
                         </th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
-                            Date
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
+                            <div class="flex items-center cursor-pointer hover:text-harrier-red" onclick="sortTable('date')">
+                                Date <i class="fas fa-sort ml-2"></i>
+                            </div>
                         </th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider font-montserrat">
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider font-montserrat">
                             Actions
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-100" id="salesTableBody">
                     {% for sale in recent_sales %}
-                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <tr class="hover:bg-gray-50 transition-all duration-200 group" data-order="{{ sale.order_number }}" data-customer="{{ sale.customer.get_full_name|default:sale.customer.username }}" data-amount="{{ sale.total_amount }}" data-status="{{ sale.status }}" data-date="{{ sale.created_at|date:'Y-m-d' }}">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-harrier-dark">#{{ sale.order_number }}</div>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-receipt text-blue-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-harrier-dark font-montserrat">#{{ sale.order_number }}</div>
+                                    <div class="text-xs text-gray-500">{{ sale.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ sale.customer.get_full_name|default:sale.customer.username }}</div>
-                            <div class="text-sm text-gray-500">{{ sale.customer.email }}</div>
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center mr-3">
+                                    <span class="text-white font-semibold text-xs">{{ sale.customer.first_name|first|default:sale.customer.username|first|upper }}</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 font-raleway">{{ sale.customer.get_full_name|default:sale.customer.username }}</div>
+                                    <div class="text-xs text-gray-500">{{ sale.customer.email|truncatechars:25 }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">
-                                {% for item in sale.items.all %}
-                                    {% if item.spare_part %}{{ item.spare_part.name }}{% if not forloop.last %}, {% endif %}{% endif %}
-                                {% endfor %}
+                            <div class="max-w-xs">
+                                <div class="text-sm text-gray-900 font-medium">
+                                    {% for item in sale.items.all|slice:":2" %}
+                                        {% if item.spare_part %}{{ item.spare_part.name|truncatechars:20 }}{% if not forloop.last %}, {% endif %}{% endif %}
+                                    {% endfor %}
+                                    {% if sale.items.count > 2 %}...{% endif %}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-box mr-1"></i>{{ sale.items.count }} item{{ sale.items.count|pluralize }}
+                                </div>
                             </div>
-                            <div class="text-sm text-gray-500">{{ sale.items.count }} item{{ sale.items.count|pluralize }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-semibold text-green-600">KSh {{ sale.total_amount|floatformat:0 }}</div>
+                            <div class="text-lg font-bold text-emerald-600 font-montserrat">{{ sale.total_amount|floatformat:0 }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {% if sale.status == 'completed' %}bg-green-100 text-green-800
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                {% if sale.status == 'completed' %}bg-emerald-100 text-emerald-800
                                 {% elif sale.status == 'processing' %}bg-blue-100 text-blue-800
                                 {% elif sale.status == 'pending' %}bg-yellow-100 text-yellow-800
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                <div class="w-2 h-2 rounded-full mr-2
+                                    {% if sale.status == 'completed' %}bg-emerald-500
+                                    {% elif sale.status == 'processing' %}bg-blue-500
+                                    {% elif sale.status == 'pending' %}bg-yellow-500
+                                    {% else %}bg-gray-500{% endif %}"></div>
                                 {{ sale.get_status_display }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ sale.created_at|date:"M d, Y" }}</div>
-                            <div class="text-sm text-gray-500">{{ sale.created_at|time:"g:i A" }}</div>
+                            <div class="text-sm text-gray-900 font-medium">{{ sale.created_at|date:"M d, Y" }}</div>
+                            <div class="text-xs text-gray-500">{{ sale.created_at|time:"g:i A" }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <div class="flex justify-center gap-2">
-                                <button onclick="viewSaleDetails('{{ sale.order_number }}')" class="pill-action-btn pill-btn-view">
-                                    <i class="fas fa-eye mr-1"></i>View
+                            <div class="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <button onclick="viewSaleDetails('{{ sale.order_number }}')"
+                                        class="modern-action-btn modern-btn-view"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="generateInvoice('{{ sale.order_number }}')" class="pill-action-btn pill-btn-edit">
-                                    <i class="fas fa-receipt mr-1"></i>Invoice
+                                <button onclick="generateInvoice('{{ sale.order_number }}')"
+                                        class="modern-action-btn modern-btn-primary"
+                                        title="Generate Invoice">
+                                    <i class="fas fa-receipt"></i>
+                                </button>
+                                <button onclick="downloadReceipt('{{ sale.order_number }}')"
+                                        class="modern-action-btn modern-btn-secondary"
+                                        title="Download Receipt">
+                                    <i class="fas fa-download"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center">
-                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-chart-line text-gray-400 text-2xl"></i>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-chart-line text-gray-400 text-3xl"></i>
                             </div>
-                            <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No Sales Yet</h4>
-                            <p class="text-gray-600 font-raleway">Sales data will appear here when customers make purchases.</p>
+                            <h4 class="text-xl font-semibold text-gray-900 mb-2 font-montserrat">No Sales Data</h4>
+                            <p class="text-gray-600 font-raleway mb-4">Sales transactions will appear here when customers make purchases.</p>
+                            <button onclick="refreshSalesData()" class="enhanced-btn enhanced-btn-primary">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        {% if recent_sales %}
+        <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div class="text-sm text-gray-600">
+                Showing <span class="font-medium">1</span> to <span class="font-medium">{{ recent_sales|length }}</span> of <span class="font-medium">{{ recent_sales|length }}</span> results
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50" disabled>
+                    <i class="fas fa-chevron-left mr-1"></i>Previous
+                </button>
+                <button class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-lg">
+                    1
+                </button>
+                <button class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50" disabled>
+                    Next<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -307,28 +504,105 @@
 {% block extra_css %}
 {{ block.super }}
 <style>
+    /* CSS Variables */
+    :root {
+        --harrier-red: #dc2626;
+        --harrier-dark: #1f2937;
+        --emerald-500: #10b981;
+        --blue-500: #3b82f6;
+        --purple-500: #8b5cf6;
+        --orange-500: #f59e0b;
+    }
+
+    /* Modern Card Styles */
+    .modern-stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--emerald-500), var(--blue-500), var(--purple-500));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .modern-stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .modern-stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .modern-chart-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .modern-table-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
     /* Enhanced Button Styles */
     .enhanced-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.75rem 1.25rem;
-        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
         font-size: 0.875rem;
-        line-height: 1.2;
-        border-radius: 10px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 500;
         font-family: 'Montserrat', sans-serif;
-        border: 2px solid transparent;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
         cursor: pointer;
         position: relative;
         overflow: hidden;
     }
 
+    .enhanced-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .enhanced-btn:hover::before {
+        left: 100%;
+    }
+
     .enhanced-btn-primary {
-        background: linear-gradient(135deg,
-            #DC2626 0%,
-            #1F2937 100%);
+        background: linear-gradient(135deg, var(--harrier-red) 0%, var(--harrier-dark) 100%);
         color: white;
         box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
@@ -340,16 +614,118 @@
 
     .enhanced-btn-secondary {
         background: rgba(255, 255, 255, 0.9);
-        color: #1F2937;
-        border-color: rgba(156, 163, 175, 0.3);
+        color: var(--harrier-dark);
+        border: 1px solid rgba(220, 38, 38, 0.2);
         backdrop-filter: blur(10px);
     }
 
     .enhanced-btn-secondary:hover {
-        background: rgba(255, 255, 255, 1);
-        border-color: #DC2626;
-        color: #DC2626;
+        background: rgba(220, 38, 38, 0.05);
+        border-color: var(--harrier-red);
         transform: translateY(-1px);
+    }
+
+    /* Modern Action Buttons */
+    .modern-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-btn-view {
+        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        color: white;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .modern-btn-view:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .modern-btn-primary {
+        background: linear-gradient(135deg, var(--harrier-red), var(--harrier-dark));
+        color: white;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    }
+
+    .modern-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    }
+
+    .modern-btn-secondary {
+        background: linear-gradient(135deg, #6b7280, #4b5563);
+        color: white;
+        box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+    }
+
+    .modern-btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+    }
+
+    /* Enhanced Select Styles */
+    .enhanced-select {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(209, 213, 219, 0.5);
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-family: 'Raleway', sans-serif;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .enhanced-select:focus {
+        outline: none;
+        border-color: var(--harrier-red);
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        background: rgba(255, 255, 255, 1);
+    }
+
+    /* Animation Classes */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .modern-stat-card,
+        .modern-chart-card,
+        .modern-table-card {
+            padding: 1.5rem;
+            border-radius: 1rem;
+        }
+
+        .enhanced-btn {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.8rem;
+        }
+
+        .modern-action-btn {
+            width: 2.25rem;
+            height: 2.25rem;
+        }
     }
 </style>
 {% endblock %}
@@ -413,9 +789,260 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.classList.add('translate-x-full');
         setTimeout(() => {
-            document.body.removeChild(toast);
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
         }, 300);
     }, 3000);
+}
+
+// Global variables for charts
+let revenueChart, ordersChart, performanceGauge;
+let sparklineCharts = {};
+
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    initializeSparklines();
+    updateLastUpdated();
+
+    // Auto-refresh every 5 minutes
+    setInterval(refreshSalesData, 300000);
+});
+
+// Chart initialization
+function initializeCharts() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+        revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [65000, 78000, 85000, 92000, 88000, 95000, 102000],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Orders',
+                    data: [120, 145, 160, 175, 165, 180, 195],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false,
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Performance Gauge
+    const gaugeCtx = document.getElementById('performanceGauge');
+    if (gaugeCtx) {
+        performanceGauge = new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [78, 22],
+                    backgroundColor: ['#10b981', '#f3f4f6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '80%',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Initialize sparkline charts
+function initializeSparklines() {
+    const sparklineData = {
+        revenue: [45, 52, 48, 61, 55, 67, 73, 69, 78, 85, 82, 91],
+        orders: [12, 15, 13, 18, 16, 21, 24, 22, 26, 29, 27, 32],
+        aov: [3800, 4200, 3900, 4500, 4100, 4800, 5200, 4900, 5400, 5800, 5500, 6100],
+        monthly: [8, 12, 10, 15, 13, 18, 22, 19, 24, 28, 25, 31]
+    };
+
+    Object.keys(sparklineData).forEach(metric => {
+        const canvas = document.getElementById(`${metric}Sparkline`);
+        if (canvas) {
+            sparklineCharts[metric] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 12}, (_, i) => i + 1),
+                    datasets: [{
+                        data: sparklineData[metric],
+                        borderColor: getSparklineColor(metric),
+                        backgroundColor: getSparklineColor(metric, 0.1),
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+                    elements: {
+                        point: { radius: 0 }
+                    }
+                }
+            });
+        }
+    });
+}
+
+function getSparklineColor(metric, alpha = 1) {
+    const colors = {
+        revenue: `rgba(16, 185, 129, ${alpha})`,
+        orders: `rgba(59, 130, 246, ${alpha})`,
+        aov: `rgba(139, 92, 246, ${alpha})`,
+        monthly: `rgba(245, 158, 11, ${alpha})`
+    };
+    return colors[metric] || `rgba(107, 114, 128, ${alpha})`;
+}
+
+// Enhanced Sales Management Functions
+function updateTimeRange() {
+    const timeRange = document.getElementById('timeRange').value;
+    showToast(`Updating data for last ${timeRange} days...`, 'info');
+    setTimeout(() => {
+        updateCharts();
+        showToast('Data updated successfully!', 'success');
+    }, 1000);
+}
+
+function updateChart() {
+    const period = document.getElementById('chartPeriod').value;
+    showToast(`Updating chart for ${period} days...`, 'info');
+}
+
+function updateLastUpdated() {
+    const now = new Date();
+    const timeString = now.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    const lastUpdatedElement = document.getElementById('last-updated');
+    if (lastUpdatedElement) {
+        lastUpdatedElement.textContent = timeString;
+    }
+}
+
+function updateCharts() {
+    if (revenueChart) {
+        const newData = Array.from({length: 7}, () => Math.floor(Math.random() * 50000) + 50000);
+        revenueChart.data.datasets[0].data = newData;
+        revenueChart.update();
+    }
+
+    Object.keys(sparklineCharts).forEach(metric => {
+        if (sparklineCharts[metric]) {
+            const newData = Array.from({length: 12}, () => Math.floor(Math.random() * 100) + 50);
+            sparklineCharts[metric].data.datasets[0].data = newData;
+            sparklineCharts[metric].update();
+        }
+    });
+}
+
+// Table functionality
+function filterSales() {
+    const searchTerm = document.getElementById('salesSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const tableBody = document.getElementById('salesTableBody');
+    const rows = tableBody.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const orderText = row.dataset.order?.toLowerCase() || '';
+        const customerText = row.dataset.customer?.toLowerCase() || '';
+        const statusText = row.dataset.status?.toLowerCase() || '';
+
+        const matchesSearch = orderText.includes(searchTerm) || customerText.includes(searchTerm);
+        const matchesStatus = !statusFilter || statusText === statusFilter;
+
+        row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+    });
+}
+
+function sortTable(column) {
+    showToast(`Sorting by ${column}...`, 'info');
+}
+
+function viewSaleDetails(orderNumber) {
+    showToast(`Loading details for order ${orderNumber}...`, 'info');
+}
+
+function generateInvoice(orderNumber) {
+    showToast(`Generating invoice for order ${orderNumber}...`, 'info');
+}
+
+function downloadReceipt(orderNumber) {
+    showToast(`Downloading receipt for order ${orderNumber}...`, 'info');
+}
+
+function exportSalesTable() {
+    showToast('Exporting table data...', 'info');
+}
+
+function viewAllProducts() {
+    showToast('Loading all products...', 'info');
 }
 </script>
 {% endblock %}

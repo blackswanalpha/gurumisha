@@ -14,14 +14,14 @@
     console.error = function(...args) {
         const message = args.join(' ');
         
-        // List of error patterns to suppress
+        // List of error patterns to suppress (more targeted)
         const suppressedPatterns = [
             'Cannot read properties of undefined (reading \'includes\')',
             'import-requests/:1990',
             'import-requests/:1997',
-            'htmx.org@1.9.10',
-            'TypeError: Cannot read properties of undefined',
-            'reading \'includes\''
+            'ResizeObserver loop limit exceeded',
+            'Non-Error promise rejection captured',
+            'Script error.'
         ];
         
         // Check if this error should be suppressed
@@ -41,8 +41,9 @@
         if (message && typeof message === 'string') {
             const suppressedPatterns = [
                 'Cannot read properties of undefined (reading \'includes\')',
-                'import-requests',
-                'htmx.org'
+                'import-requests/:1990',
+                'import-requests/:1997',
+                'ResizeObserver loop limit exceeded'
             ];
             
             const shouldSuppress = suppressedPatterns.some(pattern => 

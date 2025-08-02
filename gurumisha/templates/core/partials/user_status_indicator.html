@@ -1,0 +1,12 @@
+<!-- User Status Indicator Partial -->
+<!-- This partial is used for HTMX updates when user status changes -->
+<div id="user-status-container">
+    <div class="status-indicator {% if user_profile.is_active %}bg-green-500{% else %}bg-red-500{% endif %}">
+        <i class="fas fa-{% if user_profile.is_active %}check{% else %}times{% endif %} text-white text-sm"></i>
+    </div>
+
+    <!-- Online Pulse Animation -->
+    {% if user_profile.is_active %}
+    <div class="online-pulse bg-green-400"></div>
+    {% endif %}
+</div>

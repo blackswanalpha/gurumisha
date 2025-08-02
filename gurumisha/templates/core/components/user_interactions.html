@@ -6,26 +6,34 @@
     <div class="engagement-actions-bar fixed bottom-6 right-6 z-40">
         <div class="flex flex-col gap-3">
             <!-- Like Button -->
-            <button class="engagement-btn like-btn {% if user_has_liked %}active{% endif %}"
-                    hx-post="{% url 'core:content_like_toggle' post.id %}"
-                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                    hx-target="#like-count"
-                    hx-swap="innerHTML"
-                    title="Like this content">
-                <i class="fas fa-heart"></i>
-                <span id="like-count" class="count">{{ post.likes_count|default:0 }}</span>
-            </button>
-            
+            <div id="like-btn-container" class="engagement-btn-wrapper">
+                <button class="engagement-btn like-btn {% if user_has_liked %}active{% endif %}"
+                        hx-post="{% url 'core:content_like_toggle' post.id %}"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-target="#like-btn-container"
+                        hx-swap="innerHTML"
+                        hx-preserve="true"
+                        hx-preserve-id="like-btn-{{ post.id }}"
+                        title="Like this content">
+                    <i class="fas fa-heart"></i>
+                    <span id="like-count" class="count">{{ post.likes_count|default:0 }}</span>
+                </button>
+            </div>
+
             <!-- Bookmark Button -->
-            <button class="engagement-btn bookmark-btn {% if user_has_bookmarked %}active{% endif %}"
-                    hx-post="{% url 'core:content_bookmark_toggle' post.id %}"
-                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                    hx-target="#bookmark-count"
-                    hx-swap="innerHTML"
-                    title="Bookmark this content">
-                <i class="fas fa-bookmark"></i>
-                <span id="bookmark-count" class="count">{{ post.bookmark_count|default:0 }}</span>
-            </button>
+            <div id="bookmark-btn-container" class="engagement-btn-wrapper">
+                <button class="engagement-btn bookmark-btn {% if user_has_bookmarked %}active{% endif %}"
+                        hx-post="{% url 'core:content_bookmark_toggle' post.id %}"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-target="#bookmark-btn-container"
+                        hx-swap="innerHTML"
+                        hx-preserve="true"
+                        hx-preserve-id="bookmark-btn-{{ post.id }}"
+                        title="Bookmark this content">
+                    <i class="fas fa-bookmark"></i>
+                    <span id="bookmark-count" class="count">{{ post.bookmark_count|default:0 }}</span>
+                </button>
+            </div>
             
             <!-- Share Button -->
             <button class="engagement-btn share-btn"

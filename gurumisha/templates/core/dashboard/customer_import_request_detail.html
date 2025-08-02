@@ -1,0 +1,264 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Import Request #{{ import_request.id|stringformat:"05d" }}{% endblock %}
+{% block page_title %}Import Request Details{% endblock %}
+{% block page_description %}View your import request details and track progress{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <a href="{% url 'core:user_import_requests' %}" class="ml-1 text-sm font-medium text-gray-500 hover:text-harrier-red md:ml-2 font-raleway">Import Requests</a>
+        </div>
+    </li>
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-raleway">#{{ import_request.id|stringformat:"05d" }}</span>
+        </div>
+    </li>
+{% endblock %}
+
+{% block dashboard_content %}
+    <!-- Header Section -->
+    <div class="bg-gradient-to-r from-harrier-red to-harrier-red-dark rounded-xl p-6 text-white mb-8 animate-fade-in-up">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold font-montserrat mb-2">
+                    {{ import_request.year }} {{ import_request.brand }} {{ import_request.model }}
+                </h1>
+                <p class="text-blue-100 font-raleway">
+                    <i class="fas fa-calendar mr-2"></i>Submitted on {{ import_request.created_at|date:"F d, Y" }}
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-blue-100 mb-1 font-raleway">Request ID</div>
+                <div class="text-2xl font-bold font-montserrat">#{{ import_request.id|stringformat:"05d" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="mb-8">
+        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4
+                        {% if import_request.status == 'completed' %}bg-green-100{% elif import_request.status == 'processing' %}bg-blue-100{% elif import_request.status == 'pending' %}bg-yellow-100{% else %}bg-gray-100{% endif %}">
+                        <i class="{% if import_request.status == 'completed' %}fas fa-check text-green-600{% elif import_request.status == 'processing' %}fas fa-cog fa-spin text-blue-600{% elif import_request.status == 'pending' %}fas fa-clock text-yellow-600{% else %}fas fa-times text-gray-600{% endif %} text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Current Status</h3>
+                        <p class="text-gray-600 font-raleway">{{ import_request.get_status_display }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium font-montserrat
+                        {% if import_request.status == 'completed' %}bg-green-100 text-green-800{% elif import_request.status == 'processing' %}bg-blue-100 text-blue-800{% elif import_request.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ import_request.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Vehicle Information -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-car mr-3 text-blue-600"></i>
+                        Vehicle Information
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Year</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.year }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Brand</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.brand }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Model</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.model }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Engine Size</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.engine_size|default:"Not specified" }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Transmission</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.get_transmission_display|default:"Not specified" }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Fuel Type</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.get_fuel_type_display|default:"Not specified" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Information -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-globe mr-3 text-green-600"></i>
+                        Import Details
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Origin Country</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.origin_country }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Budget Range</label>
+                            <p class="text-harrier-dark font-semibold font-montserrat">
+                                {% if import_request.budget_min and import_request.budget_max %}
+                                    {{ import_request.budget_min|floatformat:0 }} - {{ import_request.budget_max|floatformat:0 }} KES
+                                {% elif import_request.budget_min %}
+                                    From {{ import_request.budget_min|floatformat:0 }} KES
+                                {% elif import_request.budget_max %}
+                                    Up to {{ import_request.budget_max|floatformat:0 }} KES
+                                {% else %}
+                                    Not specified
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% if import_request.special_requirements %}
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 font-raleway">Special Requirements</label>
+                            <p class="text-harrier-dark font-montserrat">{{ import_request.special_requirements }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat flex items-center">
+                        <i class="fas fa-history mr-3 text-purple-600"></i>
+                        Request Timeline
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-4"></div>
+                            <div>
+                                <p class="font-semibold text-harrier-dark font-montserrat">Request Submitted</p>
+                                <p class="text-sm text-gray-600 font-raleway">{{ import_request.created_at|date:"F d, Y \a\t H:i" }}</p>
+                            </div>
+                        </div>
+                        {% if import_request.updated_at != import_request.created_at %}
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-4"></div>
+                            <div>
+                                <p class="font-semibold text-harrier-dark font-montserrat">Last Updated</p>
+                                <p class="text-sm text-gray-600 font-raleway">{{ import_request.updated_at|date:"F d, Y \a\t H:i" }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-8">
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    {% if import_request.status == 'completed' and import_order and import_order.order_number %}
+                        <a href="{% url 'core:import_order_detail' import_order.order_number %}"
+                           class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium">
+                            <i class="fas fa-truck mr-2"></i>Track Order
+                        </a>
+                    {% elif import_request.status == 'completed' and import_order %}
+                        <span class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Order Invalid
+                        </span>
+                    {% endif %}
+
+                    {% if import_request.status == 'pending' and not import_request.admin_notes and not import_request.estimated_cost %}
+                        {% load tz %}
+                        {% now "U" as current_timestamp %}
+                        {% with import_request.created_at|add:"86400"|date:"U" as deadline_timestamp %}
+                            {% if current_timestamp|add:"0" < deadline_timestamp|add:"0" %}
+                                <a href="{% url 'core:customer_import_request_edit' import_request.id %}"
+                                   class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium">
+                                    <i class="fas fa-edit mr-2"></i>Edit Request
+                                </a>
+                            {% else %}
+                                <span class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium">
+                                    <i class="fas fa-clock mr-2"></i>Edit Window Expired
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                    {% elif import_request.status != 'pending' %}
+                        <span class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium">
+                            <i class="fas fa-lock mr-2"></i>Cannot Edit ({{ import_request.get_status_display }})
+                        </span>
+                    {% else %}
+                        <span class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium">
+                            <i class="fas fa-cog mr-2"></i>Being Processed
+                        </span>
+                    {% endif %}
+
+                    <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-harrier-red text-white rounded-lg hover:bg-harrier-red-dark transition-all duration-200 font-medium"
+                            onclick="window.print()">
+                        <i class="fas fa-print mr-2"></i>Print Details
+                    </button>
+                    
+                    <a href="{% url 'core:user_import_requests' %}" 
+                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-harrier-dark font-montserrat mb-4">Need Help?</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center text-sm text-gray-600">
+                        <i class="fas fa-phone mr-3 text-harrier-red"></i>
+                        <span>+254 720 557 457</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600">
+                        <i class="fas fa-envelope mr-3 text-harrier-red"></i>
+                        <span>support@gurumisha.com</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600">
+                        <i class="fas fa-clock mr-3 text-harrier-red"></i>
+                        <span>Mon - Fri: 8AM - 6PM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add any specific JavaScript for the detail page here
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh status every 30 seconds if not completed
+    {% if import_request.status != 'completed' and import_request.status != 'cancelled' %}
+    setInterval(() => {
+        location.reload();
+    }, 30000);
+    {% endif %}
+});
+</script>
+{% endblock %}

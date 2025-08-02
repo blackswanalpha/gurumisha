@@ -20,7 +20,7 @@
     </video>
 
     <!-- Video Overlay -->
-    <div class="absolute inset-0 bg-gradient-to-br from-primary-black/85 via-primary-blue/75 to-primary-red/70 z-10"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-black/90 via-red-900/80 to-red-600/70 z-10"></div>
 
     <!-- Hero Content -->
     <div class="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -157,9 +157,14 @@
             <h2 class="text-2xl md:text-3xl font-bold text-primary-black mb-3" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
                 BROWSE BY CATEGORY
             </h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                Discover vehicles from different sources and find exactly what you're looking for
-            </p>
+            <div class="space-y-2 max-w-2xl mx-auto">
+                <p class="text-gray-600">
+                    Discover vehicles from different sources
+                </p>
+                <p class="text-gray-600">
+                    and find exactly what you're looking for
+                </p>
+            </div>
         </div>
 
         <!-- Pill Navigation -->
@@ -209,40 +214,7 @@
             </button>
         </div>
 
-        <!-- Category Descriptions -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div class="w-12 h-12 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-car text-white text-lg"></i>
-                </div>
-                <h3 class="font-semibold text-primary-black mb-2">All Listings</h3>
-                <p class="text-sm text-gray-600">Browse our complete inventory of available vehicles</p>
-            </div>
 
-            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-ship text-white text-lg"></i>
-                </div>
-                <h3 class="font-semibold text-primary-black mb-2">Imported Cars</h3>
-                <p class="text-sm text-gray-600">Premium vehicles imported from international markets</p>
-            </div>
-
-            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-handshake text-white text-lg"></i>
-                </div>
-                <h3 class="font-semibold text-primary-black mb-2">Sell on Behalf</h3>
-                <p class="text-sm text-gray-600">Vehicles sold on behalf of individual owners</p>
-            </div>
-
-            <div class="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-gavel text-white text-lg"></i>
-                </div>
-                <h3 class="font-semibold text-primary-black mb-2">Auctioned</h3>
-                <p class="text-sm text-gray-600">Vehicles available through auction processes</p>
-            </div>
-        </div>
     </div>
 </section>
 
@@ -760,7 +732,8 @@
                     <!-- Cars Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="cars-grid">
                         {% for car in cars %}
-                            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group card-animate animate-entrance animate-delay-{{ forloop.counter }}00">
+                            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group card-animate animate-entrance animate-delay-{{ forloop.counter }}00 cursor-pointer"
+                                 onclick="window.location.href='{% url 'core:car_detail' car.pk %}'">
                                 <div class="relative overflow-hidden">
                                     {% with car.get_display_image as display_image %}
                                         {% if display_image %}
@@ -804,16 +777,17 @@
 
                                     <!-- Wishlist Button -->
                                     <div class="absolute bottom-3 right-3">
-                                        <button class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-primary-red hover:text-white transition-all duration-300 shadow-lg">
+                                        <button class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-primary-red hover:text-white transition-all duration-300 shadow-lg"
+                                                onclick="event.stopPropagation(); toggleWishlist({{ car.pk }})">
                                             <i class="fas fa-heart text-sm"></i>
                                         </button>
                                     </div>
 
                                     <!-- Quick View Overlay -->
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-6">
-                                        <a href="{% url 'core:car_detail' car.pk %}" class="bg-white text-primary-black px-6 py-3 rounded-lg font-bold hover:bg-primary-red hover:text-white transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shadow-lg">
+                                        <span class="bg-white text-primary-black px-6 py-3 rounded-lg font-bold hover:bg-primary-red hover:text-white transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shadow-lg pointer-events-none">
                                             <i class="fas fa-eye mr-2"></i>VIEW DETAILS
-                                        </a>
+                                        </span>
                                     </div>
                                 </div>
 
@@ -866,12 +840,14 @@
                                             </span>
                                         </div>
                                         <div class="flex space-x-2">
-                                            <button class="w-10 h-10 border-2 border-gray-200 rounded-lg flex items-center justify-center hover:border-primary-red hover:text-primary-red transition-all duration-300" title="Compare">
+                                            <button class="w-10 h-10 border-2 border-gray-200 rounded-lg flex items-center justify-center hover:border-primary-red hover:text-primary-red transition-all duration-300"
+                                                    title="Compare"
+                                                    onclick="event.stopPropagation(); addToCompare({{ car.pk }})">
                                                 <i class="fas fa-balance-scale text-sm"></i>
                                             </button>
-                                            <a href="{% url 'core:car_detail' car.pk %}" class="bg-gradient-to-r from-primary-red to-accent-red text-white px-6 py-2 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg">
+                                            <span class="bg-gradient-to-r from-primary-red to-accent-red text-white px-6 py-2 rounded-lg font-bold hover:from-accent-red hover:to-primary-red transition-all duration-300 shadow-lg pointer-events-none">
                                                 VIEW
-                                            </a>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -931,6 +907,293 @@
         </div>
     </div>
 </section>
+
+<!-- Recently Viewed Features Section -->
+<section class="py-16 bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, #dc2626 0%, transparent 50%), radial-gradient(circle at 75% 75%, #000000 0%, transparent 50%);"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+        <!-- Section Header -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-600 to-black rounded-2xl shadow-2xl mb-6 transform hover:scale-110 transition-all duration-500">
+                <i class="fas fa-history text-white text-2xl"></i>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: 2px;">
+                Recently Viewed
+            </h2>
+            <p class="text-gray-600 max-w-2xl mx-auto text-lg font-raleway">
+                Continue where you left off - your recently viewed vehicles are waiting
+            </p>
+        </div>
+
+        <!-- Recently Viewed Cars Container -->
+        <div id="recently-viewed-content">
+        {% if recently_viewed_cars %}
+        <div class="relative">
+            <!-- Scroll Container -->
+            <div class="overflow-x-auto scrollbar-hide" id="recently-viewed-container">
+                <div class="flex gap-6 pb-4" style="width: max-content;">
+                    {% for car in recently_viewed_cars %}
+                    <div class="recently-viewed-card group cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                         onclick="window.location.href='{% url 'core:car_detail' car.pk %}'">
+                        <!-- Card Container with Glassmorphism -->
+                        <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden w-80 hover:shadow-3xl transition-all duration-500">
+                            <!-- Image Container -->
+                            <div class="relative h-48 overflow-hidden">
+                                {% if car.main_image %}
+                                    <img src="{{ car.main_image.url }}" alt="{{ car.title }}"
+                                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-red-600 to-black flex items-center justify-center">
+                                        <i class="fas fa-car text-white text-4xl"></i>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Overlay Gradient -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                <!-- Status Badges -->
+                                <div class="absolute top-4 left-4 flex flex-col gap-2">
+                                    {% if car.is_featured %}
+                                        <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-star mr-1"></i>FEATURED
+                                        </div>
+                                    {% endif %}
+                                    {% if car.listing_type == 'imported' %}
+                                        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-ship mr-1"></i>IMPORTED
+                                        </div>
+                                    {% elif car.listing_type == 'auction' %}
+                                        <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-gavel mr-1"></i>AUCTION
+                                        </div>
+                                    {% elif car.is_certified %}
+                                        <div class="bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                            <i class="fas fa-certificate mr-1"></i>CERTIFIED
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Recently Viewed Badge -->
+                                <div class="absolute top-4 right-4">
+                                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                        <i class="fas fa-clock mr-1"></i>RECENT
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="p-6">
+                                <!-- Title and Price -->
+                                <div class="mb-4">
+                                    <h3 class="font-bold text-gray-900 text-lg font-montserrat mb-2 line-clamp-2 group-hover:text-red-600 transition-colors duration-300">
+                                        {{ car.title }}
+                                    </h3>
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-2xl font-bold text-red-600 font-montserrat">
+                                            {{ car.price|currency_ksh_no_decimals }}
+                                        </p>
+                                        {% if car.calculated_rating > 0 %}
+                                        <div class="flex items-center">
+                                            <div class="flex text-yellow-400 mr-1">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= car.calculated_rating %}
+                                                        <i class="fas fa-star text-xs"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-xs"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <span class="text-xs text-gray-600">({{ car.calculated_rating|floatformat:1 }})</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Car Details -->
+                                <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calendar-alt text-red-500 mr-2"></i>
+                                        <span>{{ car.year }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-tachometer-alt text-red-500 mr-2"></i>
+                                        <span>{{ car.mileage|default:"N/A" }} km</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-gas-pump text-red-500 mr-2"></i>
+                                        <span>{{ car.get_fuel_type_display|default:"N/A" }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-cogs text-red-500 mr-2"></i>
+                                        <span>{{ car.get_transmission_display|default:"N/A" }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Action Button -->
+                                <div class="flex items-center justify-between">
+                                    <button class="bg-gradient-to-r from-red-600 to-black text-white px-6 py-2 rounded-full font-semibold text-sm hover:from-red-700 hover:to-gray-900 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                        View Details
+                                    </button>
+                                    <div class="flex items-center text-xs text-gray-500">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        <span>{{ car.views_count }} views</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Scroll Indicators -->
+            <div class="flex justify-center mt-8">
+                <div class="flex items-center gap-2">
+                    <button id="scroll-left" class="w-10 h-10 bg-gradient-to-r from-red-600 to-black text-white rounded-full flex items-center justify-center hover:from-red-700 hover:to-gray-900 transition-all duration-300 shadow-lg">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="flex gap-2" id="scroll-dots">
+                        <!-- Dots will be generated by JavaScript -->
+                    </div>
+                    <button id="scroll-right" class="w-10 h-10 bg-gradient-to-r from-red-600 to-black text-white rounded-full flex items-center justify-center hover:from-red-700 hover:to-gray-900 transition-all duration-300 shadow-lg">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-16">
+            <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-12 max-w-md mx-auto">
+                <div class="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-history text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 font-montserrat">No Recently Viewed Cars</h3>
+                <p class="text-gray-600 mb-6 font-raleway">Start browsing our inventory to see your recently viewed vehicles here</p>
+                <a href="#cars-grid" class="inline-flex items-center bg-gradient-to-r from-red-600 to-black text-white px-6 py-3 rounded-full font-semibold hover:from-red-700 hover:to-gray-900 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-search mr-2"></i>
+                    Browse Cars
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Vehicle Categories Section -->
+<section class="py-12 bg-gradient-to-br from-white via-gray-50 to-white relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 75% 25%, #dc2626 0%, transparent 50%), radial-gradient(circle at 25% 75%, #000000 0%, transparent 50%);"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-600 to-black rounded-xl shadow-lg mb-4 transform hover:scale-110 transition-all duration-500">
+                <i class="fas fa-th-large text-white text-lg"></i>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-3" style="font-family: 'Saira Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
+                VEHICLE CATEGORIES
+            </h2>
+            <p class="text-gray-600 max-w-xl mx-auto text-base font-raleway">
+                Explore our diverse range of vehicle categories and find the perfect match for your needs
+            </p>
+        </div>
+
+        <!-- Enhanced Vehicle Categories Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <!-- All Listings Category -->
+            <div class="category-card group cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                 onclick="filterByListingType('')">
+                <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 text-center hover:shadow-xl transition-all duration-500 h-full">
+                    <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-black rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                        <i class="fas fa-car text-white text-lg"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2 text-base font-montserrat group-hover:text-red-600 transition-colors duration-300">
+                        All Listings
+                    </h3>
+                    <p class="text-xs text-gray-600 leading-relaxed font-raleway mb-3">
+                        Browse our complete collection of vehicles
+                    </p>
+                    <div class="bg-gradient-to-r from-red-600 to-black text-white px-3 py-1 rounded-full text-xs font-bold inline-block">
+                        {{ total_cars|default:0 }} Available
+                    </div>
+                </div>
+            </div>
+
+            <!-- Imported Cars Category -->
+            <div class="category-card group cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                 onclick="filterByListingType('imported')">
+                <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 text-center hover:shadow-xl transition-all duration-500 h-full">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                        <i class="fas fa-ship text-white text-lg"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2 text-base font-montserrat group-hover:text-blue-600 transition-colors duration-300">
+                        Import Cars
+                    </h3>
+                    <p class="text-xs text-gray-600 leading-relaxed font-raleway mb-3">
+                        Premium imported vehicles from overseas
+                    </p>
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold inline-block">
+                        {{ imported_count|default:0 }} Available
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sell on Behalf Category -->
+            <div class="category-card group cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                 onclick="filterByListingType('sell_behalf')">
+                <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 text-center hover:shadow-xl transition-all duration-500 h-full">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                        <i class="fas fa-handshake text-white text-lg"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2 text-base font-montserrat group-hover:text-green-600 transition-colors duration-300">
+                        Sell on Behalf
+                    </h3>
+                    <p class="text-xs text-gray-600 leading-relaxed font-raleway mb-3">
+                        Vehicles sold on behalf of owners
+                    </p>
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold inline-block">
+                        {{ sell_behalf_count|default:0 }} Available
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auctioned Category -->
+            <div class="category-card group cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                 onclick="filterByListingType('auction')">
+                <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 text-center hover:shadow-xl transition-all duration-500 h-full">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                        <i class="fas fa-gavel text-white text-lg"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2 text-base font-montserrat group-hover:text-purple-600 transition-colors duration-300">
+                        Auctioned
+                    </h3>
+                    <p class="text-xs text-gray-600 leading-relaxed font-raleway mb-3">
+                        Vehicles available through auction process
+                    </p>
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold inline-block">
+                        {{ auction_count|default:0 }} Available
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Browse All Vehicles Button -->
+        <div class="text-center mt-8">
+            <button onclick="filterByListingType('')" class="bg-gradient-to-r from-red-600 to-black text-white px-6 py-3 rounded-full font-bold text-base hover:from-red-700 hover:to-gray-900 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <i class="fas fa-car mr-2"></i>
+                Browse All Vehicles
+            </button>
+        </div>
+    </div>
+</section>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1276,6 +1539,272 @@
             }, 500);
         }
     }
+
+    // Recently Viewed Horizontal Scroll Functionality
+    function initializeRecentlyViewedScroll() {
+        const container = document.getElementById('recently-viewed-container');
+        const scrollLeftBtn = document.getElementById('scroll-left');
+        const scrollRightBtn = document.getElementById('scroll-right');
+        const dotsContainer = document.getElementById('scroll-dots');
+
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.recently-viewed-card');
+        const cardWidth = 320; // Card width + gap
+        const visibleCards = Math.floor(container.offsetWidth / cardWidth);
+        const totalPages = Math.ceil(cards.length / visibleCards);
+        let currentPage = 0;
+
+        // Generate dots
+        if (dotsContainer && totalPages > 1) {
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < totalPages; i++) {
+                const dot = document.createElement('button');
+                dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${i === 0 ? 'bg-red-600' : 'bg-gray-300'}`;
+                dot.addEventListener('click', () => scrollToPage(i));
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        function updateDots() {
+            const dots = dotsContainer?.querySelectorAll('button');
+            if (dots) {
+                dots.forEach((dot, index) => {
+                    if (index === currentPage) {
+                        dot.className = 'w-3 h-3 rounded-full transition-all duration-300 bg-red-600';
+                    } else {
+                        dot.className = 'w-3 h-3 rounded-full transition-all duration-300 bg-gray-300';
+                    }
+                });
+            }
+        }
+
+        function scrollToPage(page) {
+            currentPage = Math.max(0, Math.min(page, totalPages - 1));
+            const scrollAmount = currentPage * cardWidth * visibleCards;
+            container.scrollTo({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+            updateDots();
+        }
+
+        // Event listeners
+        if (scrollLeftBtn) {
+            scrollLeftBtn.addEventListener('click', () => {
+                scrollToPage(currentPage - 1);
+            });
+        }
+
+        if (scrollRightBtn) {
+            scrollRightBtn.addEventListener('click', () => {
+                scrollToPage(currentPage + 1);
+            });
+        }
+
+        // Auto-scroll functionality
+        let autoScrollInterval;
+        function startAutoScroll() {
+            if (totalPages > 1) {
+                autoScrollInterval = setInterval(() => {
+                    const nextPage = (currentPage + 1) % totalPages;
+                    scrollToPage(nextPage);
+                }, 5000);
+            }
+        }
+
+        function stopAutoScroll() {
+            if (autoScrollInterval) {
+                clearInterval(autoScrollInterval);
+            }
+        }
+
+        // Start auto-scroll
+        startAutoScroll();
+
+        // Pause auto-scroll on hover
+        container.addEventListener('mouseenter', stopAutoScroll);
+        container.addEventListener('mouseleave', startAutoScroll);
+    }
+
+    // Vehicle Category Filtering by Listing Type
+    function filterByListingType(listingType) {
+        // Add loading state
+        showLoadingState();
+
+        // Find the corresponding pill button and trigger click
+        const pillButtons = document.querySelectorAll('.pill-button');
+        pillButtons.forEach(button => {
+            const buttonListingType = button.getAttribute('data-listing-type');
+            if (buttonListingType === listingType) {
+                button.click();
+            }
+        });
+
+        // Scroll to results
+        setTimeout(() => {
+            document.getElementById('cars-grid').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 300);
+    }
+
+    // Vehicle Category Filtering by Body Type (kept for backward compatibility)
+    function filterByBodyType(bodyType) {
+        // Add loading state
+        showLoadingState();
+
+        // Update URL with body type filter
+        const url = new URL(window.location);
+        if (bodyType) {
+            url.searchParams.set('body_type', bodyType);
+        } else {
+            url.searchParams.delete('body_type');
+        }
+
+        // Use HTMX to load filtered results
+        htmx.ajax('GET', '{% url "core:htmx_filter_by_body_type" %}?' + url.searchParams.toString(), {
+            target: '#cars-grid',
+            swap: 'innerHTML'
+        }).then(() => {
+            // Update URL without page reload
+            window.history.pushState({}, '', url.toString());
+            hideLoadingState();
+
+            // Scroll to results
+            document.getElementById('cars-grid').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            // Update recently viewed section
+            updateRecentlyViewed();
+        });
+    }
+
+    // Update Recently Viewed Section
+    function updateRecentlyViewed() {
+        htmx.ajax('GET', '{% url "core:htmx_recently_viewed_update" %}', {
+            target: '#recently-viewed-content',
+            swap: 'innerHTML'
+        }).then(() => {
+            // Reinitialize scroll functionality
+            initializeRecentlyViewedScroll();
+        });
+    }
+
+    function showAllCategories() {
+        // Show modal or expand view with all body types
+        const allCategories = [
+            { type: 'sedan', name: 'Sedan', icon: 'fas fa-car' },
+            { type: 'suv', name: 'SUV', icon: 'fas fa-truck' },
+            { type: 'hatchback', name: 'Hatchback', icon: 'fas fa-car-side' },
+            { type: 'coupe', name: 'Coupe', icon: 'fas fa-car' },
+            { type: 'convertible', name: 'Convertible', icon: 'fas fa-car' },
+            { type: 'wagon', name: 'Wagon', icon: 'fas fa-car' },
+            { type: 'pickup', name: 'Pickup Truck', icon: 'fas fa-truck-pickup' },
+            { type: 'van', name: 'Van', icon: 'fas fa-van' },
+            { type: 'crossover', name: 'Crossover', icon: 'fas fa-car' },
+            { type: 'sports', name: 'Sports Car', icon: 'fas fa-tachometer-alt' },
+            { type: 'luxury', name: 'Luxury', icon: 'fas fa-crown' },
+            { type: 'compact', name: 'Compact', icon: 'fas fa-car' }
+        ];
+
+        // Create modal content
+        let modalContent = `
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeModal(event)">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+                    <div class="p-8">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-2xl font-bold text-gray-900 font-montserrat">All Vehicle Categories</h3>
+                            <button onclick="closeModal()" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                <i class="fas fa-times text-gray-600"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        `;
+
+        allCategories.forEach(category => {
+            modalContent += `
+                <div class="category-item p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 cursor-pointer transition-all duration-300 text-center" onclick="filterByBodyType('${category.type}'); closeModal();">
+                    <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-black rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <i class="${category.icon} text-white"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 font-montserrat">${category.name}</h4>
+                </div>
+            `;
+        });
+
+        modalContent += `
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to page
+        const modalDiv = document.createElement('div');
+        modalDiv.id = 'categories-modal';
+        modalDiv.innerHTML = modalContent;
+        document.body.appendChild(modalDiv);
+
+        // Animate in
+        setTimeout(() => {
+            modalDiv.querySelector('.fixed').style.opacity = '1';
+        }, 10);
+    }
+
+    function closeModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+
+        const modal = document.getElementById('categories-modal');
+        if (modal) {
+            modal.querySelector('.fixed').style.opacity = '0';
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }
+    }
+
+    function showLoadingState() {
+        const grid = document.getElementById('cars-grid');
+        if (grid) {
+            grid.innerHTML = `
+                <div class="col-span-full flex items-center justify-center py-16">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-black rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+                            <i class="fas fa-car text-white text-2xl"></i>
+                        </div>
+                        <p class="text-gray-600 font-raleway">Loading vehicles...</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function hideLoadingState() {
+        // Loading state will be replaced by HTMX response
+    }
+
+    // Wishlist functionality
+    function toggleWishlist(carId) {
+        // Add your wishlist toggle logic here
+        console.log('Toggle wishlist for car:', carId);
+        // You can implement HTMX call to toggle wishlist
+    }
+
+    // Compare functionality
+    function addToCompare(carId) {
+        // Add your compare logic here
+        console.log('Add to compare car:', carId);
+        // You can implement session-based compare functionality
+    }
+
+    // Initialize all functionality when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeRecentlyViewedScroll();
+    });
 
 
 </script>

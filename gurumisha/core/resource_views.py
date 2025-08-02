@@ -28,20 +28,20 @@ def admin_resource_management(request):
     """Enhanced admin resource management dashboard"""
     # Get statistics
     total_posts = BlogPost.objects.count()
-    published_posts = BlogPost.objects.filter(status='published').count()
-    draft_posts = BlogPost.objects.filter(status='draft').count()
-    
+    published_posts = BlogPost.objects.filter(is_published=True).count()
+    draft_posts = BlogPost.objects.filter(is_published=False).count()
+
     # Content type breakdown
     content_types = BlogPost.objects.values('content_type').annotate(
         count=Count('id')
     ).order_by('-count')
-    
+
     # Recent posts
     recent_posts = BlogPost.objects.select_related('author').order_by('-created_at')[:10]
-    
+
     # Popular posts (by views)
     popular_posts = BlogPost.objects.filter(
-        status='published'
+        is_published=True
     ).order_by('-views_count')[:10]
     
     # Get all tags and series for filters
@@ -78,7 +78,7 @@ def admin_resource_create(request):
             title=data.get('title', ''),
             content=data.get('content', ''),
             content_type=data.get('content_type', 'article'),
-            status=data.get('status', 'draft'),
+            is_published=data.get('status', 'draft') == 'published',
             author=request.user,
             excerpt=data.get('excerpt', ''),
             reading_time=data.get('reading_time', 5),
@@ -185,7 +185,10 @@ def admin_resource_update(request, post_id):
         post.content = data.get('content', post.content)
         post.excerpt = data.get('excerpt', post.excerpt)
         post.content_type = data.get('content_type', post.content_type)
-        post.status = data.get('status', post.status)
+        # Handle status field conversion
+        status_value = data.get('status')
+        if status_value is not None:
+            post.is_published = status_value == 'published'
         post.reading_time = data.get('reading_time', post.reading_time)
         post.difficulty_level = data.get('difficulty_level', post.difficulty_level)
         post.is_featured = data.get('is_featured', post.is_featured)
@@ -284,9 +287,12 @@ def admin_resources_table(request):
     
     if content_type:
         posts = posts.filter(content_type=content_type)
-    
+
     if status:
-        posts = posts.filter(status=status)
+        if status == 'published':
+            posts = posts.filter(is_published=True)
+        elif status == 'draft':
+            posts = posts.filter(is_published=False)
     
     if tag_id:
         posts = posts.filter(tags__id=tag_id)
@@ -380,7 +386,7 @@ def global_search(request):
     
     # Search in published posts
     posts = BlogPost.objects.filter(
-        status='published'
+        is_published=True
     ).filter(
         Q(title__icontains=query) |
         Q(content__icontains=query) |
@@ -411,9 +417,9 @@ def resources_by_category(request, category_slug):
         category = ContentTag.objects.get(slug=category_slug)
     except ContentTag.DoesNotExist:
         return redirect('core:resources')
-    
+
     posts = BlogPost.objects.filter(
-        status='published',
+        is_published=True,
         tags=category
     ).select_related('author', 'series').prefetch_related('tags').order_by('-created_at')
     
@@ -499,7 +505,7 @@ def mobile_search(request):
     
     # Search with mobile-optimized results
     posts = BlogPost.objects.filter(
-        status='published'
+        is_published=True
     ).filter(
         Q(title__icontains=query) |
         Q(content__icontains=query) |
@@ -681,7 +687,7 @@ def top_content_data(request):
         filters = json.loads(request.body) if request.method == 'POST' else {}
 
         # Get posts
-        posts = BlogPost.objects.filter(status='published')
+        posts = BlogPost.objects.filter(is_published=True)
 
         # Apply filters
         if filters.get('contentType') and filters.get('contentType') != 'all':
@@ -898,7 +904,7 @@ def get_recommendations(request, post_id):
     try:
         # Get related posts based on tags and content type
         related_posts = BlogPost.objects.filter(
-            status='published'
+            is_published=True
         ).filter(
             Q(tags__in=post.tags.all()) |
             Q(content_type=post.content_type)

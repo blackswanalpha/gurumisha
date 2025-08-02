@@ -1,13 +1,16 @@
 <!-- Modern Compare Button Component with Enhanced Design and Accessibility -->
-<button
-    id="compare-btn-{{ car.id }}"
-    hx-post="{% if in_compare %}{% url 'core:remove_from_compare' car.id %}{% else %}{% url 'core:add_to_compare' car.id %}{% endif %}"
-    hx-target="#compare-btn-{{ car.id }}"
-    hx-swap="outerHTML"
-    hx-trigger="click"
-    hx-indicator="#compare-loading-{{ car.id }}"
-    hx-on:htmx:before-request="this.setAttribute('aria-busy', 'true')"
-    hx-on:htmx:after-request="this.setAttribute('aria-busy', 'false')"
+<div id="compare-btn-container-{{ car.id }}" class="compare-btn-wrapper">
+    <button
+        id="compare-btn-{{ car.id }}"
+        hx-post="{% if in_compare %}{% url 'core:remove_from_compare' car.id %}{% else %}{% url 'core:add_to_compare' car.id %}{% endif %}"
+        hx-target="#compare-btn-container-{{ car.id }}"
+        hx-swap="innerHTML"
+        hx-trigger="click"
+        hx-indicator="#compare-loading-{{ car.id }}"
+        hx-preserve="true"
+        hx-preserve-id="compare-btn-{{ car.id }}"
+        hx-on:htmx:before-request="this.setAttribute('aria-busy', 'true')"
+        hx-on:htmx:after-request="this.setAttribute('aria-busy', 'false')"
     class="group relative flex items-center justify-center px-4 sm:px-6 py-3 bg-white/90 backdrop-blur-sm border-2 {% if in_compare %}border-blue-500 text-blue-600 shadow-lg shadow-blue-500/20{% else %}border-gray-300 text-gray-600{% endif %} rounded-xl font-semibold transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-500/20 min-h-[48px] w-full sm:w-auto"
     type="button"
     aria-label="{% if in_compare %}Remove {{ car.title }} from comparison{% else %}Add {{ car.title }} to comparison{% endif %}"
@@ -83,5 +86,6 @@
     {% endif %}
 </div>
 
-<!-- Success/Error Message Container -->
-<div id="compare-message-{{ car.id }}" class="mt-2" role="status" aria-live="polite" aria-atomic="true"></div>
+    <!-- Success/Error Message Container -->
+    <div id="compare-message-{{ car.id }}" class="mt-2" role="status" aria-live="polite" aria-atomic="true"></div>
+</div>

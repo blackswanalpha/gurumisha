@@ -4,43 +4,199 @@
 {% block page_title %}Customer Queries{% endblock %}
 {% block page_description %}Manage customer inquiries and support requests{% endblock %}
 
+{% block extra_css %}
+<style>
+    .query-priority-critical { @apply border-l-4 border-red-600 bg-red-50; }
+    .query-priority-urgent { @apply border-l-4 border-orange-500 bg-orange-50; }
+    .query-priority-high { @apply border-l-4 border-yellow-500 bg-yellow-50; }
+    .query-priority-normal { @apply border-l-4 border-blue-500 bg-blue-50; }
+    .query-priority-low { @apply border-l-4 border-gray-400 bg-gray-50; }
+
+    .query-overdue { @apply bg-red-100 border-red-300; }
+    .query-urgent-flag { @apply animate-pulse; }
+
+    .bulk-action-panel {
+        transform: translateY(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+    .bulk-action-panel.show {
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
 {% block dashboard_content %}
-<div class="space-y-8">
-    <!-- Queries Header -->
-    <div class="flex justify-between items-center animate-fade-in-up" style="animation-delay: 0.1s;">
+<div class="space-y-6">
+    <!-- Enhanced Queries Header -->
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 animate-fade-in-up">
         <div>
             <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Customer Queries</h2>
             <p class="text-gray-600 mt-1 font-raleway">Manage customer inquiries and support requests</p>
+            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                <span><i class="fas fa-clock mr-1"></i>Avg Response: {{ avg_response_time|floatformat:1 }}h</span>
+                <span><i class="fas fa-check-circle mr-1"></i>Avg Resolution: {{ avg_resolution_time|floatformat:1 }}h</span>
+            </div>
         </div>
-        
-        <div class="flex space-x-3">
-            <button class="btn-admin-secondary text-sm">
-                <i class="fas fa-filter mr-2"></i>Filter
+
+        <div class="flex flex-wrap gap-3">
+            <button onclick="toggleFilters()" class="btn-admin-secondary text-sm">
+                <i class="fas fa-filter mr-2"></i>Filters
             </button>
-            <button class="btn-admin-primary text-sm">
-                <i class="fas fa-reply mr-2"></i>Bulk Reply
+            <button onclick="showBulkActions()" class="btn-admin-secondary text-sm" id="bulk-action-btn" style="display: none;">
+                <i class="fas fa-tasks mr-2"></i>Bulk Actions
+            </button>
+            <button onclick="exportQueries()" class="btn-admin-secondary text-sm">
+                <i class="fas fa-download mr-2"></i>Export
+            </button>
+            <button onclick="refreshQueries()" class="btn-admin-primary text-sm">
+                <i class="fas fa-sync-alt mr-2"></i>Refresh
             </button>
         </div>
     </div>
 
-    <!-- Query Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+    <!-- Enhanced Query Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 animate-fade-in-up" style="animation-delay: 0.2s;" id="query-stats">
         <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-violet-600">{{ total_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">Total Queries</div>
+            <div class="admin-stat-value text-blue-600">{{ total_inquiries|default:0 }}</div>
+            <div class="admin-stat-label">Total</div>
         </div>
         <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-red-600">{{ new_inquiries|default:0 }}</div>
+            <div class="admin-stat-value text-green-600">{{ new_inquiries|default:0 }}</div>
             <div class="admin-stat-label">New</div>
+        </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-blue-600">{{ open_inquiries|default:0 }}</div>
+            <div class="admin-stat-label">Open</div>
         </div>
         <div class="admin-stat-card text-center">
             <div class="admin-stat-value text-orange-600">{{ in_progress_inquiries|default:0 }}</div>
             <div class="admin-stat-label">In Progress</div>
         </div>
         <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-green-600">{{ resolved_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">Resolved</div>
+            <div class="admin-stat-value text-red-600">{{ urgent_inquiries|default:0 }}</div>
+            <div class="admin-stat-label">Urgent</div>
         </div>
+        <div class="admin-stat-card text-center">
+            <div class="admin-stat-value text-red-700">{{ overdue_inquiries|default:0 }}</div>
+            <div class="admin-stat-label">Overdue</div>
+        </div>
+    </div>
+
+    <!-- Advanced Filter Panel -->
+    <div id="filter-panel" class="glassmorphism-card p-6 hidden animate-fade-in-up">
+        <form method="GET" id="filter-form" hx-get="{% url 'core:admin_queries' %}" hx-target="#queries-table" hx-swap="outerHTML">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <!-- Search -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    {{ filter_form.search }}
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    {{ filter_form.status }}
+                </div>
+
+                <!-- Priority Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                    {{ filter_form.priority }}
+                </div>
+
+                <!-- Type Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    {{ filter_form.inquiry_type }}
+                </div>
+
+                <!-- Assigned Admin -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned Admin</label>
+                    {{ filter_form.assigned_admin }}
+                </div>
+
+                <!-- Date From -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                    {{ filter_form.date_from }}
+                </div>
+
+                <!-- Date To -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                    {{ filter_form.date_to }}
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="flex flex-col space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Quick Filters</label>
+                    <div class="space-y-1">
+                        <label class="flex items-center">
+                            {{ filter_form.is_urgent }}
+                            <span class="ml-2 text-sm text-gray-600">Urgent Only</span>
+                        </label>
+                        <label class="flex items-center">
+                            {{ filter_form.is_overdue }}
+                            <span class="ml-2 text-sm text-gray-600">Overdue Only</span>
+                        </label>
+                        <label class="flex items-center">
+                            {{ filter_form.unassigned_only }}
+                            <span class="ml-2 text-sm text-gray-600">Unassigned Only</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <button type="button" onclick="clearFilters()" class="btn-admin-secondary text-sm">
+                    <i class="fas fa-times mr-2"></i>Clear Filters
+                </button>
+                <button type="submit" class="btn-admin-primary text-sm">
+                    <i class="fas fa-search mr-2"></i>Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions Panel -->
+    <div id="bulk-actions-panel" class="glassmorphism-card p-4 bulk-action-panel hidden">
+        <form id="bulk-actions-form" hx-post="{% url 'core:admin_query_bulk_actions' %}" hx-target="#bulk-actions-response">
+            {% csrf_token %}
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center">
+                    <span class="text-sm font-medium text-gray-700 mr-2">Selected: </span>
+                    <span id="selected-count" class="text-sm font-bold text-harrier-red">0</span>
+                </div>
+
+                <div class="flex-1 min-w-48">
+                    {{ bulk_form.action }}
+                </div>
+
+                <div id="bulk-assign-field" class="hidden">
+                    {{ bulk_form.assign_to_admin }}
+                </div>
+
+                <div id="bulk-status-field" class="hidden">
+                    {{ bulk_form.new_status }}
+                </div>
+
+                <div id="bulk-priority-field" class="hidden">
+                    {{ bulk_form.new_priority }}
+                </div>
+
+                {{ bulk_form.selected_inquiries }}
+
+                <button type="submit" class="btn-admin-primary text-sm">
+                    <i class="fas fa-check mr-2"></i>Execute
+                </button>
+
+                <button type="button" onclick="hideBulkActions()" class="btn-admin-secondary text-sm">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+            </div>
+        </form>
+        <div id="bulk-actions-response"></div>
     </div>
 
     <!-- Quick Actions -->

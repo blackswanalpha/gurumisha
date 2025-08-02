@@ -19,7 +19,7 @@
             </button>
             <button class="btn-admin-primary text-sm hover:scale-105 transition-transform duration-200"
                     hx-get="{% url 'core:admin_import_request_add_modal' %}"
-                    hx-target="body"
+                    hx-target="#import-request-modals-container"
                     hx-swap="beforeend">
                 <i class="fas fa-plus mr-2"></i>New Import Request
             </button>
@@ -108,8 +108,8 @@
                                placeholder="Search by customer, vehicle, or order ID..."
                                class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm transition-all duration-200"
                                hx-get="{% url 'core:admin_import_requests_table_partial' %}"
-                               hx-target="#import-requests-table"
-                               hx-swap="outerHTML"
+                               hx-target="#import-requests-table-container"
+                               hx-swap="innerHTML"
                                hx-trigger="keyup changed delay:500ms, search"
                                hx-include="[name='status'], [name='brand'], [name='country'], [name='date_from'], [name='date_to']">
                         <button type="button"
@@ -135,8 +135,8 @@
                     </button>
                     <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors duration-200"
                             hx-get="{% url 'core:admin_import_requests_refresh' %}?{{ request.GET.urlencode }}"
-                            hx-target="#import-requests-table"
-                            hx-swap="outerHTML"
+                            hx-target="#import-requests-table-container"
+                            hx-swap="innerHTML"
                             hx-indicator="#refresh-indicator"
                             title="Refresh table">
                         <i class="fas fa-sync mr-1" id="refresh-indicator"></i>Refresh
@@ -155,8 +155,8 @@
                         <select name="status"
                                 class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
                                 hx-get="{% url 'core:admin_import_requests_table_partial' %}"
-                                hx-target="#import-requests-table"
-                                hx-swap="outerHTML"
+                                hx-target="#import-requests-table-container"
+                                hx-swap="innerHTML"
                                 hx-include="[name='search'], [name='brand'], [name='country'], [name='date_from'], [name='date_to']">
                             <option value="">All Statuses</option>
                             {% for status_code, status_display in status_choices %}
@@ -173,8 +173,8 @@
                         <select name="brand"
                                 class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
                                 hx-get="{% url 'core:admin_import_requests_table_partial' %}"
-                                hx-target="#import-requests-table"
-                                hx-swap="outerHTML"
+                                hx-target="#import-requests-table-container"
+                                hx-swap="innerHTML"
                                 hx-include="[name='search'], [name='status'], [name='country'], [name='date_from'], [name='date_to']">
                             <option value="">All Brands</option>
                             {% for brand in brands %}
@@ -191,8 +191,8 @@
                         <select name="country"
                                 class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
                                 hx-get="{% url 'core:admin_import_requests_table_partial' %}"
-                                hx-target="#import-requests-table"
-                                hx-swap="outerHTML"
+                                hx-target="#import-requests-table-container"
+                                hx-swap="innerHTML"
                                 hx-include="[name='search'], [name='status'], [name='brand'], [name='date_from'], [name='date_to']">
                             <option value="">All Countries</option>
                             {% for country in countries %}
@@ -211,8 +211,8 @@
                                value="{{ current_date_from }}"
                                class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
                                hx-get="{% url 'core:admin_import_requests_table_partial' %}"
-                               hx-target="#import-requests-table"
-                               hx-swap="outerHTML"
+                               hx-target="#import-requests-table-container"
+                               hx-swap="innerHTML"
                                hx-trigger="change"
                                hx-include="[name='search'], [name='status'], [name='brand'], [name='country'], [name='date_to']">
                     </div>
@@ -225,8 +225,8 @@
                                value="{{ current_date_to }}"
                                class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
                                hx-get="{% url 'core:admin_import_requests_table_partial' %}"
-                               hx-target="#import-requests-table"
-                               hx-swap="outerHTML"
+                               hx-target="#import-requests-table-container"
+                               hx-swap="innerHTML"
                                hx-trigger="change"
                                hx-include="[name='search'], [name='status'], [name='brand'], [name='country'], [name='date_from']">
                     </div>
@@ -242,8 +242,9 @@
                 </div>
             </div>
         </div>
-        
-        <div class="overflow-x-auto" id="import-requests-table">
+
+        <div id="import-requests-table-container" class="table-container">
+            <div class="overflow-x-auto" id="import-requests-table">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -326,31 +327,43 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
                                     <!-- View Button -->
-                                    <button class="action-btn action-btn-view group"
-                                            hx-get="{% url 'core:admin_import_request_view_modal' request.id %}"
-                                            hx-target="body"
-                                            hx-swap="beforeend"
-                                            title="View Details">
-                                        <i class="fas fa-eye group-hover:scale-110 transition-transform duration-200"></i>
-                                    </button>
+                                    <div class="action-btn-wrapper">
+                                        <button class="action-btn action-btn-view group"
+                                                hx-get="{% url 'core:admin_import_request_view_modal' request.id %}"
+                                                hx-target="#import-request-modals-container"
+                                                hx-swap="beforeend"
+                                                hx-preserve="true"
+                                                hx-preserve-id="view-btn-{{ request.id }}"
+                                                title="View Details">
+                                            <i class="fas fa-eye group-hover:scale-110 transition-transform duration-200"></i>
+                                        </button>
+                                    </div>
 
                                     <!-- Edit Button -->
-                                    <button class="action-btn action-btn-edit group"
-                                            hx-get="{% url 'core:admin_import_request_edit_modal' request.id %}"
-                                            hx-target="body"
-                                            hx-swap="beforeend"
-                                            title="Edit Request">
-                                        <i class="fas fa-edit group-hover:scale-110 transition-transform duration-200"></i>
-                                    </button>
+                                    <div class="action-btn-wrapper">
+                                        <button class="action-btn action-btn-edit group"
+                                                hx-get="{% url 'core:admin_import_request_edit_modal' request.id %}"
+                                                hx-target="#import-request-modals-container"
+                                                hx-swap="beforeend"
+                                                hx-preserve="true"
+                                                hx-preserve-id="edit-btn-{{ request.id }}"
+                                                title="Edit Request">
+                                            <i class="fas fa-edit group-hover:scale-110 transition-transform duration-200"></i>
+                                        </button>
+                                    </div>
 
                                     <!-- Status Update Button -->
-                                    <button class="action-btn action-btn-status group"
-                                            hx-get="{% url 'core:admin_import_request_status_modal' request.id %}"
-                                            hx-target="body"
-                                            hx-swap="beforeend"
-                                            title="Update Status">
-                                        <i class="fas fa-sync group-hover:rotate-180 transition-transform duration-300"></i>
-                                    </button>
+                                    <div class="action-btn-wrapper">
+                                        <button class="action-btn action-btn-status group"
+                                                hx-get="{% url 'core:admin_import_request_status_modal' request.id %}"
+                                                hx-target="#import-request-modals-container"
+                                                hx-swap="beforeend"
+                                                hx-preserve="true"
+                                                hx-preserve-id="status-btn-{{ request.id }}"
+                                                title="Update Status">
+                                            <i class="fas fa-sync group-hover:rotate-180 transition-transform duration-300"></i>
+                                        </button>
+                                    </div>
 
                                     <!-- Track Button (only enabled when completed and not already tracked) -->
                                     {% if request.import_order %}
@@ -364,8 +377,8 @@
                                             hx-post="{% url 'core:admin_import_request_track' request.id %}"
                                             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                                             hx-confirm="Move this request to tracking management?"
-                                            hx-target="#import-requests-table"
-                                            hx-swap="outerHTML"
+                                            hx-target="#import-requests-table-container"
+                                            hx-swap="innerHTML"
                                             title="Start Tracking">
                                         <i class="fas fa-route group-hover:scale-110 transition-transform duration-200"></i>
                                     </button>
@@ -378,13 +391,17 @@
                                     {% endif %}
 
                                     <!-- Delete Button -->
-                                    <button class="action-btn action-btn-delete group"
-                                            hx-get="{% url 'core:admin_import_request_delete_modal' request.id %}"
-                                            hx-target="body"
-                                            hx-swap="beforeend"
-                                            title="Delete Request">
-                                        <i class="fas fa-trash group-hover:scale-110 transition-transform duration-200"></i>
-                                    </button>
+                                    <div class="action-btn-wrapper">
+                                        <button class="action-btn action-btn-delete group"
+                                                hx-get="{% url 'core:admin_import_request_delete_modal' request.id %}"
+                                                hx-target="#import-request-modals-container"
+                                                hx-swap="beforeend"
+                                                hx-preserve="true"
+                                                hx-preserve-id="delete-btn-{{ request.id }}"
+                                                title="Delete Request">
+                                            <i class="fas fa-trash group-hover:scale-110 transition-transform duration-200"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -402,8 +419,14 @@
                     {% endif %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
+</div>
+
+<!-- Modal Containers (Separate DOM Zone for OOB Swaps) -->
+<div id="import-request-modals-container" class="modal-zone">
+    <!-- Import request modals will be injected here via OOB swaps -->
 </div>
 {% endblock %}
 
@@ -444,8 +467,8 @@
 
         // Trigger table refresh
         htmx.ajax('GET', '{% url "core:admin_import_requests_table_partial" %}', {
-            target: '#import-requests-table',
-            swap: 'outerHTML'
+            target: '#import-requests-table-container',
+            swap: 'innerHTML'
         });
 
         // Update URL to remove query parameters
@@ -474,40 +497,48 @@
 
     // Handle refresh button animation
     document.addEventListener('htmx:beforeRequest', function(event) {
-        if (event.detail.requestConfig.url.includes('refresh')) {
+        if (event.detail && event.detail.requestConfig && event.detail.requestConfig.url &&
+            event.detail.requestConfig.url.includes('refresh')) {
             const refreshIcon = document.getElementById('refresh-indicator');
-            refreshIcon.classList.add('fa-spin');
+            if (refreshIcon) {
+                refreshIcon.classList.add('fa-spin');
+            }
         }
     });
 
     document.addEventListener('htmx:afterRequest', function(event) {
-        if (event.detail.requestConfig.url.includes('refresh')) {
+        if (event.detail && event.detail.requestConfig && event.detail.requestConfig.url &&
+            event.detail.requestConfig.url.includes('refresh')) {
             const refreshIcon = document.getElementById('refresh-indicator');
-            refreshIcon.classList.remove('fa-spin');
+            if (refreshIcon) {
+                refreshIcon.classList.remove('fa-spin');
+            }
         }
     });
 
     // Handle tracking table updates when import requests are moved to tracking
     document.addEventListener('htmx:afterRequest', function(event) {
         // Check if the response has the updateTrackingTable trigger
-        const triggerHeader = event.detail.xhr.getResponseHeader('HX-Trigger');
-        if (triggerHeader && triggerHeader.includes('updateTrackingTable')) {
-            // Update the tracking management table if it exists on the page
-            const trackingTable = document.getElementById('tracking-management-table');
-            if (trackingTable) {
-                // Trigger an HTMX request to refresh the tracking table
-                htmx.ajax('GET', '{% url "core:admin_tracking_management_table_partial" %}', {
-                    target: '#tracking-management-table',
-                    swap: 'outerHTML'
-                });
+        if (event.detail && event.detail.xhr && typeof event.detail.xhr.getResponseHeader === 'function') {
+            const triggerHeader = event.detail.xhr.getResponseHeader('HX-Trigger');
+            if (triggerHeader && triggerHeader.includes('updateTrackingTable')) {
+                // Update the tracking management table if it exists on the page
+                const trackingTable = document.getElementById('tracking-management-table');
+                if (trackingTable) {
+                    // Trigger an HTMX request to refresh the tracking table
+                    htmx.ajax('GET', '{% url "core:admin_tracking_management_table_partial" %}', {
+                        target: '#tracking-management-table-container',
+                        swap: 'innerHTML'
+                    });
+                }
             }
         }
     });
 
     // Handle successful tracking operations
     document.addEventListener('htmx:afterRequest', function(event) {
-        if (event.detail.successful && event.detail.xhr.responseURL &&
-            event.detail.xhr.responseURL.includes('track')) {
+        if (event.detail && event.detail.successful && event.detail.xhr &&
+            event.detail.xhr.responseURL && event.detail.xhr.responseURL.includes('track')) {
             // Show success animation for track button
             const trackButtons = document.querySelectorAll('.action-btn-track');
             trackButtons.forEach(btn => {
@@ -568,6 +599,881 @@
             document.getElementById('filters-panel').style.display = 'block';
         }
     });
+
+    // Enhanced HTMX Event Handling for Import Requests
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Import Requests modal system initialized');
+
+        // Debug: Check if modal container exists
+        const modalContainer = document.getElementById('import-request-modals-container');
+        console.log('📦 Modal container found:', modalContainer ? 'Yes' : 'No');
+
+        // Handle modal loading after HTMX requests
+        document.addEventListener('htmx:afterSwap', function(event) {
+            console.log('🔄 HTMX afterSwap event:', event.detail.target.id);
+
+            // Check if a modal was loaded into the modal container
+            if (event.detail.target.id === 'import-request-modals-container') {
+                console.log('🎭 Modal content loaded into container');
+
+                // Find the modal that was just added
+                const modals = event.detail.target.querySelectorAll('.modal');
+                console.log('🔍 Found modals:', modals.length);
+
+                if (modals.length > 0) {
+                    const latestModal = modals[modals.length - 1];
+                    console.log('🎯 Latest modal:', latestModal.id || 'No ID');
+
+                    // Show the modal
+                    if (latestModal) {
+                        latestModal.style.display = 'flex';
+                        latestModal.classList.add('modal-show');
+
+                        // IMMEDIATE SCROLL LOCK - Direct and forceful
+                        forceScrollLock();
+
+                        // Ensure floating elements remain visible above modal
+                        ensureFloatingElementsVisible();
+
+                        // Focus management
+                        const firstFocusable = latestModal.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                        if (firstFocusable) {
+                            setTimeout(() => firstFocusable.focus(), 100);
+                        }
+
+                        console.log('✅ Modal displayed successfully:', latestModal.id);
+                    }
+                } else {
+                    console.warn('⚠️ No modal elements found in container');
+                }
+            }
+        });
+
+        // Debug HTMX requests
+        document.addEventListener('htmx:beforeRequest', function(event) {
+            const button = event.detail.elt;
+            if (button.classList.contains('action-btn')) {
+                console.log('🔄 Modal request starting:', button.getAttribute('hx-get'));
+                button.setAttribute('aria-busy', 'true');
+            }
+        });
+
+        document.addEventListener('htmx:afterRequest', function(event) {
+            const button = event.detail.elt;
+            if (button.classList.contains('action-btn')) {
+                button.removeAttribute('aria-busy');
+                console.log('✅ Modal request completed:', event.detail.successful ? 'Success' : 'Failed');
+            }
+        });
+
+        // Handle modal close buttons with immediate scroll restoration
+        document.addEventListener('click', function(event) {
+            // Close button clicked
+            if (event.target.matches('[data-modal-close], [data-modal-close] *')) {
+                const modal = event.target.closest('.modal');
+                if (modal) {
+                    closeModal(modal);
+                }
+            }
+
+            // Backdrop clicked
+            if (event.target.matches('.modal')) {
+                closeModal(event.target);
+            }
+        });
+
+        // Handle escape key with immediate scroll restoration
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const openModals = document.querySelectorAll('.modal.modal-show');
+                openModals.forEach(modal => closeModal(modal));
+            }
+        });
+
+        // Additional safety net - listen for any modal hiding (SPECIFIC TO MODAL REQUESTS ONLY)
+        document.addEventListener('htmx:afterRequest', function(event) {
+            // Only handle modal-related requests to prevent interference
+            const triggerElement = event.detail.elt;
+            const isModalRequest = triggerElement &&
+                (triggerElement.closest('.modal') ||
+                 triggerElement.hasAttribute('data-modal-close') ||
+                 event.detail.xhr.responseURL.includes('modal'));
+
+            if (event.detail.successful && isModalRequest) {
+                setTimeout(() => {
+                    const visibleModals = document.querySelectorAll('.modal.modal-show, .modal[style*="display: flex"]');
+                    if (visibleModals.length === 0) {
+                        // Call global restoreScroll() function if available
+                        if (typeof window.restoreScroll === 'function') {
+                            window.restoreScroll();
+                        } else {
+                            // Fallback to local function
+                            forceScrollRestore();
+                        }
+                    }
+                }, 100);
+            }
+        });
+
+        // Safety net - check scroll state only when needed (not periodically)
+        function checkScrollStateOnDemand() {
+            const visibleModals = document.querySelectorAll('.modal.modal-show, .modal[style*="display: flex"]');
+            const isScrollLocked = document.body.classList.contains('scroll-locked') ||
+                                 document.body.style.overflow === 'hidden';
+
+            // If no modals but scroll is locked, restore it
+            if (visibleModals.length === 0 && isScrollLocked) {
+                console.log('🔧 Auto-fixing orphaned scroll lock');
+                // Call global restoreScroll() function if available
+                if (typeof window.restoreScroll === 'function') {
+                    window.restoreScroll();
+                } else {
+                    // Fallback to local function
+                    forceScrollRestore();
+                }
+            }
+
+            // If modals exist but scroll is not locked, lock it
+            if (visibleModals.length > 0 && !isScrollLocked) {
+                console.log('🔧 Auto-fixing missing scroll lock');
+                forceScrollLock();
+            }
+        }
+
+        // IMMEDIATE SCROLL LOCK FUNCTION
+        function forceScrollLock() {
+            console.log('🔒 FORCE SCROLL LOCK - Applying immediately');
+
+            // Remove any existing scroll restoration
+            document.body.style.overflow = 'hidden';
+            document.body.style.overflowY = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            document.body.style.height = '100%';
+
+            // Also lock document element
+            document.documentElement.style.overflow = 'hidden';
+            document.documentElement.style.overflowY = 'hidden';
+
+            // Add classes for tracking
+            document.body.classList.add('modal-open', 'scroll-locked');
+
+            console.log('✅ Scroll forcefully locked');
+        }
+
+        // IMMEDIATE SCROLL RESTORE FUNCTION
+        function forceScrollRestore() {
+            console.log('🔓 FORCE SCROLL RESTORE - Restoring immediately');
+
+            // Check if any modals are still visible
+            const visibleModals = document.querySelectorAll('.modal.modal-show, .modal[style*="display: flex"]');
+
+            if (visibleModals.length === 0) {
+                // Remove all scroll restrictions
+                document.body.style.overflow = '';
+                document.body.style.overflowY = '';
+                document.body.style.position = '';
+                document.body.style.width = '';
+                document.body.style.height = '';
+
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.overflowY = '';
+
+                // Remove classes
+                document.body.classList.remove('modal-open', 'scroll-locked');
+
+                // Force browser reflow
+                document.body.offsetHeight;
+
+                console.log('✅ Scroll forcefully restored');
+            } else {
+                console.log('⏸️ Keeping scroll locked - visible modals:', visibleModals.length);
+            }
+        }
+
+        // Enhanced modal close function with immediate scroll restoration
+        function closeModal(modal) {
+            modal.classList.remove('modal-show');
+            modal.classList.add('modal-hide');
+
+            // Call global restoreScroll() function if available
+            if (typeof window.restoreScroll === 'function') {
+                window.restoreScroll();
+            } else {
+                // Fallback to local function
+                forceScrollRestore();
+            }
+
+            // Ensure floating elements remain visible
+            ensureFloatingElementsVisible();
+
+            // Hide after animation
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.remove(); // Remove from DOM to prevent accumulation
+
+                // Call global restoreScroll() again after modal removal
+                if (typeof window.restoreScroll === 'function') {
+                    window.restoreScroll();
+                } else {
+                    // Fallback to local function
+                    forceScrollRestore();
+                }
+
+                // Double-check floating elements after modal removal
+                ensureFloatingElementsVisible();
+            }, 300);
+
+            console.log('✅ Modal closed:', modal.id);
+        }
+
+        // Comprehensive body scroll state restoration
+        function restoreBodyScrollState() {
+            // Check if there are any other active modals
+            const activeModals = document.querySelectorAll('.modal.modal-show');
+            const hasActiveModals = activeModals.length > 1; // More than the one being closed
+
+            if (!hasActiveModals) {
+                // Remove all possible overflow restrictions
+                document.body.style.overflow = '';
+                document.body.style.overflowY = '';
+                document.body.style.overflowX = '';
+
+                // Remove modal-related classes
+                document.body.classList.remove('modal-open');
+
+                // Force scroll restoration
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.overflowY = '';
+
+                console.log('🔄 Body scroll fully restored');
+            } else {
+                console.log('⏸️ Keeping scroll locked - other modals active:', activeModals.length - 1);
+            }
+        }
+
+        // Final scroll state verification and cleanup
+        function finalScrollStateCheck() {
+            setTimeout(() => {
+                const remainingModals = document.querySelectorAll('.modal.modal-show');
+                if (remainingModals.length === 0) {
+                    // Ensure no scroll restrictions remain
+                    document.body.style.overflow = '';
+                    document.body.style.overflowY = '';
+                    document.body.classList.remove('modal-open');
+                    document.documentElement.style.overflow = '';
+
+                    // Force browser to recalculate scroll
+                    document.body.offsetHeight; // Trigger reflow
+
+                    console.log('✅ Final scroll state verified and cleaned');
+                }
+            }, 50);
+        }
+
+        // Comprehensive body scroll lock with proper state management
+        function setBodyScrollLock() {
+            // Store original scroll position
+            if (!window.modalScrollState) {
+                window.modalScrollState = {
+                    scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+                    scrollLeft: window.pageXOffset || document.documentElement.scrollLeft,
+                    originalOverflow: document.body.style.overflow,
+                    originalOverflowY: document.body.style.overflowY
+                };
+            }
+
+            // Apply scroll lock
+            document.body.style.overflow = 'hidden';
+            document.body.style.overflowY = 'hidden';
+            document.body.classList.add('modal-open');
+
+            // Prevent scroll on document element as well
+            document.documentElement.style.overflow = 'hidden';
+
+            console.log('🔒 Body scroll locked, position saved:', window.modalScrollState);
+        }
+
+        // Function to ensure floating elements (FAB, scroll buttons) remain visible
+        function ensureFloatingElementsVisible() {
+            // Mobile FAB
+            const mobileFab = document.querySelector('.mobile-fab-container');
+            if (mobileFab) {
+                mobileFab.style.zIndex = '9999';
+                mobileFab.style.visibility = 'visible';
+                mobileFab.style.pointerEvents = 'auto';
+            }
+
+            // Scroll to top buttons
+            const scrollButtons = document.querySelectorAll('button[onclick*="scrollToTop"], .scroll-to-top, .scroll-button');
+            scrollButtons.forEach(button => {
+                button.style.zIndex = '9999';
+                button.style.visibility = 'visible';
+                button.style.pointerEvents = 'auto';
+            });
+
+            // WhatsApp button
+            const whatsappButton = document.querySelector('.whatsapp-float');
+            if (whatsappButton) {
+                whatsappButton.style.zIndex = '9998';
+                whatsappButton.style.visibility = 'visible';
+                whatsappButton.style.pointerEvents = 'auto';
+            }
+
+            // Compare widget
+            const compareWidget = document.getElementById('floating-compare-widget');
+            if (compareWidget) {
+                compareWidget.style.zIndex = '9997';
+                compareWidget.style.visibility = 'visible';
+                compareWidget.style.pointerEvents = 'auto';
+            }
+
+            console.log('🔧 Floating elements visibility ensured');
+        }
+
+        // Handle HTMX errors for modal requests
+        document.addEventListener('htmx:responseError', function(event) {
+            console.error('❌ Modal request failed:', event.detail);
+
+            // Show error toast or alert
+            const errorMessage = 'Failed to load modal. Please try again.';
+
+            // Create error toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span>${errorMessage}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        });
+
+        // Handle successful form submissions in modals - FIXED VERSION
+        document.addEventListener('htmx:afterRequest', function(event) {
+            // Only handle specific modal form submissions, not all requests
+            const triggerElement = event.detail.elt;
+            const isModalFormSubmission = triggerElement &&
+                (triggerElement.closest('.modal') ||
+                 triggerElement.hasAttribute('hx-post') ||
+                 triggerElement.hasAttribute('hx-put') ||
+                 triggerElement.hasAttribute('hx-delete'));
+
+            if (event.detail.successful && event.detail.xhr.status === 200 && isModalFormSubmission) {
+                const response = event.detail.xhr.responseText;
+                const url = event.detail.xhr.responseURL;
+
+                // Only process if this is actually a form submission response with success indicators
+                const isSuccessResponse = response.includes('success') ||
+                                        response.includes('updated') ||
+                                        response.includes('created') ||
+                                        url.includes('edit') ||
+                                        url.includes('delete') ||
+                                        url.includes('status');
+
+                if (isSuccessResponse) {
+                    console.log('✅ Modal form submission successful');
+
+                    // Close any open modals
+                    const openModals = document.querySelectorAll('.modal.modal-show');
+                    openModals.forEach(modal => closeModal(modal));
+
+                    // Only refresh table if this was actually a data modification
+                    if (url.includes('edit') || url.includes('delete') || url.includes('status') || url.includes('add')) {
+                        console.log('🔄 Refreshing table after data modification');
+                        htmx.ajax('GET', '{% url "core:admin_import_requests_table_partial" %}', {
+                            target: '#import-requests-table-container',
+                            swap: 'innerHTML'
+                        });
+                    }
+
+                    // Show success message
+                    const successToast = document.createElement('div');
+                    successToast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                    successToast.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span>Operation completed successfully!</span>
+                            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    document.body.appendChild(successToast);
+
+                    // Auto-remove after 3 seconds
+                    setTimeout(() => {
+                        if (successToast.parentNode) {
+                            successToast.remove();
+                        }
+                    }, 3000);
+                } else {
+                    console.log('ℹ️ HTMX request successful but not a form submission');
+                }
+            }
+        });
+
+        // Global modal close function
+        window.closeImportModal = closeModal;
+
+        // Test function for debugging
+        window.testModal = function() {
+            const container = document.getElementById('import-request-modals-container');
+            console.log('🧪 Testing modal system:');
+            console.log('Container exists:', !!container);
+            console.log('Container innerHTML:', container ? container.innerHTML.length : 'N/A');
+
+            // Create a test modal
+            if (container) {
+                const testModal = document.createElement('div');
+                testModal.className = 'modal fixed inset-0 z-50 flex items-center justify-center bg-black/50';
+                testModal.innerHTML = `
+                    <div class="modal-content bg-white rounded-lg p-6 max-w-md mx-4">
+                        <h3 class="text-lg font-bold mb-4">Test Modal</h3>
+                        <p class="mb-4">This is a test modal to verify the system is working.</p>
+                        <button onclick="closeImportModal(this.closest('.modal'))" class="bg-blue-500 text-white px-4 py-2 rounded">
+                            Close
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(testModal);
+                testModal.style.display = 'flex';
+                testModal.classList.add('modal-show');
+
+                console.log('✅ Test modal created and displayed');
+            }
+        };
+
+        console.log('🎯 Modal system ready. Use testModal() to test.');
+
+        // Override any other scroll management systems
+        overrideScrollManagement();
+
+        // Debug function for scroll issues
+        window.debugScrollState = function() {
+            console.log('🔍 Scroll Debug Information:');
+            console.log('Body overflow:', document.body.style.overflow);
+            console.log('Body overflow-y:', document.body.style.overflowY);
+            console.log('Body position:', document.body.style.position);
+            console.log('Document overflow:', document.documentElement.style.overflow);
+            console.log('Body classes:', document.body.className);
+            console.log('Active modals:', document.querySelectorAll('.modal.modal-show').length);
+            console.log('Visible modals:', document.querySelectorAll('.modal[style*="display: flex"]').length);
+
+            console.log('Use forceScrollRestore() to force restore scroll');
+            console.log('Use forceScrollLock() to force lock scroll');
+        };
+
+        // Expose force functions globally for debugging
+        window.forceScrollLock = forceScrollLock;
+        window.forceScrollRestore = forceScrollRestore;
+    });
+
+    // Override scroll management systems
+    function overrideScrollManagement() {
+        console.log('🔧 Overriding scroll management systems');
+
+        // Override modal manager if it exists
+        if (window.modalManager) {
+            const originalPreventScroll = window.modalManager.preventBodyScroll;
+            const originalRestoreScroll = window.modalManager.restoreBodyScroll;
+
+            window.modalManager.preventBodyScroll = function() {
+                console.log('🔄 Modal Manager scroll lock overridden');
+                forceScrollLock();
+            };
+
+            window.modalManager.restoreBodyScroll = function() {
+                console.log('🔄 Modal Manager scroll restore overridden');
+                forceScrollRestore();
+            };
+        }
+
+        // Override global functions if they exist
+        if (window.setGlobalBodyScrollLock) {
+            window.setGlobalBodyScrollLock = function() {
+                console.log('🔄 Global scroll lock overridden');
+                forceScrollLock();
+            };
+        }
+
+        if (window.restoreGlobalBodyScroll) {
+            window.restoreGlobalBodyScroll = function() {
+                console.log('🔄 Global scroll restore overridden');
+                forceScrollRestore();
+            };
+        }
+
+        // Override showModal and hideModal functions
+        if (window.showModal) {
+            const originalShowModal = window.showModal;
+            window.showModal = function(modalId) {
+                originalShowModal(modalId);
+                setTimeout(() => forceScrollLock(), 50);
+            };
+        }
+
+        if (window.hideModal) {
+            const originalHideModal = window.hideModal;
+            window.hideModal = function(modalId) {
+                originalHideModal(modalId);
+                setTimeout(() => forceScrollRestore(), 50);
+            };
+        }
+
+        console.log('✅ Scroll management override complete');
+
+        // Add MutationObserver to watch for body style changes
+        const bodyObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                    const visibleModals = document.querySelectorAll('.modal.modal-show, .modal[style*="display: flex"]');
+
+                    if (visibleModals.length > 0) {
+                        // Modal is open, ensure scroll is locked
+                        if (document.body.style.overflow !== 'hidden') {
+                            console.log('🔧 MutationObserver: Re-locking scroll');
+                            forceScrollLock();
+                        }
+                    }
+                }
+            });
+        });
+
+        bodyObserver.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+
+        console.log('✅ MutationObserver setup for scroll protection');
+    }
+
+        // Enhanced HTMX event handling for scroll restoration
+        setupHTMXScrollHandling();
+    });
+
+    // Setup HTMX scroll handling to prevent scroll issues after swaps
+    function setupHTMXScrollHandling() {
+        // Listen for HTMX afterSwap events that might affect scroll
+        document.addEventListener('htmx:afterSwap', function(event) {
+            const target = event.detail.target;
+
+            // If the swap target is not a modal container, ensure scroll is restored
+            if (target && !target.closest('.modal') && target.id !== 'import-request-modals-container') {
+                // Check if there are no active modals and restore scroll if needed
+                setTimeout(() => {
+                    const activeModals = document.querySelectorAll('.modal.modal-show');
+                    if (activeModals.length === 0) {
+                        // Call global restoreScroll() function if available
+                        if (typeof window.restoreScroll === 'function') {
+                            window.restoreScroll();
+                        } else {
+                            // Fallback to local function
+                            restoreBodyScrollState();
+                        }
+                        console.log('🔄 Scroll restored after HTMX swap');
+                    }
+                }, 100);
+            }
+        });
+
+        // Listen for HTMX beforeSwap to preserve scroll state
+        document.addEventListener('htmx:beforeSwap', function(event) {
+            const target = event.detail.target;
+
+            // Preserve scroll position for table updates
+            if (target.id === 'import-requests-table-container') {
+                const scrollContainer = target.closest('.overflow-x-auto');
+                if (scrollContainer) {
+                    target.dataset.scrollLeft = scrollContainer.scrollLeft;
+                    target.dataset.scrollTop = scrollContainer.scrollTop;
+                }
+            }
+        });
+
+        // Global HTMX afterSwap handler to ensure restoreScroll() is called
+        document.addEventListener('htmx:afterSwap', function(event) {
+            const target = event.detail.target;
+
+            // Always call restoreScroll() after any HTMX swap to ensure proper scroll state
+            setTimeout(() => {
+                if (typeof window.restoreScroll === 'function') {
+                    window.restoreScroll();
+                    console.log('🔄 Global restoreScroll() called after HTMX swap');
+                }
+            }, 50);
+
+            // Restore table scroll position if preserved
+            if (target.id === 'import-requests-table-container') {
+                const scrollContainer = target.closest('.overflow-x-auto');
+                if (scrollContainer && target.dataset.scrollLeft !== undefined) {
+                    scrollContainer.scrollLeft = parseInt(target.dataset.scrollLeft) || 0;
+                    scrollContainer.scrollTop = parseInt(target.dataset.scrollTop) || 0;
+
+                    // Clean up stored scroll data
+                    delete target.dataset.scrollLeft;
+                    delete target.dataset.scrollTop;
+                }
+            }
+        });
+
+        // Listen for Alpine.js re-initialization that might affect scroll
+        document.addEventListener('alpine:init', function() {
+            // Ensure scroll state is correct after Alpine initialization
+            setTimeout(() => {
+                const activeModals = document.querySelectorAll('.modal.modal-show');
+                if (activeModals.length === 0) {
+                    restoreBodyScrollState();
+                }
+            }, 50);
+        });
+
+        console.log('✅ HTMX scroll handling setup complete');
+    }
+</script>
+
+<!-- Enhanced Modal Styles -->
+<style>
+    /* Modal animations with proper z-index hierarchy */
+    .modal {
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        opacity: 0;
+        visibility: hidden;
+        overflow: auto !important; 
+        z-index: 1500 !important; /* Above all content but below emergency elements */
+    }
+
+    .modal.modal-show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal.modal-hide {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    /* Modal content animations */
+    .modal .modal-content {
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        transform: scale(0.95);
+        opacity: 0;
+        position: relative;
+        z-index: 1501 !important; /* Above modal backdrop */
+    }
+
+    .modal.modal-show .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    .modal.modal-hide .modal-content {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    /* Ensure modal backdrop is properly layered */
+    .modal::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1400 !important; /* Below modal content */
+    }
+
+    /* Action button wrapper for better preservation */
+    .action-btn-wrapper {
+        display: inline-block;
+    }
+
+    /* Loading states for buttons */
+    .action-btn[aria-busy="true"] {
+        opacity: 0.7;
+        cursor: wait;
+    }
+
+    .action-btn[aria-busy="true"] i {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Modal backdrop blur */
+    .modal {
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    /* Responsive modal adjustments */
+    @media (max-width: 640px) {
+        .modal .modal-content {
+            margin: 1rem;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+    }
+
+    /* Fix for mobile FAB and scroll buttons to appear above modals */
+    .mobile-fab-container,
+    .mobile-fab,
+    .mobile-fab-menu,
+    .mobile-fab-item {
+        z-index: 9999 !important; /* Above modals */
+    }
+
+    /* Ensure scroll-to-top buttons are always visible */
+    button[onclick*="scrollToTop"],
+    .scroll-to-top,
+    .scroll-button {
+        z-index: 9999 !important;
+    }
+
+    /* WhatsApp button should also stay above modals */
+    .whatsapp-float {
+        z-index: 9998 !important;
+    }
+
+    /* Compare widget should stay above modals */
+    #floating-compare-widget {
+        z-index: 9997 !important;
+    }
+
+    /* AGGRESSIVE SCROLL LOCK ENFORCEMENT */
+    body.scroll-locked,
+    body.modal-open {
+        overflow: hidden !important;
+        overflow-y: hidden !important;
+        position: fixed !important;
+        width: 100% !important;
+        height: 100% !important;
+        top: 0 !important;
+        left: 0 !important;
+    }
+
+    html.scroll-locked,
+    html:has(body.scroll-locked) {
+        overflow: hidden !important;
+        overflow-y: hidden !important;
+    }
+
+    /* Prevent any scroll restoration during modal display */
+    body.scroll-locked * {
+        scroll-behavior: auto !important;
+    }
+
+    /* Force modal backdrop to prevent scroll */
+    .modal.modal-show {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        overflow: hidden !important;
+    }
+</style>
+
+<script>
+    // Handle table updates with better targeting
+        document.addEventListener('htmx:beforeSwap', function(event) {
+            const target = event.detail.target;
+
+            // Preserve scroll position for table updates
+            if (target.id === 'import-requests-table-container') {
+                const scrollContainer = target.closest('.overflow-x-auto');
+                if (scrollContainer) {
+                    target.dataset.scrollLeft = scrollContainer.scrollLeft;
+                    target.dataset.scrollTop = scrollContainer.scrollTop;
+                }
+            }
+        });
+
+        document.addEventListener('htmx:afterSwap', function(event) {
+            const target = event.detail.target;
+
+            // Restore scroll position after table updates
+            if (target.id === 'import-requests-table-container') {
+                const scrollContainer = target.querySelector('.overflow-x-auto');
+                if (scrollContainer && target.dataset.scrollLeft) {
+                    scrollContainer.scrollLeft = parseInt(target.dataset.scrollLeft);
+                    scrollContainer.scrollTop = parseInt(target.dataset.scrollTop);
+                }
+            }
+
+            // Re-initialize any enhanced features
+            initializeTableFeatures();
+        });
+
+        // Handle button state preservation
+        document.addEventListener('htmx:beforeRequest', function(event) {
+            const button = event.detail.elt;
+            if (button.tagName === 'BUTTON') {
+                // Store original state
+                button.dataset.originalText = button.textContent;
+                button.dataset.originalClass = button.className;
+
+                // Add loading state
+                button.setAttribute('aria-busy', 'true');
+                button.style.opacity = '0.7';
+            }
+        });
+
+        document.addEventListener('htmx:afterRequest', function(event) {
+            const button = event.detail.elt;
+            if (button.tagName === 'BUTTON') {
+                // Restore button state
+                button.removeAttribute('aria-busy');
+                button.style.opacity = '1';
+
+                // Add success animation for successful requests
+                if (event.detail.successful) {
+                    button.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        button.style.transform = 'scale(1)';
+                    }, 200);
+                }
+            }
+        });
+    });
+
+    // Initialize enhanced table features
+    function initializeTableFeatures() {
+        // Re-initialize any table-specific enhancements
+        const actionButtons = document.querySelectorAll('.action-btn');
+        actionButtons.forEach(button => {
+            // Ensure proper hover effects are maintained
+            if (!button.hasAttribute('data-enhanced')) {
+                button.setAttribute('data-enhanced', 'true');
+
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-1px)';
+                });
+
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            }
+        });
+    }
 </script>
 {% endblock %}
 

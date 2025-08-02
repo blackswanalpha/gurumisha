@@ -16,55 +16,77 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize authentication page enhancements
     initPasswordVisibilityToggle();
-    initFormValidation();
+    initEnhancedFormValidation();
     initPasswordStrengthIndicator();
     initFormAnimations();
     initAccessibilityFeatures();
     initializeRememberMeEnhancements();
+    initRealTimeValidation();
+    initToastIntegration();
 });
 
 /**
- * Password Visibility Toggle
+ * Enhanced Password Visibility Toggle
  */
 function initPasswordVisibilityToggle() {
     const passwordFields = document.querySelectorAll('input[type="password"]');
 
     passwordFields.forEach(field => {
-        // Create toggle button container
-        const toggleContainer = document.createElement('div');
-        toggleContainer.className = 'password-toggle-container';
+        // Check if toggle button already exists (from HTML)
+        const existingToggle = field.parentElement.querySelector('.password-toggle-btn');
 
-        // Create toggle button
-        const toggleButton = document.createElement('button');
-        toggleButton.type = 'button';
-        toggleButton.className = 'password-toggle-btn';
-        toggleButton.innerHTML = '<i class="fas fa-eye"></i>';
-        toggleButton.setAttribute('aria-label', 'Show password');
-
-        // Wrap the input field
-        const wrapper = document.createElement('div');
-        wrapper.className = 'password-input-wrapper';
-
-        // Insert wrapper before the input
-        field.parentNode.insertBefore(wrapper, field);
-
-        // Move input into wrapper and add toggle button
-        wrapper.appendChild(field);
-        wrapper.appendChild(toggleButton);
-
-        // Add click event listener
-        toggleButton.addEventListener('click', function() {
-            togglePasswordVisibility(field, toggleButton);
-        });
-
-        // Add keyboard support
-        toggleButton.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                togglePasswordVisibility(field, toggleButton);
-            }
-        });
+        if (existingToggle) {
+            // Use existing toggle button
+            setupPasswordToggle(field, existingToggle);
+        } else {
+            // Create new toggle button (fallback)
+            createPasswordToggle(field);
+        }
     });
+}
+
+/**
+ * Setup existing password toggle button
+ */
+function setupPasswordToggle(field, toggleButton) {
+    // Add click event listener
+    toggleButton.addEventListener('click', function() {
+        togglePasswordVisibility(field, toggleButton);
+    });
+
+    // Add keyboard support
+    toggleButton.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            togglePasswordVisibility(field, toggleButton);
+        }
+    });
+
+    // Add touch support for mobile
+    toggleButton.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        togglePasswordVisibility(field, toggleButton);
+    });
+}
+
+/**
+ * Create new password toggle button (fallback)
+ */
+function createPasswordToggle(field) {
+    const wrapper = field.parentElement;
+
+    // Create toggle button
+    const toggleButton = document.createElement('button');
+    toggleButton.type = 'button';
+    toggleButton.className = 'password-toggle-btn';
+    toggleButton.innerHTML = '<i class="fas fa-eye"></i>';
+    toggleButton.setAttribute('aria-label', 'Show password');
+
+    // Add to wrapper
+    wrapper.appendChild(toggleButton);
+
+    // Setup toggle functionality
+    setupPasswordToggle(field, toggleButton);
 }
 
 /**
@@ -94,119 +116,291 @@ function togglePasswordVisibility(field, button) {
 }
 
 /**
- * Form Validation Enhancement
+ * Enhanced Form Validation System
  */
-function initFormValidation() {
+function initEnhancedFormValidation() {
     const forms = document.querySelectorAll('#login-form, #register-form');
-    
+
     forms.forEach(form => {
         const inputs = form.querySelectorAll('.auth-form-input');
-        
+
         inputs.forEach(input => {
-            // Real-time validation
-            input.addEventListener('input', function() {
-                validateField(this);
-            });
-            
-            // Focus effects
+            // Enhanced focus effects
             input.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
+                const formGroup = this.closest('.auth-form-group');
+                if (formGroup) {
+                    formGroup.classList.add('focused');
+                }
+                this.classList.remove('invalid', 'valid');
             });
-            
+
             input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-                validateField(this);
+                const formGroup = this.closest('.auth-form-group');
+                if (formGroup) {
+                    formGroup.classList.remove('focused');
+                }
+                // Validate on blur for better UX
+                validateFieldEnhanced(this);
             });
         });
-        
-        // Form submission
+
+        // Enhanced form submission
         form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('.auth-submit-btn');
-            if (submitBtn) {
-                submitBtn.classList.add('loading');
-                submitBtn.disabled = true;
-            }
+            e.preventDefault();
+            handleFormSubmission(this);
         });
     });
 }
 
 /**
- * Enhanced Field Validation
+ * Real-time Validation System
  */
-function validateField(field) {
+function initRealTimeValidation() {
+    const inputs = document.querySelectorAll('.auth-form-input[data-validation]');
+
+    inputs.forEach(input => {
+        let validationTimeout;
+
+        input.addEventListener('input', function() {
+            // Clear previous timeout
+            clearTimeout(validationTimeout);
+
+            // Add validating state
+            this.classList.remove('valid', 'invalid');
+            this.classList.add('validating');
+
+            // Debounce validation
+            validationTimeout = setTimeout(() => {
+                validateFieldRealTime(this);
+            }, 300);
+        });
+
+        // Immediate validation on paste
+        input.addEventListener('paste', function() {
+            setTimeout(() => {
+                validateFieldRealTime(this);
+            }, 100);
+        });
+    });
+}
+
+/**
+ * Toast Integration for Form Feedback
+ */
+function initToastIntegration() {
+    // Listen for form validation events
+    document.addEventListener('fieldValidated', function(e) {
+        const { field, isValid, message } = e.detail;
+
+        if (!isValid && message && field.dataset.showToastErrors === 'true') {
+            if (window.showError) {
+                window.showError(message, { duration: 3000 });
+            }
+        }
+    });
+
+    // Listen for form submission events
+    document.addEventListener('formSubmissionError', function(e) {
+        const { message } = e.detail;
+
+        if (window.showError) {
+            window.showError(message, { duration: 5000 });
+        }
+    });
+
+    // Listen for form submission success
+    document.addEventListener('formSubmissionSuccess', function(e) {
+        const { message } = e.detail;
+
+        if (window.showSuccess) {
+            window.showSuccess(message, { duration: 3000 });
+        }
+    });
+}
+
+/**
+ * Enhanced Field Validation with Real-time Feedback
+ */
+function validateFieldEnhanced(field) {
     const value = field.value.trim();
-    const fieldType = field.type === 'text' && field.getAttribute('data-original-type') === 'password' ? 'password' : field.type;
+    const validationType = field.dataset.validation;
     const fieldName = field.name;
 
-    // Remove existing validation classes
-    field.classList.remove('error', 'success');
-
-    // Remove existing error messages
-    const existingError = field.parentElement.querySelector('.auth-error-message');
-    if (existingError && !existingError.textContent.includes('exclamation-circle')) {
-        existingError.remove();
-    }
+    // Clear previous validation states
+    clearFieldValidation(field);
 
     let isValid = true;
     let errorMessage = '';
 
-    // Enhanced validation rules
+    // Validation rules based on field type and requirements
     if (field.required && !value) {
         isValid = false;
-        errorMessage = 'This field is required';
-    } else if (fieldType === 'email' && value && !isValidEmail(value)) {
-        isValid = false;
-        errorMessage = 'Please enter a valid email address';
-    } else if (fieldName === 'username' && value) {
-        if (value.length < 3) {
-            isValid = false;
-            errorMessage = 'Username must be at least 3 characters long';
-        } else if (value.length > 30) {
-            isValid = false;
-            errorMessage = 'Username must be less than 30 characters';
-        } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-            isValid = false;
-            errorMessage = 'Username can only contain letters, numbers, and underscores';
-        }
-    } else if (fieldType === 'password' && value) {
-        const passwordValidation = validatePassword(value);
-        if (!passwordValidation.isValid) {
-            isValid = false;
-            errorMessage = passwordValidation.message;
-        }
-    } else if (fieldName === 'password2' && value) {
-        const password1 = document.querySelector('input[name="password1"]');
-        if (password1 && value !== password1.value) {
-            isValid = false;
-            errorMessage = 'Passwords do not match';
-        }
-    } else if (fieldName === 'first_name' || fieldName === 'last_name') {
-        if (value && (value.length < 2 || value.length > 50)) {
-            isValid = false;
-            errorMessage = 'Name must be between 2 and 50 characters';
-        } else if (value && !/^[a-zA-Z\s'-]+$/.test(value)) {
-            isValid = false;
-            errorMessage = 'Name can only contain letters, spaces, hyphens, and apostrophes';
-        }
-    } else if (fieldName === 'phone' && value) {
-        if (!/^[\+]?[0-9\s\-\(\)]{10,15}$/.test(value)) {
-            isValid = false;
-            errorMessage = 'Please enter a valid phone number';
-        }
+        errorMessage = getRequiredFieldMessage(fieldName);
+    } else if (value) {
+        const validationResult = performFieldValidation(value, validationType, fieldName);
+        isValid = validationResult.isValid;
+        errorMessage = validationResult.message;
     }
 
     // Apply validation state
-    if (value) {
-        if (isValid) {
-            field.classList.add('success');
-            showFieldSuccess(field);
-        } else {
-            field.classList.add('error');
-            showFieldError(field, errorMessage);
+    applyValidationState(field, isValid, errorMessage);
+
+    // Dispatch custom event for toast integration
+    const event = new CustomEvent('fieldValidated', {
+        detail: { field, isValid, message: errorMessage }
+    });
+    document.dispatchEvent(event);
+
+    return isValid;
+}
+
+/**
+ * Real-time Field Validation (with debouncing)
+ */
+function validateFieldRealTime(field) {
+    field.classList.remove('validating');
+    return validateFieldEnhanced(field);
+}
+
+/**
+ * Perform specific validation based on field type
+ */
+function performFieldValidation(value, validationType, fieldName) {
+    switch (validationType) {
+        case 'email':
+            return validateEmailField(value);
+        case 'password':
+            return validatePasswordField(value, fieldName);
+        default:
+            return validateGenericField(value, fieldName);
+    }
+}
+
+/**
+ * Email field validation
+ */
+function validateEmailField(email) {
+    if (!isValidEmail(email)) {
+        return { isValid: false, message: 'Please enter a valid email address' };
+    }
+
+    // Additional email validation rules
+    if (email.length > 254) {
+        return { isValid: false, message: 'Email address is too long' };
+    }
+
+    const localPart = email.split('@')[0];
+    if (localPart.length > 64) {
+        return { isValid: false, message: 'Email address format is invalid' };
+    }
+
+    return { isValid: true, message: 'Valid email address' };
+}
+
+/**
+ * Password field validation for login
+ */
+function validatePasswordField(password, fieldName) {
+    if (fieldName === 'password') {
+        // For login, just check if password is provided
+        if (password.length === 0) {
+            return { isValid: false, message: 'Password is required' };
+        }
+        return { isValid: true, message: 'Password entered' };
+    }
+
+    // For registration passwords, use comprehensive validation
+    return validatePassword(password);
+}
+
+/**
+ * Generic field validation
+ */
+function validateGenericField(value, fieldName) {
+    // Add specific validation rules for other fields as needed
+    if (fieldName === 'username' && value) {
+        if (value.length < 3) {
+            return { isValid: false, message: 'Username must be at least 3 characters long' };
+        }
+        if (value.length > 30) {
+            return { isValid: false, message: 'Username must be less than 30 characters' };
+        }
+        if (!/^[a-zA-Z0-9_.-]+$/.test(value)) {
+            return { isValid: false, message: 'Username can only contain letters, numbers, dots, hyphens, and underscores' };
         }
     }
 
-    return isValid;
+    return { isValid: true, message: 'Valid input' };
+}
+
+/**
+ * Get appropriate required field message
+ */
+function getRequiredFieldMessage(fieldName) {
+    const messages = {
+        'username': 'Email address is required',
+        'password': 'Password is required',
+        'email': 'Email address is required',
+        'first_name': 'First name is required',
+        'last_name': 'Last name is required'
+    };
+
+    return messages[fieldName] || 'This field is required';
+}
+
+/**
+ * Clear field validation states and messages
+ */
+function clearFieldValidation(field) {
+    // Remove validation classes
+    field.classList.remove('valid', 'invalid', 'error', 'success', 'validating');
+
+    // Hide validation messages
+    const formGroup = field.closest('.auth-form-group');
+    if (formGroup) {
+        const validationError = formGroup.querySelector('.auth-validation-error');
+        const successIndicator = formGroup.querySelector('.auth-success-indicator');
+
+        if (validationError) {
+            validationError.style.display = 'none';
+        }
+        if (successIndicator) {
+            successIndicator.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Apply validation state to field
+ */
+function applyValidationState(field, isValid, message) {
+    const formGroup = field.closest('.auth-form-group');
+    if (!formGroup) return;
+
+    const validationError = formGroup.querySelector('.auth-validation-error');
+    const successIndicator = formGroup.querySelector('.auth-success-indicator');
+    const errorText = validationError?.querySelector('.error-text');
+
+    if (isValid && field.value.trim()) {
+        // Show success state
+        field.classList.add('valid');
+        if (successIndicator) {
+            successIndicator.style.display = 'flex';
+        }
+        if (validationError) {
+            validationError.style.display = 'none';
+        }
+    } else if (!isValid) {
+        // Show error state
+        field.classList.add('invalid');
+        if (validationError && errorText) {
+            errorText.textContent = message;
+            validationError.style.display = 'flex';
+        }
+        if (successIndicator) {
+            successIndicator.style.display = 'none';
+        }
+    }
 }
 
 /**
@@ -243,30 +437,60 @@ function validatePassword(password) {
 }
 
 /**
- * Show field success state
+ * Enhanced Form Submission Handler
  */
-function showFieldSuccess(field) {
-    // Remove existing success message
-    const existingSuccess = field.parentElement.querySelector('.auth-success-message');
-    if (existingSuccess) {
-        existingSuccess.remove();
+function handleFormSubmission(form) {
+    const submitBtn = form.querySelector('.auth-submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoading = submitBtn.querySelector('.btn-loading');
+
+    // Validate all fields before submission
+    const inputs = form.querySelectorAll('.auth-form-input[data-validation]');
+    let isFormValid = true;
+
+    inputs.forEach(input => {
+        const fieldValid = validateFieldEnhanced(input);
+        if (!fieldValid) {
+            isFormValid = false;
+        }
+    });
+
+    if (!isFormValid) {
+        // Show form-level error
+        const event = new CustomEvent('formSubmissionError', {
+            detail: { message: 'Please correct the errors above and try again.' }
+        });
+        document.dispatchEvent(event);
+        return;
     }
 
-    // Add success icon to field
-    field.style.backgroundImage = 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\' fill=\'%2310b981\'%3e%3cpath d=\'M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z\'/%3e%3c/svg%3e")';
-    field.style.backgroundRepeat = 'no-repeat';
-    field.style.backgroundPosition = 'right 1rem center';
-    field.style.backgroundSize = '1rem';
+    // Show loading state
+    if (submitBtn && btnText && btnLoading) {
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'flex';
+        submitBtn.classList.add('loading');
+    }
+
+    // Add a small delay for better UX
+    setTimeout(() => {
+        form.submit();
+    }, 500);
 }
 
 /**
- * Show field error message
+ * Legacy support functions (kept for compatibility)
  */
+function showFieldSuccess(field) {
+    // This function is kept for backward compatibility
+    // The new validation system handles success states differently
+    console.log('Legacy showFieldSuccess called for:', field.name);
+}
+
 function showFieldError(field, message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'auth-error-message';
-    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${message}`;
-    field.parentElement.appendChild(errorDiv);
+    // This function is kept for backward compatibility
+    // The new validation system handles errors differently
+    console.log('Legacy showFieldError called for:', field.name, 'with message:', message);
 }
 
 /**

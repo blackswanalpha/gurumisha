@@ -74,9 +74,21 @@ def user_login(request):
             else:
                 return redirect('core:dashboard')
         else:
+            # Enhanced error handling with field-specific messages
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, error)
+                    if field == 'username':
+                        messages.error(request, f"Email Error: {error}")
+                    elif field == 'password':
+                        messages.error(request, f"Password Error: {error}")
+                    elif field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f"{field.title()}: {error}")
+
+            # Add general guidance message if there are validation errors
+            if form.errors:
+                messages.info(request, "Please correct the errors above and try again.")
     else:
         form = CustomAuthenticationForm()
 
@@ -357,7 +369,7 @@ def homepage(request):
 
     context = {
         'featured_cars': featured_cars,
-        'car_brands': CarBrand.objects.filter(is_active=True)[:8],
+        'car_brands': CarBrand.objects.filter(is_active=True).order_by('name'),
         'testimonials': Testimonial.objects.filter(is_approved=True, is_featured=True)[:3],
         'blog_posts': BlogPost.objects.filter(is_published=True)[:3],
         'hot_deals': hot_deals,
@@ -801,6 +813,20 @@ class CarListView(ListView):
         context['auction_count'] = base_queryset.filter(listing_type='auction').count()
         context['local_count'] = base_queryset.filter(listing_type='local').count()
 
+        # Vehicle category counts by body type
+        context['sedan_count'] = base_queryset.filter(model__body_type='sedan').count()
+        context['suv_count'] = base_queryset.filter(model__body_type='suv').count()
+        context['hatchback_count'] = base_queryset.filter(model__body_type='hatchback').count()
+        context['pickup_count'] = base_queryset.filter(model__body_type='pickup').count()
+        context['sports_count'] = base_queryset.filter(model__body_type='sports').count()
+        context['luxury_count'] = base_queryset.filter(model__body_type='luxury').count()
+        context['coupe_count'] = base_queryset.filter(model__body_type='coupe').count()
+        context['convertible_count'] = base_queryset.filter(model__body_type='convertible').count()
+        context['wagon_count'] = base_queryset.filter(model__body_type='wagon').count()
+        context['van_count'] = base_queryset.filter(model__body_type='van').count()
+        context['crossover_count'] = base_queryset.filter(model__body_type='crossover').count()
+        context['compact_count'] = base_queryset.filter(model__body_type='compact').count()
+
         # Add car brands for the brand showcase section and hero form
         context['car_brands'] = CarBrand.objects.filter(is_active=True).prefetch_related('car_set')
 
@@ -1185,6 +1211,80 @@ def htmx_models_by_brand(request):
 
     context = {'models': models, 'selected_model': request.GET.get('model', '')}
     return render(request, 'core/partials/model_options.html', context)
+
+
+def htmx_filter_by_body_type(request):
+    """HTMX endpoint for filtering cars by body type"""
+    body_type = request.GET.get('body_type', '')
+
+    # Base queryset
+    cars = Car.objects.filter(
+        is_approved=True,
+        status__in=['available', 'featured']
+    ).select_related('brand', 'model', 'vendor')
+
+    # Apply body type filter
+    if body_type:
+        cars = cars.filter(model__body_type=body_type)
+
+    # Apply other existing filters from request
+    brand = request.GET.get('brand')
+    if brand:
+        cars = cars.filter(brand_id=brand)
+
+    min_price = request.GET.get('min_price')
+    if min_price:
+        try:
+            cars = cars.filter(price__gte=float(min_price))
+        except ValueError:
+            pass
+
+    max_price = request.GET.get('max_price')
+    if max_price:
+        try:
+            cars = cars.filter(price__lte=float(max_price))
+        except ValueError:
+            pass
+
+    # Order by featured status, rating, and views
+    cars = cars.order_by('-is_featured', '-calculated_rating', '-views_count')[:24]
+
+    context = {
+        'cars': cars,
+        'body_type_filter': body_type,
+        'total_count': cars.count()
+    }
+
+    return render(request, 'core/partials/car_list_results.html', context)
+
+
+def htmx_recently_viewed_update(request):
+    """HTMX endpoint for updating recently viewed cars"""
+    from .models import RecentlyViewedCar
+
+    # Get recently viewed cars for the current user/session
+    if request.user.is_authenticated:
+        # For authenticated users
+        recently_viewed = RecentlyViewedCar.objects.filter(
+            user=request.user
+        ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+    else:
+        # For anonymous users, use session
+        session_key = request.session.session_key
+        if session_key:
+            recently_viewed = RecentlyViewedCar.objects.filter(
+                session_key=session_key
+            ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+        else:
+            recently_viewed = RecentlyViewedCar.objects.none()
+
+    recently_viewed_cars = [rv.car for rv in recently_viewed if rv.car.is_approved]
+
+    context = {
+        'recently_viewed_cars': recently_viewed_cars
+    }
+
+    return render(request, 'core/partials/recently_viewed_section.html', context)
 
 
 def htmx_car_list_filter(request):
@@ -2625,6 +2725,21 @@ class BlogListView(ListView):
         context['categories'] = ContentCategory.objects.filter(is_active=True).order_by('sort_order', 'name')
         context['popular_tags'] = ContentTag.objects.filter(is_active=True).order_by('name')[:10]
 
+        # Add content type counts for filter pills
+        base_queryset = BlogPost.objects.filter(is_published=True)
+        context['total_count'] = base_queryset.count()
+        context['article_count'] = base_queryset.filter(content_type='article').count()
+        context['guide_count'] = base_queryset.filter(content_type='guide').count()
+        context['infographic_count'] = base_queryset.filter(content_type='infographic').count()
+        context['opinion_count'] = base_queryset.filter(content_type='opinion').count()
+        context['news_count'] = base_queryset.filter(content_type='news').count()
+
+        # Add stats for CTA section
+        context['total_articles'] = context['article_count']
+        context['total_guides'] = context['guide_count']
+        context['total_views'] = base_queryset.aggregate(total=models.Sum('views_count'))['total'] or 0
+        context['total_subscribers'] = 2000  # This would come from a newsletter model
+
         return context
 
 
@@ -2720,14 +2835,21 @@ def resources_filter_by_category(request, category_slug):
 
     try:
         category = ContentCategory.objects.get(slug=category_slug, is_active=True)
-        posts = BlogPost.objects.filter(
+        # Get base queryset
+        base_queryset = BlogPost.objects.filter(
             is_published=True,
             category=category
-        ).select_related('author', 'category').prefetch_related('tags').order_by('-published_at')[:20]
+        ).select_related('author', 'category').prefetch_related('tags')
+
+        # Get featured posts first (before slicing)
+        featured_posts = base_queryset.filter(is_featured=True).order_by('-published_at')[:2]
+
+        # Get all posts
+        posts = base_queryset.order_by('-published_at')[:20]
 
         context = {
             'posts': posts,
-            'featured_posts': posts.filter(is_featured=True)[:2],
+            'featured_posts': featured_posts,
             'current_category': category_slug,
             'category_name': category.name,
         }
@@ -2744,14 +2866,21 @@ def resources_filter_by_tag(request, tag_slug):
 
     try:
         tag = ContentTag.objects.get(slug=tag_slug, is_active=True)
-        posts = BlogPost.objects.filter(
+        # Get base queryset
+        base_queryset = BlogPost.objects.filter(
             is_published=True,
             tags=tag
-        ).select_related('author', 'category').prefetch_related('tags').order_by('-published_at')[:20]
+        ).select_related('author', 'category').prefetch_related('tags')
+
+        # Get featured posts first (before slicing)
+        featured_posts = base_queryset.filter(is_featured=True).order_by('-published_at')[:2]
+
+        # Get all posts
+        posts = base_queryset.order_by('-published_at')[:20]
 
         context = {
             'posts': posts,
-            'featured_posts': posts.filter(is_featured=True)[:2],
+            'featured_posts': featured_posts,
             'current_tag': tag_slug,
             'tag_name': tag.name,
         }
@@ -3557,10 +3686,50 @@ def import_listings(request):
     """Import listings page showing available import services"""
     context = {
         'popular_imports': [
-            {'country': 'Japan', 'description': 'High-quality, well-maintained vehicles', 'image': 'japan-cars.jpg'},
-            {'country': 'Germany', 'description': 'Premium luxury and performance cars', 'image': 'german-cars.jpg'},
-            {'country': 'UK', 'description': 'Right-hand drive vehicles', 'image': 'uk-cars.jpg'},
-            {'country': 'USA', 'description': 'American muscle and luxury cars', 'image': 'usa-cars.jpg'},
+            {
+                'country': 'Japan',
+                'description': 'High-quality, well-maintained vehicles with exceptional reliability',
+                'image': 'japan-cars.jpg',
+                'partners': 15,
+                'avg_age': '5-8 Years',
+                'quality': 'Excellent',
+                'specialties': ['Toyota', 'Honda', 'Nissan', 'Mazda'],
+                'shipping_time': '4-6 weeks',
+                'popular_models': ['Prius', 'Camry', 'Civic', 'Accord']
+            },
+            {
+                'country': 'Germany',
+                'description': 'Premium luxury and performance cars with cutting-edge technology',
+                'image': 'german-cars.jpg',
+                'partners': 12,
+                'luxury': 'Premium',
+                'tech': 'Advanced',
+                'specialties': ['BMW', 'Mercedes-Benz', 'Audi', 'Porsche'],
+                'shipping_time': '3-5 weeks',
+                'popular_models': ['3 Series', 'C-Class', 'A4', '911']
+            },
+            {
+                'country': 'UK',
+                'description': 'Right-hand drive vehicles with classic British heritage',
+                'image': 'uk-cars.jpg',
+                'partners': 8,
+                'drive': 'RHD',
+                'heritage': 'Classic',
+                'specialties': ['Jaguar', 'Land Rover', 'Bentley', 'Rolls-Royce'],
+                'shipping_time': '3-4 weeks',
+                'popular_models': ['Range Rover', 'XF', 'Continental', 'Phantom']
+            },
+            {
+                'country': 'USA',
+                'description': 'American muscle and luxury cars with powerful performance',
+                'image': 'usa-cars.jpg',
+                'partners': 10,
+                'power': 'Muscle',
+                'size': 'Large',
+                'specialties': ['Ford', 'Chevrolet', 'Dodge', 'Cadillac'],
+                'shipping_time': '5-7 weeks',
+                'popular_models': ['Mustang', 'Camaro', 'Challenger', 'Escalade']
+            },
         ],
         'import_process': [
             {'step': 1, 'title': 'Submit Request', 'description': 'Tell us what car you want to import'},

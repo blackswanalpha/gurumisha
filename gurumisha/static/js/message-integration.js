@@ -252,6 +252,12 @@
         }
 
         async updateNotificationBadges() {
+            // Only update badges if user is authenticated and on dashboard
+            if (!document.body.classList.contains('dashboard-page') &&
+                !window.location.pathname.startsWith('/dashboard/')) {
+                return; // Skip on non-dashboard pages
+            }
+
             // Update message-related notification badges
             try {
                 const response = await fetch('/dashboard/admin/message-management/count/', {
@@ -268,9 +274,16 @@
                     if (badge && window.notificationBadgeManager) {
                         window.notificationBadgeManager.updateBadge('message-count-badge', parseInt(count));
                     }
+                } else if (response.status === 401 || response.status === 403) {
+                    // User not authenticated or not authorized, skip silently
+                    return;
                 }
             } catch (error) {
-                console.error('Error updating message notification badges:', error);
+                // Only log error if it's not a network/auth issue
+                if (!error.message.includes('Failed to fetch') &&
+                    !error.message.includes('NetworkError')) {
+                    console.error('Error updating message notification badges:', error);
+                }
             }
         }
 

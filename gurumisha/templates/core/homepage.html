@@ -289,20 +289,22 @@
 
                     <div class="flex flex-col sm:flex-row gap-6 animate-fade-in-up animate-delay-600">
                         <a href="{% url 'core:car_explore' %}"
-                           class="admin-request-add-btn group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-105 hover:shadow-2xl font-montserrat relative overflow-hidden"
+                           class="admin-request-add-btn group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-105 hover:shadow-2xl font-montserrat relative overflow-hidden hover-lift"
                            style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4), 0 4px 12px rgba(31, 41, 55, 0.3);">
                             <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <span class="relative z-10">Explore Cars</span>
                             <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-400 to-gray-800 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                         </a>
                         <a href="{% url 'core:sell_car' %}"
-                           class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white border-3 border-white/80 rounded-2xl transition-all duration-500 hover:bg-white hover:text-gray-900 font-montserrat relative overflow-hidden backdrop-blur-sm bg-white/10"
+                           class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white border-3 border-white/80 rounded-2xl transition-all duration-500 hover:bg-white hover:text-gray-900 font-montserrat relative overflow-hidden backdrop-blur-sm bg-white/10 hover-lift"
                            style="box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);">
                             <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            <svg class="w-6 h-6 mr-3 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
                             <span class="relative z-10">Sell Your Car</span>
@@ -312,8 +314,8 @@
                 </div>
 
                 <!-- Car Search Form -->
-                <div class="car-search-form bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Find Your Perfect Car</h3>
+                <div class="car-search-form bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl animate-slide-in-right animate-delay-300 hover-lift">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center animate-fade-in-up animate-delay-500">Find Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Perfect</span> Car</h3>
                     <form id="car-search-form" action="{% url 'core:car_explore' %}" method="GET">
                         <div class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -328,7 +330,10 @@
 
                                 <div class="form-group">
                                     <label for="brand" class="block text-sm font-semibold text-gray-700 mb-2">Brand</label>
-                                    <select name="brand" id="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
+                                    <select name="brand" id="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                                            hx-get="{% url 'core:htmx_models_by_brand' %}"
+                                            hx-target="#model-options"
+                                            hx-include="[name='brand']">
                                         <option value="">Select Brand</option>
                                         {% for brand in car_brands %}
                                             <option value="{{ brand.id }}">{{ brand.name }}</option>
@@ -338,6 +343,13 @@
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="model" class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
+                                    <select name="model" id="model-options" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">Select Brand First</option>
+                                    </select>
+                                </div>
+
                                 <div class="form-group">
                                     <label for="vehicle_type" class="block text-sm font-semibold text-gray-700 mb-2">Vehicle Type</label>
                                     <select name="vehicle_type" id="vehicle_type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
@@ -467,25 +479,25 @@
 
 
 <!-- Enhanced Browse by Vehicle Type Section -->
-<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden animate-entrance">
     <!-- Background Pattern -->
     {% comment %} <div class="absolute inset-0 opacity-5">
         <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p3.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
     </div> {% endcomment %}
 
     <div class="container mx-auto px-4 relative z-10">
-        <div class="text-center mb-16 animate-entrance">
-            <div class="flex items-center justify-center mb-6">
-                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-4">
-                    <i class="fas fa-car text-white text-2xl"></i>
+        <div class="text-center mb-16 animate-fade-in-up">
+            <div class="flex items-center justify-center mb-6 animate-slide-in-left animate-delay-200">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-4 hover-lift hover:rotate-6 transition-all duration-500">
+                    <i class="fas fa-car text-white text-2xl hover:scale-110 transition-transform duration-300"></i>
                 </div>
                 <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
                     BROWSE BY
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 block md:inline">VEHICLE TYPE</span>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 block md:inline hover:from-red-700 hover:to-red-900 transition-all duration-500">VEHICLE TYPE</span>
                 </h2>
             </div>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Find the perfect vehicle for your needs from our diverse collection of premium automobiles</p>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Find the perfect vehicle for your needs from our diverse collection of premium automobiles</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
         <!-- Vehicle Type Grid with Navigation -->
@@ -493,13 +505,13 @@
             <!-- Enhanced Navigation Controls -->
             <div class="hidden md:flex justify-between items-center absolute inset-y-0 left-0 right-0 z-10 pointer-events-none">
                 <!-- Previous Button -->
-                <button id="prevVehicleBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -ml-7">
-                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
+                <button id="prevVehicleBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -ml-7 hover-lift hover:scale-110">
+                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white group-hover:-translate-x-1"></i>
                 </button>
 
                 <!-- Next Button -->
-                <button id="nextVehicleBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -mr-7">
-                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
+                <button id="nextVehicleBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -mr-7 hover-lift hover:scale-110">
+                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white group-hover:translate-x-1"></i>
                 </button>
             </div>
 
@@ -558,31 +570,31 @@
 </section>
 
 <!-- Enhanced Why Choose Us Section -->
-<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden animate-entrance">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+        <div class="absolute inset-0 animate-scale-in" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16 animate-entrance">
-            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
+        <div class="text-center mb-16 animate-fade-in-up">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6 animate-slide-in-left animate-delay-200">
                 Why Choose
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Gurumisha Motors</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">Gurumisha Motors</span>
             </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Experience the difference with our comprehensive automotive services and unmatched commitment to excellence</p>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Experience the difference with our comprehensive automotive services and unmatched commitment to excellence</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <!-- Verified Dealers -->
-            <div class="group text-center animate-entrance">
-                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+            <div class="group text-center animate-scale-in animate-delay-200 hover-lift">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2 hover:shadow-red-500/20">
                     <div class="relative mb-6">
-                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
-                            <i class="fas fa-shield-alt text-white text-2xl"></i>
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg floating-animation">
+                            <i class="fas fa-shield-alt text-white text-2xl group-hover:scale-110 transition-transform duration-300"></i>
                         </div>
-                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center pulse-glow">
                             <i class="fas fa-check text-white text-xs"></i>
                         </div>
                     </div>
@@ -595,13 +607,13 @@
             </div>
 
             <!-- Quality Inspection -->
-            <div class="group text-center animate-entrance">
-                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+            <div class="group text-center animate-scale-in animate-delay-400 hover-lift">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2 hover:shadow-red-500/20">
                     <div class="relative mb-6">
-                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
-                            <i class="fas fa-search text-white text-2xl"></i>
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg floating-animation" style="animation-delay: 0.5s;">
+                            <i class="fas fa-search text-white text-2xl group-hover:scale-110 transition-transform duration-300"></i>
                         </div>
-                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                        <div class="absolute -top-2 -right-6 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center pulse-glow" style="animation-delay: 0.3s;">
                             <i class="fas fa-star text-white text-xs"></i>
                         </div>
                     </div>
@@ -709,32 +721,32 @@
 </section>
 
 <!-- Enhanced Featured Cars Showcase -->
-<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden animate-entrance">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+        <div class="absolute inset-0 animate-scale-in" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
     </div>
 
     <div class="container mx-auto px-4 relative z-10">
-        <div class="text-center mb-16 animate-entrance">
-            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
+        <div class="text-center mb-16 animate-fade-in-up">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6 animate-slide-in-left animate-delay-200">
                 FEATURED
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">CARS</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">CARS</span>
             </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Handpicked premium vehicles from trusted dealers, featuring the latest models and best deals in our marketplace</p>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Handpicked premium vehicles from trusted dealers, featuring the latest models and best deals in our marketplace</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
-        <div class="flex justify-center mb-12">
-            <a href="{% url 'core:car_explore' %}" class="admin-request-add-btn">
-                <i class="fas fa-car mr-2"></i>EXPLORE ALL CARS
+        <div class="flex justify-center mb-12 animate-scale-in animate-delay-800">
+            <a href="{% url 'core:car_explore' %}" class="admin-request-add-btn hover-lift group">
+                <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform duration-300"></i>EXPLORE ALL CARS
             </a>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="featured-cars">
             {% for car in featured_cars %}
                 {% load promotion_tags %}
-                <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 group border border-gray-200/50 hover:scale-105 hover:-translate-y-2 overflow-hidden">
+                <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 group border border-gray-200/50 hover:scale-105 hover:-translate-y-2 overflow-hidden animate-scale-in hover-lift" style="animation-delay: {{ forloop.counter0|add:1 }}00ms;">
                     <div class="relative overflow-hidden">
                         {% if car.main_image %}
                             <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500">
@@ -853,94 +865,100 @@
     </div>
 </section>
 
-<!-- Simplified Trusted Brands Section -->
-<section class="py-16 bg-white">
+<!-- Enhanced Trusted Brands Section -->
+<section class="py-16 bg-white animate-entrance">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Simple Header -->
-        <div class="text-center mb-12">
-            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-4">
-                TRUSTED
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">BRANDS</span>
-            </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway">
+        <!-- Enhanced Header with Animations -->
+        <div class="text-center mb-12 animate-fade-in-up">
+            <div class="flex items-center justify-center mb-6 animate-slide-in-left animate-delay-200">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-4 floating-animation hover-lift hover:rotate-6 transition-all duration-500">
+                    <i class="fas fa-award text-white text-2xl pulse-glow"></i>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
+                    TRUSTED
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">BRANDS</span>
+                </h2>
+            </div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway animate-fade-in-up animate-delay-400">
                 We work with the world's leading automotive brands to bring you quality and reliability
             </p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
-        <!-- Simple Brand Grid -->
+        <!-- Enhanced Brand Grid with Staggered Animations -->
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 items-center">
             <!-- Toyota -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /toyota.png' %}" alt="Toyota" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Toyota</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-200 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /toyota.png' %}" alt="Toyota" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.2s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Toyota</h3>
                 </div>
             </div>
 
             <!-- Honda -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /honda.png' %}" alt="Honda" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Honda</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-300 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /honda.png' %}" alt="Honda" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.3s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Honda</h3>
                 </div>
             </div>
 
             <!-- Nissan -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /nissan.jpeg' %}" alt="Nissan" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Nissan</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-400 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /nissan.jpeg' %}" alt="Nissan" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.4s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Nissan</h3>
                 </div>
             </div>
 
             <!-- BMW -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /bmw.png' %}" alt="BMW" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">BMW</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-500 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /bmw.png' %}" alt="BMW" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.5s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">BMW</h3>
                 </div>
             </div>
 
             <!-- Mercedes -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /mercedez.png' %}" alt="Mercedes-Benz" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Mercedes</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-600 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /mercedez.png' %}" alt="Mercedes-Benz" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.6s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Mercedes</h3>
                 </div>
             </div>
 
             <!-- Mazda -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /mazda.png' %}" alt="Mazda" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Mazda</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-700 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /mazda.png' %}" alt="Mazda" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.7s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Mazda</h3>
                 </div>
             </div>
 
             <!-- Mitsubishi -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /mitsubishi.png' %}" alt="Mitsubishi" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Mitsubishi</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-800 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /mitsubishi.png' %}" alt="Mitsubishi" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.8s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Mitsubishi</h3>
                 </div>
             </div>
 
             <!-- Subaru -->
-            <div class="group text-center transition-all duration-300 hover:scale-105">
-                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
-                    <img src="{% static 'images/brands /subaru.png' %}" alt="Subaru" class="w-16 h-16 mx-auto object-contain transition-all duration-300">
-                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300 font-montserrat">Subaru</h3>
+            <div class="group text-center transition-all duration-300 hover:scale-105 animate-scale-in animate-delay-900 hover-lift">
+                <div class="bg-gray-50 hover:bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-500 border border-gray-200 hover:border-red-300 hover:shadow-red-500/20 group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-red-50">
+                    <img src="{% static 'images/brands /subaru.png' %}" alt="Subaru" class="w-16 h-16 mx-auto object-contain transition-all duration-500 group-hover:scale-110 floating-animation" style="animation-delay: 0.9s;">
+                    <h3 class="mt-3 text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors duration-300 font-montserrat">Subaru</h3>
                 </div>
             </div>
         </div>
 
         <!-- Enhanced Trust Indicators -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center mt-16">
-            <div class="trust-indicator group">
-                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
-                    <i class="icon fas fa-shield-alt text-white text-2xl"></i>
+            <div class="trust-indicator group animate-scale-in animate-delay-200 hover-lift">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500 floating-animation pulse-glow">
+                    <i class="icon fas fa-shield-alt text-white text-2xl group-hover:rotate-12 transition-transform duration-300"></i>
                 </div>
-                <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2">100%</div>
+                <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2 group-hover:text-red-600 transition-colors duration-300">100%</div>
                 <div class="text-gray-600 text-base font-raleway">Verified Brands</div>
             </div>
             <div class="trust-indicator group">
@@ -969,63 +987,63 @@
 </section>
 
 <!-- Enhanced Sell Your Car Section -->
-<section class="py-20 relative overflow-hidden">
+<section class="py-20 relative overflow-hidden animate-entrance">
     <!-- Enhanced Background with Glassmorphism -->
     <div class="absolute inset-0">
-        <img src="{% static 'images/slide2.jpg' %}" alt="Sell Your Car" class="w-full h-full object-cover">
+        <img src="{% static 'images/back.jpg' %}" alt="Sell Your Car" class="w-full h-full object-cover animate-scale-in">
         <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-red-900/30 to-gray-900/30"></div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center text-white mb-16">
-            <h2 class="text-4xl md:text-5xl font-montserrat font-bold mb-6">
-                <span class="inline-block bg-gradient-to-r from-red-500 to-red-700 text-transparent bg-clip-text px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+        <div class="text-center text-white mb-16 animate-slide-in-left">
+            <h2 class="text-4xl md:text-5xl font-montserrat font-bold mb-6 animate-fade-in-up animate-delay-200">
+                <span class="inline-block bg-gradient-to-r from-red-500 to-red-700 text-transparent bg-clip-text px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover-lift transition-all duration-500 hover:scale-105 hover:shadow-2xl">
                     READY TO SELL YOUR CAR?
                 </span>
             </h2>
-            <p class="text-xl font-raleway leading-relaxed max-w-3xl mx-auto mb-8 text-gray-100">
+            <p class="text-xl font-raleway leading-relaxed max-w-3xl mx-auto mb-8 text-gray-100 animate-fade-in-up animate-delay-400">
                 Get the best value for your vehicle with our trusted platform. List your car today and reach thousands of potential buyers across Kenya.
             </p>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-red-700 mx-auto rounded-full"></div>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-red-700 mx-auto rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
         <!-- Enhanced Process Steps -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div class="group text-center">
+            <div class="group text-center animate-slide-in-left animate-delay-200 hover-lift">
                 <div class="relative mb-8">
-                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20">
+                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20 hover:shadow-red-500/20">
                         <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
-                            <i class="fas fa-camera text-white text-2xl"></i>
+                            <i class="fas fa-camera text-white text-2xl group-hover:scale-110 transition-transform duration-300"></i>
                         </div>
                     </div>
-                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm animate-bounce">1</div>
                 </div>
-                <h3 class="text-xl text-white  ont-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">UPLOAD PHOTOS</h3>
+                <h3 class="text-xl text-white font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">UPLOAD PHOTOS</h3>
                 <p class="text-gray-200 font-raleway leading-relaxed">Add high-quality photos of your vehicle to attract more buyers and showcase your car's best features</p>
             </div>
 
-            <div class="group text-center">
+            <div class="group text-center animate-fade-in-up animate-delay-400 hover-lift">
                 <div class="relative mb-8">
-                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20">
+                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20 hover:shadow-red-500/20">
                         <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
-                            <i class="fas fa-edit text-white text-2xl"></i>
+                            <i class="fas fa-edit text-white text-2xl group-hover:scale-110 transition-transform duration-300"></i>
                         </div>
                     </div>
-                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm animate-bounce animate-delay-200">2</div>
                 </div>
                 <h3 class="text-xl text-white font-montserrat font-bold mb-4 group-hover:text-red-400 transition-colors duration-300">ADD DETAILS</h3>
                 <p class="text-gray-200 font-raleway leading-relaxed">Provide comprehensive vehicle information, specifications, and maintenance history for transparency</p>
             </div>
 
-            <div class="group text-center">
+            <div class="group text-center animate-slide-in-right animate-delay-600 hover-lift">
                 <div class="relative mb-8">
-                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20">
+                    <div class="w-24 h-24 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-2xl border border-white/20 group-hover:bg-white/20 hover:shadow-green-500/20">
                         <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
-                            <i class="fas fa-handshake text-white text-2xl"></i>
+                            <i class="fas fa-handshake text-white text-2xl group-hover:scale-110 transition-transform duration-300"></i>
                         </div>
                     </div>
-                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm animate-bounce animate-delay-400">3</div>
                 </div>
                 <h3 class="text-xl text-white font-montserrat font-bold mb-4 group-hover:text-green-400 transition-colors duration-300">GET OFFERS</h3>
                 <p class="text-gray-200 font-raleway leading-relaxed">Receive inquiries and offers from thousands of interested buyers across our platform</p>
@@ -1033,15 +1051,17 @@
         </div>
 
         <!-- Enhanced Action Buttons -->
-        <div class="flex flex-col sm:flex-row gap-6 justify-center">
-            <a href="{% url 'core:sell_car' %}" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-2xl font-montserrat relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800">
+        <div class="flex flex-col sm:flex-row gap-6 justify-center animate-scale-in animate-delay-800">
+            <a href="{% url 'core:sell_car' %}" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white rounded-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-2xl font-montserrat relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover-lift hover:shadow-red-500/30">
                 <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <i class="fas fa-car mr-3 transition-transform duration-300 group-hover:rotate-12"></i>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <i class="fas fa-car mr-3 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"></i>
                 <span class="relative z-10">SELL YOUR CAR</span>
             </a>
-            <button id="get-valuation-btn" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white border-3 border-white/80 rounded-2xl transition-all duration-500 hover:bg-white hover:text-gray-900 font-montserrat relative overflow-hidden backdrop-blur-sm bg-white/10">
+            <button id="get-valuation-btn" class="group inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white border-3 border-white/80 rounded-2xl transition-all duration-500 hover:bg-white hover:text-gray-900 font-montserrat relative overflow-hidden backdrop-blur-sm bg-white/10 hover-lift hover:shadow-white/20">
                 <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <i class="fas fa-calculator mr-3 transition-transform duration-300 group-hover:rotate-12"></i>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <i class="fas fa-calculator mr-3 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"></i>
                 <span class="relative z-10">GET VALUATION</span>
             </button>
         </div>
@@ -1107,27 +1127,57 @@
     </div>
 </div>
 
-<!-- Hot Deals Section -->
-<section class="py-16 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center mb-12">
-            <div>
-                <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Hot Deals</h2>
-                <p class="text-lg text-gray-600">Limited time offers on premium vehicles</p>
+<!-- Enhanced Hot Deals Section -->
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden animate-entrance">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0 animate-scale-in" style="background-image: url('{% static 'images/products-images/p1.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex justify-between items-center mb-16">
+            <div class="animate-fade-in-up">
+                <!-- Redesigned Title with Fire Icon and Enhanced Styling -->
+                <div class="flex items-center mb-6 animate-slide-in-left animate-delay-200">
+                    <div class="w-20 h-20 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-6 floating-animation pulse-glow hover-lift hover:rotate-6 transition-all duration-500">
+                        <i class="fas fa-fire text-white text-3xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-5xl md:text-6xl font-montserrat font-black text-gray-900 mb-2 relative">
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-700 hover:via-red-800 hover:to-red-900 transition-all duration-500">HOT</span>
+                            <span class="ml-2 text-gray-900">DEALS</span>
+                            <div class="absolute -top-2 -right-8 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full animate-bounce"></div>
+                        </h2>
+                        <div class="w-32 h-1.5 bg-gradient-to-r from-red-600 to-red-800 rounded-full animate-scale-in animate-delay-400"></div>
+                    </div>
+                </div>
+
+                <!-- Redesigned Paragraph with Enhanced Typography -->
+                <div class="animate-fade-in-up animate-delay-600">
+                    <p class="text-2xl md:text-3xl font-raleway font-light text-gray-700 mb-4 leading-relaxed">
+                        <span class="font-semibold text-red-600">Limited Time Offers</span> on Premium Vehicles
+                    </p>
+                    <p class="text-lg text-gray-600 max-w-2xl font-inter leading-relaxed">
+                        Don't miss out on these exclusive deals! Save thousands on handpicked premium vehicles with
+                        <span class="font-bold text-red-600">up to 30% off</span> selected models.
+                    </p>
+                </div>
             </div>
-            <div class="hidden md:flex items-center space-x-4">
-                <button class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-crimson hover:text-white transition-colors" id="deals-prev">
-                    <i class="fas fa-chevron-left"></i>
+
+            <!-- Enhanced Navigation Controls -->
+            <div class="hidden md:flex items-center space-x-4 animate-scale-in animate-delay-800">
+                <button class="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl flex items-center justify-center hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white transition-all duration-500 group border border-gray-200/50 hover:border-red-600 hover-lift hover:scale-110" id="deals-prev">
+                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white group-hover:-translate-x-1"></i>
                 </button>
-                <button class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-crimson hover:text-white transition-colors" id="deals-next">
-                    <i class="fas fa-chevron-right"></i>
+                <button class="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl flex items-center justify-center hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white transition-all duration-500 group border border-gray-200/50 hover:border-red-600 hover-lift hover:scale-110" id="deals-next">
+                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white group-hover:translate-x-1"></i>
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="hot-deals">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" id="hot-deals">
             {% for car in hot_deals %}
-                <a href="{% url 'core:car_detail' car.pk %}" class="block bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer transform hover:-translate-y-2" data-deal-id="{% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% endif %}" onclick="trackHotDealCardClick({{ car.pk }}, {% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% else %}null{% endif %})">
+                <a href="{% url 'core:car_detail' car.pk %}" class="block bg-white/95 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 group cursor-pointer transform hover:-translate-y-3 hover:scale-105 border border-gray-200/50 hover:border-red-300 animate-scale-in hover-lift" style="animation-delay: {{ forloop.counter0|add:1 }}00ms;" data-deal-id="{% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% endif %}" onclick="trackHotDealCardClick({{ car.pk }}, {% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% else %}null{% endif %})">
                     <div class="relative">
                         {% if car.main_image %}
                             <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
@@ -1212,30 +1262,35 @@
 </section>
 
 <!-- Enhanced Genuine Spare Parts Section -->
-<section class="py-20 bg-gradient-to-br from-white via-gray-50 to-white relative overflow-hidden">
+<section class="py-20 bg-gradient-to-br from-white via-gray-50 to-white relative overflow-hidden animate-entrance">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p3.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+        <div class="absolute inset-0 animate-scale-in" style="background-image: url('{% static 'images/products-images/p3.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16 animate-entrance">
-            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
-                Genuine
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Spare Parts</span>
-            </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Quality spare parts for all major car brands. Keep your vehicle running smoothly with our authentic, certified automotive components.</p>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+        <div class="text-center mb-16 animate-fade-in-up">
+            <div class="flex items-center justify-center mb-6 animate-slide-in-left animate-delay-200">
+                <div class="w-20 h-20 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-6 floating-animation pulse-glow hover-lift hover:rotate-6 transition-all duration-500">
+                    <i class="fas fa-cogs text-white text-3xl rotate-on-hover"></i>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
+                    Genuine
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">Spare Parts</span>
+                </h2>
+            </div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Quality spare parts for all major car brands. Keep your vehicle running smoothly with our authentic, certified automotive components.</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
         <!-- Featured Spare Parts Categories -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             <!-- Engine Parts -->
-            <div class="group cursor-pointer animate-entrance" onclick="window.location.href='{% url 'core:spare_parts' %}?category=engine'">
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white transition-all duration-500 shadow-xl hover:shadow-2xl border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2">
+            <div class="group cursor-pointer animate-scale-in animate-delay-200 hover-lift" onclick="window.location.href='{% url 'core:spare_parts' %}?category=engine'">
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white transition-all duration-500 shadow-xl hover:shadow-2xl border border-gray-200/50 group-hover:scale-105 group-hover:-translate-y-2 hover:shadow-red-500/20">
                     <div class="relative mb-6">
-                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg">
-                            <i class="fas fa-cog text-white text-3xl"></i>
+                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-500 shadow-lg floating-animation pulse-glow">
+                            <i class="fas fa-cog text-white text-3xl group-hover:scale-110 rotate-on-hover transition-transform duration-300"></i>
                         </div>
                         <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
                             <i class="fas fa-check text-white text-xs"></i>
@@ -1357,34 +1412,39 @@
 </section>
 
 <!-- Enhanced Customer Testimonials with Carousel -->
-<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
+<section class="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden animate-entrance">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('{% static 'images/products-images/p2.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+        <div class="absolute inset-0 animate-scale-in" style="background-image: url('{% static 'images/products-images/p2.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16 animate-entrance">
-            <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900 mb-6">
-                What Our
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Customers Say</span>
-            </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed">Real experiences from satisfied customers who trust Gurumisha Motors for their automotive needs</p>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full"></div>
+        <div class="text-center mb-16 animate-fade-in-up">
+            <div class="flex items-center justify-center mb-6 animate-slide-in-left animate-delay-200">
+                <div class="w-20 h-20 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-6 floating-animation pulse-glow hover-lift hover:rotate-6 transition-all duration-500">
+                    <i class="fas fa-quote-left text-white text-3xl"></i>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
+                    What Our
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">Customers Say</span>
+                </h2>
+            </div>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Real experiences from satisfied customers who trust Gurumisha Motors for their automotive needs</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
         <!-- Testimonials Carousel Container -->
-        <div class="relative">
-            <!-- Navigation Controls -->
+        <div class="relative animate-scale-in animate-delay-800">
+            <!-- Enhanced Navigation Controls -->
             <div class="hidden md:flex justify-between items-center absolute inset-y-0 left-0 right-0 z-10 pointer-events-none">
                 <!-- Previous Button -->
-                <button id="prevTestimonialBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-red-600 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 -ml-6">
-                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
+                <button id="prevTestimonialBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -ml-7 hover-lift hover:scale-110">
+                    <i class="fas fa-chevron-left text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white group-hover:-translate-x-1"></i>
                 </button>
 
                 <!-- Next Button -->
-                <button id="nextTestimonialBtn" class="pointer-events-auto flex items-center justify-center w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-red-600 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 -mr-6">
-                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white"></i>
+                <button id="nextTestimonialBtn" class="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 hover:text-white group disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200/50 hover:border-red-600 -mr-7 hover-lift hover:scale-110">
+                    <i class="fas fa-chevron-right text-lg group-hover:scale-110 transition-transform text-gray-700 group-hover:text-white group-hover:translate-x-1"></i>
                 </button>
             </div>
 
@@ -1393,17 +1453,17 @@
                 <div id="testimonialsGrid" class="flex gap-8 transition-transform duration-500 ease-in-out" style="width: max-content;">
                     <!-- Testimonial 1 - Car Purchase -->
                     <div class="flex-shrink-0 w-80 md:w-96">
-                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2">
+                        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-200/50 group hover:scale-105 hover:-translate-y-2 hover-lift hover:shadow-red-500/20">
                             <!-- Rating Stars -->
                             <div class="flex items-center mb-6">
                                 <div class="flex text-yellow-400 mr-3">
-                                    <i class="fas fa-star text-lg"></i>
-                                    <i class="fas fa-star text-lg"></i>
-                                    <i class="fas fa-star text-lg"></i>
-                                    <i class="fas fa-star text-lg"></i>
-                                    <i class="fas fa-star text-lg"></i>
+                                    <i class="fas fa-star text-lg hover:scale-110 transition-transform duration-300"></i>
+                                    <i class="fas fa-star text-lg hover:scale-110 transition-transform duration-300" style="transition-delay: 0.1s;"></i>
+                                    <i class="fas fa-star text-lg hover:scale-110 transition-transform duration-300" style="transition-delay: 0.2s;"></i>
+                                    <i class="fas fa-star text-lg hover:scale-110 transition-transform duration-300" style="transition-delay: 0.3s;"></i>
+                                    <i class="fas fa-star text-lg hover:scale-110 transition-transform duration-300" style="transition-delay: 0.4s;"></i>
                                 </div>
-                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">5.0</span>
+                                <span class="text-sm font-medium text-gray-600 bg-yellow-50 px-3 py-1 rounded-full pulse-glow">5.0</span>
                             </div>
 
                             <!-- Testimonial Content -->
@@ -1623,28 +1683,45 @@
     </div>
 </section>
 
-<!-- Resources Preview -->
-<section class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center mb-12">
-            <div>
-                <h2 class="text-3xl md:text-4xl font-heading font-bold text-midnight mb-4">Latest Resources</h2>
-                <p class="text-lg text-gray-600">Stay updated with automotive news, tips, and insights</p>
+<!-- Enhanced Resources Preview -->
+<section class="py-20 bg-gradient-to-br from-white via-gray-50 to-white relative overflow-hidden animate-entrance">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0 animate-scale-in" style="background-image: url('{% static 'images/products-images/p3.jpg' %}'); background-size: cover; background-position: center; filter: blur(1px);"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex justify-between items-center mb-16">
+            <div class="animate-fade-in-up">
+                <div class="flex items-center mb-6 animate-slide-in-left animate-delay-200">
+                    <div class="w-20 h-20 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg mr-6 floating-animation pulse-glow hover-lift hover:rotate-6 transition-all duration-500">
+                        <i class="fas fa-newspaper text-white text-3xl"></i>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
+                        Latest
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">Resources</span>
+                    </h2>
+                </div>
+                <p class="text-xl text-gray-600 max-w-2xl font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Stay updated with automotive news, tips, and insights from industry experts</p>
+                <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mt-4 rounded-full animate-scale-in animate-delay-600"></div>
             </div>
-            <a href="{% url 'core:resources' %}" class="btn-secondary hidden md:inline-flex">View All Resources</a>
+            <a href="{% url 'core:resources' %}" class="admin-request-add-btn hidden md:inline-flex animate-scale-in animate-delay-800 hover-lift group">
+                <i class="fas fa-arrow-right mr-2 group-hover:translate-x-1 transition-transform duration-300"></i>View All Resources
+            </a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             {% for post in blog_posts %}
-                <article class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+                <article class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 group border border-gray-200/50 hover:border-red-300 animate-scale-in hover-lift hover:scale-105 hover:-translate-y-2" style="animation-delay: {{ forloop.counter0|add:1 }}00ms;">
                     <div class="relative overflow-hidden">
                         {% if post.featured_image %}
                             <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
                         {% else %}
-                            <div class="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                <i class="fas fa-newspaper text-gray-400 text-4xl"></i>
+                            <div class="w-full h-48 bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
+                                <i class="fas fa-newspaper text-white text-4xl floating-animation"></i>
                             </div>
                         {% endif %}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     </div>
 
                     <div class="p-6">
@@ -2185,7 +2262,7 @@ function initEntranceAnimations() {
     }, observerOptions);
 
     // Observe all elements with entrance animation classes
-    const animatedElements = document.querySelectorAll('.animate-entrance, .animate-slide-in-left, .animate-slide-in-right, .animate-scale-in');
+    const animatedElements = document.querySelectorAll('.animate-entrance, .animate-slide-in-left, .animate-slide-in-right, .animate-scale-in, .animate-fade-in-up');
     animatedElements.forEach(el => {
         observer.observe(el);
     });

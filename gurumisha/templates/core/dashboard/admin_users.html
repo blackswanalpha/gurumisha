@@ -294,38 +294,7 @@
         </div>
     </div>
 
-    <!-- Bulk Actions -->
-    <div id="bulkActions" class="hidden bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 mb-6 shadow-md">
-        <div class="flex items-center justify-between">
-            <span class="text-blue-800 font-semibold font-montserrat">
-                <i class="fas fa-check-square mr-2"></i>
-                <span id="selectedCount">0</span> users selected
-            </span>
-            <div class="flex items-center space-x-3">
-                <button
-                    type="button"
-                    class="modern-action-btn activate-btn"
-                    onclick="performBulkAction('activate')">
-                    <i class="fas fa-user-check mr-1"></i>
-                    Activate
-                </button>
-                <button
-                    type="button"
-                    class="modern-action-btn deactivate-btn"
-                    onclick="performBulkAction('deactivate')">
-                    <i class="fas fa-user-slash mr-1"></i>
-                    Deactivate
-                </button>
-                <button
-                    type="button"
-                    class="modern-action-btn delete-btn"
-                    onclick="performBulkAction('delete')">
-                    <i class="fas fa-trash mr-1"></i>
-                    Delete
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Bulk Actions Removed - Simplified interface with profile-only actions -->
 
     <!-- Enhanced Users Table Container -->
     <div class="dashboard-card">
@@ -340,106 +309,11 @@
 <script>
 // Enhanced User Management JavaScript with HTMX Integration
 
-// Bulk actions functionality
-function selectAllUsers() {
-    const selectAll = document.getElementById('selectAll');
-    const checkboxes = document.querySelectorAll('input[name="selected_users"]');
+// Bulk actions functionality - Removed for simplified interface
+// Only profile viewing actions remain
 
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAll.checked;
-    });
-
-    updateBulkActions();
-}
-
-function updateBulkActions() {
-    const checkboxes = document.querySelectorAll('input[name="selected_users"]:checked');
-    const bulkActions = document.getElementById('bulkActions');
-    const selectedCount = document.getElementById('selectedCount');
-
-    selectedCount.textContent = checkboxes.length;
-
-    if (checkboxes.length > 0) {
-        bulkActions.classList.remove('hidden');
-        bulkActions.style.animation = 'fadeInUp 0.3s ease-out';
-    } else {
-        bulkActions.classList.add('hidden');
-    }
-}
-
-function performBulkAction(action) {
-    const checkboxes = document.querySelectorAll('input[name="selected_users"]:checked');
-    const userIds = Array.from(checkboxes).map(cb => cb.value);
-
-    if (userIds.length === 0) {
-        showToast('Please select users first.', 'warning');
-        return;
-    }
-
-    let message = '';
-    let confirmClass = 'btn-danger';
-
-    switch(action) {
-        case 'activate':
-            message = `Are you sure you want to activate ${userIds.length} user(s)?`;
-            confirmClass = 'btn-success';
-            break;
-        case 'deactivate':
-            message = `Are you sure you want to deactivate ${userIds.length} user(s)?`;
-            confirmClass = 'btn-warning';
-            break;
-        case 'delete':
-            message = `Are you sure you want to delete ${userIds.length} user(s)? This action cannot be undone.`;
-            confirmClass = 'btn-danger';
-            break;
-    }
-
-    if (confirm(message)) {
-        showToast(`Processing ${action} for ${userIds.length} user(s)...`, 'info');
-
-        // TODO: Implement actual bulk action API call
-        console.log(`Performing ${action} on users:`, userIds);
-    }
-}
-
-// Individual user actions
-function toggleUserStatus(userId, action) {
-    const actionText = action === 'activate' ? 'activate' : 'deactivate';
-
-    if (confirm(`Are you sure you want to ${actionText} this user?`)) {
-        showToast(`${actionText.charAt(0).toUpperCase() + actionText.slice(1)}ing user...`, 'info');
-
-        // TODO: Implement actual API call
-        console.log(`${actionText} user:`, userId);
-
-        // Simulate success
-        setTimeout(() => {
-            showToast(`User ${actionText}d successfully`, 'success');
-            htmx.trigger('#users-table-container', 'refresh');
-        }, 1000);
-    }
-}
-
-function deleteUser(userId) {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-        showToast('Deleting user...', 'info');
-
-        // TODO: Implement actual API call
-        console.log('Deleting user:', userId);
-
-        // Simulate success
-        setTimeout(() => {
-            showToast('User deleted successfully', 'success');
-            const row = document.getElementById(`user-${userId}`);
-            if (row) {
-                row.style.animation = 'fadeOut 0.3s ease-out';
-                setTimeout(() => {
-                    htmx.trigger('#users-table-container', 'refresh');
-                }, 300);
-            }
-        }, 1000);
-    }
-}
+// Individual user actions - Removed toggleUserStatus and deleteUser functions
+// as they are no longer needed since only profile buttons remain
 
 // Utility functions
 function getCsrfToken() {
@@ -512,7 +386,6 @@ document.addEventListener('htmx:afterRequest', function(event) {
     // Re-initialize event listeners after HTMX update
     setTimeout(() => {
         initializeEventListeners();
-        updateBulkActions();
     }, 100);
 });
 
@@ -551,35 +424,8 @@ function handlePaginationClick(e) {
 
 
 
-// Dropdown functionality
-function toggleDropdown(userId) {
-    event.stopPropagation();
-    const dropdown = document.getElementById(`dropdown-${userId}`);
-    const allDropdowns = document.querySelectorAll('[id^="dropdown-"]');
-
-    // Close all other dropdowns
-    allDropdowns.forEach(d => {
-        if (d !== dropdown) {
-            d.classList.add('hidden');
-        }
-    });
-
-    // Toggle current dropdown
-    if (dropdown) {
-        dropdown.classList.toggle('hidden');
-    }
-}
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(event) {
-    // Check if click is outside dropdown area
-    if (!event.target.closest('.dropdown-toggle') && !event.target.closest('[id^="dropdown-"]')) {
-        const allDropdowns = document.querySelectorAll('[id^="dropdown-"]');
-        allDropdowns.forEach(dropdown => {
-            dropdown.classList.add('hidden');
-        });
-    }
-});
+// Dropdown functionality - Removed as dropdowns are no longer used
+// Only profile buttons remain in the simplified interface
 
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

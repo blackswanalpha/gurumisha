@@ -1,0 +1,151 @@
+<!-- Recently Viewed Cars Container -->
+{% if recently_viewed_cars %}
+<div class="relative">
+    <!-- Scroll Container -->
+    <div class="overflow-x-auto scrollbar-hide" id="recently-viewed-container">
+        <div class="flex gap-6 pb-4" style="width: max-content;">
+            {% for car in recently_viewed_cars %}
+            <div class="recently-viewed-card group cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                 onclick="window.location.href='{% url 'core:car_detail' car.pk %}'">
+                <!-- Card Container with Glassmorphism -->
+                <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden w-80 hover:shadow-3xl transition-all duration-500">
+                    <!-- Image Container -->
+                    <div class="relative h-48 overflow-hidden">
+                        {% if car.main_image %}
+                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" 
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        {% else %}
+                            <div class="w-full h-full bg-gradient-to-br from-red-600 to-black flex items-center justify-center">
+                                <i class="fas fa-car text-white text-4xl"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Overlay Gradient -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        
+                        <!-- Status Badges -->
+                        <div class="absolute top-4 left-4 flex flex-col gap-2">
+                            {% if car.is_featured %}
+                                <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                    <i class="fas fa-star mr-1"></i>FEATURED
+                                </div>
+                            {% endif %}
+                            {% if car.listing_type == 'imported' %}
+                                <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                    <i class="fas fa-ship mr-1"></i>IMPORTED
+                                </div>
+                            {% elif car.listing_type == 'auction' %}
+                                <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                    <i class="fas fa-gavel mr-1"></i>AUCTION
+                                </div>
+                            {% elif car.is_certified %}
+                                <div class="bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                    <i class="fas fa-certificate mr-1"></i>CERTIFIED
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Recently Viewed Badge -->
+                        <div class="absolute top-4 right-4">
+                            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg">
+                                <i class="fas fa-clock mr-1"></i>RECENT
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Content -->
+                    <div class="p-6">
+                        <!-- Title and Price -->
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-900 text-lg font-montserrat mb-2 line-clamp-2 group-hover:text-red-600 transition-colors duration-300">
+                                {{ car.title }}
+                            </h3>
+                            <div class="flex items-center justify-between">
+                                <p class="text-2xl font-bold text-red-600 font-montserrat">
+                                    {{ car.price|currency_ksh_no_decimals }}
+                                </p>
+                                {% if car.calculated_rating > 0 %}
+                                <div class="flex items-center">
+                                    <div class="flex text-yellow-400 mr-1">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= car.calculated_rating %}
+                                                <i class="fas fa-star text-xs"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-xs"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="text-xs text-gray-600">({{ car.calculated_rating|floatformat:1 }})</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Car Details -->
+                        <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-alt text-red-500 mr-2"></i>
+                                <span>{{ car.year }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-tachometer-alt text-red-500 mr-2"></i>
+                                <span>{{ car.mileage|default:"N/A" }} km</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-gas-pump text-red-500 mr-2"></i>
+                                <span>{{ car.get_fuel_type_display|default:"N/A" }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-cogs text-red-500 mr-2"></i>
+                                <span>{{ car.get_transmission_display|default:"N/A" }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Button -->
+                        <div class="flex items-center justify-between">
+                            <button class="bg-gradient-to-r from-red-600 to-black text-white px-6 py-2 rounded-full font-semibold text-sm hover:from-red-700 hover:to-gray-900 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                View Details
+                            </button>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-eye mr-1"></i>
+                                <span>{{ car.views_count }} views</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Scroll Indicators -->
+    <div class="flex justify-center mt-8">
+        <div class="flex items-center gap-2">
+            <button id="scroll-left" class="w-10 h-10 bg-gradient-to-r from-red-600 to-black text-white rounded-full flex items-center justify-center hover:from-red-700 hover:to-gray-900 transition-all duration-300 shadow-lg">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="flex gap-2" id="scroll-dots">
+                <!-- Dots will be generated by JavaScript -->
+            </div>
+            <button id="scroll-right" class="w-10 h-10 bg-gradient-to-r from-red-600 to-black text-white rounded-full flex items-center justify-center hover:from-red-700 hover:to-gray-900 transition-all duration-300 shadow-lg">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-16">
+    <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-12 max-w-md mx-auto">
+        <div class="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-history text-white text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-4 font-montserrat">No Recently Viewed Cars</h3>
+        <p class="text-gray-600 mb-6 font-raleway">Start browsing our inventory to see your recently viewed vehicles here</p>
+        <a href="#cars-grid" class="inline-flex items-center bg-gradient-to-r from-red-600 to-black text-white px-6 py-3 rounded-full font-semibold hover:from-red-700 hover:to-gray-900 transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <i class="fas fa-search mr-2"></i>
+            Browse Cars
+        </a>
+    </div>
+</div>
+{% endif %}

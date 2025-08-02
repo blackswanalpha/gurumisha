@@ -1,6 +1,6 @@
 <!-- Live Tracking Notifications Component -->
-<div class="live-notifications" 
-     x-data="liveNotifications()"
+<div class="live-notifications"
+     x-data="getAlpineComponent('liveNotifications')()"
      x-init="initializeNotifications()"
      hx-get="{% url 'core:import_tracking_notifications_htmx' %}"
      hx-trigger="every 120s"

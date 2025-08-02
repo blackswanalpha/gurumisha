@@ -32,6 +32,17 @@ class User(AbstractUser):
     # Override email field to make it unique
     email = models.EmailField(unique=True, help_text="Email address must be unique")
 
+    # Override username field to remove default validators
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        help_text='Required. 150 characters or fewer.',
+        validators=[],  # Remove all default validators
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
+    )
+
     # Basic Information
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     phone = models.CharField(max_length=20, blank=True)
@@ -1354,7 +1365,7 @@ class ImportOrder(models.Model):
 
     def get_balance_due(self):
         """Calculate balance due"""
-        return self.total_cost - (self.amount_paid or 0)
+        return (self.total_cost or 0) - (self.paid_amount or 0)
 
     def get_payment_status_color(self):
         """Return color class for payment status"""
@@ -2261,21 +2272,36 @@ class Invoice(models.Model):
 
 
 class Inquiry(models.Model):
-    """Customer inquiries for cars and spare parts"""
+    """Enhanced customer inquiries with admin response capabilities"""
     INQUIRY_TYPE_CHOICES = [
         ('car', 'Car Inquiry'),
         ('spare_part', 'Spare Part Inquiry'),
         ('import', 'Import Inquiry'),
         ('general', 'General Inquiry'),
+        ('support', 'Technical Support'),
+        ('complaint', 'Complaint'),
+        ('suggestion', 'Suggestion'),
     ]
 
     STATUS_CHOICES = [
+        ('new', 'New'),
         ('open', 'Open'),
         ('in_progress', 'In Progress'),
+        ('pending_customer', 'Pending Customer Response'),
         ('resolved', 'Resolved'),
         ('closed', 'Closed'),
+        ('escalated', 'Escalated'),
     ]
 
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('normal', 'Normal'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+        ('critical', 'Critical'),
+    ]
+
+    # Basic Information
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inquiries')
     inquiry_type = models.CharField(max_length=20, choices=INQUIRY_TYPE_CHOICES)
 
@@ -2289,18 +2315,187 @@ class Inquiry(models.Model):
     customer_phone = models.CharField(max_length=20, blank=True)
     customer_email = models.EmailField(blank=True)
 
-    # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    # Admin Management
+    assigned_admin = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_inquiries',
+        limit_choices_to={'role': 'admin'}
+    )
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='normal')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+
+    # Admin Response
+    admin_response = models.TextField(blank=True, help_text="Admin's response to the inquiry")
+    internal_notes = models.TextField(blank=True, help_text="Internal notes for admin use only")
+    resolution_notes = models.TextField(blank=True, help_text="Notes about how the inquiry was resolved")
+
+    # Response Tracking
+    first_response_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    response_time_hours = models.PositiveIntegerField(null=True, blank=True, help_text="Hours to first response")
+    resolution_time_hours = models.PositiveIntegerField(null=True, blank=True, help_text="Hours to resolution")
+
+    # Customer Satisfaction
+    customer_rating = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        choices=[(i, i) for i in range(1, 6)],
+        help_text="Customer satisfaction rating (1-5)"
+    )
+    customer_feedback = models.TextField(blank=True, help_text="Customer feedback on resolution")
+
+    # Flags and Metadata
+    is_escalated = models.BooleanField(default=False)
+    is_urgent = models.BooleanField(default=False)
+    requires_followup = models.BooleanField(default=False)
+    followup_date = models.DateTimeField(null=True, blank=True)
+
+    # Email tracking
+    customer_notified = models.BooleanField(default=False)
+    last_notification_sent = models.DateTimeField(null=True, blank=True)
 
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.subject} - {self.customer.username}"
+        return f"{self.subject} - {self.customer.username} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        """Override save to track response and resolution times"""
+        from django.utils import timezone
+
+        # Track first response time
+        if self.admin_response and not self.first_response_at:
+            self.first_response_at = timezone.now()
+            if self.created_at:
+                time_diff = self.first_response_at - self.created_at
+                self.response_time_hours = int(time_diff.total_seconds() / 3600)
+
+        # Track resolution time
+        if self.status == 'resolved' and not self.resolved_at:
+            self.resolved_at = timezone.now()
+            if self.created_at:
+                time_diff = self.resolved_at - self.created_at
+                self.resolution_time_hours = int(time_diff.total_seconds() / 3600)
+
+        # Track closure time
+        if self.status == 'closed' and not self.closed_at:
+            self.closed_at = timezone.now()
+
+        super().save(*args, **kwargs)
+
+    @property
+    def is_overdue(self):
+        """Check if inquiry is overdue based on priority"""
+        from django.utils import timezone
+        if self.status in ['resolved', 'closed']:
+            return False
+
+        hours_since_created = (timezone.now() - self.created_at).total_seconds() / 3600
+
+        # Define SLA hours based on priority
+        sla_hours = {
+            'critical': 2,
+            'urgent': 4,
+            'high': 8,
+            'normal': 24,
+            'low': 48,
+        }
+
+        return hours_since_created > sla_hours.get(self.priority, 24)
+
+    @property
+    def time_since_created(self):
+        """Get human-readable time since creation"""
+        from django.utils import timezone
+        time_diff = timezone.now() - self.created_at
+
+        if time_diff.days > 0:
+            return f"{time_diff.days} day{'s' if time_diff.days != 1 else ''} ago"
+        elif time_diff.seconds > 3600:
+            hours = time_diff.seconds // 3600
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        elif time_diff.seconds > 60:
+            minutes = time_diff.seconds // 60
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        else:
+            return "Just now"
+
+    def get_priority_color(self):
+        """Get color class for priority display"""
+        colors = {
+            'low': 'text-gray-600 bg-gray-100',
+            'normal': 'text-blue-600 bg-blue-100',
+            'high': 'text-orange-600 bg-orange-100',
+            'urgent': 'text-red-600 bg-red-100',
+            'critical': 'text-red-800 bg-red-200',
+        }
+        return colors.get(self.priority, 'text-gray-600 bg-gray-100')
+
+    def get_status_color(self):
+        """Get color class for status display"""
+        colors = {
+            'new': 'text-blue-600 bg-blue-100',
+            'open': 'text-yellow-600 bg-yellow-100',
+            'in_progress': 'text-purple-600 bg-purple-100',
+            'pending_customer': 'text-orange-600 bg-orange-100',
+            'resolved': 'text-green-600 bg-green-100',
+            'closed': 'text-gray-600 bg-gray-100',
+            'escalated': 'text-red-600 bg-red-100',
+        }
+        return colors.get(self.status, 'text-gray-600 bg-gray-100')
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'priority']),
+            models.Index(fields=['assigned_admin', 'status']),
+            models.Index(fields=['customer', 'status']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['is_urgent', 'status']),
+        ]
+
+
+class InquiryResponse(models.Model):
+    """Responses to customer inquiries - tracks conversation history"""
+    RESPONSE_TYPE_CHOICES = [
+        ('admin_reply', 'Admin Reply'),
+        ('customer_reply', 'Customer Reply'),
+        ('system_note', 'System Note'),
+        ('status_change', 'Status Change'),
+        ('assignment', 'Assignment Change'),
+        ('escalation', 'Escalation'),
+    ]
+
+    inquiry = models.ForeignKey(Inquiry, on_delete=models.CASCADE, related_name='responses')
+    response_type = models.CharField(max_length=20, choices=RESPONSE_TYPE_CHOICES)
+
+    # Response details
+    content = models.TextField()
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inquiry_responses')
+
+    # Metadata
+    is_internal = models.BooleanField(default=False, help_text="Internal note not visible to customer")
+    is_email_sent = models.BooleanField(default=False)
+    email_sent_at = models.DateTimeField(null=True, blank=True)
+
+    # Attachments
+    attachment = models.FileField(upload_to='inquiry_attachments/', blank=True, null=True)
+    attachment_name = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.get_response_type_display()} - {self.inquiry.subject}"
+
+    class Meta:
+        ordering = ['created_at']
 
 
 class Message(models.Model):

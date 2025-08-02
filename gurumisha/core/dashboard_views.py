@@ -16,7 +16,11 @@ from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 import csv
 import json
+import logging
 from io import StringIO
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 from .models import (
     Car, CarBrand, CarModel, CarImage, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
@@ -665,6 +669,19 @@ def admin_user_detail_view(request, user_id):
                 {'target_user_id': user.id, 'new_status': user.is_active}
             )
 
+            # Handle HTMX requests
+            if request.headers.get('HX-Request'):
+                from django.template.loader import render_to_string
+
+                # Render the updated status indicator
+                status_html = render_to_string('core/partials/user_status_indicator.html', {
+                    'user_profile': user
+                })
+
+                response = HttpResponse(status_html)
+                response['X-Toast-Success'] = f'Account {status} for {user.username}!'
+                return response
+
             messages.success(request, f'Account {status} for {user.username}!')
             return redirect('core:admin_user_detail', user_id=user_id)
 
@@ -778,6 +795,158 @@ def admin_user_detail_view(request, user_id):
     }
 
     return render(request, 'core/dashboard/admin_user_detail.html', context)
+
+
+@login_required
+def admin_user_delete_view(request, user_id):
+    """Admin user deletion view with safety checks"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        if request.headers.get('HX-Request'):
+            response = HttpResponse('Access denied', status=403)
+            response['X-Toast-Error'] = 'Access denied. Admin privileges required.'
+            return response
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('core:dashboard')
+
+    # Get the user
+    user = get_object_or_404(User, id=user_id)
+
+    # Prevent self-deletion
+    if user == request.user:
+        if request.headers.get('HX-Request'):
+            response = HttpResponse('Cannot delete yourself', status=400)
+            response['X-Toast-Error'] = 'You cannot delete your own account.'
+            return response
+        messages.error(request, 'You cannot delete your own account.')
+        return redirect('core:admin_user_detail', user_id=user_id)
+
+    # Prevent deletion of other admin users (safety measure)
+    if user.role == 'admin' or user.is_superuser:
+        if request.headers.get('HX-Request'):
+            response = HttpResponse('Cannot delete admin users', status=400)
+            response['X-Toast-Error'] = 'Admin users cannot be deleted for security reasons.'
+            return response
+        messages.error(request, 'Admin users cannot be deleted for security reasons.')
+        return redirect('core:admin_user_detail', user_id=user_id)
+
+    if request.method == 'DELETE':
+        try:
+            username = user.username
+            user_role = user.get_role_display()
+
+            # Log the deletion activity before deleting
+            log_user_activity(
+                request.user,
+                'user_deletion',
+                f'Admin deleted user {username} ({user_role})',
+                request,
+                {'deleted_user_id': user.id, 'deleted_username': username}
+            )
+
+            # Delete the user
+            user.delete()
+
+            # Handle HTMX requests
+            if request.headers.get('HX-Request'):
+                response = HttpResponse('User deleted successfully', status=200)
+                response['X-Toast-Success'] = f'User {username} has been deleted successfully.'
+                return response
+
+            messages.success(request, f'User {username} has been deleted successfully.')
+            return redirect('core:admin_users')
+
+        except Exception as e:
+            # Handle deletion errors
+            if request.headers.get('HX-Request'):
+                response = HttpResponse('Error deleting user', status=500)
+                response['X-Toast-Error'] = 'An error occurred while deleting the user. Please try again.'
+                return response
+
+            messages.error(request, 'An error occurred while deleting the user. Please try again.')
+            return redirect('core:admin_user_detail', user_id=user_id)
+
+    # Only allow DELETE method
+    if request.headers.get('HX-Request'):
+        response = HttpResponse('Method not allowed', status=405)
+        response['X-Toast-Error'] = 'Invalid request method.'
+        return response
+
+    return redirect('core:admin_user_detail', user_id=user_id)
+
+
+@login_required
+def admin_user_edit_modal_view(request, user_id):
+    """Admin user edit modal view"""
+    # Check admin permissions
+    if not request.user.is_staff and request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    # Get the user
+    user = get_object_or_404(User, id=user_id)
+
+    if request.method == 'GET':
+        # Return the modal HTML
+        from .dashboard_forms import AdminUserEditForm
+        user_form = AdminUserEditForm(instance=user)
+
+        context = {
+            'user_profile': user,
+            'user_form': user_form,
+        }
+
+        return render(request, 'core/modals/admin_user_edit_modal.html', context)
+
+    elif request.method == 'POST':
+        # Handle form submission
+        from .dashboard_forms import AdminUserEditForm
+        user_form = AdminUserEditForm(request.POST, request.FILES, instance=user)
+
+        if user_form.is_valid():
+            try:
+                # Save the user
+                updated_user = user_form.save()
+
+                # Log the activity
+                log_user_activity(
+                    request.user,
+                    'user_profile_update',
+                    f'Admin updated profile for {updated_user.username}',
+                    request,
+                    {'target_user_id': updated_user.id}
+                )
+
+                # Handle HTMX requests
+                if request.headers.get('HX-Request'):
+                    response = HttpResponse('User updated successfully')
+                    response['X-Toast-Success'] = f'User {updated_user.username} has been updated successfully.'
+                    response['HX-Refresh'] = 'true'  # Refresh the page to show changes
+                    return response
+
+                messages.success(request, f'User {updated_user.username} has been updated successfully.')
+                return redirect('core:admin_user_detail', user_id=user_id)
+
+            except Exception as e:
+                # Handle save errors
+                if request.headers.get('HX-Request'):
+                    response = HttpResponse('Error updating user', status=500)
+                    response['X-Toast-Error'] = 'An error occurred while updating the user. Please try again.'
+                    return response
+
+                messages.error(request, 'An error occurred while updating the user. Please try again.')
+        else:
+            # Form validation errors
+            if request.headers.get('HX-Request'):
+                # Return the modal with errors
+                context = {
+                    'user_profile': user,
+                    'user_form': user_form,
+                }
+                return render(request, 'core/modals/admin_user_edit_modal.html', context)
+
+            messages.error(request, 'Please correct the errors below.')
+
+    return redirect('core:admin_user_detail', user_id=user_id)
 
 
 @login_required
@@ -2141,6 +2310,11 @@ def admin_vendors_view(request):
         'business_type_filter': business_type_filter,
         'search_query': search,
     }
+
+    # Handle HTMX requests for dynamic filtering
+    if request.headers.get('HX-Request'):
+        # Return only the table container for HTMX updates
+        return render(request, 'core/partials/vendor_table_container.html', context)
 
     return render(request, 'core/dashboard/admin_vendors.html', context)
 
@@ -3515,6 +3689,137 @@ def vendor_import_requests_view(request):
 
 
 @login_required
+def customer_import_request_detail_view(request, request_id):
+    """Customer import request detail view - shows detailed information about a specific import request"""
+    if request.user.role != 'customer':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    # Get the import request - ensure it belongs to this customer
+    import_request = get_object_or_404(ImportRequest, id=request_id, customer=request.user)
+
+    # Get related import order if it exists
+    import_order = None
+    if hasattr(import_request, 'import_order'):
+        import_order = import_request.import_order
+
+    context = {
+        'import_request': import_request,
+        'import_order': import_order,
+        'status_choices': ImportRequest.STATUS_CHOICES,
+    }
+
+    return render(request, 'core/dashboard/customer_import_request_detail.html', context)
+
+
+def can_edit_import_request(import_request):
+    """Helper function to check if an import request can be edited"""
+    from datetime import timedelta
+
+    # Only pending requests can be edited
+    if import_request.status != 'pending':
+        return False, 'This import request cannot be edited as it is no longer pending.'
+
+    # Check if the request is too old to edit (24 hours limit)
+    edit_deadline = import_request.created_at + timedelta(hours=24)
+    if timezone.now() > edit_deadline:
+        return False, 'This import request can no longer be edited as the 24-hour edit window has expired.'
+
+    # Check if there are any admin notes (indicates admin has started processing)
+    if import_request.admin_notes.strip():
+        return False, 'This import request cannot be edited as it is already being processed by our team.'
+
+    # Check if estimated cost has been set (indicates quotation process started)
+    if import_request.estimated_cost:
+        return False, 'This import request cannot be edited as a quotation has already been prepared.'
+
+    return True, None
+
+
+@login_required
+def customer_import_request_edit_view(request, request_id):
+    """Customer import request edit view - allows customers to edit their pending import requests"""
+    if request.user.role != 'customer':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    # Get the import request - ensure it belongs to this customer
+    import_request = get_object_or_404(ImportRequest, id=request_id, customer=request.user)
+
+    # Check if the request can be edited
+    can_edit, error_message = can_edit_import_request(import_request)
+    if not can_edit:
+        messages.error(request, error_message)
+        return redirect('core:customer_import_request_detail', request_id=request_id)
+
+    # Calculate edit deadline for template
+    from datetime import timedelta
+    edit_deadline = import_request.created_at + timedelta(hours=24)
+
+    if request.method == 'POST':
+        # Double-check edit permissions before processing
+        can_edit, error_message = can_edit_import_request(import_request)
+        if not can_edit:
+            messages.error(request, error_message)
+            return redirect('core:customer_import_request_detail', request_id=request_id)
+
+        from .forms import ImportRequestForm
+        form = ImportRequestForm(request.POST, instance=import_request)
+        if form.is_valid():
+            # Additional validation
+            if form.cleaned_data['budget_min'] >= form.cleaned_data['budget_max']:
+                form.add_error('budget_max', 'Maximum budget must be greater than minimum budget.')
+            else:
+                # Save the updated import request
+                updated_request = form.save(commit=False)
+                updated_request.customer = request.user  # Ensure customer doesn't change
+                updated_request.status = 'pending'  # Keep status as pending
+
+                # Track changes for audit
+                changes = []
+                for field in ['brand', 'model', 'year', 'preferred_color', 'origin_country', 'budget_min', 'budget_max', 'special_requirements']:
+                    old_value = getattr(import_request, field)
+                    new_value = getattr(updated_request, field)
+                    if old_value != new_value:
+                        changes.append(f"{field}: '{old_value}' → '{new_value}'")
+
+                updated_request.save()
+
+                # Log the update activity
+                log_user_activity(
+                    user=request.user,
+                    action='import_request_updated',
+                    description=f"Updated import request #{import_request.id:05d}",
+                    metadata={'changes': changes}
+                )
+
+                # Create notification for admin about the update
+                from .notification_manager import create_notification
+                create_notification(
+                    recipient=None,  # Admin notification
+                    title="Import Request Updated",
+                    message=f"Customer {request.user.get_full_name() or request.user.username} updated import request #{import_request.id:05d} for {updated_request.year} {updated_request.brand} {updated_request.model}.",
+                    notification_type='info',
+                    action_url=f"/dashboard/admin/import-requests/{import_request.id}/view-modal/",
+                    action_text="View Request"
+                )
+
+                messages.success(request, 'Your import request has been updated successfully.')
+                return redirect('core:customer_import_request_detail', request_id=request_id)
+    else:
+        from .forms import ImportRequestForm
+        form = ImportRequestForm(instance=import_request)
+
+    context = {
+        'import_request': import_request,
+        'form': form,
+        'edit_deadline': edit_deadline,
+    }
+
+    return render(request, 'core/dashboard/customer_import_request_edit.html', context)
+
+
+@login_required
 def vendor_import_request_detail_view(request, request_id):
     """Vendor import request detail view - shows detailed information about a specific import request"""
     if request.user.role != 'vendor':
@@ -3524,7 +3829,7 @@ def vendor_import_request_detail_view(request, request_id):
     try:
         vendor = request.user.vendor
 
-        # Get the import request - ensure it belongs to this vendor
+        # Get the import request - ensure it belongs to this vendor (vendor as customer)
         import_request = get_object_or_404(ImportRequest, id=request_id, customer=request.user)
 
         # Get related import order if it exists
@@ -3690,7 +3995,21 @@ def approve_vendor(request, vendor_id):
 
     messages.success(request, f'Vendor "{vendor.company_name}" has been approved.')
 
-    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    # Handle HTMX requests
+    if request.headers.get('HX-Request'):
+        from django.template.loader import render_to_string
+
+        # Render the updated vendor row
+        vendor_row_html = render_to_string('core/partials/vendor_table_row.html', {
+            'vendor': vendor
+        })
+
+        response = HttpResponse(vendor_row_html)
+        response['X-Toast-Success'] = f'Vendor "{vendor.company_name}" has been approved.'
+        return response
+
+    # Handle legacy AJAX requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'status': 'approved'})
 
     return redirect('core:admin_vendors')
@@ -3719,7 +4038,21 @@ def disapprove_vendor(request, vendor_id):
 
     messages.success(request, f'Approval revoked for vendor "{vendor.company_name}".')
 
-    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    # Handle HTMX requests
+    if request.headers.get('HX-Request'):
+        from django.template.loader import render_to_string
+
+        # Render the updated vendor row
+        vendor_row_html = render_to_string('core/partials/vendor_table_row.html', {
+            'vendor': vendor
+        })
+
+        response = HttpResponse(vendor_row_html)
+        response['X-Toast-Success'] = f'Approval revoked for vendor "{vendor.company_name}".'
+        return response
+
+    # Handle legacy AJAX requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'status': 'disapproved'})
 
     return redirect('core:admin_vendors')
@@ -5228,34 +5561,798 @@ def admin_tracking_details_modal(request, order_id):
 
 @login_required
 def admin_queries_view(request):
-    """Admin queries/inquiries management view"""
+    """Enhanced admin queries/inquiries management view"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
-    inquiries = Inquiry.objects.all().order_by('-created_at')
+    from .dashboard_forms import AdminInquiryFilterForm, AdminInquiryBulkActionForm
+    from django.db.models import Q, Count, Avg
+    from datetime import timedelta
 
-    # Filter by status
-    status_filter = request.GET.get('status')
-    if status_filter:
-        inquiries = inquiries.filter(status=status_filter)
+    # Initialize filter form
+    filter_form = AdminInquiryFilterForm(request.GET)
+
+    # Base queryset with related data
+    inquiries = Inquiry.objects.select_related(
+        'customer', 'assigned_admin', 'car', 'spare_part'
+    ).prefetch_related('responses')
+
+    # Apply filters
+    if filter_form.is_valid():
+        cleaned_data = filter_form.cleaned_data
+
+        # Search filter
+        if cleaned_data.get('search'):
+            search_term = cleaned_data['search']
+            inquiries = inquiries.filter(
+                Q(subject__icontains=search_term) |
+                Q(message__icontains=search_term) |
+                Q(customer__username__icontains=search_term) |
+                Q(customer__email__icontains=search_term) |
+                Q(customer__first_name__icontains=search_term) |
+                Q(customer__last_name__icontains=search_term)
+            )
+
+        # Status filter
+        if cleaned_data.get('status'):
+            inquiries = inquiries.filter(status=cleaned_data['status'])
+
+        # Priority filter
+        if cleaned_data.get('priority'):
+            inquiries = inquiries.filter(priority=cleaned_data['priority'])
+
+        # Type filter
+        if cleaned_data.get('inquiry_type'):
+            inquiries = inquiries.filter(inquiry_type=cleaned_data['inquiry_type'])
+
+        # Assigned admin filter
+        if cleaned_data.get('assigned_admin'):
+            inquiries = inquiries.filter(assigned_admin=cleaned_data['assigned_admin'])
+
+        # Date filters
+        if cleaned_data.get('date_from'):
+            inquiries = inquiries.filter(created_at__date__gte=cleaned_data['date_from'])
+
+        if cleaned_data.get('date_to'):
+            inquiries = inquiries.filter(created_at__date__lte=cleaned_data['date_to'])
+
+        # Urgent filter
+        if cleaned_data.get('is_urgent'):
+            inquiries = inquiries.filter(is_urgent=True)
+
+        # Unassigned filter
+        if cleaned_data.get('unassigned_only'):
+            inquiries = inquiries.filter(assigned_admin__isnull=True)
+
+        # Overdue filter
+        if cleaned_data.get('is_overdue'):
+            # This would need to be implemented with raw SQL or custom manager
+            # For now, we'll filter by created date
+            overdue_date = timezone.now() - timedelta(hours=24)
+            inquiries = inquiries.filter(
+                created_at__lt=overdue_date,
+                status__in=['new', 'open', 'in_progress']
+            )
+
+    # Order by priority and creation date
+    inquiries = inquiries.order_by(
+        models.Case(
+            models.When(priority='critical', then=models.Value(1)),
+            models.When(priority='urgent', then=models.Value(2)),
+            models.When(priority='high', then=models.Value(3)),
+            models.When(priority='normal', then=models.Value(4)),
+            models.When(priority='low', then=models.Value(5)),
+            default=models.Value(4),
+            output_field=models.IntegerField(),
+        ),
+        '-created_at'
+    )
+
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(inquiries, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Calculate comprehensive stats
+    total_inquiries = Inquiry.objects.count()
+    new_inquiries = Inquiry.objects.filter(status='new').count()
+    open_inquiries = Inquiry.objects.filter(status='open').count()
+    in_progress_inquiries = Inquiry.objects.filter(status='in_progress').count()
+    resolved_inquiries = Inquiry.objects.filter(status='resolved').count()
+    closed_inquiries = Inquiry.objects.filter(status='closed').count()
+    urgent_inquiries = Inquiry.objects.filter(is_urgent=True, status__in=['new', 'open', 'in_progress']).count()
+
+    # Calculate overdue inquiries
+    overdue_date = timezone.now() - timedelta(hours=24)
+    overdue_inquiries = Inquiry.objects.filter(
+        created_at__lt=overdue_date,
+        status__in=['new', 'open', 'in_progress']
+    ).count()
+
+    # Response time stats
+    response_stats = Inquiry.objects.filter(
+        response_time_hours__isnull=False
+    ).aggregate(
+        avg_response_time=Avg('response_time_hours'),
+        avg_resolution_time=Avg('resolution_time_hours')
+    )
+
+    # Initialize bulk action form
+    bulk_form = AdminInquiryBulkActionForm()
+
+    context = {
+        'inquiries': page_obj,
+        'filter_form': filter_form,
+        'bulk_form': bulk_form,
+        'total_inquiries': total_inquiries,
+        'new_inquiries': new_inquiries,
+        'open_inquiries': open_inquiries,
+        'in_progress_inquiries': in_progress_inquiries,
+        'resolved_inquiries': resolved_inquiries,
+        'closed_inquiries': closed_inquiries,
+        'urgent_inquiries': urgent_inquiries,
+        'overdue_inquiries': overdue_inquiries,
+        'avg_response_time': response_stats.get('avg_response_time', 0) or 0,
+        'avg_resolution_time': response_stats.get('avg_resolution_time', 0) or 0,
+        'current_filters': request.GET.dict(),
+    }
+
+    return render(request, 'core/dashboard/admin_queries_enhanced.html', context)
+
+
+@login_required
+def admin_query_detail_view(request, inquiry_id):
+    """Detailed view of a specific inquiry with response history"""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied.')
+        return redirect('core:dashboard')
+
+    from .models import InquiryResponse
+
+    inquiry = get_object_or_404(
+        Inquiry.objects.select_related('customer', 'assigned_admin', 'car', 'spare_part'),
+        id=inquiry_id
+    )
+
+    # Get all responses for this inquiry
+    responses = InquiryResponse.objects.filter(inquiry=inquiry).select_related('sender').order_by('created_at')
+
+    context = {
+        'inquiry': inquiry,
+        'responses': responses,
+    }
+
+    return render(request, 'core/dashboard/admin_query_detail.html', context)
+
+
+@login_required
+def admin_query_reply(request, inquiry_id):
+    """Handle admin reply to customer inquiry"""
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Access denied'})
+
+    from .dashboard_forms import AdminInquiryReplyForm
+    from .models import InquiryResponse
+    from .email_notifications import send_inquiry_response_email
+
+    inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+
+    if request.method == 'POST':
+        form = AdminInquiryReplyForm(request.POST, request.FILES, inquiry=inquiry)
+
+        if form.is_valid():
+            try:
+                # Update inquiry
+                inquiry.admin_response = form.cleaned_data['response_content']
+                inquiry.status = form.cleaned_data['status']
+                inquiry.priority = form.cleaned_data['priority']
+                inquiry.assigned_admin = form.cleaned_data['assign_to_admin'] or request.user
+                inquiry.requires_followup = form.cleaned_data['requires_followup']
+                inquiry.followup_date = form.cleaned_data['followup_date']
+
+                # Add internal notes if provided
+                if form.cleaned_data['internal_notes']:
+                    inquiry.internal_notes = form.cleaned_data['internal_notes']
+
+                inquiry.save()
+
+                # Create response record
+                response = InquiryResponse.objects.create(
+                    inquiry=inquiry,
+                    response_type='admin_reply',
+                    content=form.cleaned_data['response_content'],
+                    sender=request.user,
+                    is_internal=False,
+                    attachment=form.cleaned_data.get('attachment')
+                )
+
+                # Create internal note if provided
+                if form.cleaned_data['internal_notes']:
+                    InquiryResponse.objects.create(
+                        inquiry=inquiry,
+                        response_type='system_note',
+                        content=form.cleaned_data['internal_notes'],
+                        sender=request.user,
+                        is_internal=True
+                    )
+
+                # Send email notification if requested
+                if form.cleaned_data['send_email']:
+                    try:
+                        send_inquiry_response_email(inquiry, response)
+                        response.is_email_sent = True
+                        response.email_sent_at = timezone.now()
+                        response.save()
+                        inquiry.customer_notified = True
+                        inquiry.last_notification_sent = timezone.now()
+                        inquiry.save()
+                    except Exception as e:
+                        logger.error(f"Failed to send email notification: {e}")
+
+                messages.success(request, 'Response sent successfully!')
+
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Response sent successfully!',
+                        'redirect': f'/dashboard/admin/queries/{inquiry_id}/'
+                    })
+                else:
+                    return redirect('core:admin_query_detail', inquiry_id=inquiry_id)
+
+            except Exception as e:
+                logger.error(f"Error sending inquiry response: {e}")
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Failed to send response. Please try again.'
+                    })
+                else:
+                    messages.error(request, 'Failed to send response. Please try again.')
+        else:
+            if request.headers.get('HX-Request'):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please correct the form errors.',
+                    'form_errors': form.errors
+                })
+            else:
+                messages.error(request, 'Please correct the form errors.')
+
+    else:
+        form = AdminInquiryReplyForm(inquiry=inquiry)
+
+    context = {
+        'form': form,
+        'inquiry': inquiry,
+    }
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'core/dashboard/partials/admin_query_reply_modal.html', context)
+    else:
+        return render(request, 'core/dashboard/admin_query_reply.html', context)
+
+
+@login_required
+def admin_query_status_update(request, inquiry_id):
+    """Quick status update for inquiry"""
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Access denied'})
+
+    from .dashboard_forms import AdminInquiryStatusForm
+    from .models import InquiryResponse
+
+    inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+
+    if request.method == 'POST':
+        form = AdminInquiryStatusForm(request.POST, instance=inquiry)
+
+        if form.is_valid():
+            old_status = inquiry.status
+            old_priority = inquiry.priority
+            old_admin = inquiry.assigned_admin
+
+            form.save()
+
+            # Create system note for status change
+            changes = []
+            if old_status != inquiry.status:
+                changes.append(f"Status changed from {old_status} to {inquiry.status}")
+            if old_priority != inquiry.priority:
+                changes.append(f"Priority changed from {old_priority} to {inquiry.priority}")
+            if old_admin != inquiry.assigned_admin:
+                old_admin_name = old_admin.get_full_name() if old_admin else "Unassigned"
+                new_admin_name = inquiry.assigned_admin.get_full_name() if inquiry.assigned_admin else "Unassigned"
+                changes.append(f"Assigned admin changed from {old_admin_name} to {new_admin_name}")
+
+            if changes:
+                InquiryResponse.objects.create(
+                    inquiry=inquiry,
+                    response_type='status_change',
+                    content="; ".join(changes),
+                    sender=request.user,
+                    is_internal=True
+                )
+
+            messages.success(request, 'Inquiry updated successfully!')
+
+            if request.headers.get('HX-Request'):
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Inquiry updated successfully!',
+                    'status': inquiry.get_status_display(),
+                    'priority': inquiry.get_priority_display(),
+                    'status_color': inquiry.get_status_color(),
+                    'priority_color': inquiry.get_priority_color(),
+                })
+            else:
+                return redirect('core:admin_queries')
+        else:
+            if request.headers.get('HX-Request'):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please correct the form errors.',
+                    'form_errors': form.errors
+                })
+            else:
+                messages.error(request, 'Please correct the form errors.')
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_query_bulk_actions(request):
+    """Handle bulk actions on multiple inquiries"""
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Access denied'})
+
+    from .dashboard_forms import AdminInquiryBulkActionForm
+    from .models import InquiryResponse
+
+    if request.method == 'POST':
+        form = AdminInquiryBulkActionForm(request.POST)
+
+        if form.is_valid():
+            action = form.cleaned_data['action']
+            inquiry_ids = form.cleaned_data['selected_inquiries'].split(',')
+
+            try:
+                inquiry_ids = [int(id.strip()) for id in inquiry_ids if id.strip()]
+                inquiries = Inquiry.objects.filter(id__in=inquiry_ids)
+
+                if not inquiries.exists():
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'No valid inquiries selected'
+                    })
+
+                updated_count = 0
+
+                if action == 'assign':
+                    admin_user = form.cleaned_data['assign_to_admin']
+                    if admin_user:
+                        inquiries.update(assigned_admin=admin_user)
+                        updated_count = inquiries.count()
+
+                        # Create system notes
+                        for inquiry in inquiries:
+                            InquiryResponse.objects.create(
+                                inquiry=inquiry,
+                                response_type='assignment',
+                                content=f"Assigned to {admin_user.get_full_name()}",
+                                sender=request.user,
+                                is_internal=True
+                            )
+
+                elif action == 'status_change':
+                    new_status = form.cleaned_data['new_status']
+                    if new_status:
+                        inquiries.update(status=new_status)
+                        updated_count = inquiries.count()
+
+                        # Create system notes
+                        for inquiry in inquiries:
+                            InquiryResponse.objects.create(
+                                inquiry=inquiry,
+                                response_type='status_change',
+                                content=f"Status changed to {dict(Inquiry.STATUS_CHOICES)[new_status]}",
+                                sender=request.user,
+                                is_internal=True
+                            )
+
+                elif action == 'priority_change':
+                    new_priority = form.cleaned_data['new_priority']
+                    if new_priority:
+                        inquiries.update(priority=new_priority)
+                        updated_count = inquiries.count()
+
+                        # Create system notes
+                        for inquiry in inquiries:
+                            InquiryResponse.objects.create(
+                                inquiry=inquiry,
+                                response_type='status_change',
+                                content=f"Priority changed to {dict(Inquiry.PRIORITY_CHOICES)[new_priority]}",
+                                sender=request.user,
+                                is_internal=True
+                            )
+
+                elif action == 'mark_urgent':
+                    inquiries.update(is_urgent=True)
+                    updated_count = inquiries.count()
+
+                    # Create system notes
+                    for inquiry in inquiries:
+                        InquiryResponse.objects.create(
+                            inquiry=inquiry,
+                            response_type='status_change',
+                            content="Marked as urgent",
+                            sender=request.user,
+                            is_internal=True
+                        )
+
+                elif action == 'remove_urgent':
+                    inquiries.update(is_urgent=False)
+                    updated_count = inquiries.count()
+
+                    # Create system notes
+                    for inquiry in inquiries:
+                        InquiryResponse.objects.create(
+                            inquiry=inquiry,
+                            response_type='status_change',
+                            content="Urgent flag removed",
+                            sender=request.user,
+                            is_internal=True
+                        )
+
+                elif action == 'export':
+                    # Export selected inquiries to CSV
+                    response = HttpResponse(content_type='text/csv')
+                    response['Content-Disposition'] = f'attachment; filename="inquiries_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+
+                    writer = csv.writer(response)
+                    writer.writerow([
+                        'ID', 'Subject', 'Customer', 'Type', 'Status', 'Priority',
+                        'Assigned Admin', 'Created', 'Updated', 'Response Time (hrs)',
+                        'Resolution Time (hrs)'
+                    ])
+
+                    for inquiry in inquiries.select_related('customer', 'assigned_admin'):
+                        writer.writerow([
+                            inquiry.id,
+                            inquiry.subject,
+                            inquiry.customer.get_full_name() or inquiry.customer.username,
+                            inquiry.get_inquiry_type_display(),
+                            inquiry.get_status_display(),
+                            inquiry.get_priority_display(),
+                            inquiry.assigned_admin.get_full_name() if inquiry.assigned_admin else 'Unassigned',
+                            inquiry.created_at.strftime('%Y-%m-%d %H:%M'),
+                            inquiry.updated_at.strftime('%Y-%m-%d %H:%M'),
+                            inquiry.response_time_hours or '',
+                            inquiry.resolution_time_hours or ''
+                        ])
+
+                    return response
+
+                elif action == 'delete':
+                    # Soft delete or actual delete based on business requirements
+                    deleted_count = inquiries.count()
+                    inquiries.delete()
+
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Successfully deleted {deleted_count} inquiries',
+                        'reload': True
+                    })
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Successfully updated {updated_count} inquiries',
+                    'reload': True
+                })
+
+            except Exception as e:
+                logger.error(f"Error in bulk action: {e}")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'An error occurred while processing the bulk action'
+                })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid form data',
+                'form_errors': form.errors
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_query_assign(request, inquiry_id):
+    """Assign inquiry to admin user"""
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Access denied'})
+
+    from .models import InquiryResponse
+
+    inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+
+    if request.method == 'POST':
+        admin_id = request.POST.get('admin_id')
+
+        try:
+            if admin_id:
+                admin_user = get_object_or_404(User, id=admin_id, role='admin')
+                old_admin = inquiry.assigned_admin
+                inquiry.assigned_admin = admin_user
+                inquiry.save()
+
+                # Create system note
+                old_admin_name = old_admin.get_full_name() if old_admin else "Unassigned"
+                new_admin_name = admin_user.get_full_name()
+
+                InquiryResponse.objects.create(
+                    inquiry=inquiry,
+                    response_type='assignment',
+                    content=f"Assigned from {old_admin_name} to {new_admin_name}",
+                    sender=request.user,
+                    is_internal=True
+                )
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Inquiry assigned to {new_admin_name}',
+                    'assigned_admin': new_admin_name
+                })
+            else:
+                # Unassign
+                old_admin = inquiry.assigned_admin
+                inquiry.assigned_admin = None
+                inquiry.save()
+
+                if old_admin:
+                    InquiryResponse.objects.create(
+                        inquiry=inquiry,
+                        response_type='assignment',
+                        content=f"Unassigned from {old_admin.get_full_name()}",
+                        sender=request.user,
+                        is_internal=True
+                    )
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Inquiry unassigned',
+                    'assigned_admin': 'Unassigned'
+                })
+
+        except Exception as e:
+            logger.error(f"Error assigning inquiry: {e}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to assign inquiry'
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def admin_queries_table_htmx(request):
+    """HTMX endpoint for queries table updates"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    from .dashboard_forms import AdminInquiryFilterForm
+    from django.db.models import Q
+
+    # Apply filters similar to main view
+    filter_form = AdminInquiryFilterForm(request.GET)
+    inquiries = Inquiry.objects.select_related('customer', 'assigned_admin', 'car', 'spare_part')
+
+    if filter_form.is_valid():
+        cleaned_data = filter_form.cleaned_data
+
+        if cleaned_data.get('search'):
+            search_term = cleaned_data['search']
+            inquiries = inquiries.filter(
+                Q(subject__icontains=search_term) |
+                Q(message__icontains=search_term) |
+                Q(customer__username__icontains=search_term) |
+                Q(customer__email__icontains=search_term)
+            )
+
+        if cleaned_data.get('status'):
+            inquiries = inquiries.filter(status=cleaned_data['status'])
+
+        if cleaned_data.get('priority'):
+            inquiries = inquiries.filter(priority=cleaned_data['priority'])
+
+    # Order and paginate
+    inquiries = inquiries.order_by('-created_at')
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(inquiries, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'inquiries': page_obj,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_queries_table.html', context)
+
+
+@login_required
+def admin_queries_search_htmx(request):
+    """HTMX endpoint for real-time search"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    search_term = request.GET.get('search', '').strip()
+
+    if len(search_term) < 2:
+        return HttpResponse('')
+
+    from django.db.models import Q
+
+    inquiries = Inquiry.objects.filter(
+        Q(subject__icontains=search_term) |
+        Q(message__icontains=search_term) |
+        Q(customer__username__icontains=search_term) |
+        Q(customer__email__icontains=search_term) |
+        Q(customer__first_name__icontains=search_term) |
+        Q(customer__last_name__icontains=search_term)
+    ).select_related('customer', 'assigned_admin')[:10]
+
+    context = {
+        'inquiries': inquiries,
+        'search_term': search_term,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_queries_search_results.html', context)
+
+
+@login_required
+def admin_queries_stats_htmx(request):
+    """HTMX endpoint for refreshing stats"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    from datetime import timedelta
+    from django.db.models import Avg
 
     # Calculate stats
     total_inquiries = Inquiry.objects.count()
     new_inquiries = Inquiry.objects.filter(status='new').count()
+    open_inquiries = Inquiry.objects.filter(status='open').count()
     in_progress_inquiries = Inquiry.objects.filter(status='in_progress').count()
-    resolved_inquiries = Inquiry.objects.filter(status='resolved').count()
+    urgent_inquiries = Inquiry.objects.filter(is_urgent=True, status__in=['new', 'open', 'in_progress']).count()
+
+    overdue_date = timezone.now() - timedelta(hours=24)
+    overdue_inquiries = Inquiry.objects.filter(
+        created_at__lt=overdue_date,
+        status__in=['new', 'open', 'in_progress']
+    ).count()
+
+    response_stats = Inquiry.objects.filter(
+        response_time_hours__isnull=False
+    ).aggregate(
+        avg_response_time=Avg('response_time_hours'),
+        avg_resolution_time=Avg('resolution_time_hours')
+    )
 
     context = {
-        'inquiries': inquiries[:20],
         'total_inquiries': total_inquiries,
         'new_inquiries': new_inquiries,
+        'open_inquiries': open_inquiries,
         'in_progress_inquiries': in_progress_inquiries,
-        'resolved_inquiries': resolved_inquiries,
-        'current_filter': status_filter,
+        'urgent_inquiries': urgent_inquiries,
+        'overdue_inquiries': overdue_inquiries,
+        'avg_response_time': response_stats.get('avg_response_time', 0) or 0,
+        'avg_resolution_time': response_stats.get('avg_resolution_time', 0) or 0,
     }
 
-    return render(request, 'core/dashboard/admin_queries.html', context)
+    return render(request, 'core/dashboard/partials/admin_queries_stats.html', context)
+
+
+@login_required
+def admin_query_quick_reply_htmx(request, inquiry_id):
+    """HTMX endpoint for quick reply"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+
+    if request.method == 'POST':
+        response_text = request.POST.get('response', '').strip()
+
+        if response_text:
+            from .models import InquiryResponse
+
+            # Update inquiry
+            inquiry.admin_response = response_text
+            inquiry.status = 'in_progress'
+            inquiry.assigned_admin = request.user
+            inquiry.save()
+
+            # Create response record
+            InquiryResponse.objects.create(
+                inquiry=inquiry,
+                response_type='admin_reply',
+                content=response_text,
+                sender=request.user,
+                is_internal=False
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Quick reply sent successfully!'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Response cannot be empty'
+            })
+
+    context = {
+        'inquiry': inquiry,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_query_quick_reply.html', context)
+
+
+@login_required
+def admin_query_status_htmx(request, inquiry_id):
+    """HTMX endpoint for status updates"""
+    if request.user.role != 'admin':
+        return HttpResponse('Access denied', status=403)
+
+    inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        new_priority = request.POST.get('priority')
+
+        if new_status and new_status in dict(Inquiry.STATUS_CHOICES):
+            old_status = inquiry.status
+            inquiry.status = new_status
+
+            if new_priority and new_priority in dict(Inquiry.PRIORITY_CHOICES):
+                inquiry.priority = new_priority
+
+            inquiry.save()
+
+            # Create system note
+            from .models import InquiryResponse
+            InquiryResponse.objects.create(
+                inquiry=inquiry,
+                response_type='status_change',
+                content=f"Status changed from {old_status} to {new_status}",
+                sender=request.user,
+                is_internal=True
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Status updated successfully!',
+                'status': inquiry.get_status_display(),
+                'priority': inquiry.get_priority_display(),
+                'status_color': inquiry.get_status_color(),
+                'priority_color': inquiry.get_priority_color(),
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid status'
+            })
+
+    context = {
+        'inquiry': inquiry,
+        'status_choices': Inquiry.STATUS_CHOICES,
+        'priority_choices': Inquiry.PRIORITY_CHOICES,
+    }
+
+    return render(request, 'core/dashboard/partials/admin_query_status_form.html', context)
 
 
 @login_required
@@ -5881,10 +6978,13 @@ def admin_spare_part_delete_view(request, part_id):
 
         # Handle HTMX requests
         if request.headers.get('HX-Request'):
-            # Return updated table content
-            spare_parts = SparePart.objects.all().order_by('-created_at')[:10]
-            context = {'spare_parts': spare_parts}
-            return render(request, 'core/partials/admin_spare_shop_table.html', context)
+            # Return JSON success response for HTMX
+            return JsonResponse({
+                'success': True,
+                'message': success_msg,
+                'part_id': part_id,
+                'part_name': part_name
+            })
 
         messages.success(request, success_msg)
         return redirect('core:admin_spare_shop')

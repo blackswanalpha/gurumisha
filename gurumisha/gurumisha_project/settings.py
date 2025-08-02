@@ -60,7 +60,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'core.middleware.EmailVerificationMiddleware',
-    'core.middleware.SessionSecurityMiddleware',
+    # Temporarily disabled to debug CSRF issue
+    # 'core.middleware.SessionSecurityMiddleware',
     # Temporarily disabled to debug recursion issue
     # 'core.middleware.ActivityTrackingMiddleware',
     # 'core.middleware.AuditTrackingMiddleware',
@@ -275,3 +276,16 @@ MPESA_TOKEN_CACHE_TIMEOUT = 3600  # 1 hour
 # M-Pesa Logging
 MPESA_ENABLE_LOGGING = True
 MPESA_LOG_LEVEL = 'INFO'
+
+# Session Configuration
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# CSRF Configuration
+CSRF_COOKIE_AGE = 31449600  # 1 year
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access for HTMX
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF tokens

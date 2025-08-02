@@ -10,8 +10,8 @@ I'm excited to share **Gurumisha Motors** - a comprehensive Django-powered autom
 
 **🔧 Complete Automotive Ecosystem:**
 - Advanced car listings with intelligent filtering & search
-- Comprehensive spare parts marketplace with M-Pesa integration
-- 7-stage import car tracking system with real-time updates
+- Comprehensive spare parts marketplace with M-Pesa INTEGRATION
+- 7-stage import car tracking system with real-time UPDATES
 - Multi-role dashboards (Customer, Vendor, Admin)
 
 **💻 Modern Tech Stack:**

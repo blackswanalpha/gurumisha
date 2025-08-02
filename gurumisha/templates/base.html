@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block meta_description %}Gurumisha - Your trusted automotive marketplace for buying, selling, and importing cars. Find quality vehicles and spare parts.{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}cars, automotive, car dealership, spare parts, car import, used cars, new cars{% endblock %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
 
     <title>{% block title %}Gurumisha - Premium Automotive Marketplace{% endblock %}</title>
 
@@ -143,14 +144,192 @@
         }
     </script>
 
-    <!-- Error Suppressor (load before HTMX) -->
+    <!-- Error Suppressor (load first) -->
     <script src="{% static 'js/error-suppressor.js' %}"></script>
 
     <!-- Enhanced Price Formatter -->
     <script src="{% static 'js/price-formatter.js' %}"></script>
 
-    <!-- HTMX -->
+    <!-- Alpine.js Initialization Guard (load first) -->
+    <script src="{% static 'js/alpine-initialization-guard.js' %}?v=20250801-1600"></script>
+
+    <!-- Alpine.js Components (load before Alpine.js) -->
+    <script src="{% static 'js/alpine-components.js' %}?v=20250801-1000"></script>
+
+    <!-- Alpine.js for enhanced gallery (load before HTMX) -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- HTMX (load after Alpine.js) -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Unified Hydration Manager (load after HTMX) -->
+    <script src="{% static 'js/hydration-manager.js' %}?v=20250801-1000"></script>
+
+    <!-- HTMX Configuration and Error Handling -->
+    <script src="{% static 'js/htmx-config.js' %}?v=20250801-1000"></script>
+
+    <!-- Enhanced HTMX Integration -->
+    <script src="{% static 'js/htmx-integration-enhanced.js' %}?v=20250801-1500"></script>
+
+    <!-- Enhanced Modal Manager -->
+    <script src="{% static 'js/modal-manager-enhanced.js' %}?v=20250801-1400"></script>
+
+    <!-- Modal Utilities -->
+    <script src="{% static 'js/modal-utilities.js' %}?v=20250801-1400"></script>
+
+    <!-- Modal Test Suite -->
+    <script src="{% static 'js/modal-test-suite.js' %}?v=20250801-1400"></script>
+
+    <!-- Button Persistence Test Suite -->
+    <script src="{% static 'js/button-persistence-test.js' %}?v=20250801-1500"></script>
+
+    <!-- Modal Error Catcher -->
+    <script src="{% static 'js/modal-error-catcher.js' %}?v=20250801-1700"></script>
+
+    <!-- Modal Error Test Suite -->
+    <script src="{% static 'js/modal-error-test-suite.js' %}?v=20250801-1700"></script>
+
+    <!-- Modal Button Persistence -->
+    <script src="{% static 'js/modal-button-persistence.js' %}?v=20250801-1800"></script>
+
+    <!-- Modal Button Test Suite -->
+    <script src="{% static 'js/modal-button-test-suite.js' %}?v=20250801-1800"></script>
+
+    <!-- Button Disappearing Fix -->
+    <script src="{% static 'js/button-disappearing-fix.js' %}?v=20250801-1900"></script>
+
+    <!-- HTMX Preserve Extension -->
+    <script src="{% static 'js/htmx-preserve.js' %}?v=20250801-1000"></script>
+
+    <!-- HTMX Enhanced Utilities -->
+    <script src="{% static 'js/htmx-utilities.js' %}?v=20250801-1000"></script>
+
+    <!-- Tab and Button Preservation System -->
+    <script src="{% static 'js/tab-preservation.js' %}?v=20250801-1000"></script>
+
+    <!-- Global Floating Elements Z-Index Fix -->
+    <style>
+        /* Ensure floating elements always stay above modals */
+        .mobile-fab-container,
+        .mobile-fab,
+        .mobile-fab-menu,
+        .mobile-fab-item,
+        button[onclick*="scrollToTop"],
+        .scroll-to-top,
+        .scroll-button {
+            z-index: 9999 !important;
+        }
+
+        .whatsapp-float {
+            z-index: 9998 !important;
+        }
+
+        #floating-compare-widget {
+            z-index: 9997 !important;
+        }
+
+        /* Ensure modals have proper z-index hierarchy */
+        .modal,
+        .fixed.inset-0[class*="modal"] {
+            z-index: 1500 !important;
+        }
+
+        .modal .modal-content,
+        .modal-panel {
+            z-index: 1501 !important;
+        }
+
+        /* Prevent modal backdrop from hiding floating elements */
+        .modal::before {
+            z-index: 1400 !important;
+        }
+    </style>
+
+    <!-- Global Floating Elements Preservation Script -->
+    <script>
+        // Global function to ensure floating elements remain visible
+        window.ensureFloatingElementsVisible = function() {
+            // Mobile FAB
+            const mobileFab = document.querySelector('.mobile-fab-container');
+            if (mobileFab) {
+                mobileFab.style.zIndex = '9999';
+                mobileFab.style.visibility = 'visible';
+                mobileFab.style.pointerEvents = 'auto';
+            }
+
+            // Scroll to top buttons
+            const scrollButtons = document.querySelectorAll('button[onclick*="scrollToTop"], .scroll-to-top, .scroll-button');
+            scrollButtons.forEach(button => {
+                button.style.zIndex = '9999';
+                button.style.visibility = 'visible';
+                button.style.pointerEvents = 'auto';
+            });
+
+            // WhatsApp button
+            const whatsappButton = document.querySelector('.whatsapp-float');
+            if (whatsappButton) {
+                whatsappButton.style.zIndex = '9998';
+                whatsappButton.style.visibility = 'visible';
+                whatsappButton.style.pointerEvents = 'auto';
+            }
+
+            // Compare widget
+            const compareWidget = document.getElementById('floating-compare-widget');
+            if (compareWidget) {
+                compareWidget.style.zIndex = '9997';
+                compareWidget.style.visibility = 'visible';
+                compareWidget.style.pointerEvents = 'auto';
+            }
+        };
+
+        // Ensure floating elements are visible on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            ensureFloatingElementsVisible();
+        });
+
+        // Re-ensure visibility after any HTMX swaps
+        document.addEventListener('htmx:afterSwap', function() {
+            setTimeout(ensureFloatingElementsVisible, 100);
+        });
+    </script>
+
+    <!-- Global Floating Elements Z-Index Fix -->
+    <style>
+        /* Ensure floating elements always stay above modals */
+        .mobile-fab-container,
+        .mobile-fab,
+        .mobile-fab-menu,
+        .mobile-fab-item,
+        button[onclick*="scrollToTop"],
+        .scroll-to-top,
+        .scroll-button {
+            z-index: 9999 !important;
+        }
+
+        .whatsapp-float {
+            z-index: 9998 !important;
+        }
+
+        #floating-compare-widget {
+            z-index: 9997 !important;
+        }
+
+        /* Ensure modals have proper z-index hierarchy */
+        .modal,
+        .fixed.inset-0[class*="modal"] {
+            z-index: 1500 !important;
+        }
+
+        .modal .modal-content,
+        .modal-panel {
+            z-index: 1501 !important;
+        }
+
+        /* Prevent modal backdrop from hiding floating elements */
+        .modal::before {
+            z-index: 1400 !important;
+        }
+    </style>
 
     <!-- HTMX Extensions for Enhanced Error Handling -->
     <script>
@@ -249,8 +428,136 @@
         });
     </script>
 
-    <!-- Alpine.js for enhanced gallery -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Frontend Validator (load after all other scripts) -->
+    <script src="{% static 'js/frontend-validator.js' %}?v=20250801-1000"></script>
+
+    <!-- Hydration Test Suite (always available for testing) -->
+    <script src="{% static 'js/hydration-test.js' %}?v=20250801-1300"></script>
+
+    <!-- Fallback Hydration Status Checker -->
+    <script>
+        // Ensure hydration status checker is always available
+        if (typeof window.checkHydrationStatus === 'undefined') {
+            window.checkHydrationStatus = function() {
+                const status = {
+                    alpine: typeof Alpine !== 'undefined',
+                    htmx: typeof htmx !== 'undefined',
+                    hydrationManager: !!window.hydrationManager,
+                    alpineComponents: !!window.alpineComponents,
+                    hydrationTester: !!window.hydrationTester,
+                    errors: []
+                };
+
+                if (!status.alpine) status.errors.push('Alpine.js not loaded');
+                if (!status.htmx) status.errors.push('HTMX not loaded');
+                if (!status.hydrationManager) status.errors.push('Hydration Manager not loaded');
+                if (!status.alpineComponents) status.errors.push('Alpine Components not loaded');
+                if (!status.hydrationTester) status.errors.push('Hydration Tester not loaded');
+
+                console.log('🔍 Hydration Status (Fallback):', status);
+                return status;
+            };
+        }
+
+        // Simple test function fallback
+        if (typeof window.testHydration === 'undefined') {
+            window.testHydration = function() {
+                console.log('🧪 Running basic hydration test...');
+                const status = window.checkHydrationStatus();
+                const allPassed = status.errors.length === 0;
+
+                console.log(`🧪 Basic Test Result: ${allPassed ? 'PASSED' : 'FAILED'}`);
+                if (!allPassed) {
+                    console.warn('⚠️ Issues found:', status.errors);
+                }
+
+                return Promise.resolve({
+                    allPassed,
+                    basicTests: [{ name: 'Component Availability', passed: allPassed }],
+                    errors: status.errors
+                });
+            };
+        }
+
+        // Diagnostic function to check what's loaded
+        window.diagnoseHydration = function() {
+            console.log('🔍 Hydration Diagnostic Report:');
+            console.log('- Alpine.js:', typeof Alpine !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('- HTMX:', typeof htmx !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('- Hydration Manager:', window.hydrationManager ? '✅ Loaded' : '❌ Not loaded');
+            console.log('- Alpine Components:', window.alpineComponents ? '✅ Loaded' : '❌ Not loaded');
+            console.log('- Hydration Tester:', window.hydrationTester ? '✅ Loaded' : '❌ Not loaded');
+            console.log('- Test Functions:', {
+                checkHydrationStatus: typeof window.checkHydrationStatus === 'function',
+                testHydration: typeof window.testHydration === 'function'
+            });
+
+            // Check for JavaScript errors
+            if (window.console && window.console.error) {
+                console.log('- Console errors: Check browser console for any red error messages');
+            }
+
+            return {
+                alpine: typeof Alpine !== 'undefined',
+                htmx: typeof htmx !== 'undefined',
+                hydrationManager: !!window.hydrationManager,
+                alpineComponents: !!window.alpineComponents,
+                hydrationTester: !!window.hydrationTester,
+                testFunctions: {
+                    checkHydrationStatus: typeof window.checkHydrationStatus === 'function',
+                    testHydration: typeof window.testHydration === 'function'
+                }
+            };
+        };
+
+        console.log('🔧 Hydration diagnostic tools loaded. Run window.diagnoseHydration() for detailed status.');
+
+        // Comprehensive button disappearing test
+        window.testButtonDisappearing = function() {
+            console.log('🧪 Testing button disappearing fixes...');
+
+            const results = {
+                jsonErrorFixed: !window.statsUpdateErrorLogged,
+                buttonProtectionActive: !!window.buttonDisappearingFix,
+                modalPersistenceActive: !!window.modalButtonPersistence,
+                statsThrottling: typeof window.statsUpdateInProgress !== 'undefined',
+                protectedButtonCount: 0,
+                allPassed: false
+            };
+
+            // Check button protection
+            if (window.getButtonProtectionStats) {
+                const stats = window.getButtonProtectionStats();
+                results.protectedButtonCount = stats.totalProtected;
+                results.buttonHealthRatio = stats.healthRatio;
+            }
+
+            // Check if all systems are working
+            results.allPassed = results.buttonProtectionActive &&
+                              results.modalPersistenceActive &&
+                              results.statsThrottling &&
+                              results.protectedButtonCount > 0;
+
+            console.log('🧪 Button Disappearing Test Results:', results);
+
+            if (results.allPassed) {
+                console.log('🎉 All button disappearing fixes are working correctly!');
+            } else {
+                console.warn('⚠️ Some button disappearing fixes may need attention');
+            }
+
+            return results;
+        };
+    </script>
+
+    <!-- Cache Clearing Script -->
+    <script>
+        // Force reload of updated JavaScript files if needed
+        if (window.performance && window.performance.navigation.type === 1) {
+            // This is a page refresh, ensure scripts are reloaded
+            console.log('🔄 Page refreshed - ensuring latest scripts are loaded');
+        }
+    </script>
 
     <!-- Sortable.js for drag and drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -275,6 +582,9 @@
     <!-- Logo Enhancement Styles -->
     <link rel="stylesheet" href="{% static 'css/logo-enhancements.css' %}">
 
+    <!-- Import Destinations Enhancement Styles -->
+    <link rel="stylesheet" href="{% static 'css/import-destinations.css' %}">
+
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -293,7 +603,7 @@
                         </div>
                         <div class="flex items-center space-x-6">
                             <span class="flex items-center"><i class="fa fa-clock-o mr-2"></i> Mon - Fri : 09am to 06pm</span>
-                            <span class="flex items-center"><i class="fa fa-phone mr-2"></i> +254 700 000 000</span>
+                            <span class="flex items-center"><i class="fa fa-phone mr-2"></i> +254 117 002 222</span>
                         </div>
                     </div>
                 </div>
@@ -305,8 +615,8 @@
                         <div class="flex-shrink-0">
                             <a href="{% url 'core:homepage' %}" class="flex items-center group">
                                 <!-- Primary Logo - Enhanced Responsive Sizing for Better Visibility -->
-                                <img src="{% static 'images/logo.jpeg' %}" alt="Gurumisha Motors"
-                                     class="logo-primary h-6 sm:h-7 md:h-6 lg:h-9 xl:h-10 2xl:h-12 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 filter drop-shadow-sm">
+                                <img src="{% static 'images/logos.png' %}" alt="Gurumisha Motors"
+                                     class="logo-primary h-4 sm:h-5 md:h-4 lg:h-6 xl:h-8 2xl:h-10 w-auto brightness-110 filter transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 filter drop-shadow-sm">
 
                                 <!-- Alternative: Compact Logo for smaller screens (uncomment if needed) -->
                                 <!-- <img src="{% static 'images/logo-compact.png' %}" alt="Gurumisha"
@@ -376,7 +686,7 @@
 
                     <!-- Enhanced Navigation Menu with Glassmorphism -->
                     <nav class="bg-gradient-to-r from-gray-900 via-black to-gray-900 shadow-2xl border-t border-gray-700/50">
-                        <div class="hidden md:flex items-center justify-center py-4 max-w-7xl mx-auto">
+                        <div class="hidden md:flex items-center justify-center py-4 w-full mx-auto">
                             <ul class="flex items-center space-x-2 text-white">
                                 <li><a href="{% url 'core:homepage' %}" class="nav-link-harrier {% if request.resolver_match.url_name == 'homepage' %}active{% endif %}">HOME</a></li>
                                 <li class="relative group">
@@ -443,7 +753,7 @@
                                     {% if user.is_authenticated %}
                                         <div class="border-t border-gray-200 pt-3 mt-3">
                                             <a href="{% url 'core:dashboard' %}" class="mobile-nav-link-harrier">
-                                                <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>Dashboard
+                                                <i class="fas fa-tachometer-alt mr-3 text-red-500"></i>Dashboard
                                             </a>
                                             <a href="{% url 'core:logout' %}" class="mobile-nav-link-harrier text-red-600">
                                                 <i class="fas fa-sign-out-alt mr-3"></i>Logout
@@ -452,10 +762,10 @@
                                     {% else %}
                                         <div class="border-t border-gray-200 pt-3 mt-3">
                                             <a href="{% url 'core:login' %}" class="mobile-nav-link-harrier">
-                                                <i class="fas fa-sign-in-alt mr-3 text-blue-600"></i>Login
+                                                <i class="fas fa-sign-in-alt mr-3 text-red-500"></i>Login
                                             </a>
                                             <a href="{% url 'core:register' %}" class="mobile-nav-link-harrier">
-                                                <i class="fas fa-user-plus mr-3 text-green-600"></i>Register
+                                                <i class="fas fa-user-plus mr-3 text-red-500"></i>Register
                                             </a>
                                         </div>
                                     {% endif %}
@@ -600,22 +910,22 @@
                         <!-- Company Info -->
                         <div class="lg:col-span-1">
                             <div class="flex items-center mb-6">
-                                <img src="{% static 'images/logo.jpeg' %}" alt="Gurumisha Motors" class="logo-footer h-10 sm:h-12 md:h-14 w-auto filter brightness-110 transition-all duration-300 hover:scale-105">
+                                <img src="{% static 'images/logos.png' %}" alt="Gurumisha Motors" class="logo-footer h-1 sm:h-4 md:h-1 w-auto brightness-110 filter transition-all duration-300 hover:scale-105">
                             </div>
                             <p class="text-gray-300 mb-6 leading-relaxed">Your trusted automotive marketplace for buying, selling, and importing quality vehicles. We connect car enthusiasts with their dream cars.</p>
 
                             <!-- Social Media -->
                             <div class="flex space-x-3 mb-6">
-                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-primary-red to-accent-red rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                <a href="#" class="w-12 h-12 social-link facebook rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
                                     <i class="fab fa-facebook-f text-white"></i>
                                 </a>
-                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                <a href="#" class="w-12 h-12 social-link twitter rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
                                     <i class="fab fa-twitter text-white"></i>
                                 </a>
                                 <a href="#" class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
                                     <i class="fab fa-instagram text-white"></i>
                                 </a>
-                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-gray-700 to-black rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
                                     <i class="fab fa-tiktok text-white"></i>
                                 </a>
                                 <a href="#" class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
@@ -697,11 +1007,11 @@
                                     </div>
                                     <div>
                                         <p class="font-semibold text-white">Call Us</p>
-                                        <span class="text-sm">+254 700 000 000</span>
+                                        <span class="text-sm">+254 117 002 222</span>
                                     </div>
                                 </li>
                                 <li class="flex items-center group">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
                                         <i class="fas fa-envelope text-white text-sm"></i>
                                     </div>
                                     <div>
@@ -725,7 +1035,7 @@
             </div>
 
             <!-- Bottom Footer -->
-            <div class="bg-gradient-to-r from-primary-red to-primary-black py-8">
+            <div class="bg-gradient-to-r from-gray-900 via-black to-gray-800 py-8">
                 <div class="container mx-auto px-4">
                     <div class="flex flex-col lg:flex-row justify-between items-center space-y-6 lg:space-y-0">
                         <!-- Copyright -->
@@ -829,7 +1139,7 @@
 
         .nav-link-modern.active {
             color: #FFFFFF;
-            background: #1E3A8A;
+            background: linear-gradient(135deg, #DC2626, #000000);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -877,8 +1187,8 @@
 
         .nav-link-harrier.active {
             color: #FFFFFF;
-            background: linear-gradient(135deg, #1E3A8A, #1E40AF);
-            box-shadow: 0 8px 25px -5px rgba(30, 58, 138, 0.4);
+            background: linear-gradient(135deg, #DC2626, #000000);
+            box-shadow: 0 8px 25px -5px rgba(220, 38, 38, 0.4);
             transform: translateY(-1px);
         }
 
@@ -938,10 +1248,10 @@
             font-size: 15px;
             text-transform: uppercase;
             font-weight: 600;
-            color: #1E3A8A;
+            color: #DC2626;
             letter-spacing: 0.5px;
             background: transparent;
-            border: 2px solid #1E3A8A;
+            border: 2px solid #DC2626;
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
@@ -952,7 +1262,7 @@
         }
 
         .btn-harrier-secondary:hover {
-            background: #1E3A8A;
+            background: linear-gradient(135deg, #DC2626, #000000);
             color: #FFFFFF;
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -1085,7 +1395,7 @@
             font-family: 'Poppins', 'Inter', sans-serif;
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            background: linear-gradient(135deg, #1E3A8A 0%, #DC2626 100%);
+            background: linear-gradient(135deg, #DC2626 0%, #000000 100%);
             margin-top: 0px;
             border-radius: 8px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -1216,8 +1526,9 @@
             height: 100%;
             background: linear-gradient(
                 135deg,
-                rgba(31, 41, 55, 0.8) 0%,
-                rgba(30, 58, 138, 0.7) 50%,
+                rgba(0, 0, 0, 0.9) 0%,
+                rgba(17, 24, 39, 0.8) 30%,
+                rgba(31, 41, 55, 0.7) 70%,
                 rgba(220, 38, 38, 0.6) 100%
             );
             z-index: -1;
@@ -1300,7 +1611,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1F2937 0%, #1E3A8A 50%, #DC2626 100%);
+            background: linear-gradient(135deg, #000000 0%, #111827 30%, #1F2937 70%, #DC2626 100%);
             z-index: -3;
         }
 
@@ -1420,67 +1731,11 @@
                 evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
             });
 
-            // Enhanced HTMX + Alpine.js hydration
-            document.body.addEventListener('htmx:afterSwap', function(evt) {
-                console.log('🔄 HTMX afterSwap - Re-initializing Alpine.js');
+            // Hydration is now handled by the unified Hydration Manager
+            // No duplicate event listeners needed here
 
-                // Re-initialize Alpine.js for new content
-                if (typeof Alpine !== 'undefined' && Alpine.initTree) {
-                    // Find all new Alpine components in the swapped content
-                    const newElements = evt.detail.target.querySelectorAll('[x-data]');
-                    newElements.forEach(element => {
-                        if (!element._x_dataStack) {
-                            console.log('🎯 Initializing Alpine component:', element);
-                            Alpine.initTree(element);
-                        }
-                    });
-                } else {
-                    console.warn('⚠️ Alpine.js not available for hydration');
-                }
-            });
-
-            // Handle Alpine.js hydration for dynamically loaded content
-            document.body.addEventListener('htmx:load', function(evt) {
-                console.log('🔄 HTMX load event - Checking for Alpine components');
-
-                if (typeof Alpine !== 'undefined') {
-                    // Initialize Alpine.js for the loaded content
-                    const alpineElements = evt.detail.elt.querySelectorAll('[x-data]');
-                    if (alpineElements.length > 0) {
-                        console.log(`🎯 Found ${alpineElements.length} Alpine components to initialize`);
-                        alpineElements.forEach(element => {
-                            if (!element._x_dataStack) {
-                                Alpine.initTree(element);
-                            }
-                        });
-                    }
-                }
-            });
-
-            // Handle modal-specific hydration
-            document.body.addEventListener('htmx:afterRequest', function(evt) {
-                if (evt.detail.xhr.status === 200) {
-                    // Check if this is a modal response
-                    const responseText = evt.detail.xhr.responseText;
-                    if (responseText.includes('edit-car-modal') || responseText.includes('x-data')) {
-                        console.log('🎯 Modal detected - Ensuring Alpine.js hydration');
-
-                        setTimeout(() => {
-                            const modal = document.getElementById('edit-car-modal');
-                            if (modal && typeof Alpine !== 'undefined') {
-                                console.log('🔄 Re-initializing modal Alpine.js');
-                                Alpine.initTree(modal);
-
-                                // Trigger show state
-                                const alpineData = Alpine.$data(modal);
-                                if (alpineData && typeof alpineData.show !== 'undefined') {
-                                    alpineData.show = true;
-                                }
-                            }
-                        }, 100);
-                    }
-                }
-            });
+            // Modal handling is now managed by the unified Hydration Manager
+            // No duplicate modal event listeners needed here
 
             // Close mobile menu when clicking outside
             document.addEventListener('click', function(e) {
@@ -1622,8 +1877,11 @@
     <!-- Logo Manager -->
     <script src="{% static 'js/logo-manager.js' %}"></script>
 
+    <!-- Import Destinations Manager -->
+    <script src="{% static 'js/import-destinations.js' %}"></script>
+
     <!-- Message Integration -->
-    <script src="{% static 'js/message-integration.js' %}"></script>
+    <script src="{% static 'js/message-integration.js' %}?v=20250731-1730"></script>
 
     <!-- Global Message Functions -->
     <script>
@@ -1924,5 +2182,61 @@
 
     <!-- Floating Compare Widget -->
     {% include 'components/floating_compare_widget.html' %}
+
+    <!-- Global Modal Container (Separate DOM Zone) -->
+    <div id="global-modal-container" class="modal-zone">
+        <!-- Modals will be injected here via OOB swaps -->
+    </div>
+
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[60] space-y-2">
+        <!-- Toast notifications will be injected here via OOB swaps -->
+    </div>
+
+    <!-- Global Loading Overlay -->
+    <div id="global-loading-overlay" class="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm hidden items-center justify-center">
+        <div class="bg-white rounded-lg p-6 shadow-2xl">
+            <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-gray-700 font-medium">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced HTMX Event Debugging (Development Only) -->
+    {% if debug %}
+    <div id="htmx-debug-panel" class="fixed bottom-4 left-4 z-[80] bg-gray-900 text-white p-3 rounded-lg text-xs max-w-sm hidden">
+        <div class="font-bold mb-2">HTMX Debug</div>
+        <div id="htmx-debug-content"></div>
+    </div>
+
+    <script>
+    // HTMX Debug Panel (Development Only)
+    document.addEventListener('htmx:afterRequest', function(event) {
+        const debugPanel = document.getElementById('htmx-debug-panel');
+        const debugContent = document.getElementById('htmx-debug-content');
+
+        if (debugPanel && debugContent) {
+            const timestamp = new Date().toLocaleTimeString();
+            const method = event.detail.xhr.method || 'GET';
+            const url = event.detail.xhr.responseURL || 'Unknown';
+            const status = event.detail.xhr.status;
+
+            debugContent.innerHTML = `
+                <div class="mb-1">${timestamp}</div>
+                <div class="text-blue-300">${method} ${url}</div>
+                <div class="text-${status >= 400 ? 'red' : 'green'}-300">Status: ${status}</div>
+            `;
+
+            debugPanel.classList.remove('hidden');
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                debugPanel.classList.add('hidden');
+            }, 3000);
+        }
+    });
+    </script>
+    {% endif %}
 </body>
 </html>

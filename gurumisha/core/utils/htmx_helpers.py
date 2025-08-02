@@ -129,6 +129,194 @@ def htmx_success_response(request, message, template_name=None, context=None, ta
         })
 
 
+def htmx_modal_response(request, modal_id, content_template, context=None, modal_title=None, auto_show=True):
+    """
+    Generate HTMX out-of-band modal response
+
+    Args:
+        request: HTTP request object
+        modal_id: ID of the modal to update
+        content_template: Template for modal content
+        context: Template context
+        modal_title: Optional modal title
+        auto_show: Whether to auto-show the modal
+    """
+    if context is None:
+        context = {}
+
+    context.update({
+        'modal_id': modal_id,
+        'modal_title': modal_title,
+        'is_htmx': request.headers.get('HX-Request'),
+    })
+
+    # Render modal content
+    modal_content = render_to_string(content_template, context, request=request)
+
+    # Create OOB response
+    oob_attributes = ['hx-swap-oob="innerHTML"']
+    if auto_show:
+        oob_attributes.append('data-auto-show="true"')
+
+    oob_response = f'''
+    <div id="{modal_id}-body" {' '.join(oob_attributes)}>
+        {modal_content}
+    </div>
+    '''
+
+    return HttpResponse(oob_response)
+
+
+def htmx_modal_form_response(request, form, modal_id, success_template, error_template,
+                           success_message=None, context=None):
+    """
+    Handle form responses for modal submissions with OOB updates
+    """
+    if context is None:
+        context = {}
+
+    context['form'] = form
+    context['modal_id'] = modal_id
+
+    if form.is_valid():
+        # Success response with OOB update
+        if success_message:
+            context['success_message'] = success_message
+
+        modal_content = render_to_string(success_template, context, request=request)
+
+        oob_response = f'''
+        <div id="{modal_id}-body" hx-swap-oob="innerHTML">
+            {modal_content}
+        </div>
+        '''
+
+        response = HttpResponse(oob_response)
+
+        # Optionally close modal after success
+        if context.get('close_modal_on_success', True):
+            response['HX-Trigger'] = f'closeModal:{modal_id}'
+
+        return response
+    else:
+        # Error response with form errors
+        context['form_errors'] = get_htmx_form_errors(form)
+        modal_content = render_to_string(error_template, context, request=request)
+
+        oob_response = f'''
+        <div id="{modal_id}-body" hx-swap-oob="innerHTML">
+            {modal_content}
+        </div>
+        '''
+
+        return HttpResponse(oob_response, status=400)
+
+
+def htmx_oob_update(target_id, content, swap_type='innerHTML'):
+    """
+    Create an out-of-band update for any element
+
+    Args:
+        target_id: ID of element to update
+        content: HTML content to swap
+        swap_type: Type of swap (innerHTML, outerHTML, afterend, beforeend)
+    """
+    return f'<div id="{target_id}" hx-swap-oob="{swap_type}">{content}</div>'
+
+
+def htmx_multiple_oob_response(updates):
+    """
+    Create response with multiple out-of-band updates
+
+    Args:
+        updates: List of dicts with 'target_id', 'content', and optional 'swap_type'
+    """
+    oob_parts = []
+
+    for update in updates:
+        target_id = update['target_id']
+        content = update['content']
+        swap_type = update.get('swap_type', 'innerHTML')
+
+        oob_parts.append(htmx_oob_update(target_id, content, swap_type))
+
+    return HttpResponse('\n'.join(oob_parts))
+
+
+def htmx_toast_oob_response(message, toast_type='info', additional_updates=None):
+    """
+    Create OOB response that shows a toast notification
+
+    Args:
+        message: Toast message
+        toast_type: Type of toast (success, error, warning, info)
+        additional_updates: Optional list of additional OOB updates
+    """
+    toast_html = f'''
+    <div class="toast toast-{toast_type} animate-slide-in-right"
+         x-data="{{ show: true }}"
+         x-show="show"
+         x-init="setTimeout(() => show = false, 5000)">
+        <div class="toast-content">
+            <i class="fas fa-{get_toast_icon(toast_type)} mr-2"></i>
+            {message}
+        </div>
+        <button @click="show = false" class="toast-close">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    '''
+
+    updates = [{'target_id': 'toast-container', 'content': toast_html, 'swap_type': 'afterbegin'}]
+
+    if additional_updates:
+        updates.extend(additional_updates)
+
+    return htmx_multiple_oob_response(updates)
+
+
+def get_toast_icon(toast_type):
+    """Get appropriate icon for toast type"""
+    icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    }
+    return icons.get(toast_type, 'info-circle')
+
+
+def htmx_button_update_oob(button_id, new_text, new_class='', disabled=False):
+    """
+    Create OOB update for button state without replacing the entire button
+    """
+    disabled_attr = 'disabled' if disabled else ''
+
+    button_content = f'''
+    <span class="button-text">{new_text}</span>
+    '''
+
+    # Update button content and attributes
+    updates = [
+        {
+            'target_id': f'{button_id}-content',
+            'content': button_content,
+            'swap_type': 'innerHTML'
+        }
+    ]
+
+    if new_class:
+        # Update button class via attribute
+        class_update = f'<div hx-swap-oob="setAttribute:class:{new_class}" id="{button_id}"></div>'
+        updates.append({
+            'target_id': 'temp-class-update',
+            'content': class_update,
+            'swap_type': 'innerHTML'
+        })
+
+    return htmx_multiple_oob_response(updates)
+
+
 def validate_htmx_request(request, required_method='POST'):
     """
     Validate HTMX request and method

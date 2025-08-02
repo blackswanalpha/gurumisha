@@ -34,7 +34,7 @@
     width: auto;
     max-width: none;
     object-fit: contain;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
 }
 
 /* Responsive Logo Sizing */
@@ -73,14 +73,14 @@
 .logo-compact {
     height: var(--logo-sm);
     width: auto;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
 }
 
 /* Full Logo for Desktop */
 .logo-full {
     height: var(--logo-lg);
     width: auto;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
 }
 
 @media (min-width: 1024px) {
@@ -99,7 +99,7 @@
 .logo-footer {
     height: var(--logo-md);
     width: auto;
-    filter: brightness(1.1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+    filter: brightness(1.1) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
 }
 
 @media (min-width: 640px) {
@@ -120,7 +120,7 @@
 .logo-full:hover,
 .logo-footer:hover {
     transform: scale(var(--logo-hover-scale));
-    filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    filter: brightness(1.1) drop-shadow(0 2px 4px rgba(255, 255, 255, 0.9));
 }
 
 /* Logo Active State */
@@ -237,11 +237,11 @@
     .logo-primary,
     .logo-compact,
     .logo-full {
-        filter: brightness(1.1) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.1));
+        filter: brightness(1.1) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
     }
-    
+
     .logo-footer {
-        filter: brightness(1.2) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.2));
+        filter: brightness(1.2) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
     }
 }
 

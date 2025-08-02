@@ -2,7 +2,7 @@
 
 <!-- Live Tracking Map Component -->
 <div class="live-tracking-map-container"
-     x-data="liveTrackingMap()"
+     x-data="getAlpineComponent('liveTrackingMap')()"
      x-init="initializeMap()"
      data-order-number="{{ order.order_number }}"
      data-current-lat="{{ order.current_latitude|default:'0' }}"

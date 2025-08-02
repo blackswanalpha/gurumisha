@@ -3,12 +3,15 @@
 <!-- Lazy Loading Content Component with HTMX -->
 <!-- Usage: {% include 'components/lazy_content.html' with url='dashboard/lazy-stats/' skeleton_type='stats' trigger='revealed' %} -->
 
-<div class="lazy-content-container" 
+<div class="lazy-content-container"
      hx-get="{{ url }}"
      hx-trigger="{{ trigger|default:'revealed' }}"
-     hx-swap="outerHTML"
+     hx-swap="innerHTML"
+     hx-target="#lazy-content-{{ skeleton_type|default:'card' }}"
      hx-indicator="#loading-{{ skeleton_type|default:'card' }}"
      data-skeleton="{{ skeleton_type|default:'card' }}">
+
+    <div id="lazy-content-{{ skeleton_type|default:'card' }}" class="lazy-content-inner">
     
     <!-- Loading Skeleton based on type -->
     {% if skeleton_type == 'stats' %}
@@ -25,9 +28,10 @@
         {% include 'components/loading_skeletons.html' with skeleton_id='skeleton-card' %}
     {% endif %}
     
-    <!-- Loading indicator -->
-    <div id="loading-{{ skeleton_type|default:'card' }}" class="htmx-indicator">
-        {% include 'components/loading_skeletons.html' with skeleton_id='loading-spinner' %}
+        <!-- Loading indicator -->
+        <div id="loading-{{ skeleton_type|default:'card' }}" class="htmx-indicator">
+            {% include 'components/loading_skeletons.html' with skeleton_id='loading-spinner' %}
+        </div>
     </div>
 </div>
 

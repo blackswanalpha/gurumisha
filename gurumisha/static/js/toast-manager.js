@@ -315,44 +315,49 @@ class ToastManager {
                 return;
             }
 
-            // Filter out common non-critical errors
+            // Filter out common non-critical errors (more targeted)
             const ignoredErrors = [
                 'isSubmitting is not defined',
                 'Script error.',
                 'ResizeObserver loop limit exceeded',
                 'Non-Error promise rejection captured',
                 'Loading chunk',
-                'Unexpected token',
                 'dismissMessage is not defined',
-                'JSON.parse',
                 'Cannot read properties of undefined (reading \'includes\')',
-                'reading \'includes\'',
                 'import-requests/:1990',
-                'import-requests/:1997',
-                'TypeError: Cannot read properties of undefined',
-                'htmx.org@1.9.10'
+                'import-requests/:1997'
             ];
 
-            // Check if error should be ignored
+            // Check if error should be ignored (more selective)
             if (!event.error ||
                 event.error === null ||
                 (event.filename && event.filename.includes('cdn.min.js')) ||
-                (event.filename && event.filename.includes('alpine')) ||
-                (event.filename && event.filename.includes('htmx.org')) ||
                 (event.filename && event.filename.includes('import-requests')) ||
                 ignoredErrors.some(ignored => event.message && event.message.includes(ignored))) {
                 return;
             }
 
-            // Only log actual meaningful errors
+            // Only log actual meaningful errors and categorize them
             if (event.error && event.error.stack && typeof event.error.stack === 'string' && !event.error.stack.includes('isSubmitting')) {
                 console.error('Global error:', event.error);
-                this.show('An unexpected error occurred.', 'error', {
-                    action: {
-                        text: 'Reload Page',
-                        handler: () => window.location.reload()
-                    }
-                });
+
+                // Categorize error severity
+                const errorMessage = event.error.message || event.message || 'An unexpected error occurred.';
+                const isCritical = this.isCriticalError(errorMessage);
+
+                if (isCritical) {
+                    this.show('A critical error occurred. Please reload the page.', 'error', {
+                        persistent: true,
+                        action: {
+                            text: 'Reload Page',
+                            handler: () => window.location.reload()
+                        }
+                    });
+                } else {
+                    this.show('An error occurred, but the application should continue to work.', 'warning', {
+                        duration: 5000
+                    });
+                }
             }
         });
 
@@ -415,6 +420,22 @@ class ToastManager {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    isCriticalError(errorMessage) {
+        const criticalPatterns = [
+            'Network error',
+            'Failed to fetch',
+            'TypeError: Failed to fetch',
+            'ReferenceError',
+            'SyntaxError',
+            'Cannot read properties of null',
+            'Cannot read properties of undefined'
+        ];
+
+        return criticalPatterns.some(pattern =>
+            errorMessage.toLowerCase().includes(pattern.toLowerCase())
+        );
     }
 
     // Featured car specific notification methods

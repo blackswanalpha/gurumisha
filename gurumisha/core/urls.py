@@ -40,6 +40,8 @@ urlpatterns = [
     path('dashboard/orders/', dashboard_views.user_orders_view, name='user_orders'),
     path('dashboard/addresses/', dashboard_views.user_addresses_view, name='user_addresses'),
     path('dashboard/import-requests/', dashboard_views.user_import_requests_view, name='user_import_requests'),
+    path('dashboard/import-requests/<int:request_id>/', dashboard_views.customer_import_request_detail_view, name='customer_import_request_detail'),
+    path('dashboard/import-requests/<int:request_id>/edit/', dashboard_views.customer_import_request_edit_view, name='customer_import_request_edit'),
     path('dashboard/inquiries/', dashboard_views.user_inquiries_view, name='user_inquiries'),
     path('dashboard/wishlist/', dashboard_views.user_wishlist_view, name='user_wishlist'),
     path('dashboard/listings/', dashboard_views.user_listings_view, name='user_listings'),
@@ -79,6 +81,8 @@ urlpatterns = [
     path('dashboard/admin/users/search/', dashboard_views.admin_users_search, name='admin_users_search'),
     path('dashboard/admin/users/refresh/', dashboard_views.admin_users_refresh, name='admin_users_refresh'),
     path('dashboard/admin/users/<int:user_id>/', dashboard_views.admin_user_detail_view, name='admin_user_detail'),
+    path('dashboard/admin/users/<int:user_id>/delete/', dashboard_views.admin_user_delete_view, name='admin_user_delete'),
+    path('dashboard/admin/users/<int:user_id>/edit-modal/', dashboard_views.admin_user_edit_modal_view, name='admin_user_edit_modal'),
     path('dashboard/admin/vendors/', dashboard_views.admin_vendors_view, name='admin_vendors'),
     path('dashboard/admin/vendors/user/<int:user_id>/', dashboard_views.admin_vendor_user_detail_view, name='admin_vendor_user_detail'),
     path('dashboard/admin/listings/', dashboard_views.admin_listings_view, name='admin_listings'),
@@ -135,6 +139,13 @@ urlpatterns = [
     path('dashboard/admin/queries/', dashboard_views.admin_queries_view, name='admin_queries'),
     path('dashboard/admin/content-management/', dashboard_views.admin_content_management_view, name='admin_content_management'),
     path('dashboard/admin/system-settings/', dashboard_views.admin_system_settings_view, name='admin_system_settings'),
+
+    # Enhanced Admin Query Management URLs
+    path('dashboard/admin/queries/<int:inquiry_id>/', dashboard_views.admin_query_detail_view, name='admin_query_detail'),
+    path('dashboard/admin/queries/<int:inquiry_id>/reply/', dashboard_views.admin_query_reply, name='admin_query_reply'),
+    path('dashboard/admin/queries/<int:inquiry_id>/status/', dashboard_views.admin_query_status_update, name='admin_query_status_update'),
+    path('dashboard/admin/queries/<int:inquiry_id>/assign/', dashboard_views.admin_query_assign, name='admin_query_assign'),
+    path('dashboard/admin/queries/bulk-actions/', dashboard_views.admin_query_bulk_actions, name='admin_query_bulk_actions'),
 
     # Enhanced Content Management HTMX Endpoints
     path('dashboard/admin/content/posts-tab/', dashboard_views.admin_content_posts_tab, name='admin_content_posts_tab'),
@@ -398,6 +409,8 @@ urlpatterns = [
     path('htmx/countdown/<int:deal_id>/', views.htmx_countdown_timer_update, name='htmx_countdown_timer_update'),
     path('htmx/cars/filter/', views.htmx_car_list_filter, name='htmx_car_list_filter'),
     path('htmx/models-by-brand/', views.htmx_models_by_brand, name='htmx_models_by_brand'),
+    path('htmx/cars/filter-body-type/', views.htmx_filter_by_body_type, name='htmx_filter_by_body_type'),
+    path('htmx/recently-viewed/update/', views.htmx_recently_viewed_update, name='htmx_recently_viewed_update'),
 
     # Import Order Tracking HTMX endpoints
     path('import/tracking/<str:order_number>/status/', views.import_order_status_update_htmx, name='import_order_status_htmx'),
@@ -423,6 +436,13 @@ urlpatterns = [
     path('dashboard/htmx/tracking-stats/', views.admin_tracking_stats_htmx, name='admin_tracking_stats_htmx'),
     path('dashboard/htmx/inquiry-stats/', views.admin_inquiry_stats_htmx, name='admin_inquiry_stats_htmx'),
     path('dashboard/htmx/admin-quick-actions/', dashboard_views.admin_quick_actions_lazy, name='admin_quick_actions_htmx'),
+
+    # Admin Query Management HTMX Endpoints
+    path('dashboard/admin/queries/table-htmx/', dashboard_views.admin_queries_table_htmx, name='admin_queries_table_htmx'),
+    path('dashboard/admin/queries/search-htmx/', dashboard_views.admin_queries_search_htmx, name='admin_queries_search_htmx'),
+    path('dashboard/admin/queries/stats-htmx/', dashboard_views.admin_queries_stats_htmx, name='admin_queries_stats_htmx'),
+    path('dashboard/admin/queries/<int:inquiry_id>/quick-reply-htmx/', dashboard_views.admin_query_quick_reply_htmx, name='admin_query_quick_reply_htmx'),
+    path('dashboard/admin/queries/<int:inquiry_id>/status-htmx/', dashboard_views.admin_query_status_htmx, name='admin_query_status_htmx'),
 
     # Payment callbacks
     path('payments/mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),

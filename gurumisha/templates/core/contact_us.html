@@ -3,101 +3,538 @@
 
 {% block title %}Contact Us - Gurumisha{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/homepage-enhancements.css' %}">
+<style>
+/* Contact Hero Section */
+.contact-hero {
+    position: relative;
+    min-height: 70vh;
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 25%, #991B1B 50%, #7F1D1D 75%, #1F2937 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contact-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('{% static "images/contact.jpg" %}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    z-index: 1;
+}
+
+.contact-hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 2;
+}
+
+.contact-hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    color: white;
+}
+
+/* Animated Background Elements */
+.contact-hero .floating-elements {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+.contact-hero .floating-elements div {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    animation: float 6s ease-in-out infinite;
+}
+
+.contact-hero .floating-elements div:nth-child(1) {
+    top: 10%;
+    left: 10%;
+    width: 80px;
+    height: 80px;
+    background: rgba(220, 38, 38, 0.2);
+    animation-delay: 0s;
+}
+
+.contact-hero .floating-elements div:nth-child(2) {
+    bottom: 15%;
+    right: 15%;
+    width: 100px;
+    height: 100px;
+    background: rgba(239, 68, 68, 0.15);
+    animation-delay: 2s;
+}
+
+.contact-hero .floating-elements div:nth-child(3) {
+    top: 50%;
+    left: 30%;
+    width: 60px;
+    height: 60px;
+    background: rgba(248, 113, 113, 0.2);
+    animation-delay: 4s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-20px) scale(1.1); }
+}
+
+/* Enhanced Contact Information Cards */
+.contact-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.contact-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.1), transparent);
+    transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contact-info-card:hover::before {
+    left: 100%;
+}
+
+.contact-info-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(220, 38, 38, 0.2);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+.contact-info-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.contact-info-item:hover {
+    transform: translateX(8px);
+}
+
+.contact-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #DC2626, #B91C1C);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 8px 16px rgba(220, 38, 38, 0.3);
+    transition: all 0.3s ease;
+}
+
+.contact-info-item:hover .contact-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 12px 24px rgba(220, 38, 38, 0.4);
+}
+
+.contact-icon i {
+    color: white;
+    font-size: 1.5rem;
+}
+
+.contact-info-content h3 {
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.125rem;
+}
+
+.contact-info-content p {
+    color: #6B7280;
+    line-height: 1.6;
+    font-family: 'Raleway', sans-serif;
+}
+
+/* Social Media Section */
+.social-media-section {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(220, 38, 38, 0.1);
+}
+
+.social-media-section h3 {
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.25rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-link {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.social-link::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.social-link:hover::before {
+    opacity: 1;
+}
+
+.social-link:hover {
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.social-link.facebook {
+    background: linear-gradient(135deg, #1877F2, #0C63D4);
+}
+
+.social-link.twitter {
+    background: linear-gradient(135deg, #1DA1F2, #0D8BD9);
+}
+
+.social-link.instagram {
+    background: linear-gradient(135deg, #E4405F, #C13584);
+}
+
+.social-link.tiktok {
+    background: linear-gradient(135deg, #000000, #FF0050);
+}
+
+.social-link i {
+    color: white;
+    font-size: 1.25rem;
+    z-index: 1;
+}
+
+/* Enhanced Form Styling */
+.form-group {
+    position: relative;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 2px solid rgba(229, 231, 235, 1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    font-family: 'Raleway', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-group textarea {
+    padding-top: 1rem;
+    padding-left: 3rem;
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #DC2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1), 0 4px 12px rgba(220, 38, 38, 0.15);
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+}
+
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover {
+    border-color: rgba(220, 38, 38, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Animation Classes */
+.animate-fade-in-up {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-delay-300 {
+    animation-delay: 0.3s;
+}
+
+.animate-delay-600 {
+    animation-delay: 0.6s;
+}
+
+.animate-scale-in {
+    opacity: 0;
+    transform: scale(0.8);
+    animation: scaleIn 0.6s ease-out forwards;
+}
+
+.animate-slide-in-left {
+    opacity: 0;
+    transform: translateX(-50px);
+    animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    opacity: 0;
+    transform: translateX(50px);
+    animation: slideInRight 0.8s ease-out 0.2s forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInLeft {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .contact-hero {
+        min-height: 60vh;
+    }
+
+    .contact-hero-content h1 {
+        font-size: 3rem;
+    }
+
+    .contact-info-card {
+        padding: 1.5rem;
+    }
+
+    .contact-icon {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 768px) {
+    .contact-hero-content h1 {
+        font-size: 2.5rem;
+    }
+
+    .contact-hero-content p {
+        font-size: 1.125rem;
+    }
+
+    .contact-info-item {
+        margin-bottom: 1.5rem;
+    }
+
+    .social-links {
+        justify-content: center;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding-left: 2.5rem;
+    }
+
+    .form-group .absolute {
+        left: 0.75rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Page Header -->
-<div class="bg-harrier-dark py-16">
-    <div class="container mx-auto px-4">
-        <div class="text-center">
-            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
-                CONTACT US
-            </h1>
-            <p class="text-xl text-gray-300">
-                Get in touch with our automotive experts - we're here to help you find your perfect car
-            </p>
-        </div>
+<!-- Enhanced Hero Section with Background Image -->
+<section class="contact-hero">
+    <!-- Floating Background Elements -->
+    <div class="floating-elements">
+        <div></div>
+        <div></div>
+        <div></div>
     </div>
-</div>
 
-<!-- Contact Section -->
-<section class="py-16 bg-harrier-gray">
-    <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <!-- Contact Information -->
-            <div>
-                <h2 class="text-3xl font-heading font-bold text-harrier-dark mb-8">Get in Touch</h2>
+    <div class="contact-hero-content max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold font-montserrat mb-6 animate-fade-in-up">
+            CONTACT
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
+                US
+            </span>
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-300">
+            Get in touch with our automotive experts - we're here to help you find your perfect car
+        </p>
+        <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-white mx-auto mt-8 rounded-full animate-scale-in animate-delay-600"></div>
+    </div>
+</section>
 
-                <div class="space-y-6 mb-8">
-                    <div class="flex items-start">
-                        <div class="w-12 h-12 bg-harrier-red rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                            <i class="fas fa-map-marker-alt text-white text-xl"></i>
+<!-- Enhanced Contact Section -->
+<section class="py-20 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 100 100&quot;><defs><pattern id=&quot;grid&quot; width=&quot;10&quot; height=&quot;10&quot; patternUnits=&quot;userSpaceOnUse&quot;><path d=&quot;M 10 0 L 0 0 0 10&quot; fill=&quot;none&quot; stroke=&quot;rgba(220,38,38,0.3)&quot; stroke-width=&quot;0.5&quot;/></pattern></defs><rect width=&quot;100&quot; height=&quot;100&quot; fill=&quot;url(%23grid)&quot;/></svg>');"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            <!-- Enhanced Contact Information -->
+            <div class="contact-info-card animate-slide-in-left">
+                <h2 class="text-4xl font-bold text-gray-900 mb-8 font-montserrat">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Get in Touch</span>
+                </h2>
+
+                <div class="space-y-0">
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-harrier-dark mb-1">Our Location</h3>
-                            <p class="text-gray-600">Westlands Business District<br>Nairobi, Kenya<br>P.O. Box 12345-00100</p>
+                        <div class="contact-info-content">
+                            <h3>Our Location</h3>
+                            <p>Westlands Business District<br>Nairobi, Kenya<br>P.O. Box 12345-00100</p>
                         </div>
                     </div>
 
-                    <div class="flex items-start">
-                        <div class="w-12 h-12 bg-harrier-red rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                            <i class="fas fa-phone text-white text-xl"></i>
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-harrier-dark mb-1">Phone Numbers</h3>
-                            <p class="text-gray-600">Sales: +254 700 000 000<br>Support: +254 711 000 000<br>Import Desk: +254 722 000 000</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start">
-                        <div class="w-12 h-12 bg-harrier-red rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                            <i class="fas fa-envelope text-white text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-harrier-dark mb-1">Email Addresses</h3>
-                            <p class="text-gray-600">info@gurumisha.com<br>support@gurumisha.com<br>imports@gurumisha.com</p>
+                        <div class="contact-info-content">
+                            <h3>Phone Numbers</h3>
+                            <p>Sales: +254 117 002 222 <br>Support: +254 117 002 222<br>Import Desk: +254 117 002 222 </p>
                         </div>
                     </div>
 
-                    <div class="flex items-start">
-                        <div class="w-12 h-12 bg-harrier-red rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                            <i class="fas fa-clock text-white text-xl"></i>
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-harrier-dark mb-1">Business Hours</h3>
-                            <p class="text-gray-600">Monday - Friday: 8:00 AM - 6:00 PM<br>Saturday: 9:00 AM - 4:00 PM<br>Sunday: Closed</p>
+                        <div class="contact-info-content">
+                            <h3>Email Addresses</h3>
+                            <p>info@gurumisha.com<br>support@gurumisha.com<br>imports@gurumisha.com</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="contact-info-content">
+                            <h3>Business Hours</h3>
+                            <p>Monday - Friday: 8:00 AM - 6:00 PM<br>Saturday: 9:00 AM - 4:00 PM<br>Sunday: Closed</p>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Social Media -->
-                <div>
-                    <h3 class="font-semibold text-harrier-dark mb-4">Follow Us</h3>
-                    <div class="flex space-x-4">
-                        <a href="#" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
+
+                <!-- Enhanced Social Media -->
+                <div class="social-media-section">
+                    <h3>Follow Us</h3>
+                    <div class="social-links">
+                        <a href="#" class="social-link facebook" aria-label="Follow us on Facebook">
                             <i class="fab fa-facebook-f"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 bg-blue-400 text-white rounded-full flex items-center justify-center hover:bg-blue-500 transition-colors">
+                        <a href="#" class="social-link twitter" aria-label="Follow us on Twitter">
                             <i class="fab fa-twitter"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 bg-pink-600 text-white rounded-full flex items-center justify-center hover:bg-pink-700 transition-colors">
+                        <a href="#" class="social-link instagram" aria-label="Follow us on Instagram">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#" class="w-10 h-10 bg-blue-700 text-white rounded-full flex items-center justify-center hover:bg-blue-800 transition-colors">
-                            <i class="fab fa-linkedin-in"></i>
+                        <a href="#" class="social-link tiktok" aria-label="Follow us on TikTok">
+                            <i class="fab fa-tiktok"></i>
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Contact Form -->
-            <div>
-                <div class="bg-white rounded-2xl shadow-xl p-8">
-                    <h2 class="text-2xl font-heading font-bold text-harrier-dark mb-6">Send us a Message</h2>
-                    
+            <!-- Enhanced Contact Form -->
+            <div class="animate-slide-in-right">
+                <div class="contact-info-card">
+                    <h2 class="text-4xl font-bold text-gray-900 mb-8 font-montserrat">
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Send us a Message</span>
+                    </h2>
+
                     <!-- Display Messages -->
                     {% if messages %}
                         {% for message in messages %}
-                            <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
-                                {{ message }}
+                            <div class="mb-6 p-4 rounded-xl border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-500 text-red-700{% elif message.tags == 'success' %}bg-green-50 border-green-500 text-green-700{% else %}bg-blue-50 border-blue-500 text-blue-700{% endif %} backdrop-blur-sm">
+                                <div class="flex items-center">
+                                    <i class="{% if message.tags == 'error' %}fas fa-exclamation-triangle{% elif message.tags == 'success' %}fas fa-check-circle{% else %}fas fa-info-circle{% endif %} mr-3"></i>
+                                    {{ message }}
+                                </div>
                             </div>
                         {% endfor %}
                     {% endif %}
@@ -106,69 +543,121 @@
                         {% csrf_token %}
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
-                                    First Name <span class="text-harrier-red">*</span>
+                            <div class="form-group">
+                                <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3 font-montserrat">
+                                    First Name <span class="text-red-600">*</span>
                                 </label>
-                                {{ form.first_name }}
+                                <div class="relative">
+                                    {{ form.first_name }}
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                </div>
                                 {% if form.first_name.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</div>
+                                    <div class="mt-2 text-sm text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <div>
-                                <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
-                                    Last Name <span class="text-harrier-red">*</span>
+                            <div class="form-group">
+                                <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3 font-montserrat">
+                                    Last Name <span class="text-red-600">*</span>
                                 </label>
-                                {{ form.last_name }}
+                                <div class="relative">
+                                    {{ form.last_name }}
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                </div>
                                 {% if form.last_name.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</div>
+                                    <div class="mt-2 text-sm text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
 
-                        <div>
-                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
-                                Email Address <span class="text-harrier-red">*</span>
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3 font-montserrat">
+                                Email Address <span class="text-red-600">*</span>
                             </label>
-                            {{ form.email }}
+                            <div class="relative">
+                                {{ form.email }}
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-envelope text-gray-400"></i>
+                                </div>
+                            </div>
                             {% if form.email.errors %}
-                                <div class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</div>
+                                <div class="mt-2 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.email.errors.0 }}
+                                </div>
                             {% endif %}
                         </div>
 
-                        <div>
-                            <label for="{{ form.phone.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                        <div class="form-group">
+                            <label for="{{ form.phone.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3 font-montserrat">
                                 Phone Number
                             </label>
-                            {{ form.phone }}
+                            <div class="relative">
+                                {{ form.phone }}
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-phone text-gray-400"></i>
+                                </div>
+                            </div>
                             {% if form.phone.errors %}
-                                <div class="mt-1 text-sm text-red-600">{{ form.phone.errors.0 }}</div>
+                                <div class="mt-2 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.phone.errors.0 }}
+                                </div>
                             {% endif %}
                         </div>
 
-                        <div>
-                            <label for="{{ form.subject.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
-                                Subject <span class="text-harrier-red">*</span>
+                        <div class="form-group">
+                            <label for="{{ form.subject.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3 font-montserrat">
+                                Subject <span class="text-red-600">*</span>
                             </label>
-                            {{ form.subject }}
+                            <div class="relative">
+                                {{ form.subject }}
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-tag text-gray-400"></i>
+                                </div>
+                            </div>
                             {% if form.subject.errors %}
-                                <div class="mt-1 text-sm text-red-600">{{ form.subject.errors.0 }}</div>
+                                <div class="mt-2 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.subject.errors.0 }}
+                                </div>
                             {% endif %}
                         </div>
 
-                        <div>
-                            <label for="{{ form.message.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
-                                Message <span class="text-harrier-red">*</span>
+                        <div class="form-group">
+                            <label for="{{ form.message.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3 font-montserrat">
+                                Message <span class="text-red-600">*</span>
                             </label>
-                            {{ form.message }}
+                            <div class="relative">
+                                {{ form.message }}
+                                <div class="absolute top-4 left-4 pointer-events-none">
+                                    <i class="fas fa-comment text-gray-400"></i>
+                                </div>
+                            </div>
                             {% if form.message.errors %}
-                                <div class="mt-1 text-sm text-red-600">{{ form.message.errors.0 }}</div>
+                                <div class="mt-2 text-sm text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.message.errors.0 }}
+                                </div>
                             {% endif %}
                         </div>
 
-                        <div class="pt-4">
-                            <button type="submit" class="w-full btn-harrier-primary py-4 text-lg font-semibold">
-                                <i class="fas fa-paper-plane mr-2"></i>SEND MESSAGE
+                        <div class="pt-6">
+                            <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl font-montserrat text-lg relative overflow-hidden group">
+                                <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+                                <span class="relative flex items-center justify-center">
+                                    <i class="fas fa-paper-plane mr-3"></i>
+                                    SEND MESSAGE
+                                </span>
                             </button>
                         </div>
                     </form>
@@ -267,7 +756,7 @@
                     <i class="fas fa-phone text-white text-xl"></i>
                 </div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">Contact</h3>
-                <p class="text-gray-600 font-raleway">+254 700 000 000<br>info@gurumisha.com</p>
+                <p class="text-gray-600 font-raleway">+254 117 002 222 <br>info@gurumisha.com</p>
             </div>
         </div>
 
