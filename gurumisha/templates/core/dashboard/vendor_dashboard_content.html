@@ -164,7 +164,7 @@
                 <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div class="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
                         {% if car.images.first %}
-                            <img src="{{ car.images.first.image.url }}" alt="{{ car.brand }} {{ car.model }}" class="w-full h-full object-cover">
+                            <img src="{{ car.images.first.image.url }}" alt="{{ car.make_name|default:car.make.name }} {{ car.model_name|default:car.model.name }}" class="w-full h-full object-cover">
                         {% else %}
                             <div class="w-full h-full flex items-center justify-center">
                                 <i class="fas fa-car text-gray-400"></i>
@@ -172,7 +172,7 @@
                         {% endif %}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-medium text-harrier-dark truncate">{{ car.brand }} {{ car.model }}</p>
+                        <p class="font-medium text-harrier-dark truncate">{{ car.make_name|default:car.make.name }} {{ car.model_name|default:car.model.name }}</p>
                         <p class="text-sm text-gray-600">{{ car.year }} • ${{ car.price|floatformat:0 }}</p>
                         <p class="text-xs text-gray-500">{{ car.created_at|date:"M d, Y" }}</p>
                     </div>

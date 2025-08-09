@@ -70,12 +70,12 @@
                         <h3 class="text-xl font-heading font-bold text-harrier-dark mb-6">Vehicle Information</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label for="{{ form.brand.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
-                                    Brand <span class="text-harrier-red">*</span>
+                                <label for="{{ form.make.id_for_label }}" class="block text-sm font-semibold text-harrier-dark mb-2">
+                                    Make <span class="text-harrier-red">*</span>
                                 </label>
-                                {{ form.brand }}
-                                {% if form.brand.errors %}
-                                    <div class="mt-1 text-sm text-red-600">{{ form.brand.errors.0 }}</div>
+                                {{ form.make }}
+                                {% if form.make.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.make.errors.0 }}</div>
                                 {% endif %}
                             </div>
                             <div>

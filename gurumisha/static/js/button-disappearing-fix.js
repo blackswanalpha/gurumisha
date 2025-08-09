@@ -19,7 +19,11 @@
             this.protectedButtons = new Map();
             this.operationQueue = [];
             this.isProcessingQueue = false;
-            this.init();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.init(), { once: true });
+            } else {
+                this.init();
+            }
         }
 
         init() {
@@ -41,17 +45,22 @@
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node && node.nodeType === Node.ELEMENT_NODE) {
                             this.protectButtonsInElement(node);
                         }
                     });
                 });
             });
 
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+            const root = document && document.body ? document.body : null;
+            if (root) {
+                observer.observe(root, {
+                    childList: true,
+                    subtree: true
+                });
+            } else {
+                console.warn('ButtonDisappearingFix: document.body not available for MutationObserver');
+            }
         }
 
         /**
@@ -150,27 +159,28 @@
          * Setup stats update protection
          */
         setupStatsUpdateProtection() {
-            // Intercept stats updates to prevent conflicts
-            const originalFetch = window.fetch;
-            window.fetch = (...args) => {
-                const url = args[0];
-                
-                // Check if this is a stats update request
-                if (typeof url === 'string' && url.includes('admin-quick-actions')) {
-                    // Check if buttons are busy
-                    const busyButtons = document.querySelectorAll('button[aria-busy="true"]');
-                    if (busyButtons.length > 0) {
-                        console.log('🛡️ Delaying stats update - buttons are busy');
-                        return new Promise(resolve => {
-                            setTimeout(() => {
-                                resolve(originalFetch.apply(this, args));
-                            }, 2000);
-                        });
+            // Intercept stats updates to prevent conflicts without overriding window.fetch
+            const originalFetch = window.fetch.bind(window);
+            const guardedFetch = (...args) => {
+                try {
+                    const url = args[0];
+                    // Throttle only specific endpoints
+                    if (typeof url === 'string' && url.includes('admin-quick-actions')) {
+                        const busyButtons = document.querySelectorAll('button[aria-busy="true"]');
+                        if (busyButtons.length > 0) {
+                            console.log('🛡️ Delaying stats update - buttons are busy');
+                            return new Promise(resolve => {
+                                setTimeout(() => resolve(originalFetch(...args)), 2000);
+                            });
+                        }
                     }
+                    return originalFetch(...args);
+                } catch (e) {
+                    return originalFetch(...args);
                 }
-                
-                return originalFetch.apply(this, args);
             };
+            // Expose as utility without replacing global fetch
+            window.safeFetchForStats = guardedFetch;
         }
 
         /**

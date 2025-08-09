@@ -51,11 +51,37 @@ class ToastManager {
     }
 
     createContainer() {
-        this.container = document.createElement('div');
-        this.container.id = 'toast-container';
-        this.container.className = 'fixed top-4 right-4 z-[9999] space-y-3 pointer-events-none';
-        this.container.style.maxWidth = '400px';
-        document.body.appendChild(this.container);
+        // Remove existing container if it exists
+        const existing = document.getElementById('toast-container');
+        if (existing) {
+            existing.remove();
+        }
+
+        // Ensure document.body exists before creating container
+        if (!document.body) {
+            console.warn('⚠️ Document body not ready, delaying toast container creation');
+            setTimeout(() => this.createContainer(), 100);
+            return;
+        }
+
+        try {
+            this.container = document.createElement('div');
+            this.container.id = 'toast-container';
+            this.container.className = 'fixed top-4 right-4 z-[9999] space-y-3 pointer-events-none';
+            this.container.style.maxWidth = '400px';
+
+            // Safely append to body with error handling
+            if (document.body && document.body.appendChild) {
+                document.body.appendChild(this.container);
+                console.log('✅ Toast container created successfully');
+            } else {
+                console.error('❌ Failed to append toast container to body');
+                this.container = null;
+            }
+        } catch (error) {
+            console.error('❌ Error creating toast container:', error);
+            this.container = null;
+        }
     }
 
     show(message, type = 'info', options = {}) {
@@ -81,7 +107,33 @@ class ToastManager {
 
         const toast = this.createToast(message, type, config);
         this.toasts.set(config.id, toast);
-        this.container.appendChild(toast.element);
+
+        // Ensure container exists and is connected before appending
+        if (!this.container || !this.container.isConnected) {
+            console.warn('⚠️ Toast container not available, recreating...');
+            this.createContainer();
+        }
+
+        if (this.container && this.container.appendChild) {
+            try {
+                this.container.appendChild(toast.element);
+            } catch (error) {
+                console.error('❌ Failed to append toast to container:', error);
+                // Try to recreate container and retry once
+                this.createContainer();
+                if (this.container) {
+                    try {
+                        this.container.appendChild(toast.element);
+                    } catch (retryError) {
+                        console.error('❌ Failed to append toast after container recreation:', retryError);
+                        return null;
+                    }
+                }
+            }
+        } else {
+            console.error('❌ Toast container not available for appendChild');
+            return null;
+        }
 
         // Animate in
         requestAnimationFrame(() => {

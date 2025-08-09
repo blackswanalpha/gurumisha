@@ -26,7 +26,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-3xl font-bold font-montserrat mb-2">
-                    {{ import_request.year }} {{ import_request.brand }} {{ import_request.model }}
+                    {{ import_request.year }} {{ import_request.make }} {{ import_request.model }}
                 </h1>
                 <p class="text-blue-100 font-raleway">
                     <i class="fas fa-calendar mr-2"></i>Submitted on {{ import_request.created_at|date:"F d, Y" }}
@@ -181,8 +181,8 @@
             <div class="p-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-sm font-medium text-gray-700 font-raleway">Brand</label>
-                        <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.brand }}</p>
+                        <label class="text-sm font-medium text-gray-700 font-raleway">Make</label>
+                        <p class="text-harrier-dark font-semibold font-montserrat">{{ import_request.make }}</p>
                     </div>
                     <div>
                         <label class="text-sm font-medium text-gray-700 font-raleway">Model</label>

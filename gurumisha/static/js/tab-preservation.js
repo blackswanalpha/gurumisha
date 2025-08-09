@@ -43,7 +43,10 @@
             document.addEventListener('htmx:afterSwap', (event) => {
                 this.restoreTabFunctionality(event.detail.target);
                 this.restoreButtonFunctionality(event.detail.target);
-                this.rehydrateComponents(event.detail.target);
+                // Avoid double hydration; unified hydration manager will handle it
+                if (!window.unifiedHydrationLoaded) {
+                    this.rehydrateComponents(event.detail.target);
+                }
             });
 
             // After HTMX settle - final cleanup

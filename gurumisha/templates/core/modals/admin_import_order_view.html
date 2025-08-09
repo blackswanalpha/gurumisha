@@ -79,7 +79,7 @@
                                 <i class="fas fa-car text-white text-2xl"></i>
                             </div>
                             <div>
-                                <h4 class="text-2xl font-bold text-gray-900 font-montserrat">{{ import_order.year }} {{ import_order.brand }} {{ import_order.model }}</h4>
+                                <h4 class="text-2xl font-bold text-gray-900 font-montserrat">{{ import_order.year }} {{ import_order.make }} {{ import_order.model }}</h4>
                                 <p class="text-lg text-gray-600 font-raleway">Order #{{ import_order.order_number }}</p>
                                 <div class="flex items-center mt-2">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-{{ import_order.get_status_color }}-100 text-{{ import_order.get_status_color }}-800">
@@ -141,8 +141,8 @@
                         </h5>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <div class="text-sm text-gray-500">Brand</div>
-                                <div class="font-semibold text-gray-900">{{ import_order.brand }}</div>
+                                <div class="text-sm text-gray-500">Make</div>
+                                <div class="font-semibold text-gray-900">{{ import_order.make }}</div>
                             </div>
                             <div>
                                 <div class="text-sm text-gray-500">Model</div>

@@ -145,21 +145,23 @@
 <script>
 function addToCartQuick(partId, quantity) {
     // Use HTMX to add to cart
+    const cartEl = document.getElementById('cart-response-container') || document.body;
     htmx.ajax('POST', '{% url "core:add_to_cart_htmx" %}', {
         values: {
             'part_id': partId,
             'quantity': quantity,
             'csrfmiddlewaretoken': '{{ csrf_token }}'
         },
-        target: '#cart-response-container',
+        target: cartEl,
         swap: 'innerHTML'
     });
 }
 
 function openQuickView(partId) {
     // Load quick view modal content
+    const qvEl = document.getElementById('quick-view-modal-content') || document.body;
     htmx.ajax('GET', `/spare-parts/quick-view/${partId}/`, {
-        target: '#quick-view-modal-content',
+        target: qvEl,
         swap: 'innerHTML'
     });
 

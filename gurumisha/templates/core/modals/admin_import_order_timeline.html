@@ -37,7 +37,7 @@
                         </div>
                         <div>
                             <h3 class="text-xl font-bold text-white font-montserrat">Order Timeline</h3>
-                            <p class="text-white text-opacity-90 text-sm font-raleway">Order #{{ import_order.order_number }} - {{ import_order.year }} {{ import_order.brand }} {{ import_order.model }}</p>
+                            <p class="text-white text-opacity-90 text-sm font-raleway">Order #{{ import_order.order_number }} - {{ import_order.year }} {{ import_order.make }} {{ import_order.model }}</p>
                         </div>
                     </div>
                     <button type="button" 
@@ -59,7 +59,7 @@
                                 <i class="fas fa-car text-white text-xl"></i>
                             </div>
                             <div>
-                                <h4 class="text-lg font-bold text-gray-900 font-montserrat">{{ import_order.year }} {{ import_order.brand }} {{ import_order.model }}</h4>
+                                <h4 class="text-lg font-bold text-gray-900 font-montserrat">{{ import_order.year }} {{ import_order.make }} {{ import_order.model }}</h4>
                                 <p class="text-sm text-gray-600 font-raleway">Customer: {{ import_order.customer.get_full_name|default:import_order.customer.username }}</p>
                             </div>
                         </div>

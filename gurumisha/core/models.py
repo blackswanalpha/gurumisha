@@ -416,16 +416,16 @@ class Vendor(models.Model):
 
 
 
-class CarBrand(models.Model):
-    """Enhanced car brands with additional metadata"""
+class CarMake(models.Model):
+    """Enhanced car makes with additional metadata"""
     name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, help_text="Brand description and history")
-    country_of_origin = models.CharField(max_length=100, blank=True, help_text="Country where brand originated")
-    logo = models.ImageField(upload_to='brands/', blank=True)
+    description = models.TextField(blank=True, help_text="Make description and history")
+    country_of_origin = models.CharField(max_length=100, blank=True, help_text="Country where make originated")
+    logo = models.ImageField(upload_to='makes/', blank=True)
     logo_url = models.URLField(blank=True, help_text="Alternative logo URL if not uploaded")
-    website = models.URLField(blank=True, help_text="Official brand website")
+    website = models.URLField(blank=True, help_text="Official make website")
     is_active = models.BooleanField(default=True)
-    is_premium = models.BooleanField(default=False, help_text="Mark as premium/luxury brand")
+    is_premium = models.BooleanField(default=False, help_text="Mark as premium/luxury make")
     display_order = models.PositiveIntegerField(default=0, help_text="Order for display in lists")
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -475,7 +475,7 @@ class CarModel(models.Model):
         ('other', 'Other'),
     ]
 
-    brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, related_name='models')
+    make = models.ForeignKey(CarMake, on_delete=models.CASCADE, related_name='models')
     name = models.CharField(max_length=100)
     body_type = models.CharField(max_length=20, choices=BODY_TYPE_CHOICES, blank=True)
     engine_options = models.TextField(blank=True, help_text="Available engine options (comma-separated)")
@@ -488,11 +488,11 @@ class CarModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
-        return f"{self.brand.name} {self.name}"
+        return f"{self.make.name} {self.name}"
 
     class Meta:
-        ordering = ['brand__name', 'name']
-        unique_together = ['brand', 'name']
+        ordering = ['make__name', 'name']
+        unique_together = ['make', 'name']
 
     def get_production_years(self):
         """Get production year range as string"""
@@ -505,8 +505,11 @@ class CarModel(models.Model):
 
 
 # Aliases for consistency
-VehicleBrand = CarBrand
+VehicleMake = CarMake
 VehicleModel = CarModel
+# Legacy aliases for backward compatibility
+CarBrand = CarMake
+VehicleBrand = CarMake
 
 
 class Car(models.Model):
@@ -542,13 +545,13 @@ class Car(models.Model):
 
     # Basic Information
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='cars')
-    brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, null=True, blank=True)
+    make = models.ForeignKey(CarMake, on_delete=models.CASCADE, null=True, blank=True)
     model = models.ForeignKey(CarModel, on_delete=models.CASCADE, null=True, blank=True)
     year = models.PositiveIntegerField()
     condition = models.ForeignKey(VehicleCondition, on_delete=models.CASCADE, null=True, blank=True)
 
     # Fallback string fields for when using hardcoded choices
-    brand_name = models.CharField(max_length=100, blank=True, help_text="Brand name when not using database brands")
+    make_name = models.CharField(max_length=100, blank=True, help_text="Make name when not using database makes")
     model_name = models.CharField(max_length=100, blank=True, help_text="Model name when not using database models")
     condition_name = models.CharField(max_length=50, blank=True, help_text="Condition when not using database conditions")
 
@@ -605,13 +608,13 @@ class Car(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        brand_name = self.brand.name if self.brand else self.brand_name
+        make_name = self.make.name if self.make else self.make_name
         model_name = self.model.name if self.model else self.model_name
-        return f"{self.year} {brand_name} {model_name}"
+        return f"{self.year} {make_name} {model_name}"
 
-    def get_brand_name(self):
-        """Get brand name from either database model or string field"""
-        return self.brand.name if self.brand else self.brand_name
+    def get_make_name(self):
+        """Get make name from either database model or string field"""
+        return self.make.name if self.make else self.make_name
 
     def get_model_name(self):
         """Get model name from either database model or string field"""
@@ -1108,7 +1111,7 @@ class ImportRequest(models.Model):
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='import_requests')
 
     # Car Details
-    brand = models.CharField(max_length=100)
+    make = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
     year = models.PositiveIntegerField()
     preferred_color = models.CharField(max_length=50, blank=True)
@@ -1133,12 +1136,12 @@ class ImportRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Import Request: {self.year} {self.brand} {self.model} - {self.customer.username}"
+        return f"Import Request: {self.year} {self.make} {self.model} - {self.customer.username}"
 
     @property
     def vehicle_details(self):
         """Return formatted vehicle details string"""
-        return f"{self.year} {self.brand} {self.model}"
+        return f"{self.year} {self.make} {self.model}"
 
     class Meta:
         ordering = ['-created_at']
@@ -1174,7 +1177,7 @@ class ImportOrder(models.Model):
     import_request = models.OneToOneField(ImportRequest, on_delete=models.CASCADE, related_name='import_order', null=True, blank=True)
 
     # Car Details
-    brand = models.CharField(max_length=100)
+    make = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
     year = models.PositiveIntegerField()
     color = models.CharField(max_length=50, blank=True)
@@ -1245,12 +1248,12 @@ class ImportOrder(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Import Order {self.order_number} - {self.year} {self.brand} {self.model}"
+        return f"Import Order {self.order_number} - {self.year} {self.make} {self.model}"
 
     @property
     def vehicle_details(self):
         """Return formatted vehicle details string"""
-        return f"{self.year} {self.brand} {self.model}"
+        return f"{self.year} {self.make} {self.model}"
 
     def save(self, *args, **kwargs):
         if not self.order_number:
@@ -1762,7 +1765,7 @@ class SparePart(models.Model):
     category_new = models.ForeignKey(SparePartCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='parts')
 
     # Compatibility
-    compatible_brands = models.ManyToManyField(CarBrand, blank=True)
+    compatible_makes = models.ManyToManyField(CarMake, blank=True)
     compatible_models = models.ManyToManyField(CarModel, blank=True)
     year_from = models.PositiveIntegerField(null=True, blank=True)
     year_to = models.PositiveIntegerField(null=True, blank=True)

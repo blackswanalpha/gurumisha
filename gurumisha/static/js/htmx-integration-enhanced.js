@@ -18,7 +18,11 @@
         constructor() {
             this.preservedElements = new Map();
             this.buttonRegistry = new Map();
-            this.init();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.init(), { once: true });
+            } else {
+                this.init();
+            }
         }
 
         init() {
@@ -37,10 +41,9 @@
                 this.preserveImportantElements(event);
             });
 
-            // After swap - restore and re-hydrate
+            // After swap - restore and re-register buttons (hydration handled by unified manager)
             document.addEventListener('htmx:afterSwap', (event) => {
                 this.restorePreservedElements(event);
-                this.rehydrateAlpineComponents(event);
                 this.reregisterButtons(event);
             });
 
@@ -132,17 +135,22 @@
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node && node.nodeType === Node.ELEMENT_NODE) {
                             this.registerButtonsInElement(node);
                         }
                     });
                 });
             });
 
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+            const root = document && document.body ? document.body : null;
+            if (root) {
+                observer.observe(root, {
+                    childList: true,
+                    subtree: true
+                });
+            } else {
+                console.warn('EnhancedHTMXIntegration: document.body not available for MutationObserver');
+            }
         }
 
         /**
@@ -228,70 +236,14 @@
         }
 
         /**
-         * Setup Alpine.js integration
+         * Alpine.js integration is governed by the unified hydration manager.
+         * No-op here to avoid duplication.
          */
         setupAlpineIntegration() {
-            // Ensure Alpine.js is available
-            if (typeof Alpine === 'undefined') {
-                console.warn('⚠️ Alpine.js not available for HTMX integration');
-                return;
-            }
-
-            // Setup Alpine.js re-hydration
-            this.setupAlpineRehydration();
+            // Intentionally left blank
         }
 
-        /**
-         * Setup Alpine.js re-hydration after HTMX swaps
-         */
-        setupAlpineRehydration() {
-            document.addEventListener('htmx:afterSwap', (event) => {
-                this.rehydrateAlpineComponents(event);
-            });
-        }
-
-        /**
-         * Re-hydrate Alpine.js components after HTMX swap
-         */
-        rehydrateAlpineComponents(event) {
-            const target = event.detail.target;
-
-            // Use safe Alpine.js utilities if available
-            if (window.safeAlpineBatchInit) {
-                console.log('🏔️ Re-hydrating Alpine.js components using safe utilities');
-                window.safeAlpineBatchInit(target);
-                return;
-            }
-
-            // Fallback to direct Alpine.js if safe utilities not available
-            if (!window.isAlpineReady || !window.isAlpineReady()) {
-                console.warn('⚠️ Alpine.js not ready for re-hydration');
-                return;
-            }
-
-            try {
-                // Find Alpine.js components in the swapped content
-                const alpineElements = target.querySelectorAll('[x-data]');
-
-                alpineElements.forEach(element => {
-                    // Only initialize if not already initialized
-                    if (!element._x_dataStack || element._x_dataStack.length === 0) {
-                        console.log('🏔️ Re-hydrating Alpine.js component:', element);
-                        Alpine.initTree(element);
-                    }
-                });
-
-                // Also check if target itself has Alpine.js
-                if (target.hasAttribute && target.hasAttribute('x-data')) {
-                    if (!target._x_dataStack || target._x_dataStack.length === 0) {
-                        Alpine.initTree(target);
-                    }
-                }
-
-            } catch (error) {
-                console.error('❌ Error re-hydrating Alpine.js components:', error);
-            }
-        }
+        // Removed: Alpine rehydration is handled by unified hydration manager
 
         /**
          * Handle HTMX errors

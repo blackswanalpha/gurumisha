@@ -146,7 +146,7 @@
                     {% for car in top_rated %}
                     <div class="car-card">
                         <h4 style="margin: 0 0 10px 0; color: #1f2937;">{{ car.title }}</h4>
-                        <p style="margin: 5px 0; color: #6b7280;">{{ car.brand.name }} {{ car.model.name }}</p>
+                        <p style="margin: 5px 0; color: #6b7280;">{{ car.make.name }} {{ car.model.name }}</p>
                         <div style="margin: 10px 0;">
                             <span style="font-size: 18px; font-weight: bold; color: #1f2937;">
                                 KSh {{ car.price|floatformat:0 }}

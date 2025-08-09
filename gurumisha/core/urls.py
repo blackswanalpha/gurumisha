@@ -224,6 +224,7 @@ urlpatterns = [
     path('messages/popup/', dashboard_views.user_messages_popup, name='user_messages_popup'),
     path('messages/action/<int:message_id>/', dashboard_views.user_message_action, name='user_message_action'),
     path('messages/dashboard/', dashboard_views.user_dashboard_messages, name='user_dashboard_messages'),
+    path('messages/debug/', views.message_debug_view, name='message_debug'),
 
     # Import Request HTMX Endpoints
     path('dashboard/admin/import-requests/add-modal/', dashboard_views.admin_import_request_add_modal, name='admin_import_request_add_modal'),
@@ -382,6 +383,9 @@ urlpatterns = [
     path('calculator/', views.car_calculator, name='car_calculator'),
     path('calculator/calculate/', views.calculate_loan, name='calculate_loan'),
 
+    # Car Valuation URLs
+    path('valuation/', views.car_valuation, name='car_valuation'),
+
     # Cart and Checkout
     path('cart/', views.cart_view, name='cart'),
     path('checkout/', views.checkout_view, name='checkout'),
@@ -408,9 +412,11 @@ urlpatterns = [
     path('htmx/analytics/widget/', views.htmx_promotion_analytics_widget, name='htmx_promotion_analytics_widget'),
     path('htmx/countdown/<int:deal_id>/', views.htmx_countdown_timer_update, name='htmx_countdown_timer_update'),
     path('htmx/cars/filter/', views.htmx_car_list_filter, name='htmx_car_list_filter'),
-    path('htmx/models-by-brand/', views.htmx_models_by_brand, name='htmx_models_by_brand'),
+    path('htmx/models-by-make/', views.htmx_models_by_make, name='htmx_models_by_make'),
     path('htmx/cars/filter-body-type/', views.htmx_filter_by_body_type, name='htmx_filter_by_body_type'),
     path('htmx/recently-viewed/update/', views.htmx_recently_viewed_update, name='htmx_recently_viewed_update'),
+    # Spare parts subcategory endpoint
+    path('htmx/subcategories-by-category/', views.htmx_subcategories_by_category, name='htmx_subcategories_by_category'),
 
     # Import Order Tracking HTMX endpoints
     path('import/tracking/<str:order_number>/status/', views.import_order_status_update_htmx, name='import_order_status_htmx'),
@@ -436,6 +442,7 @@ urlpatterns = [
     path('dashboard/htmx/tracking-stats/', views.admin_tracking_stats_htmx, name='admin_tracking_stats_htmx'),
     path('dashboard/htmx/inquiry-stats/', views.admin_inquiry_stats_htmx, name='admin_inquiry_stats_htmx'),
     path('dashboard/htmx/admin-quick-actions/', dashboard_views.admin_quick_actions_lazy, name='admin_quick_actions_htmx'),
+    path('dashboard/htmx/admin-stats/', dashboard_views.admin_stats_json, name='admin_stats_json'),
 
     # Admin Query Management HTMX Endpoints
     path('dashboard/admin/queries/table-htmx/', dashboard_views.admin_queries_table_htmx, name='admin_queries_table_htmx'),
@@ -457,7 +464,7 @@ urlpatterns = [
     path('spare-parts/stats/', views.spare_parts_stats_htmx, name='spare_parts_stats_htmx'),
 
     # HTMX endpoints for sell car form
-    # Note: htmx_models_by_brand URL already defined above
+    # Note: htmx_models_by_make URL already defined above
 
     # Test 404 page (for development)
     path('404/', views.test_404_view, name='test_404'),

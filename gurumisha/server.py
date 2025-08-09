@@ -412,6 +412,36 @@ class DeploymentManager:
             logger.error(f"Error applying migrations: {e}")
             return False
 
+    def populate_car_models(self):
+        """Populate comprehensive car models using management command"""
+        try:
+            if not self.django_initialized:
+                if not self.initialize_django():
+                    return False
+
+            logger.info("Populating comprehensive car models...")
+
+            # Run the populate_car_models management command
+            result = subprocess.run([
+                sys.executable, 'manage.py', 'populate_car_models', '--verbosity=1'
+            ], capture_output=True, text=True, cwd=self.project_dir)
+
+            if result.returncode == 0:
+                logger.info("Car models populated successfully")
+                # Log the output to show what was created
+                if result.stdout:
+                    for line in result.stdout.split('\n'):
+                        if line.strip():
+                            logger.info(f"Models: {line.strip()}")
+                return True
+            else:
+                logger.error(f"Failed to populate car models: {result.stderr}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error populating car models: {e}")
+            return False
+
     def collect_static_files(self):
         """Collect and optimize static files"""
         try:
@@ -465,12 +495,22 @@ class DeploymentManager:
                 stdout=out
             )
 
-            # Set password (createsuperuser doesn't set password non-interactively)
+            # Set password and email verification (createsuperuser doesn't set password non-interactively)
             user = User.objects.get(username=username)
             user.set_password(password)
+
+            # Set email verification status if the field exists
+            if hasattr(user, 'is_email_verified'):
+                user.is_email_verified = True
+                logger.info(f"Email verification set for superuser: {username}")
+
+            # Set additional admin-specific fields if they exist
+            if hasattr(user, 'role'):
+                user.role = 'admin'
+
             user.save()
 
-            logger.info(f"Superuser '{username}' created successfully")
+            logger.info(f"Superuser '{username}' created successfully with verified email")
             return True
 
         except Exception as e:
@@ -1703,9 +1743,9 @@ class GurumishaServer:
                 security_issues.append("Wildcard in ALLOWED_HOSTS")
 
             # Check for default admin credentials
-            User = get_user_model()
+            User = self.django_modules['get_user_model']()
             default_admin = User.objects.filter(username='admin').first()
-            if default_admin and default_admin.check_password('admin123'):
+            if default_admin and default_admin.check_password('Admin123'):
                 security_issues.append("Default admin credentials detected")
 
             if security_issues:
@@ -1766,7 +1806,124 @@ class GurumishaServer:
         except Exception as e:
             logger.error(f"Failed to initialize sample data: {e}")
             return False
-    
+
+    def populate_initial_data(self):
+        """Populate comprehensive car models and create initial users"""
+        try:
+            logger.info("Starting initial data population...")
+
+            # Always run comprehensive car models population to ensure latest models
+            logger.info("Populating comprehensive car models...")
+            if self.deployment_manager.populate_car_models():
+                logger.info("Comprehensive car models populated successfully")
+
+                # Log model statistics
+                from core.models import CarMake, CarModel
+                total_makes = CarMake.objects.filter(is_active=True).count()
+                total_models = CarModel.objects.filter(is_active=True).count()
+                logger.info(f"Database now contains {total_makes} car makes and {total_models} car models")
+
+                # Log some popular brands
+                popular_brands = ['Toyota', 'Honda', 'BMW', 'Mercedes-Benz', 'Volkswagen', 'Audi']
+                for brand_name in popular_brands:
+                    try:
+                        brand = CarMake.objects.get(name=brand_name)
+                        model_count = CarModel.objects.filter(make=brand, is_active=True).count()
+                        logger.info(f"  {brand_name}: {model_count} models available")
+                    except CarMake.DoesNotExist:
+                        pass
+            else:
+                logger.warning("Car models population failed, but continuing...")
+
+            # Create initial users
+            logger.info("Creating initial users...")
+            if hasattr(self, 'create_initial_users'):
+                self.create_initial_users()
+            else:
+                # Fallback to management command
+                from django.core.management import call_command
+                call_command('create_initial_users')
+            logger.info("Initial users created successfully")
+
+            logger.info("Initial data population completed")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to populate initial data: {e}")
+            return False
+
+    def create_initial_users(self):
+        """Create 3 customer users with realistic data"""
+        try:
+            logger.info("Creating customer users...")
+
+            User = self.django_modules['get_user_model']()
+
+            # Customer user data
+            customers = [
+                {
+                    'username': 'john_customer',
+                    'email': 'john.doe@example.com',
+                    'first_name': 'John',
+                    'last_name': 'Doe',
+                    'phone': '+254712345678',
+                    'city': 'Nairobi',
+                    'password': 'customer123'
+                },
+                {
+                    'username': 'mary_customer',
+                    'email': 'mary.smith@example.com',
+                    'first_name': 'Mary',
+                    'last_name': 'Smith',
+                    'phone': '+254723456789',
+                    'city': 'Mombasa',
+                    'password': 'customer123'
+                },
+                {
+                    'username': 'peter_customer',
+                    'email': 'peter.jones@example.com',
+                    'first_name': 'Peter',
+                    'last_name': 'Jones',
+                    'phone': '+254734567890',
+                    'city': 'Kisumu',
+                    'password': 'customer123'
+                }
+            ]
+
+            created_count = 0
+            for customer_data in customers:
+                if not User.objects.filter(username=customer_data['username']).exists():
+                    user = User.objects.create_user(
+                        username=customer_data['username'],
+                        email=customer_data['email'],
+                        first_name=customer_data['first_name'],
+                        last_name=customer_data['last_name'],
+                        password=customer_data['password']
+                    )
+
+                    # Set additional fields if they exist
+                    if hasattr(user, 'phone'):
+                        user.phone = customer_data['phone']
+                    if hasattr(user, 'city'):
+                        user.city = customer_data['city']
+                    if hasattr(user, 'role'):
+                        user.role = 'customer'
+                    if hasattr(user, 'is_email_verified'):
+                        user.is_email_verified = True
+
+                    user.save()
+                    created_count += 1
+                    logger.info(f"Created customer user: {customer_data['username']}")
+                else:
+                    logger.info(f"Customer user already exists: {customer_data['username']}")
+
+            logger.info(f"Customer user creation completed. Created: {created_count}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to create customer users: {e}")
+            return False
+
     def _kill_switch_monitor(self):
         """Monitor for kill switch activation"""
         while self.running:
@@ -1878,17 +2035,20 @@ class GurumishaServer:
                     logger.error("Django initialization failed")
                     return
 
-            # Create default admin user with secure password if needed
-            admin_password = self.generate_secure_password()
+            # Create default admin user with specified credentials
             admin_created = self.deployment_manager.create_superuser(
                 username='admin',
                 email='admin@gurumisha.com',
-                password=admin_password
+                password='Admin123'
             )
 
             if admin_created:
-                logger.info(f"Default admin created with password: {admin_password}")
-                logger.warning("Please change the default admin password immediately!")
+                logger.info("Default admin created with email: admin@gurumisha.com")
+                logger.info("Default admin password: Admin123")
+                logger.warning("Please change the default admin password after first login!")
+
+            # Populate car models and initial data
+            self.populate_initial_data()
 
             # Setup worker processes
             if not self.setup_worker_processes():

@@ -353,7 +353,7 @@
                               hx-get="{% url 'core:car_explore' %}"
                               hx-target="#cars-results"
                               hx-trigger="change, submit"
-                              hx-indicator="#loading-indicator"
+                              hx-indicator="#cars-explore-loading-indicator"
                               hx-push-url="true"
                               class="space-y-6">
 
@@ -363,22 +363,22 @@
                         <!-- Search -->
                         <div class="filter-section">
                             <h3>Search</h3>
-                            <input type="text" name="search" value="{{ current_filters.search }}" 
-                                   placeholder="Search cars..." 
+                            <input type="text" name="search" value="{{ current_filters.search }}"
+                                   placeholder="Search cars..."
                                    class="form-input w-full">
                         </div>
 
-                        <!-- Brand Filter -->
+                        <!-- Make Filter -->
                         <div class="filter-section">
-                            <h3>Brand</h3>
-                            <select name="brand" class="form-select w-full"
-                                    hx-get="{% url 'core:htmx_models_by_brand' %}"
+                            <h3>Make</h3>
+                            <select name="make" class="form-select w-full"
+                                    hx-get="{% url 'core:htmx_models_by_make' %}"
                                     hx-target="#model-options"
-                                    hx-include="[name='brand']">
-                                <option value="">All Brands</option>
-                                {% for brand in car_brands %}
-                                    <option value="{{ brand.id }}" {% if current_filters.brand == brand.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ brand.name }}
+                                    hx-include="[name='make']">
+                                <option value="">All Makes</option>
+                                {% for make in car_makes %}
+                                    <option value="{{ make.id }}" {% if current_filters.make == make.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ make.name }}
                                     </option>
                                 {% endfor %}
                             </select>
@@ -390,7 +390,7 @@
                             <select name="model" class="form-select w-full" id="model-options">
                                 <option value="">All Models</option>
                                 {% for model in car_models %}
-                                    {% if not current_filters.brand or model.brand.id|stringformat:"s" == current_filters.brand %}
+                                    {% if not current_filters.make or model.make.id|stringformat:"s" == current_filters.make %}
                                         <option value="{{ model.id }}" {% if current_filters.model == model.id|stringformat:"s" %}selected{% endif %}>
                                             {{ model.name }}
                                         </option>
@@ -577,13 +577,13 @@
                             <h3>Special</h3>
                             <div class="space-y-3">
                                 <label class="flex items-center">
-                                    <input type="checkbox" name="featured_only" value="1" 
+                                    <input type="checkbox" name="featured_only" value="1"
                                            {% if current_filters.featured_only %}checked{% endif %}
                                            class="mr-2 text-red-600">
                                     <span class="text-sm font-medium">Featured Only</span>
                                 </label>
                                 <label class="flex items-center">
-                                    <input type="checkbox" name="hot_deals" value="1" 
+                                    <input type="checkbox" name="hot_deals" value="1"
                                            {% if current_filters.hot_deals %}checked{% endif %}
                                            class="mr-2 text-red-600">
                                     <span class="text-sm font-medium">Hot Deals</span>
@@ -618,6 +618,14 @@
             </div>
 
             <!-- Main Content Area -->
+                <!-- Stable Loading Indicator (outside swap region) -->
+                <div id="cars-explore-loading-indicator" class="htmx-indicator" aria-live="polite" style="display:none">
+                    <div class="flex justify-center items-center py-6">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                        <span class="ml-3 text-gray-600">Loading...</span>
+                    </div>
+                </div>
+
             <div class="lg:col-span-3">
                 <div id="cars-results">
                     {% include 'core/partials/car_explore_results.html' %}
@@ -628,9 +636,9 @@
 </section>
 
 <!-- WhatsApp Floating Button -->
-<a href="https://api.whatsapp.com/send/?phone=254720557457&text&type=phone_number&app_absent=0" 
-   class="whatsapp-float" 
-   target="_blank" 
+<a href="https://api.whatsapp.com/send/?phone=254720557457&text&type=phone_number&app_absent=0"
+   class="whatsapp-float"
+   target="_blank"
    rel="noopener noreferrer"
    aria-label="Contact us on WhatsApp">
     <i class="fab fa-whatsapp"></i>

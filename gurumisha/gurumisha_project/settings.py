@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'tailwind',
+    'theme',
     'django_htmx',
     'core',
 ]
@@ -93,10 +94,31 @@ TEMPLATES = [
 WSGI_APPLICATION = 'gurumisha_project.wsgi.application'
 
 
+# On}bO{%A)q1yDnAs-- cpanel password 
+
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# PostgreSQL Configuration (Production)
 DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME', default='gurumisha_db'),
+        'USER': config('DB_USER', default='gurumisha_user'),
+        'PASSWORD': config('DB_PASSWORD', default='gurumisha_password'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
+        'OPTIONS': {
+            'connect_timeout': 60,
+        },
+        'CONN_MAX_AGE': 600,  # 10 minutes connection pooling
+        'CONN_HEALTH_CHECKS': True,
+    }
+}
+
+# SQLite Configuration (Development/Fallback)
+SQLITE_DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
@@ -107,6 +129,10 @@ DATABASES = {
         'CONN_MAX_AGE': 0,  # Don't persist connections to avoid locks
     }
 }
+
+# Use SQLite for development if PostgreSQL is not available
+if config('USE_SQLITE', default=False, cast=bool):
+    DATABASES = SQLITE_DATABASES
 
 
 # Password validation

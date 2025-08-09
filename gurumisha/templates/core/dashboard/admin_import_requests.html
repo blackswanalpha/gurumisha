@@ -111,7 +111,7 @@
                                hx-target="#import-requests-table-container"
                                hx-swap="innerHTML"
                                hx-trigger="keyup changed delay:500ms, search"
-                               hx-include="[name='status'], [name='brand'], [name='country'], [name='date_from'], [name='date_to']">
+                               hx-include="[name='status'], [name='make'], [name='country'], [name='date_from'], [name='date_to']">
                         <button type="button"
                                 id="clear-search"
                                 class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-harrier-red transition-colors duration-200"
@@ -157,7 +157,7 @@
                                 hx-get="{% url 'core:admin_import_requests_table_partial' %}"
                                 hx-target="#import-requests-table-container"
                                 hx-swap="innerHTML"
-                                hx-include="[name='search'], [name='brand'], [name='country'], [name='date_from'], [name='date_to']">
+                                hx-include="[name='search'], [name='make'], [name='country'], [name='date_from'], [name='date_to']">
                             <option value="">All Statuses</option>
                             {% for status_code, status_display in status_choices %}
                                 <option value="{{ status_code }}" {% if current_status == status_code %}selected{% endif %}>
@@ -167,19 +167,19 @@
                         </select>
                     </div>
 
-                    <!-- Brand Filter -->
+                    <!-- Make Filter -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Brand</label>
-                        <select name="brand"
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-raleway">Make</label>
+                        <select name="make"
                                 class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-harrier-red focus:border-harrier-red font-raleway text-sm"
                                 hx-get="{% url 'core:admin_import_requests_table_partial' %}"
                                 hx-target="#import-requests-table-container"
                                 hx-swap="innerHTML"
                                 hx-include="[name='search'], [name='status'], [name='country'], [name='date_from'], [name='date_to']">
-                            <option value="">All Brands</option>
-                            {% for brand in brands %}
-                                <option value="{{ brand }}" {% if current_brand == brand %}selected{% endif %}>
-                                    {{ brand }}
+                            <option value="">All Makes</option>
+                            {% for make in makes %}
+                                <option value="{{ make }}" {% if current_make == make %}selected{% endif %}>
+                                    {{ make }}
                                 </option>
                             {% endfor %}
                         </select>
@@ -193,7 +193,7 @@
                                 hx-get="{% url 'core:admin_import_requests_table_partial' %}"
                                 hx-target="#import-requests-table-container"
                                 hx-swap="innerHTML"
-                                hx-include="[name='search'], [name='status'], [name='brand'], [name='date_from'], [name='date_to']">
+                                hx-include="[name='search'], [name='status'], [name='make'], [name='date_from'], [name='date_to']">
                             <option value="">All Countries</option>
                             {% for country in countries %}
                                 <option value="{{ country }}" {% if current_country == country %}selected{% endif %}>
@@ -214,7 +214,7 @@
                                hx-target="#import-requests-table-container"
                                hx-swap="innerHTML"
                                hx-trigger="change"
-                               hx-include="[name='search'], [name='status'], [name='brand'], [name='country'], [name='date_to']">
+                               hx-include="[name='search'], [name='status'], [name='make'], [name='country'], [name='date_to']">
                     </div>
 
                     <!-- Date To -->
@@ -228,7 +228,7 @@
                                hx-target="#import-requests-table-container"
                                hx-swap="innerHTML"
                                hx-trigger="change"
-                               hx-include="[name='search'], [name='status'], [name='brand'], [name='country'], [name='date_from']">
+                               hx-include="[name='search'], [name='status'], [name='make'], [name='country'], [name='date_from']">
                     </div>
                 </div>
 
@@ -288,7 +288,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ request.year }} {{ request.brand }} {{ request.model }}</div>
+                                <div class="text-sm font-medium text-gray-900 font-raleway">{{ request.year }} {{ request.make }} {{ request.model }}</div>
                                 <div class="text-sm text-gray-500">{{ request.origin_country }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -457,7 +457,7 @@
         // Clear all filter inputs
         document.querySelector('[name="search"]').value = '';
         document.querySelector('[name="status"]').value = '';
-        document.querySelector('[name="brand"]').value = '';
+        document.querySelector('[name="make"]').value = '';
         document.querySelector('[name="country"]').value = '';
         document.querySelector('[name="date_from"]').value = '';
         document.querySelector('[name="date_to"]').value = '';
@@ -562,14 +562,14 @@
         const params = new URLSearchParams();
         const search = document.querySelector('[name="search"]').value;
         const status = document.querySelector('[name="status"]').value;
-        const brand = document.querySelector('[name="brand"]').value;
+        const make = document.querySelector('[name="make"]').value;
         const country = document.querySelector('[name="country"]').value;
         const dateFrom = document.querySelector('[name="date_from"]').value;
         const dateTo = document.querySelector('[name="date_to"]').value;
 
         if (search) params.append('search', search);
         if (status) params.append('status', status);
-        if (brand) params.append('brand', brand);
+        if (make) params.append('make', make);
         if (country) params.append('country', country);
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
@@ -592,7 +592,7 @@
 
     // Auto-show filters if any filter is active
     document.addEventListener('DOMContentLoaded', function() {
-        const hasActiveFilters = '{{ current_status }}' || '{{ current_search }}' || '{{ current_brand }}' ||
+        const hasActiveFilters = '{{ current_status }}' || '{{ current_search }}' || '{{ current_make }}' ||
                                 '{{ current_country }}' || '{{ current_date_from }}' || '{{ current_date_to }}';
 
         if (hasActiveFilters) {

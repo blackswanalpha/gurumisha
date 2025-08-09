@@ -51,23 +51,26 @@
         }
     </script>
 
+    <!-- Alpine.js Initialization Guard (load first) -->
+    <script src="{% static 'js/alpine-initialization-guard.js' %}"></script>
+
     <!-- Alpine.js Components (load before Alpine.js) -->
     <script src="{% static 'js/alpine-components.js' %}"></script>
 
-    <!-- Hydration Manager (load before HTMX) -->
-    <script src="{% static 'js/hydration-manager.js' %}"></script>
+    <!-- Alpine.js for interactive components (load before HTMX) -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- Modal Manager -->
-    <script src="{% static 'js/modal-manager.js' %}"></script>
-
-    <!-- HTMX -->
+    <!-- HTMX (load after Alpine.js) -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Unified Hydration Manager (load after HTMX) -->
+    <script src="{% static 'js/hydration-manager.js' %}"></script>
 
     <!-- HTMX Configuration and Error Handling -->
     <script src="{% static 'js/htmx-config.js' %}"></script>
 
-    <!-- Alpine.js for interactive components -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Modal Manager (after HTMX and hydration setup) -->
+    <script src="{% static 'js/modal-manager.js' %}"></script>
 
     <!-- Frontend Validator (load after all other scripts) -->
     <script src="{% static 'js/frontend-validator.js' %}"></script>
@@ -242,7 +245,7 @@
     </div>
 
     <!-- Enhanced Admin Sidebar JavaScript -->
-    <script src="{% static 'js/admin-sidebar.js' %}"></script>
+    <script src="{% static 'js/admin-sidebar.js' %}?v=20250802-1400"></script>
 
     {% block extra_js %}
     <script>

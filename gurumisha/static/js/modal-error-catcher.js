@@ -20,7 +20,11 @@
             this.maxErrorLog = 50;
             this.retryAttempts = new Map();
             this.maxRetries = 3;
-            this.init();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.init(), { once: true });
+            } else {
+                this.init();
+            }
         }
 
         init() {
@@ -103,22 +107,29 @@
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === Node.ELEMENT_NODE && this.isModalElement(node)) {
+                        if (node && node.nodeType === Node.ELEMENT_NODE && this.isModalElement(node)) {
                             this.setupModalElementErrorHandling(node);
                         }
                     });
                 });
             });
 
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+            const root = document && document.body ? document.body : null;
+            if (root) {
+                observer.observe(root, {
+                    childList: true,
+                    subtree: true
+                });
+            } else {
+                console.warn('ModalErrorCatcher: document.body not available for MutationObserver');
+            }
 
-            // Handle existing modals
-            document.querySelectorAll('[role="dialog"], [id*="modal"]').forEach(modal => {
-                this.setupModalElementErrorHandling(modal);
-            });
+            // Handle existing modals (guard for DOM availability)
+            if (document && document.querySelectorAll) {
+                document.querySelectorAll('[role="dialog"], [id*="modal"]').forEach(modal => {
+                    this.setupModalElementErrorHandling(modal);
+                });
+            }
         }
 
         /**
@@ -344,11 +355,12 @@
         isModalRelatedError(event) {
             const errorMessage = event.message?.toLowerCase() || '';
             const filename = event.filename?.toLowerCase() || '';
-            
+            const t = event && event.target;
+            const canClosest = t && typeof t.closest === 'function';
+
             return errorMessage.includes('modal') ||
                    filename.includes('modal') ||
-                   event.target?.closest('[role="dialog"]') ||
-                   event.target?.closest('[id*="modal"]');
+                   (canClosest && (t.closest('[role="dialog"]') || t.closest('[id*="modal"]')));
         }
 
         /**
@@ -365,12 +377,13 @@
         isModalHTMXRequest(event) {
             const url = event.detail.requestConfig?.path || '';
             const target = event.detail.target;
-            
+            const canClosest = target && typeof target.closest === 'function';
+            const elt = event.detail && event.detail.elt;
+            const eltHasAttr = elt && typeof elt.hasAttribute === 'function' && elt.hasAttribute('hx-target');
+
             return url.includes('modal') ||
-                   target?.closest('[role="dialog"]') ||
-                   target?.closest('[id*="modal"]') ||
-                   event.detail.elt?.hasAttribute('hx-target') && 
-                   event.detail.elt.getAttribute('hx-target') === 'body';
+                   (canClosest && (target.closest('[role="dialog"]') || target.closest('[id*="modal"]'))) ||
+                   (eltHasAttr && elt.getAttribute('hx-target') === 'body');
         }
 
         /**
@@ -496,8 +509,9 @@
             console.log(`🔄 Retrying modal request (${retryCount + 1}/${this.maxRetries}):`, url);
             
             if (typeof htmx !== 'undefined') {
+                const targetEl = document.body;
                 htmx.ajax('GET', url, {
-                    target: 'body',
+                    target: targetEl,
                     swap: 'beforeend'
                 });
             }

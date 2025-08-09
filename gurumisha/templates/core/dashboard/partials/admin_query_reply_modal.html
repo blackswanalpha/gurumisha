@@ -1,170 +1,280 @@
-<!-- Admin Query Reply Modal -->
-<div class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat">Reply to Customer Inquiry</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+<!-- Modal Container with Alpine.js Scope -->
+<div x-data="{ saving: false, showPreview: false }" @submit="saving = true">
+
+<!-- Modern No-Splash Modal Design -->
+<div class="bg-gradient-to-br from-violet-600 via-violet-500 to-purple-600 px-8 py-6 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>
+    </div>
+
+    <div class="relative flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <i class="fas fa-reply text-white text-lg"></i>
             </div>
-            <p class="text-sm text-gray-600 mt-1">{{ inquiry.subject }}</p>
+            <div>
+                <h3 class="text-2xl font-bold text-white font-montserrat">Reply to Customer</h3>
+                <p class="text-violet-100 mt-1 font-raleway">{{ inquiry.subject }}</p>
+            </div>
+        </div>
+        <button onclick="closeModal()" class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-110">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Modern Modal Body -->
+<div class="p-8 bg-gradient-to-br from-gray-50 to-white">
+    <form id="reply-form"
+          hx-post="{% url 'core:admin_query_reply' inquiry.id %}"
+          hx-target="#modal-content-area"
+          hx-swap="innerHTML"
+          enctype="multipart/form-data"
+          class="space-y-8">
+        {% csrf_token %}
+
+        <!-- Customer Information Card -->
+        <div class="glass-card p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    {{ inquiry.customer.first_name|first|default:inquiry.customer.username|first|upper }}
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-xl font-bold text-gray-900 font-montserrat">{{ inquiry.customer.get_full_name|default:inquiry.customer.username }}</h4>
+                    <p class="text-gray-600 font-raleway flex items-center gap-2">
+                        <i class="fas fa-envelope text-blue-500"></i>
+                        {{ inquiry.customer.email }}
+                    </p>
+                    {% if inquiry.phone %}
+                    <p class="text-gray-600 font-raleway flex items-center gap-2">
+                        <i class="fas fa-phone text-green-500"></i>
+                        {{ inquiry.phone }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500 font-raleway">Query ID</div>
+                    <div class="text-lg font-bold text-gray-900 font-montserrat">#{{ inquiry.id }}</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Modal Body -->
-        <div class="px-6 py-4">
-            <form hx-post="{% url 'core:admin_query_reply' inquiry.id %}" 
-                  hx-target="#modal-container" 
-                  hx-swap="innerHTML"
-                  enctype="multipart/form-data">
-                {% csrf_token %}
-                
-                <div class="space-y-6">
-                    <!-- Customer Info Summary -->
-                    <div class="bg-blue-50 rounded-lg p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                                {{ inquiry.customer.first_name|first|default:inquiry.customer.username|first|upper }}
-                            </div>
-                            <div>
-                                <p class="font-medium text-blue-900">{{ inquiry.customer.get_full_name|default:inquiry.customer.username }}</p>
-                                <p class="text-sm text-blue-700">{{ inquiry.customer.email }}</p>
-                            </div>
+        <!-- Original Inquiry Card -->
+        <div class="glass-card p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-quote-left text-white"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-900 font-montserrat">Original Inquiry</h4>
+            </div>
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                <h5 class="font-semibold text-gray-900 mb-2 font-montserrat">{{ inquiry.subject }}</h5>
+                <p class="text-gray-700 font-raleway leading-relaxed">{{ inquiry.message }}</p>
+            </div>
+        </div>
+
+        <!-- Response Content -->
+        <div class="glass-card p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-pen text-white"></i>
+                </div>
+                <label for="{{ form.response_content.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                    Your Response <span class="text-red-500">*</span>
+                </label>
+            </div>
+
+            <div class="relative">
+                {{ form.response_content }}
+                <div class="absolute bottom-3 right-3 flex gap-2">
+                    <button type="button" @click="showPreview = !showPreview" class="btn-modern btn-secondary text-xs">
+                        <i class="fas fa-eye mr-1"></i>Preview
+                    </button>
+                </div>
+            </div>
+
+            {% if form.response_content.help_text %}
+                <p class="mt-2 text-sm text-gray-500 font-raleway">{{ form.response_content.help_text }}</p>
+            {% endif %}
+            {% if form.response_content.errors %}
+                <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm text-red-600 font-raleway">{{ form.response_content.errors.0 }}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Additional Form Fields -->
+        <div class="space-y-6">
+            <!-- Internal Notes -->
+            <div class="glass-card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-sticky-note text-white"></i>
+                    </div>
+                    <label for="{{ form.internal_notes.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                        Internal Notes
+                    </label>
+                </div>
+                {{ form.internal_notes }}
+                {% if form.internal_notes.help_text %}
+                    <p class="mt-2 text-sm text-gray-500 font-raleway">{{ form.internal_notes.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Status and Priority Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-tasks text-white"></i>
                         </div>
-                    </div>
-
-                    <!-- Response Content -->
-                    <div>
-                        <label for="{{ form.response_content.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Response to Customer <span class="text-red-500">*</span>
+                        <label for="{{ form.status.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                            Update Status
                         </label>
-                        {{ form.response_content }}
-                        {% if form.response_content.help_text %}
-                            <p class="mt-1 text-sm text-gray-500">{{ form.response_content.help_text }}</p>
-                        {% endif %}
-                        {% if form.response_content.errors %}
-                            <div class="mt-1 text-sm text-red-600">
-                                {{ form.response_content.errors.0 }}
-                            </div>
-                        {% endif %}
                     </div>
-
-                    <!-- Internal Notes -->
-                    <div>
-                        <label for="{{ form.internal_notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Internal Notes
-                        </label>
-                        {{ form.internal_notes }}
-                        {% if form.internal_notes.help_text %}
-                            <p class="mt-1 text-sm text-gray-500">{{ form.internal_notes.help_text }}</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Status and Priority Row -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                                Update Status
-                            </label>
-                            {{ form.status }}
+                    {{ form.status }}
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-exclamation text-white"></i>
                         </div>
-                        <div>
-                            <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                                Priority Level
-                            </label>
-                            {{ form.priority }}
-                        </div>
-                    </div>
-
-                    <!-- Assignment -->
-                    <div>
-                        <label for="{{ form.assign_to_admin.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Admin
+                        <label for="{{ form.priority.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                            Priority Level
                         </label>
-                        {{ form.assign_to_admin }}
-                        {% if form.assign_to_admin.help_text %}
-                            <p class="mt-1 text-sm text-gray-500">{{ form.assign_to_admin.help_text }}</p>
-                        {% endif %}
                     </div>
+                    {{ form.priority }}
+                </div>
+            </div>
 
-                    <!-- Follow-up Options -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Assignment -->
+            <div class="glass-card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-user-tie text-white"></i>
+                    </div>
+                    <label for="{{ form.assign_to_admin.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                        Assign to Admin
+                    </label>
+                </div>
+                {{ form.assign_to_admin }}
+                {% if form.assign_to_admin.help_text %}
+                    <p class="mt-2 text-sm text-gray-500 font-raleway">{{ form.assign_to_admin.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Follow-up Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
                         <div class="flex items-center">
                             {{ form.requires_followup }}
-                            <label for="{{ form.requires_followup.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                            <label for="{{ form.requires_followup.id_for_label }}" class="ml-2 text-lg font-bold text-gray-900 font-montserrat">
                                 Requires follow-up
                             </label>
                         </div>
-                        <div>
-                            <label for="{{ form.followup_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                                Follow-up Date
-                            </label>
-                            {{ form.followup_date }}
-                        </div>
                     </div>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-calendar text-white"></i>
+                        </div>
+                        <label for="{{ form.followup_date.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                            Follow-up Date
+                        </label>
+                    </div>
+                    {{ form.followup_date }}
+                </div>
+            </div>
 
-                    <!-- Email Notification -->
+            <!-- Email Notification -->
+            <div class="glass-card p-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-envelope text-white"></i>
+                    </div>
                     <div class="flex items-center">
                         {{ form.send_email }}
-                        <label for="{{ form.send_email.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                        <label for="{{ form.send_email.id_for_label }}" class="ml-2 text-lg font-bold text-gray-900 font-montserrat">
                             Send email notification to customer
                         </label>
                     </div>
-
-                    <!-- File Attachment -->
-                    <div>
-                        <label for="{{ form.attachment.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Attach File
-                        </label>
-                        {{ form.attachment }}
-                        {% if form.attachment.help_text %}
-                            <p class="mt-1 text-sm text-gray-500">{{ form.attachment.help_text }}</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Quick Response Templates -->
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Response Templates</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <button type="button" onclick="insertTemplate('acknowledgment')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
-                                <div class="font-medium text-gray-900">Acknowledgment</div>
-                                <div class="text-gray-600 text-xs">Thank you for contacting us...</div>
-                            </button>
-                            <button type="button" onclick="insertTemplate('information_request')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
-                                <div class="font-medium text-gray-900">Request More Info</div>
-                                <div class="text-gray-600 text-xs">We need additional information...</div>
-                            </button>
-                            <button type="button" onclick="insertTemplate('resolution')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
-                                <div class="font-medium text-gray-900">Resolution</div>
-                                <div class="text-gray-600 text-xs">Your issue has been resolved...</div>
-                            </button>
-                            <button type="button" onclick="insertTemplate('escalation')" class="text-left p-2 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors">
-                                <div class="font-medium text-gray-900">Escalation</div>
-                                <div class="text-gray-600 text-xs">We're escalating your inquiry...</div>
-                            </button>
-                        </div>
-                    </div>
                 </div>
+            </div>
 
-                <!-- Modal Footer -->
-                <div class="flex justify-between items-center pt-6 mt-6 border-t border-gray-200">
-                    <button type="button" onclick="closeModal()" class="btn-admin-secondary">
-                        <i class="fas fa-times mr-2"></i>Cancel
+            <!-- File Attachment -->
+            <div class="glass-card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-paperclip text-white"></i>
+                    </div>
+                    <label for="{{ form.attachment.id_for_label }}" class="text-lg font-bold text-gray-900 font-montserrat">
+                        Attach File
+                    </label>
+                </div>
+                {{ form.attachment }}
+                {% if form.attachment.help_text %}
+                    <p class="mt-2 text-sm text-gray-500 font-raleway">{{ form.attachment.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Quick Response Templates -->
+            <div class="glass-card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-magic text-white"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-900 font-montserrat">Quick Response Templates</h4>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button type="button" onclick="insertTemplate('acknowledgment')" class="text-left p-4 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-200 transform hover:scale-105">
+                        <div class="font-bold text-blue-900 font-montserrat">Acknowledgment</div>
+                        <div class="text-blue-700 text-sm font-raleway">Thank you for contacting us...</div>
                     </button>
-                    <div class="flex gap-3">
-                        <button type="button" onclick="saveDraft()" class="btn-admin-secondary">
-                            <i class="fas fa-save mr-2"></i>Save Draft
-                        </button>
-                        <button type="submit" class="btn-admin-primary">
-                            <i class="fas fa-paper-plane mr-2"></i>Send Response
-                        </button>
-                    </div>
+                    <button type="button" onclick="insertTemplate('information_request')" class="text-left p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-xl hover:from-yellow-100 hover:to-yellow-200 transition-all duration-200 transform hover:scale-105">
+                        <div class="font-bold text-yellow-900 font-montserrat">Request More Info</div>
+                        <div class="text-yellow-700 text-sm font-raleway">We need additional information...</div>
+                    </button>
+                    <button type="button" onclick="insertTemplate('resolution')" class="text-left p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-200 transform hover:scale-105">
+                        <div class="font-bold text-green-900 font-montserrat">Resolution</div>
+                        <div class="text-green-700 text-sm font-raleway">Your issue has been resolved...</div>
+                    </button>
+                    <button type="button" onclick="insertTemplate('escalation')" class="text-left p-4 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl hover:from-red-100 hover:to-red-200 transition-all duration-200 transform hover:scale-105">
+                        <div class="font-bold text-red-900 font-montserrat">Escalation</div>
+                        <div class="text-red-700 text-sm font-raleway">We're escalating your inquiry...</div>
+                    </button>
                 </div>
-            </form>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<!-- Modern Modal Footer -->
+<div class="bg-gradient-to-r from-gray-50 to-white px-8 py-6 border-t border-gray-200">
+    <div class="flex justify-between items-center">
+        <button type="button" onclick="closeModal()" class="btn-modern btn-secondary" :disabled="saving">
+            <i class="fas fa-times mr-2"></i>Cancel
+        </button>
+        <div class="flex gap-4">
+            <button type="button" onclick="saveDraft()" class="btn-modern btn-secondary" :disabled="saving">
+                <i class="fas fa-save mr-2"></i>Save Draft
+            </button>
+            <button type="submit" form="reply-form" class="btn-modern btn-primary" :disabled="saving">
+                <div x-show="saving" class="modern-spinner inline-block mr-2 w-4 h-4"></div>
+                <i x-show="!saving" class="fas fa-paper-plane mr-2"></i>
+                <span x-text="saving ? 'Sending Response...' : 'Send Response'"></span>
+            </button>
         </div>
     </div>
 </div>
+
+</div> <!-- End Alpine.js Container -->
 
 <script>
 // Response templates
@@ -250,15 +360,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Handle form submission
+// No-Splash Form Handling
 document.addEventListener('htmx:afterRequest', function(event) {
     if (event.detail.successful && event.detail.xhr.responseURL.includes('reply')) {
-        closeModal();
-        showToast('Response sent successfully!', 'success');
-        // Refresh the page to show updated data
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+        // Instant success feedback
+        if (window.toastManager) {
+            window.toastManager.show('Response sent successfully!', 'success');
+        }
+
+        // Instant modal close - no delays
+        if (window.adminQueriesComponent) {
+            window.adminQueriesComponent.closeModal();
+            window.adminQueriesComponent.loadQueries();
+        } else {
+            closeModal();
+        }
     }
 });
+
+// Instant error handling - no splash screens
+document.addEventListener('htmx:responseError', function(event) {
+    if (window.toastManager) {
+        window.toastManager.show('Error sending response. Please try again.', 'error');
+    }
+});
+
+document.addEventListener('htmx:sendError', function(event) {
+    if (window.toastManager) {
+        window.toastManager.show('Network error. Please check your connection.', 'error');
+    }
+});
+
+// Instant modal interactions
+function closeModal() {
+    if (window.adminQueriesComponent) {
+        window.adminQueriesComponent.closeModal();
+    }
+}
 </script>

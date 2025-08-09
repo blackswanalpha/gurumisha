@@ -1,332 +1,139 @@
 {% extends 'base_admin_dashboard.html' %}
 {% load static %}
 
-{% block page_title %}Query Details - {{ inquiry.subject }}{% endblock %}
-{% block page_description %}View and manage customer inquiry details{% endblock %}
-
-{% block extra_css %}
-<style>
-    .response-bubble {
-        max-width: 80%;
-    }
-    .response-admin {
-        margin-left: auto;
-        background: linear-gradient(135deg, #dc2626, #1f2937);
-        color: white;
-    }
-    .response-customer {
-        margin-right: auto;
-        background: #f3f4f6;
-        color: #1f2937;
-    }
-    .response-system {
-        margin: 0 auto;
-        background: #fef3c7;
-        color: #92400e;
-        max-width: 60%;
-        text-align: center;
-        font-size: 0.875rem;
-    }
-</style>
-{% endblock %}
+{% block page_title %}Query Detail{% endblock %}
+{% block page_description %}View conversation and respond to the customer{% endblock %}
 
 {% block dashboard_content %}
-<div class="space-y-6">
+<div x-data="queryDetail()" x-init="init()" class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-        <div>
-            <div class="flex items-center gap-3 mb-2">
-                <a href="{% url 'core:admin_queries' %}" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Query Details</h2>
-                {% if inquiry.is_urgent %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 animate-pulse">
-                        <i class="fas fa-exclamation-triangle mr-1"></i>Urgent
-                    </span>
-                {% endif %}
-                {% if inquiry.is_overdue %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-200 text-red-900">
-                        <i class="fas fa-clock mr-1"></i>Overdue
-                    </span>
-                {% endif %}
+    <div class="glass-card p-6 flex items-center justify-between">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-harrier-red to-harrier-dark text-white flex items-center justify-center">
+                <i class="fas fa-envelope-open text-lg"></i>
             </div>
-            <p class="text-gray-600 font-raleway">{{ inquiry.subject }}</p>
+            <div>
+                <h1 class="text-2xl font-bold text-harrier-dark font-montserrat">{{ inquiry.subject }}</h1>
+                <p class="text-gray-600 text-sm font-raleway">From {{ inquiry.customer.get_full_name|default:inquiry.customer.username }} • {{ inquiry.created_at|date:"M d, Y H:i" }}</p>
+            </div>
         </div>
-        
-        <div class="flex flex-wrap gap-3">
-            <button onclick="openReplyModal()" class="btn-admin-primary text-sm">
-                <i class="fas fa-reply mr-2"></i>Reply
-            </button>
-            <button onclick="openStatusModal()" class="btn-admin-secondary text-sm">
-                <i class="fas fa-edit mr-2"></i>Update Status
-            </button>
-            <button onclick="openAssignModal()" class="btn-admin-secondary text-sm">
-                <i class="fas fa-user-plus mr-2"></i>Assign
-            </button>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'core:admin_queries' %}" class="btn-modern btn-secondary"><i class="fas fa-arrow-left mr-2"></i>All Queries</a>
+            <button @click="openModal('{% url 'core:admin_query_reply' inquiry.id %}')" class="btn-modern btn-primary"><i class="fas fa-reply mr-2"></i>Reply</button>
+            <button @click="openModal('{% url 'core:admin_query_status_update' inquiry.id %}')" class="btn-modern btn-secondary"><i class="fas fa-edit mr-2"></i>Status</button>
+            <button @click="openModal('{% url 'core:admin_query_assign' inquiry.id %}')" class="btn-modern btn-secondary"><i class="fas fa-user-cog mr-2"></i>Assign</button>
         </div>
     </div>
 
-    <!-- Inquiry Overview -->
+    <!-- Meta Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Customer Information -->
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Customer Information</h3>
-                <div class="flex items-start gap-4">
-                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        {{ inquiry.customer.first_name|first|default:inquiry.customer.username|first|upper }}
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="text-lg font-semibold text-gray-900">
-                            {{ inquiry.customer.get_full_name|default:inquiry.customer.username }}
-                        </h4>
-                        <div class="space-y-1 text-sm text-gray-600">
-                            <div><i class="fas fa-envelope mr-2"></i>{{ inquiry.customer.email }}</div>
-                            {% if inquiry.customer_phone %}
-                                <div><i class="fas fa-phone mr-2"></i>{{ inquiry.customer_phone }}</div>
-                            {% endif %}
-                            <div><i class="fas fa-calendar mr-2"></i>Member since {{ inquiry.customer.date_joined|date:"M Y" }}</div>
-                        </div>
-                    </div>
-                </div>
+        <div class="glass-card p-6 space-y-4 lg:col-span-2">
+            <div class="flex items-center gap-3">
+                <span class="px-2 py-1 rounded-full text-xs font-semibold {{ inquiry.get_status_color }}">{{ inquiry.get_status_display }}</span>
+                <span class="px-2 py-1 rounded-full text-xs font-semibold {{ inquiry.get_priority_color }}">{{ inquiry.get_priority_display }}</span>
+                <span class="text-sm text-gray-600">Assigned: {{ inquiry.assigned_admin.get_full_name|default:'Unassigned' }}</span>
             </div>
 
-            <!-- Original Inquiry -->
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Original Inquiry</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                        <p class="text-gray-900">{{ inquiry.subject }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <p class="text-gray-900 whitespace-pre-wrap">{{ inquiry.message }}</p>
-                        </div>
-                    </div>
-                    {% if inquiry.car %}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Related Vehicle</label>
-                            <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                                <i class="fas fa-car text-blue-600"></i>
-                                <div>
-                                    <p class="font-medium text-blue-900">{{ inquiry.car.title }}</p>
-                                    <p class="text-sm text-blue-700">{{ inquiry.car.year }} {{ inquiry.car.brand.name }} {{ inquiry.car.model.name }}</p>
-                                </div>
-                                <a href="{% url 'core:car_detail' inquiry.car.id %}" class="ml-auto text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if inquiry.spare_part %}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Related Spare Part</label>
-                            <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                                <i class="fas fa-cog text-green-600"></i>
-                                <div>
-                                    <p class="font-medium text-green-900">{{ inquiry.spare_part.name }}</p>
-                                    <p class="text-sm text-green-700">SKU: {{ inquiry.spare_part.sku }}</p>
-                                </div>
-                                <a href="{% url 'core:spare_part_detail' inquiry.spare_part.id %}" class="ml-auto text-green-600 hover:text-green-800">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
+            <div class="prose max-w-none">
+                <h3 class="font-semibold text-gray-800 mb-2">Customer Message</h3>
+                <pre class="whitespace-pre-wrap text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-200">{{ inquiry.message }}</pre>
             </div>
 
-            <!-- Response History -->
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Response History</h3>
-                <div class="space-y-4 max-h-96 overflow-y-auto">
-                    {% for response in responses %}
-                        <div class="response-bubble p-4 rounded-lg 
-                                    {% if response.response_type == 'admin_reply' %}response-admin
-                                    {% elif response.response_type == 'customer_reply' %}response-customer
-                                    {% else %}response-system{% endif %}">
-                            <div class="flex items-start justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    {% if response.response_type == 'admin_reply' %}
-                                        <i class="fas fa-user-shield"></i>
-                                        <span class="font-medium">{{ response.sender.get_full_name|default:response.sender.username }}</span>
-                                    {% elif response.response_type == 'customer_reply' %}
-                                        <i class="fas fa-user"></i>
-                                        <span class="font-medium">{{ response.sender.get_full_name|default:response.sender.username }}</span>
-                                    {% else %}
-                                        <i class="fas fa-cog"></i>
-                                        <span class="font-medium">System</span>
-                                    {% endif %}
-                                </div>
-                                <span class="text-xs opacity-75">{{ response.created_at|date:"M d, Y H:i" }}</span>
-                            </div>
-                            <div class="whitespace-pre-wrap">{{ response.content }}</div>
-                            {% if response.attachment %}
-                                <div class="mt-2 pt-2 border-t border-white/20">
-                                    <a href="{{ response.attachment.url }}" class="inline-flex items-center gap-2 text-sm hover:underline">
-                                        <i class="fas fa-paperclip"></i>
-                                        {{ response.attachment_name|default:"Attachment" }}
-                                    </a>
-                                </div>
-                            {% endif %}
-                            {% if response.is_email_sent %}
-                                <div class="mt-2 text-xs opacity-75">
-                                    <i class="fas fa-envelope mr-1"></i>Email sent
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% empty %}
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-comments text-3xl mb-2"></i>
-                            <p>No responses yet</p>
-                        </div>
-                    {% endfor %}
-                </div>
+            {% if inquiry.car %}
+            <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-800 mb-2">Related Car</h4>
+                <a href="{% url 'core:admin_car_detail' inquiry.car.id %}" class="text-harrier-red hover:underline">
+                    <i class="fas fa-car mr-2"></i>{{ inquiry.car.title }}
+                </a>
             </div>
+            {% endif %}
         </div>
 
-        <!-- Sidebar -->
         <div class="space-y-6">
-            <!-- Status & Priority -->
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Status & Priority</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ inquiry.get_status_color }}">
-                            {{ inquiry.get_status_display }}
-                        </span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ inquiry.get_priority_color }}">
-                            {{ inquiry.get_priority_display }}
-                        </span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {{ inquiry.get_inquiry_type_display }}
-                        </span>
-                    </div>
+            <div class="glass-card p-6">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wide">Customer</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2 text-gray-700"><i class="fas fa-user text-gray-400"></i>{{ inquiry.customer.get_full_name|default:inquiry.customer.username }}</div>
+                    <div class="flex items-center gap-2 text-gray-700"><i class="fas fa-envelope text-gray-400"></i>{{ inquiry.customer_email|default:inquiry.customer.email }}</div>
+                    {% if inquiry.customer_phone %}<div class="flex items-center gap-2 text-gray-700"><i class="fas fa-phone text-gray-400"></i>{{ inquiry.customer_phone }}</div>{% endif %}
+                    <div class="flex items-center gap-2 text-gray-700"><i class="fas fa-clock text-gray-400"></i>Created {{ inquiry.created_at|date:"M d, Y H:i" }}</div>
+                    <div class="flex items-center gap-2 text-gray-700"><i class="fas fa-sync text-gray-400"></i>Updated {{ inquiry.updated_at|date:"M d, Y H:i" }}</div>
                 </div>
             </div>
 
-            <!-- Assignment -->
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Assignment</h3>
-                {% if inquiry.assigned_admin %}
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-green-600"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900">{{ inquiry.assigned_admin.get_full_name|default:inquiry.assigned_admin.username }}</p>
-                            <p class="text-sm text-gray-500">{{ inquiry.assigned_admin.email }}</p>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-user-slash text-gray-400"></i>
-                        </div>
-                        <p class="text-gray-500">Unassigned</p>
-                        <button onclick="openAssignModal()" class="mt-2 text-sm text-harrier-red hover:text-harrier-dark">
-                            Assign to admin
-                        </button>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Timing Information -->
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Timing</h3>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Created:</span>
-                        <span class="text-gray-900">{{ inquiry.created_at|date:"M d, Y H:i" }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Updated:</span>
-                        <span class="text-gray-900">{{ inquiry.updated_at|date:"M d, Y H:i" }}</span>
-                    </div>
-                    {% if inquiry.first_response_at %}
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">First Response:</span>
-                            <span class="text-gray-900">{{ inquiry.first_response_at|date:"M d, Y H:i" }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Response Time:</span>
-                            <span class="text-gray-900">{{ inquiry.response_time_hours }}h</span>
-                        </div>
-                    {% endif %}
-                    {% if inquiry.resolved_at %}
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Resolved:</span>
-                            <span class="text-gray-900">{{ inquiry.resolved_at|date:"M d, Y H:i" }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Resolution Time:</span>
-                            <span class="text-gray-900">{{ inquiry.resolution_time_hours }}h</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Internal Notes -->
             {% if inquiry.internal_notes %}
-            <div class="glassmorphism-card p-6">
-                <h3 class="text-lg font-semibold text-harrier-dark font-montserrat mb-4">Internal Notes</h3>
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p class="text-sm text-yellow-800 whitespace-pre-wrap">{{ inquiry.internal_notes }}</p>
-                </div>
+            <div class="glass-card p-6">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wide">Internal Notes</h3>
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ inquiry.internal_notes }}</p>
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Conversation -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-800">Conversation</h3>
+            <button @click="openModal('{% url 'core:admin_query_reply' inquiry.id %}')" class="btn-modern btn-primary text-sm"><i class="fas fa-reply mr-2"></i>Reply</button>
+        </div>
+        {% if responses %}
+            <div class="space-y-4">
+                {% for r in responses %}
+                    <div class="p-4 rounded-xl border {{ 'bg-gray-50' if r.is_internal else 'bg-white' }}">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs px-2 py-1 rounded-full font-semibold
+                                    {% if r.response_type == 'admin_reply' %}bg-blue-100 text-blue-700{% elif r.response_type == 'customer_reply' %}bg-green-100 text-green-700{% elif r.response_type == 'status_change' %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ r.get_response_type_display }}
+                                </span>
+                                {% if r.is_internal %}<span class="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-700">Internal</span>{% endif %}
+                            </div>
+                            <div class="text-xs text-gray-500">{{ r.created_at|date:"M d, Y H:i" }}</div>
+                        </div>
+                        <div class="text-sm text-gray-800 whitespace-pre-wrap">{{ r.content }}</div>
+                        <div class="mt-2 text-xs text-gray-600">By {{ r.sender.get_full_name|default:r.sender.username }}</div>
+                        {% if r.attachment %}
+                        <div class="mt-2">
+                            <a href="{{ r.attachment.url }}" class="text-xs text-harrier-red hover:underline"><i class="fas fa-paperclip mr-1"></i>{{ r.attachment_name|default:'Attachment' }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-sm text-gray-600">No responses yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Modal Container -->
+    <div x-show="showingModal" x-transition.opacity class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50">
+        <div class="bg-white w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl">
+            <div id="modal-content-area" class="min-h-[200px]"></div>
+        </div>
+    </div>
 </div>
 
-<!-- Modals will be loaded here via HTMX -->
-<div id="modal-container"></div>
-{% endblock %}
-
-{% block extra_js %}
 <script>
-function openReplyModal() {
-    htmx.ajax('GET', '{% url "core:admin_query_reply" inquiry.id %}', {
-        target: '#modal-container',
-        swap: 'innerHTML'
-    });
+function queryDetail(){
+    return {
+        showingModal:false,
+        init(){
+            // Expose shim for modal scripts used by partials
+            window.adminQueriesComponent = {
+                closeModal: () => this.closeModal(),
+                loadQueries: () => window.location.reload()
+            };
+        },
+        openModal(url){
+            this.showingModal = true;
+            htmx.ajax('GET', url, { target: '#modal-content-area', swap: 'innerHTML' });
+        },
+        closeModal(){
+            this.showingModal = false;
+            const el = document.getElementById('modal-content-area');
+            if (el) el.innerHTML = '';
+        }
+    }
 }
-
-function openStatusModal() {
-    htmx.ajax('GET', '{% url "core:admin_query_status_update" inquiry.id %}', {
-        target: '#modal-container',
-        swap: 'innerHTML'
-    });
-}
-
-function openAssignModal() {
-    htmx.ajax('GET', '{% url "core:admin_query_assign" inquiry.id %}', {
-        target: '#modal-container',
-        swap: 'innerHTML'
-    });
-}
-
-function closeModal() {
-    document.getElementById('modal-container').innerHTML = '';
-}
-
-// Auto-refresh response history every 30 seconds
-setInterval(function() {
-    htmx.ajax('GET', window.location.href, {
-        target: '.response-history',
-        swap: 'outerHTML'
-    });
-}, 30000);
 </script>
 {% endblock %}

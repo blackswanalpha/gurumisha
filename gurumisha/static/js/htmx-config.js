@@ -1,272 +1,453 @@
 /**
- * HTMX Configuration and Error Handling for Gurumisha
- * Provides enhanced HTMX functionality with proper error handling,
- * loading states, and integration with the hydration system
+ * Unified HTMX Configuration and Management for Gurumisha
+ * Single source of truth for all HTMX functionality
+ * Version 3.0 - Unified and conflict-free
  */
 
 (function() {
     'use strict';
 
     // Prevent multiple script executions
-    if (window.htmxConfigLoaded) {
-        console.log('HTMX config already loaded');
+    if (window.unifiedHTMXLoaded) {
+        console.log('🔧 Unified HTMX already loaded');
         return;
     }
-    window.htmxConfigLoaded = true;
+    window.unifiedHTMXLoaded = true;
 
-    // Wait for HTMX to be available
-    const waitForHTMX = () => {
-        if (typeof htmx !== 'undefined') {
-            console.log('🔧 HTMX detected - Setting up configuration');
-            initializeHTMXConfig();
-        } else {
-            setTimeout(waitForHTMX, 100);
-        }
-    };
-
-    function initializeHTMXConfig() {
-        // Configure HTMX defaults
-        htmx.config.defaultSwapStyle = 'innerHTML';
-        htmx.config.defaultSwapDelay = 0;
-        htmx.config.defaultSettleDelay = 20;
-        htmx.config.includeIndicatorStyles = false; // We'll handle our own loading styles
-        htmx.config.requestClass = 'htmx-request';
-        htmx.config.addedClass = 'htmx-added';
-        htmx.config.settlingClass = 'htmx-settling';
-        htmx.config.swappingClass = 'htmx-swapping';
-
-        // Setup global HTMX event listeners
-        setupHTMXEventListeners();
-
-        // Setup CSRF token handling
-        setupCSRFHandling();
-
-        // Setup loading indicators
-        setupLoadingIndicators();
-
-        // Setup error handling
-        setupErrorHandling();
-
-        // Setup OOB swap handling
-        setupOOBSwapHandling();
-
-        console.log('✅ HTMX configuration complete');
+    // Clear any existing HTMX configurations
+    if (window.htmxConfigLoaded) {
+        console.log('🔧 Clearing existing HTMX config');
+        delete window.htmxConfigLoaded;
     }
 
-    // Enhanced Button Preservation System
-    let preservedButtonStates = new Map();
+    class UnifiedHTMXManager {
+        constructor() {
+            this.isInitialized = false;
+            this.eventListeners = new Map();
+            this.activeRequests = new Set();
+            this.preservedElements = new Map();
+            this.init();
+        }
 
-    function preserveButtonStates(triggerElement) {
-        // Find all buttons in the target area that might be affected
-        const targetSelector = triggerElement.getAttribute('hx-target');
-        if (!targetSelector) return;
+        init() {
+            this.waitForHTMX(() => {
+                this.configureHTMX();
+                this.setupEventSystem();
+                this.setupErrorHandling();
+                this.setupComponentIntegration();
+                this.isInitialized = true;
+                console.log('✅ Unified HTMX Manager v3.0 initialized');
+            });
+        }
 
-        const targetElement = document.querySelector(targetSelector);
-        if (!targetElement) return;
+        waitForHTMX(callback) {
+            if (typeof htmx !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(() => this.waitForHTMX(callback), 50);
+            }
+        }
 
-        // Store button states before swap
-        const buttons = targetElement.querySelectorAll('button[id], [data-preserve="true"]');
-        buttons.forEach(button => {
-            if (button.id) {
-                preservedButtonStates.set(button.id, {
-                    innerHTML: button.innerHTML,
-                    className: button.className,
-                    disabled: button.disabled,
-                    attributes: Array.from(button.attributes).reduce((acc, attr) => {
-                        acc[attr.name] = attr.value;
-                        return acc;
-                    }, {})
+        configureHTMX() {
+            // Unified HTMX configuration
+            htmx.config.defaultSwapStyle = 'innerHTML';
+            htmx.config.defaultSwapDelay = 0;
+            htmx.config.defaultSettleDelay = 20;
+            htmx.config.includeIndicatorStyles = false;
+            htmx.config.requestClass = 'htmx-request';
+            htmx.config.addedClass = 'htmx-added';
+            htmx.config.settlingClass = 'htmx-settling';
+            htmx.config.swappingClass = 'htmx-swapping';
+            htmx.config.timeout = 30000; // 30 second timeout
+            htmx.config.historyCacheSize = 10;
+
+            // Prefer using response fragments if server responds with a single root node
+            htmx.config.useTemplateFragments = true;
+
+            // Expose config loaded flag(s) for validators
+            window.htmxConfigLoaded = true;
+            window.htmxConfigured = true;
+
+            console.log('🔧 HTMX configuration applied');
+        }
+
+        setupEventSystem() {
+            // Clear any existing event listeners to prevent conflicts
+            this.clearExistingListeners();
+            // Global Target safety guard: ensure valid target Element before swapping
+            document.addEventListener('htmx:beforeSwap', (e) => {
+                try {
+                    let t = e.detail && e.detail.target;
+                    const resolveFallback = () => {
+                        const src = e.detail && e.detail.elt;
+                        const fbSel = (src && typeof src.getAttribute === 'function' && src.getAttribute('data-swap-fallback')) || '#resources-content';
+                        let fb = null;
+                        if (typeof fbSel === 'string') fb = document.querySelector(fbSel);
+                        if (!fb) fb = document.getElementById('resources-content');
+                        if (!fb) fb = document.body;
+                        return fb;
+                    };
+                    if (!(t instanceof Element) || !t.isConnected || !t.parentNode) {
+                        const fb = resolveFallback();
+                        if (fb) {
+                            e.detail.target = fb;
+                            if (!e.detail.swapStyle) e.detail.swapStyle = 'innerHTML';
+                            console.warn('HTMX target invalid; using fallback', fb);
+                        } else {
+                            console.warn('HTMX: no valid target or fallback; canceling swap');
+                            e.preventDefault();
+                        }
+                    }
+                } catch (err) {
+                    console.warn('HTMX target guard error:', err);
+                }
+            });
+
+
+            // Setup unified event handling
+            this.setupBeforeRequestHandling();
+            this.setupAfterRequestHandling();
+            this.setupAfterSwapHandling();
+            this.setupResponseErrorHandling();
+
+            console.log('🔧 HTMX event system configured');
+        }
+
+        clearExistingListeners() {
+            // Remove any existing HTMX event listeners that might conflict
+            const existingEvents = ['htmx:beforeRequest', 'htmx:afterRequest', 'htmx:afterSwap', 'htmx:responseError', 'htmx:sendError'];
+            existingEvents.forEach(eventName => {
+                const listeners = this.eventListeners.get(eventName) || [];
+                listeners.forEach(listener => {
+                    document.removeEventListener(eventName, listener);
+                });
+                this.eventListeners.set(eventName, []);
+            });
+        }
+
+        setupBeforeRequestHandling() {
+            const beforeRequestHandler = (event) => {
+                const element = event.detail.elt;
+                const requestId = this.generateRequestId();
+
+                // Track active request
+                this.activeRequests.add(requestId);
+                element.setAttribute('data-request-id', requestId);
+
+                // Preserve components before request
+                this.preserveComponents(element);
+
+                // Show loading state
+                this.showLoadingState(element);
+
+                // Add CSRF token
+                this.addCSRFToken(event);
+
+                console.log('🔧 HTMX request started:', requestId);
+            };
+
+            document.addEventListener('htmx:beforeRequest', beforeRequestHandler);
+            this.eventListeners.set('htmx:beforeRequest', [beforeRequestHandler]);
+        }
+
+        setupAfterRequestHandling() {
+            const afterRequestHandler = (event) => {
+                const element = event.detail.elt;
+                const requestId = element.getAttribute('data-request-id');
+
+                // Remove from active requests
+                if (requestId) {
+                    this.activeRequests.delete(requestId);
+                    element.removeAttribute('data-request-id');
+                }
+
+                // Hide loading state
+                this.hideLoadingState(element);
+
+                console.log('🔧 HTMX request completed:', requestId);
+            };
+
+            document.addEventListener('htmx:afterRequest', afterRequestHandler);
+            this.eventListeners.set('htmx:afterRequest', [afterRequestHandler]);
+        }
+
+        setupAfterSwapHandling() {
+            const afterSwapHandler = (event) => {
+                const target = event.detail.target;
+
+                // Restore preserved components
+                this.restoreComponents(target);
+
+                // Trigger component hydration
+                this.hydrateComponents(target);
+
+                // Setup new event listeners
+
+            // (Target safety guard installed globally during setupEventSystem)
+
+                this.setupDynamicEventListeners(target);
+
+                console.log('🔧 HTMX swap completed, components hydrated');
+            };
+
+            document.addEventListener('htmx:afterSwap', afterSwapHandler);
+            this.eventListeners.set('htmx:afterSwap', [afterSwapHandler]);
+        }
+
+        setupResponseErrorHandling() {
+            const errorHandler = (event) => {
+                const element = event.detail.elt;
+                const requestId = element.getAttribute('data-request-id');
+
+                // Clean up request tracking
+                if (requestId) {
+                    this.activeRequests.delete(requestId);
+                    element.removeAttribute('data-request-id');
+                }
+
+                // Hide loading state
+                this.hideLoadingState(element);
+
+                // Show error message
+                this.showErrorMessage(event.detail.xhr);
+
+                console.error('🔧 HTMX request error:', event.detail);
+            };
+
+            document.addEventListener('htmx:responseError', errorHandler);
+            document.addEventListener('htmx:sendError', errorHandler);
+            this.eventListeners.set('htmx:responseError', [errorHandler]);
+        }
+
+        setupErrorHandling() {
+            // Global error boundary for HTMX operations
+            window.addEventListener('error', (event) => {
+                if (event.error && event.error.message && event.error.message.includes('htmx')) {
+                    console.error('🔧 HTMX Error caught:', event.error);
+                    this.handleHTMXError(event.error);
+                }
+            });
+        }
+
+        setupComponentIntegration() {
+            // Integration with other systems
+            this.setupModalIntegration();
+            this.setupFormIntegration();
+            this.setupButtonIntegration();
+        }
+
+        // Component preservation and restoration
+        preserveComponents(element) {
+            const target = element.getAttribute('hx-target');
+            if (!target) return;
+
+            const targetElement = document.querySelector(target);
+            if (!targetElement) return;
+
+            // Preserve Alpine.js components
+            const alpineElements = targetElement.querySelectorAll('[x-data]');
+            alpineElements.forEach(alpineEl => {
+                if (alpineEl.id) {
+                    this.preservedElements.set(alpineEl.id, {
+                        type: 'alpine',
+                        data: alpineEl._x_dataStack ? [...alpineEl._x_dataStack] : null,
+                        attributes: this.getElementAttributes(alpineEl)
+                    });
+                }
+            });
+
+            // Preserve buttons and interactive elements
+            const buttons = targetElement.querySelectorAll('button[id], [data-preserve="true"]');
+            buttons.forEach(button => {
+                if (button.id) {
+                    this.preservedElements.set(button.id, {
+                        type: 'button',
+                        innerHTML: button.innerHTML,
+                        className: button.className,
+                        disabled: button.disabled,
+                        attributes: this.getElementAttributes(button)
+                    });
+                }
+            });
+        }
+
+        restoreComponents(targetElement) {
+            // Restore preserved components
+            this.preservedElements.forEach((preserved, elementId) => {
+                const element = targetElement.querySelector(`#${elementId}`);
+                if (element && preserved.type === 'button') {
+                    // Only restore if not intentionally updated
+                    if (!element.hasAttribute('data-updated')) {
+                        element.innerHTML = preserved.innerHTML;
+                        element.className = preserved.className;
+                        element.disabled = preserved.disabled;
+                    }
+                }
+            });
+
+            // Clear preserved elements
+            this.preservedElements.clear();
+        }
+
+        hydrateComponents(targetElement) {
+            // If unified hydration manager is already listening to HTMX events,
+            // avoid double-hydration from here.
+            if (window.unifiedHydrationLoaded) {
+                return;
+            }
+
+            // Delegate to unified hydration manager if available
+            if (window.hydrationManager && window.hydrationManager.hydrateElement) {
+                window.hydrationManager.hydrateElement(targetElement);
+            } else {
+                // Fallback hydration
+                this.fallbackHydration(targetElement);
+            }
+        }
+
+        fallbackHydration(targetElement) {
+            // Basic Alpine.js hydration
+            if (typeof Alpine !== 'undefined') {
+                const alpineElements = targetElement.querySelectorAll('[x-data]');
+                alpineElements.forEach(element => {
+                    if (!element._x_dataStack || element._x_dataStack.length === 0) {
+                        try {
+                            Alpine.initTree(element);
+                        } catch (error) {
+                            console.warn('🔧 Alpine hydration failed:', error);
+                        }
+                    }
                 });
             }
-        });
-    }
-
-    function restoreButtonStates(targetElement) {
-        // Restore preserved button states after swap
-        const buttons = targetElement.querySelectorAll('button[id]');
-        buttons.forEach(button => {
-            if (preservedButtonStates.has(button.id)) {
-                const preserved = preservedButtonStates.get(button.id);
-
-                // Only restore if the button structure hasn't intentionally changed
-                if (!button.hasAttribute('data-updated')) {
-                    button.innerHTML = preserved.innerHTML;
-                    button.className = preserved.className;
-                    button.disabled = preserved.disabled;
-                }
-
-                // Clean up preserved state
-                preservedButtonStates.delete(button.id);
-            }
-        });
-    }
-
-    // Alpine.js hydration is now handled by the unified Hydration Manager
-    // This function is kept for backward compatibility but delegates to the manager
-    function hydrateAlpineComponents(targetElement) {
-        if (window.hydrationManager) {
-            window.hydrationManager.hydrateAlpineComponents(targetElement);
-        } else {
-            console.warn('⚠️ Hydration Manager not available, skipping Alpine hydration');
-        }
-    }
-
-    // Re-initialize Event Listeners for Dynamic Content
-    function reinitializeEventListeners(targetElement) {
-        // Re-initialize hover effects
-        const hoverElements = targetElement.querySelectorAll('.hover-lift, .hover-scale, .card-animate');
-        hoverElements.forEach(element => {
-            element.addEventListener('mouseenter', function() {
-                this.style.transform = this.classList.contains('hover-lift') ? 'translateY(-8px)' :
-                                     this.classList.contains('hover-scale') ? 'scale(1.05)' :
-                                     'translateY(-8px)';
-            });
-
-            element.addEventListener('mouseleave', function() {
-                this.style.transform = '';
-            });
-        });
-
-        // Re-initialize any custom components
-        if (window.initializeCustomComponents) {
-            window.initializeCustomComponents(targetElement);
-        }
-    }
-
-    // Enhanced Out-of-Band (OOB) Swap Handling
-    function setupOOBSwapHandling() {
-        // Listen for OOB swaps specifically for modals
-        document.addEventListener('htmx:oobAfterSwap', function(event) {
-            const target = event.detail.target;
-
-            // Handle modal OOB swaps
-            if (target.classList.contains('modal') || target.id.includes('modal')) {
-                console.log('🎭 Modal OOB swap detected:', target.id);
-
-                // Re-hydrate modal content
-                hydrateAlpineComponents(target);
-
-                // Initialize modal-specific functionality
-                initializeModalFeatures(target);
-
-                // Show modal if it has auto-show attribute
-                if (target.hasAttribute('data-auto-show')) {
-                    showModal(target.id);
-                }
-            }
-        });
-
-        // Enhanced modal management
-        document.addEventListener('htmx:afterRequest', function(event) {
-            // Check if response contains OOB modal content
-            const response = event.detail.xhr.responseText;
-            if (response && response.includes('hx-swap-oob') && response.includes('modal')) {
-                console.log('🎭 OOB modal content detected in response');
-            }
-        });
-
-        // Global HTMX afterSwap handler to ensure restoreScroll() is always called
-        document.addEventListener('htmx:afterSwap', function(event) {
-            const target = event.detail.target;
-
-            // Call global restoreScroll() after any swap operation
-            setTimeout(() => {
-                if (typeof window.restoreScroll === 'function') {
-                    window.restoreScroll();
-                    console.log('🔄 Global restoreScroll() called after HTMX swap:', target.id || target.tagName);
-                }
-            }, 50);
-        });
-    }
-
-    // Initialize modal-specific features
-    function initializeModalFeatures(modalElement) {
-        // Setup close button handlers
-        const closeButtons = modalElement.querySelectorAll('[data-modal-close]');
-        closeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                hideModal(modalElement.id);
-            });
-        });
-
-        // Setup backdrop click to close
-        if (modalElement.hasAttribute('data-backdrop-close')) {
-            modalElement.addEventListener('click', function(e) {
-                if (e.target === modalElement) {
-                    hideModal(modalElement.id);
-                }
-            });
         }
 
-        // Setup escape key to close
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modalElement.style.display !== 'none') {
-                hideModal(modalElement.id);
-            }
-        });
-    }
-
-    // Modal utility functions
-    window.showModal = function(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'flex';
-            modal.classList.add('modal-show');
-            modal.classList.remove('modal-hide');
-
-            // Comprehensive body scroll lock
-            setGlobalBodyScrollLock();
-
-            // Focus management
-            const firstFocusable = modal.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            if (firstFocusable) {
-                firstFocusable.focus();
-            }
-
-            // Trigger custom event
-            modal.dispatchEvent(new CustomEvent('modal:shown', { detail: { modalId } }));
+        // Utility methods
+        generateRequestId() {
+            return 'htmx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         }
-    };
 
-    window.hideModal = function(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('modal-hide');
-            modal.classList.remove('modal-show');
+        getElementAttributes(element) {
+            const attributes = {};
+            Array.from(element.attributes).forEach(attr => {
+                attributes[attr.name] = attr.value;
+            });
+            return attributes;
+        }
 
-            // Call global restoreScroll() function
-            if (typeof window.restoreScroll === 'function') {
-                window.restoreScroll();
+        showLoadingState(element) {
+            element.classList.add('htmx-loading');
+            const indicator = element.querySelector('.loading-indicator');
+            if (indicator) {
+                indicator.style.display = 'block';
+            }
+        }
+
+        hideLoadingState(element) {
+            element.classList.remove('htmx-loading');
+            const indicator = element.querySelector('.loading-indicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+        }
+
+        addCSRFToken(event) {
+            const token = this.getCSRFToken();
+            if (token && event.detail.xhr) {
+                event.detail.xhr.setRequestHeader('X-CSRFToken', token);
+            }
+        }
+
+        getCSRFToken() {
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            if (metaToken) return metaToken.getAttribute('content');
+
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') return value;
+            }
+            return '';
+        }
+
+        showErrorMessage(xhr) {
+            if (window.toastManager) {
+                window.toastManager.show('Request failed. Please try again.', 'error');
             } else {
-                // Fallback to legacy function
-                restoreGlobalBodyScroll();
+                console.error('HTMX Request failed:', xhr.status, xhr.statusText);
             }
-
-            // Hide after animation
-            setTimeout(() => {
-                modal.style.display = 'none';
-                // Final scroll state check
-                finalGlobalScrollCheck();
-
-                // Ensure restoreScroll() is called again after modal removal
-                if (typeof window.restoreScroll === 'function') {
-                    window.restoreScroll();
-                }
-            }, 300);
-
-            // Trigger custom event
-            modal.dispatchEvent(new CustomEvent('modal:hidden', { detail: { modalId } }));
         }
-    };
 
-    // Enhanced HTMX request function with OOB support
+        handleHTMXError(error) {
+            console.error('🔧 HTMX Error:', error);
+            if (window.toastManager) {
+                window.toastManager.show('An error occurred. Please refresh the page.', 'error');
+            }
+        }
+
+        setupDynamicEventListeners(targetElement) {
+            // Setup event listeners for dynamically added content
+            const buttons = targetElement.querySelectorAll('button[hx-get], button[hx-post]');
+            buttons.forEach(button => {
+                if (!button.hasAttribute('data-htmx-initialized')) {
+                    button.setAttribute('data-htmx-initialized', 'true');
+                    // Additional button setup if needed
+                }
+            });
+        }
+
+        setupModalIntegration() {
+            // Integration with modal system
+            document.addEventListener('htmx:afterSwap', (event) => {
+                const target = event.detail.target;
+                const modals = target.querySelectorAll('[id*="modal"]');
+                modals.forEach(modal => {
+                    if (window.modalManager && window.modalManager.initializeModal) {
+                        window.modalManager.initializeModal(modal, modal.id);
+                    }
+                });
+            });
+        }
+
+        setupFormIntegration() {
+            // Integration with form system
+            document.addEventListener('htmx:afterSwap', (event) => {
+                const target = event.detail.target;
+                const forms = target.querySelectorAll('form');
+                forms.forEach(form => {
+                    if (window.formValidator && window.formValidator.initializeForm) {
+                        window.formValidator.initializeForm(form);
+                    }
+                });
+            });
+        }
+
+        setupButtonIntegration() {
+            // Integration with button persistence system
+            document.addEventListener('htmx:beforeSwap', (event) => {
+                try {
+                    const tgt = event && event.detail ? event.detail.target : null;
+                    if (window.buttonPersistenceManager && tgt instanceof Element) {
+                        window.buttonPersistenceManager.preserveButtons(tgt);
+                    }
+                } catch (_) { /* no-op */ }
+            });
+        }
+    }
+
+    // Initialize the unified HTMX manager
+    const htmxManager = new UnifiedHTMXManager();
+
+    // Expose globally for other scripts
+    window.unifiedHTMXManager = htmxManager;
+
+    // Backward compatibility functions
     window.htmxModalRequest = function(url, options = {}) {
         const defaultOptions = {
             method: 'GET',
             target: 'this',
-            swap: 'none', // Don't swap the trigger
+            swap: 'none',
             headers: {
-                'X-CSRFToken': getCSRFToken(),
+                'X-CSRFToken': htmxManager.getCSRFToken(),
                 'X-Requested-With': 'XMLHttpRequest',
                 ...options.headers
             }
@@ -278,450 +459,43 @@
         });
     };
 
-    function getCSRFToken() {
-        const metaToken = document.querySelector('meta[name="csrf-token"]');
-        if (metaToken) return metaToken.getAttribute('content');
+    console.log('✅ Unified HTMX Manager loaded and active');
 
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-            const [name, value] = cookie.trim().split('=');
-            if (name === 'csrftoken') return value;
-        }
-        return '';
-    }
+    // Note: keep htmxConfigLoaded for validators and health checks
 
-    function setupHTMXEventListeners() {
-        // Prevent duplicate listener setup
-        if (window.htmxEventListenersSetup) return;
-        window.htmxEventListenersSetup = true;
 
-        // Before request - setup loading states
-        document.addEventListener('htmx:beforeRequest', function(event) {
-            const element = event.detail.elt;
 
-            // Add loading state to the triggering element
-            if (element.tagName === 'BUTTON') {
-                element.setAttribute('aria-busy', 'true');
-                element.style.cursor = 'wait';
-
-                // Store original text and show loading
-                if (!element.dataset.originalText) {
-                    element.dataset.originalText = element.textContent;
-                }
-
-                // Add loading spinner if it's a button
-                const spinner = '<i class="fas fa-spinner fa-spin mr-2"></i>';
-                if (!element.innerHTML.includes('fa-spinner')) {
-                    element.innerHTML = spinner + (element.dataset.loadingText || 'Loading...');
-                }
-            }
-
-            // Enhanced button preservation check
-            preserveButtonStates(element);
-        });
-
-        // Simplified afterSwap - let hydration manager handle Alpine.js
-        document.addEventListener('htmx:afterSwap', function(event) {
-            const target = event.detail.target;
-
-            // Restore button states after swap
-            restoreButtonStates(target);
-
-            // Re-initialize event listeners for new content
-            reinitializeEventListeners(target);
-
-            // Trigger custom hydration event (hydration manager will handle Alpine.js)
-            target.dispatchEvent(new CustomEvent('htmx:hydrated', {
-                detail: { target: target }
-            }));
-        });
-
-        // After request - cleanup loading states
-        document.addEventListener('htmx:afterRequest', function(event) {
-            const element = event.detail.elt;
-
-            // Remove loading state from buttons
-            if (element.tagName === 'BUTTON') {
-                element.setAttribute('aria-busy', 'false');
-                element.style.cursor = '';
-
-                // Restore original text
-                if (element.dataset.originalText) {
-                    element.textContent = element.dataset.originalText;
-                }
-            }
-
-            // Hide global loading indicator
-            hideGlobalLoadingIndicator();
-
-            // Handle response status
-            const xhr = event.detail.xhr;
-            if (xhr.status >= 200 && xhr.status < 300) {
-                handleSuccessResponse(xhr, element);
-            } else {
-                handleErrorResponse(xhr, element);
-            }
-
-            // Global scroll restoration after any HTMX request
-            setTimeout(() => {
-                if (typeof window.restoreScroll === 'function') {
-                    window.restoreScroll();
-                }
-            }, 100);
-        });
-
-        // Note: afterSwap hydration is handled above, no duplicate needed
-
-        // After settle - final cleanup
-        document.addEventListener('htmx:afterSettle', function(event) {
-            const target = event.detail.target;
-            
-            // Final hydration check
-            if (window.hydrationManager) {
-                window.hydrationManager.finalizeHydration(target);
-            }
-
-            // Scroll to target if needed
-            handleScrollToTarget(target, event.detail);
-        });
-
-        // Handle configuration requests
-        document.addEventListener('htmx:configRequest', function(event) {
-            // Add CSRF token to all requests
-            const csrfToken = getCSRFToken();
-            if (csrfToken) {
-                event.detail.headers['X-CSRFToken'] = csrfToken;
-            }
-
-            // Add custom headers
-            event.detail.headers['X-Requested-With'] = 'XMLHttpRequest';
-            event.detail.headers['X-HTMX-Request'] = 'true';
-        });
-    }
-
-    function setupCSRFHandling() {
-        // Get CSRF token from various sources
-        window.getCSRFToken = function() {
-            // Try meta tag first
-            const metaToken = document.querySelector('meta[name="csrf-token"]');
-            if (metaToken) {
-                return metaToken.getAttribute('content');
-            }
-
-            // Try cookie
-            const cookieToken = getCookie('csrftoken');
-            if (cookieToken) {
-                return cookieToken;
-            }
-
-            // Try hidden input
-            const inputToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
-            if (inputToken) {
-                return inputToken.value;
-            }
-
-            return null;
-        };
-
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-    }
-
-    function setupLoadingIndicators() {
-        // Create global loading indicator
-        const loadingIndicator = document.createElement('div');
-        loadingIndicator.id = 'htmx-global-loading';
-        loadingIndicator.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] bg-white rounded-lg shadow-lg px-4 py-2 flex items-center space-x-2 opacity-0 transition-opacity duration-300 pointer-events-none';
-        loadingIndicator.innerHTML = `
-            <div class="w-4 h-4 border-2 border-harrier-red border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-sm font-medium text-gray-700">Loading...</span>
-        `;
-        document.body.appendChild(loadingIndicator);
-
-        window.showGlobalLoadingIndicator = function() {
-            const indicator = document.getElementById('htmx-global-loading');
-            if (indicator) {
-                indicator.style.opacity = '1';
-                indicator.style.pointerEvents = 'auto';
-            }
-        };
-
-        window.hideGlobalLoadingIndicator = function() {
-            const indicator = document.getElementById('htmx-global-loading');
-            if (indicator) {
-                indicator.style.opacity = '0';
-                indicator.style.pointerEvents = 'none';
-            }
-        };
-    }
-
-    function setupErrorHandling() {
-        // Response error handling
-        document.addEventListener('htmx:responseError', function(event) {
-            const xhr = event.detail.xhr;
-            const element = event.detail.elt;
-            
-            console.error('HTMX Response Error:', {
-                status: xhr.status,
-                statusText: xhr.statusText,
-                url: xhr.responseURL,
-                element: element
-            });
-
-            // Show user-friendly error message
-            if (window.showToast) {
-                const errorMessage = getErrorMessage(xhr.status);
-                window.showToast(errorMessage, 'error');
-            }
-
-            // Handle specific error types
-            handleSpecificErrors(xhr, element);
-        });
-
-        // Send error handling
-        document.addEventListener('htmx:sendError', function(event) {
-            console.error('HTMX Send Error:', event.detail);
-            
-            if (window.showToast) {
-                window.showToast('Network error. Please check your connection.', 'error');
-            }
-        });
-
-        // Timeout handling
-        document.addEventListener('htmx:timeout', function(event) {
-            console.warn('HTMX Timeout:', event.detail);
-            
-            if (window.showToast) {
-                window.showToast('Request timed out. Please try again.', 'warning');
-            }
-        });
-    }
-
-    function handleSuccessResponse(xhr, element) {
-        // Check for success messages in response headers
-        const successMessage = xhr.getResponseHeader('X-Toast-Success');
-        if (successMessage && window.showToast) {
-            window.showToast(successMessage, 'success');
-        }
-
-        // Handle redirect responses
-        const redirectUrl = xhr.getResponseHeader('X-Redirect');
-        if (redirectUrl) {
-            window.location.href = redirectUrl;
-        }
-    }
-
-    function handleErrorResponse(xhr, element) {
-        // Check for error messages in response headers
-        const errorMessage = xhr.getResponseHeader('X-Toast-Error');
-        if (errorMessage && window.showToast) {
-            window.showToast(errorMessage, 'error');
-        }
-    }
-
-    function handlePostSwapProcessing(target, detail) {
-        // Handle modal-specific processing
-        if (target.id && target.id.includes('modal')) {
-            // Focus management for modals
-            const firstFocusable = target.querySelector('input, select, textarea, button');
-            if (firstFocusable) {
-                setTimeout(() => firstFocusable.focus(), 100);
-            }
-        }
-
-        // Handle form-specific processing
-        const forms = target.querySelectorAll('form');
-        forms.forEach(form => {
-            // Re-initialize form validation
-            if (window.hydrationManager) {
-                window.hydrationManager.registerComponent('form[data-validate]', (element) => {
-                    element.addEventListener('submit', (e) => {
-                        if (!validateForm(element)) {
-                            e.preventDefault();
-                        }
-                    });
-                });
-            }
-        });
-    }
-
-    function handleScrollToTarget(target, detail) {
-        // Auto-scroll to target if it has scroll attribute
-        if (target.hasAttribute('data-scroll-to')) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    function handleSpecificErrors(xhr, element) {
-        switch (xhr.status) {
-            case 401:
-                // Unauthorized - redirect to login
-                window.location.href = '/login/';
-                break;
-            case 403:
-                // Forbidden - show access denied message
-                if (window.showToast) {
-                    window.showToast('Access denied. You do not have permission to perform this action.', 'error');
-                }
-                break;
-            case 404:
-                // Not found - show not found message
-                if (window.showToast) {
-                    window.showToast('The requested resource was not found.', 'error');
-                }
-                break;
-            case 422:
-                // Validation error - try to show form errors
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.errors) {
-                        showFormErrors(response.errors, element);
-                    }
-                } catch (e) {
-                    console.warn('Could not parse validation errors:', e);
-                }
-                break;
-            case 500:
-                // Server error - show generic error
-                if (window.showToast) {
-                    window.showToast('A server error occurred. Please try again later.', 'error');
-                }
-                break;
-        }
-    }
-
-    function getErrorMessage(status) {
-        const messages = {
-            400: 'Bad request. Please check your input.',
-            401: 'You are not authorized. Please log in.',
-            403: 'Access denied.',
-            404: 'Resource not found.',
-            422: 'Invalid data provided.',
-            429: 'Too many requests. Please wait.',
-            500: 'Server error. Please try again later.',
-            502: 'Service temporarily unavailable.',
-            503: 'Service temporarily unavailable.',
-            504: 'Request timed out.'
-        };
-
-        return messages[status] || 'An error occurred. Please try again.';
-    }
-
-    function showFormErrors(errors, formElement) {
-        // Clear existing errors
-        const existingErrors = formElement.querySelectorAll('.error-message');
-        existingErrors.forEach(error => error.remove());
-
-        // Show new errors
-        Object.keys(errors).forEach(fieldName => {
-            const field = formElement.querySelector(`[name="${fieldName}"]`);
-            if (field) {
-                field.classList.add('border-red-500');
-                
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message text-red-500 text-sm mt-1';
-                errorDiv.textContent = errors[fieldName][0]; // Show first error
-                
-                field.parentNode.appendChild(errorDiv);
-            }
-        });
-    }
-
-    function validateForm(form) {
-        const requiredFields = form.querySelectorAll('[required]');
-        let isValid = true;
-
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('border-red-500');
-                isValid = false;
-            } else {
-                field.classList.remove('border-red-500');
-            }
-        });
-
-        return isValid;
-    }
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', waitForHTMX);
-    } else {
-        waitForHTMX();
-    }
-
-    // Global scroll management functions
-    window.setGlobalBodyScrollLock = function() {
-        // Store original scroll position if not already stored
-        if (!window.modalScrollState) {
-            window.modalScrollState = {
-                scrollTop: window.pageYOffset || document.documentElement.scrollTop,
-                scrollLeft: window.pageXOffset || document.documentElement.scrollLeft,
-                originalOverflow: document.body.style.overflow,
-                originalOverflowY: document.body.style.overflowY
-            };
-        }
-
-        // Apply comprehensive scroll lock
-        document.body.style.overflow = 'hidden';
-        document.body.style.overflowY = 'hidden';
-        document.body.classList.add('modal-open');
-        document.documentElement.style.overflow = 'hidden';
-
-        console.log('🔒 Global: Body scroll locked');
-    };
-
-    window.restoreGlobalBodyScroll = function() {
-        // Check if there are any active modals
-        const activeModals = document.querySelectorAll('.modal.modal-show');
-        if (activeModals.length <= 1) { // 1 or less (the one being closed)
-            // Comprehensive scroll restoration
-            document.body.style.overflow = '';
-            document.body.style.overflowY = '';
-            document.body.classList.remove('modal-open');
-            document.documentElement.style.overflow = '';
-
-            console.log('✅ Global: Body scroll restored');
-        } else {
-            console.log('⏸️ Global: Keeping scroll locked - active modals:', activeModals.length - 1);
+    // Backward compatibility functions (delegating to unified manager)
+    window.preserveButtonStates = function(triggerElement) {
+        if (htmxManager) {
+            htmxManager.preserveComponents(triggerElement);
         }
     };
 
-    window.finalGlobalScrollCheck = function() {
-        setTimeout(() => {
-            const remainingModals = document.querySelectorAll('.modal.modal-show');
-            if (remainingModals.length === 0) {
-                // Ensure no scroll restrictions remain
-                document.body.style.overflow = '';
-                document.body.style.overflowY = '';
-                document.body.classList.remove('modal-open');
-                document.documentElement.style.overflow = '';
-
-                // Clear stored scroll state
-                if (window.modalScrollState) {
-                    delete window.modalScrollState;
-                }
-
-                // Force browser reflow
-                document.body.offsetHeight;
-
-                console.log('✅ Global: Final scroll state verified');
-            }
-        }, 50);
+    window.restoreButtonStates = function(targetElement) {
+        if (htmxManager) {
+            htmxManager.restoreComponents(targetElement);
+        }
     };
 
-    console.log('✅ HTMX configuration script loaded');
+    window.hydrateAlpineComponents = function(targetElement) {
+        if (htmxManager) {
+            htmxManager.hydrateComponents(targetElement);
+        }
+    };
+
+    // Global fallback for old references
+    window.waitForHTMX = window.waitForHTMX || function(cb){
+        if (typeof htmx !== 'undefined') { if (typeof cb === 'function') cb(); }
+        else { setTimeout(() => window.waitForHTMX(cb), 50); }
+    };
+
+
+    // Backward compatibility for event listeners
+    window.reinitializeEventListeners = function(targetElement) {
+        if (htmxManager) {
+            htmxManager.setupDynamicEventListeners(targetElement);
+        }
+    };
 
 })();

@@ -23,10 +23,18 @@
         }
 
         init() {
-            console.log('🧪 Frontend Validator initialized (v2.2 - DOM-aware initialization)');
+            console.log('🧪 Frontend Validator initialized (v2.3 - DOM-safe initialization)');
             this.registerTests();
             this.setupMonitoring();
-            this.createDebugPanel();
+
+            // Only create debug panel when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    this.createDebugPanel();
+                });
+            } else {
+                this.createDebugPanel();
+            }
         }
 
         /**
@@ -84,10 +92,19 @@
 
             // Toast system tests
             this.registerTest('toast-manager', 'Toast Manager', () => {
-                // Check for any available toast function
-                return typeof window.showToast === 'function' ||
-                       typeof window.simpleShowToast === 'function' ||
-                       window.toastManager;
+                // Check for any available toast function or manager
+                if (typeof window.showToast === 'function') return true;
+                if (typeof window.simpleShowToast === 'function') return true;
+                if (window.toastManager && typeof window.toastManager.show === 'function') return true;
+                if (window.toastManagerLoaded) return true;
+
+                // Check if ensureToastManager function exists (fallback)
+                if (typeof window.ensureToastManager === 'function') {
+                    window.ensureToastManager();
+                    return window.toastManager || window.showToast;
+                }
+
+                return false;
             });
 
             // Error handling tests
@@ -318,7 +335,20 @@
                 return;
             }
 
-            const panel = document.createElement('div');
+            // Ensure document.body exists
+            if (!document.body) {
+                console.warn('🧪 Frontend Validator: document.body not available, skipping debug panel');
+                return;
+            }
+
+            // Check if panel already exists
+            if (document.getElementById('frontend-debug-panel')) {
+                console.log('🧪 Frontend Validator: Debug panel already exists');
+                return;
+            }
+
+            try {
+                const panel = document.createElement('div');
             panel.id = 'frontend-debug-panel';
             panel.style.cssText = `
                 position: fixed;
@@ -348,7 +378,12 @@
                 </div>
             `;
 
-            document.body.appendChild(panel);
+                document.body.appendChild(panel);
+                console.log('🧪 Frontend Validator: Debug panel created successfully');
+            } catch (error) {
+                console.error('🧪 Frontend Validator: Failed to create debug panel:', error);
+                return;
+            }
 
             // Event listeners
             document.getElementById('debug-close').addEventListener('click', () => {
@@ -436,13 +471,25 @@
     window.startFrontendMonitoring = () => validator.startMonitoring();
     window.stopFrontendMonitoring = () => validator.stopMonitoring();
 
-    // Auto-run tests after page load
+    // Auto-run tests after page load with longer delay for toast manager
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => validator.runAllTests(), 2000);
+            setTimeout(() => {
+                // Ensure toast manager is available before testing
+                if (typeof window.ensureToastManager === 'function') {
+                    window.ensureToastManager();
+                }
+                validator.runAllTests();
+            }, 3000);
         });
     } else {
-        setTimeout(() => validator.runAllTests(), 2000);
+        setTimeout(() => {
+            // Ensure toast manager is available before testing
+            if (typeof window.ensureToastManager === 'function') {
+                window.ensureToastManager();
+            }
+            validator.runAllTests();
+        }, 3000);
     }
 
     console.log('✅ Frontend Validator loaded and active');

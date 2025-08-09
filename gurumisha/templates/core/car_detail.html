@@ -426,7 +426,7 @@
                 <li class="text-gray-500">&rsaquo;</li>
                 <li><a href="{% url 'core:car_list' %}" class="text-harrier-dark hover:text-harrier-red">Cars</a></li>
                 <li class="text-gray-500">&rsaquo;</li>
-                <li><a href="{% url 'core:car_list' %}?brand={{ car.brand.id }}" class="text-harrier-dark hover:text-harrier-red">{{ car.brand.name }}</a></li>
+                <li><a href="{% url 'core:car_list' %}?make={{ car.make.id }}" class="text-harrier-dark hover:text-harrier-red">{{ car.make.name }}</a></li>
                 <li class="text-gray-500">&rsaquo;</li>
                 <li class="text-harrier-red font-semibold">{{ car.model.name }}</li>
             </ol>
@@ -717,7 +717,7 @@
                 <div class="car-info-card">
                     <!-- Brand Badge -->
                     <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-harrier-red to-red-600 text-white rounded-full text-sm font-bold uppercase tracking-wide mb-4 font-montserrat">
-                        <i class="fas fa-award mr-2"></i>{{ car.brand.name }}
+                        <i class="fas fa-award mr-2"></i>{{ car.make.name }}
                     </div>
 
                     <!-- Car Title -->
@@ -1206,47 +1206,8 @@
         showNotification('Request timed out. Please try again.', 'warning');
     });
 
-    // Add to compare functionality
-    function addToCompare(carId) {
-        fetch(`/compare/add/${carId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification(data.message, 'success');
-                updateCompareButton(data.count);
-
-                // Show compare link if cars added
-                if (data.count > 0) {
-                    setTimeout(() => {
-                        const compareLink = document.createElement('div');
-                        compareLink.className = 'fixed bottom-4 right-4 z-50';
-                        compareLink.innerHTML = `
-                            <a href="/compare/" class="bg-harrier-red text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-red-600 transition-colors inline-flex items-center">
-                                <i class="fas fa-balance-scale mr-2"></i>
-                                Compare (${data.count})
-                            </a>
-                        `;
-                        document.body.appendChild(compareLink);
-
-                        // Remove after 10 seconds
-                        setTimeout(() => compareLink.remove(), 10000);
-                    }, 1000);
-                }
-            } else {
-                showNotification(data.message, 'warning');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error adding car to comparison', 'error');
-        });
-    }
+    // Compare functionality is now handled by HTMX in the compare button component
+    // No additional JavaScript needed for compare functionality
 
 
 
@@ -1334,18 +1295,7 @@
         }
     }
 
-    // Update compare button with count
-    function updateCompareButton(count = 0) {
-        const compareButtons = document.querySelectorAll('[onclick*="addToCompare"]');
-
-        compareButtons.forEach(button => {
-            if (count > 0) {
-                button.innerHTML = `<i class="fas fa-balance-scale"></i>Compare (${count})`;
-            } else {
-                button.innerHTML = `<i class="fas fa-balance-scale"></i>Add to Compare`;
-            }
-        });
-    }
+    // Compare button updates are now handled automatically by HTMX
 
     // Close modal when clicking outside
     document.getElementById('inquiryModal').addEventListener('click', function(e) {
@@ -1356,7 +1306,6 @@
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
-        updateCompareButton();
 
         // Animate elements on scroll
         const observerOptions = {

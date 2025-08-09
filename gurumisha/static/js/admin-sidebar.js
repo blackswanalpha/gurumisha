@@ -1,18 +1,29 @@
 /**
  * Enhanced Admin Sidebar JavaScript
  * Handles mobile navigation, real-time updates, and interactive features
+ * Wrapped in IIFE to prevent variable conflicts
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    initializeSidebar();
-    initializeActiveStateManagement();
-    initializeIconAnimations();
-    initializeRealTimeUpdates();
-    initializeTooltips();
-    initializeKeyboardShortcuts();
-    initializeMobileGestures();
-    initializeAccessibility();
-});
+(function() {
+    'use strict';
+
+    // Prevent multiple script executions
+    if (window.adminSidebarLoaded) {
+        console.log('Admin sidebar already loaded, skipping duplicate execution');
+        return;
+    }
+    window.adminSidebarLoaded = true;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeSidebar();
+        initializeActiveStateManagement();
+        initializeIconAnimations();
+        initializeRealTimeUpdates();
+        initializeTooltips();
+        initializeKeyboardShortcuts();
+        initializeMobileGestures();
+        initializeAccessibility();
+    });
 
 /**
  * Initialize sidebar functionality
@@ -168,7 +179,7 @@ function initializeHTMXUpdates() {
     });
 }
 
-// Request throttling
+// Request throttling - scoped to this module
 let statsUpdateInProgress = false;
 let lastStatsUpdate = 0;
 const STATS_UPDATE_COOLDOWN = 10000; // 10 seconds minimum between updates
@@ -211,41 +222,74 @@ function updateSidebarStats() {
     lastStatsUpdate = now;
     console.log('📊 Updating sidebar stats...');
 
-    // Update tracking stats
+    // Update tracking stats with better error handling
     fetch('/dashboard/htmx/tracking-stats/', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'HX-Request': 'true'
+            'HX-Request': 'true',
+            'X-CSRFToken': getCSRFToken()
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Expected JSON but received ${contentType}. Response may be HTML.`);
+        }
+        return response.json();
+    })
     .then(data => {
         updateTrackingBadges(data);
     })
     .catch(error => {
-        console.log('Tracking stats update failed:', error);
+        window.statsUpdateErrorCount = (window.statsUpdateErrorCount || 0) + 1;
+        console.log(`⚠️ Stats update failed (${window.statsUpdateErrorCount}/3): ${error.message}`);
+
+        // If too many errors, disable stats updates temporarily
+        if (window.statsUpdateErrorCount >= 3) {
+            console.warn('📊 Too many stats update errors, disabling for 5 minutes');
+            window.statsUpdateDisabled = true;
+            setTimeout(() => {
+                window.statsUpdateDisabled = false;
+                window.statsUpdateErrorCount = 0;
+                console.log('📊 Stats updates re-enabled');
+            }, 300000);
+        }
     });
 
-    // Update inquiry stats
+    // Update inquiry stats with better error handling
     fetch('/dashboard/htmx/inquiry-stats/', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'HX-Request': 'true'
+            'HX-Request': 'true',
+            'X-CSRFToken': getCSRFToken()
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Expected JSON but received ${contentType}. Response may be HTML.`);
+        }
+        return response.json();
+    })
     .then(data => {
         updateInquiryBadges(data);
     })
     .catch(error => {
-        console.log('Inquiry stats update failed:', error);
+        console.log(`⚠️ Inquiry stats update failed: ${error.message}`);
     });
 
     // Update general admin stats
-    fetch('/dashboard/htmx/admin-quick-actions/', {
+    fetch('/dashboard/htmx/admin-stats/', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'HX-Request': 'true'
+            'HX-Request': 'true',
+            'X-CSRFToken': getCSRFToken()
         }
     })
     .then(response => {
@@ -788,15 +832,37 @@ function hideNotification(notification) {
     }, 300);
 }
 
-/**
- * Export functions for global use
- */
-window.AdminSidebar = {
-    toggle: toggleMobileSidebar,
-    close: closeMobileSidebar,
-    showNotification: showSidebarNotification,
-    updateStats: updateSidebarStats,
-    updateTrackingBadges: updateTrackingBadges,
-    updateInquiryBadges: updateInquiryBadges,
-    updateGeneralBadges: updateGeneralBadges
-};
+    /**
+     * Get CSRF token for requests
+     */
+    function getCSRFToken() {
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        if (metaToken) return metaToken.getAttribute('content');
+
+        const cookieToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (cookieToken) return cookieToken.value;
+
+        // Try to get from cookies
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') return value;
+        }
+
+        return '';
+    }
+
+    /**
+     * Export functions for global use
+     */
+    window.AdminSidebar = {
+        toggle: toggleMobileSidebar,
+        close: closeMobileSidebar,
+        showNotification: showSidebarNotification,
+        updateStats: updateSidebarStats,
+        updateTrackingBadges: updateTrackingBadges,
+        updateInquiryBadges: updateInquiryBadges,
+        updateGeneralBadges: updateGeneralBadges
+    };
+
+})(); // End of IIFE

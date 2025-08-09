@@ -1,3 +1,5 @@
+console.log('🚀 MESSAGE INTEGRATION SCRIPT STARTING TO LOAD');
+
 /**
  * Gurumisha Message System Integration
  * Integrates the messaging system with toast manager and notification badges
@@ -6,6 +8,8 @@
 
 (function() {
     'use strict';
+
+    console.log('🔄 Message Integration script loading...');
 
     if (window.messageIntegrationLoaded) {
         console.log('Message integration already loaded');
@@ -23,10 +27,35 @@
         }
 
         init() {
+            this.setupToastFallbacks();
             this.setupEventListeners();
             this.startPeriodicChecks();
             this.checkForInitialMessages();
             this.setupNotificationBadges();
+        }
+
+        setupToastFallbacks() {
+            // Provide fallback toast functions if toast manager is not available
+            if (typeof window.showInfo !== 'function') {
+                window.showInfo = (message, options) => {
+                    console.log(`INFO: ${message}`);
+                };
+            }
+            if (typeof window.showSuccess !== 'function') {
+                window.showSuccess = (message, options) => {
+                    console.log(`SUCCESS: ${message}`);
+                };
+            }
+            if (typeof window.showError !== 'function') {
+                window.showError = (message, options) => {
+                    console.log(`ERROR: ${message}`);
+                };
+            }
+            if (typeof window.showWarning !== 'function') {
+                window.showWarning = (message, options) => {
+                    console.log(`WARNING: ${message}`);
+                };
+            }
         }
 
         setupEventListeners() {
@@ -71,7 +100,9 @@
 
         checkForInitialMessages() {
             // Check for messages on page load
+            console.log('🚀 Scheduling initial message check in 1 second...');
             setTimeout(() => {
+                console.log('🚀 Running initial message check now');
                 this.checkForPopupMessages();
                 this.loadDashboardMessages();
             }, 1000); // Delay to ensure page is fully loaded
@@ -118,19 +149,24 @@
         }
 
         async checkForPopupMessages() {
+            console.log('🔍 Checking for popup messages...');
+
             // Only check for popup messages if user is authenticated
             if (!this.isUserAuthenticated()) {
+                console.log('❌ User not authenticated, skipping popup check');
                 return;
             }
 
             // Prevent too frequent checks
             const now = Date.now();
             if (now - this.lastPopupCheck < this.popupCheckInterval) {
+                console.log('⏰ Too soon for popup check, skipping');
                 return;
             }
             this.lastPopupCheck = now;
 
             try {
+                console.log('📡 Fetching popup messages from /messages/popup/');
                 const response = await fetch('/messages/popup/', {
                     method: 'GET',
                     headers: {
@@ -140,12 +176,18 @@
                     credentials: 'same-origin'
                 });
 
+                console.log(`📡 Response status: ${response.status}`);
+
                 if (response.ok) {
                     const data = await response.text();
+                    console.log(`📡 Response data length: ${data.length}`);
 
                     // Check if response contains a message popup
                     if (data && typeof data === 'string' && !data.includes('"no_messages": true')) {
+                        console.log('✅ Found popup message, displaying...');
                         this.displayPopupMessage(data);
+                    } else {
+                        console.log('ℹ️ No popup messages to display');
                     }
                 } else if (response.status === 302 || response.status === 401 || response.status === 403) {
                     // User is not authenticated or doesn't have permission
@@ -373,19 +415,14 @@
 
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
-        // Wait for toast manager to be ready
-        const initMessageIntegration = () => {
-            if (window.toastManagerLoaded) {
-                window.messageIntegration = new MessageIntegration();
-                
-                // Expose public methods
-                window.MessageIntegration = MessageIntegration;
-            } else {
-                setTimeout(initMessageIntegration, 100);
-            }
-        };
-        
-        initMessageIntegration();
+        // Initialize message integration immediately
+        // Toast manager is optional - we'll use fallbacks if it's not available
+        window.messageIntegration = new MessageIntegration();
+
+        // Expose public methods
+        window.MessageIntegration = MessageIntegration;
+
+        console.log('✅ Message integration initialized');
     });
 
     // Handle page navigation (for SPAs or HTMX navigation)
@@ -394,6 +431,8 @@
             window.messageIntegration.checkForMessages();
         }
     });
+
+    console.log('✅ Message Integration script loaded completely');
 
 })();
 

@@ -5,7 +5,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Vendor, Car, ImportRequest, Inquiry, CarBrand, CarModel, VehicleCondition
+from .models import Vendor, Car, ImportRequest, Inquiry, CarMake, CarModel, VehicleCondition
 from .utils.image_utils import default_image_handler
 
 User = get_user_model()
@@ -1119,7 +1119,7 @@ class CarSearchForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-harrier-red focus:border-harrier-red',
-            'placeholder': 'Search by title, brand, or model...'
+            'placeholder': 'Search by title, make, or model...'
         })
     )
     status = forms.ChoiceField(
@@ -1227,13 +1227,13 @@ class AdminCarEditForm(forms.ModelForm):
     """Enhanced form for admin to edit all car details"""
 
     # Additional fields for fallback names
-    brand_name = forms.CharField(
+    make_name = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'Enter brand name if not in dropdown'
+            'placeholder': 'Enter make name if not in dropdown'
         }),
-        help_text='Use only if brand is not available in dropdown'
+        help_text='Use only if make is not available in dropdown'
     )
 
     model_name = forms.CharField(
@@ -1305,7 +1305,7 @@ class AdminCarEditForm(forms.ModelForm):
             'title', 'description', 'features',
 
             # Vehicle Identification
-            'brand', 'model', 'brand_name', 'model_name', 'year', 'color',
+            'make', 'model', 'make_name', 'model_name', 'year', 'color',
 
             # Vehicle Condition & Specifications
             'condition', 'condition_name', 'mileage', 'engine_size',
@@ -1346,7 +1346,7 @@ class AdminCarEditForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Air conditioning, Leather seats, Sunroof, Navigation system...'
             }),
-            'brand': forms.Select(attrs={'class': 'form-input'}),
+            'make': forms.Select(attrs={'class': 'form-input'}),
             'model': forms.Select(attrs={'class': 'form-input'}),
             'year': forms.NumberInput(attrs={
                 'class': 'form-input',
@@ -1413,9 +1413,9 @@ class AdminCarEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Populate brand choices
-        self.fields['brand'].queryset = CarBrand.objects.filter(is_active=True).order_by('name')
-        self.fields['brand'].empty_label = "Select Brand"
+        # Populate make choices
+        self.fields['make'].queryset = CarMake.objects.filter(is_active=True).order_by('name')
+        self.fields['make'].empty_label = "Select Make"
 
         # Populate model choices (will be filtered by brand via JavaScript)
         self.fields['model'].queryset = CarModel.objects.filter(is_active=True).order_by('name')
@@ -1490,11 +1490,11 @@ class AdminCarEditForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
-        # Validate that either brand or brand_name is provided
-        brand = cleaned_data.get('brand')
-        brand_name = cleaned_data.get('brand_name')
-        if not brand and not brand_name:
-            raise forms.ValidationError("Please select a brand or enter a brand name")
+        # Validate that either make or make_name is provided
+        make = cleaned_data.get('make')
+        make_name = cleaned_data.get('make_name')
+        if not make and not make_name:
+            raise forms.ValidationError("Please select a make or enter a make name")
 
         # Validate hot deal fields if hot deal is enabled
         is_hot_deal = cleaned_data.get('is_hot_deal')

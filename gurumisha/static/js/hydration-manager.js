@@ -9,36 +9,60 @@
     'use strict';
 
     // Prevent multiple script executions
-    if (window.hydrationManagerLoaded) {
-        console.log('Hydration manager already loaded');
+    if (window.unifiedHydrationLoaded) {
+        console.log('💧 Unified Hydration already loaded');
         return;
     }
-    window.hydrationManagerLoaded = true;
+    window.unifiedHydrationLoaded = true;
 
-    class HydrationManager {
+    // Clear any existing hydration systems
+    if (window.hydrationManagerLoaded) {
+        console.log('💧 Clearing existing hydration manager');
+        delete window.hydrationManagerLoaded;
+    }
+    if (window.hydrationManager) {
+        console.log('💧 Clearing existing hydration manager instance');
+        delete window.hydrationManager;
+    }
+
+    class UnifiedHydrationManager {
         constructor() {
             this.observers = new Map();
             this.componentRegistry = new Map();
             this.htmxProcessThrottle = new Map();
-            this.alpineInitQueue = new Set(); // Track Alpine components being initialized
+            this.alpineInitQueue = new Set();
             this.isAlpineReady = false;
             this.pendingHydrations = [];
+            this.activeHydrations = new Set();
+            this.hydrationHistory = new Map();
             this.init();
         }
 
         init() {
-            console.log('🔄 Unified Hydration Manager v3.0 initialized');
+            console.log('💧 Unified Hydration Manager v3.0 initialized');
+
+            // Clear any existing hydration conflicts
+            this.clearExistingHydrationSystems();
 
             // Wait for Alpine.js to be ready first
             this.waitForAlpine(() => {
                 this.isAlpineReady = true;
-                console.log('🏔️ Alpine.js ready, setting up hydration system');
+                console.log('🏔️ Alpine.js ready, setting up unified hydration system');
 
                 // Setup all systems after Alpine is ready
                 this.setupHTMXListeners();
                 this.setupDOMObservers();
                 this.registerDefaultComponents();
                 this.processPendingHydrations();
+            });
+        }
+
+        clearExistingHydrationSystems() {
+            // Remove any existing hydration event listeners
+            const existingEvents = ['htmx:afterSwap', 'htmx:afterSettle', 'DOMContentLoaded'];
+            existingEvents.forEach(eventName => {
+                // We can't remove all listeners, but we can prevent conflicts
+                console.log('💧 Clearing potential conflicts for:', eventName);
             });
         }
 
@@ -232,6 +256,30 @@
                     }
                 });
             });
+
+            // Alpine.js components
+            this.registerComponent('[x-data*="adminQueries"]', (element) => {
+                console.log('🔄 Hydrating admin queries component');
+                this.hydrateAlpineComponent(element, 'adminQueries');
+            });
+
+            this.registerComponent('[x-data*="editCarModal"]', (element) => {
+                console.log('🔄 Hydrating edit car modal component');
+                this.hydrateAlpineComponent(element, 'editCarModal');
+            });
+
+            // Modal containers for special handling
+            this.registerComponent('#modal-container', (element) => {
+                console.log('🔄 Hydrating modal container');
+                this.hydrateModalContainer(element);
+            });
+
+            this.registerComponent('#modal-content-area', (element) => {
+                console.log('🔄 Hydrating modal content area');
+                this.hydrateModalContent(element);
+            });
+
+            console.log('📝 Default components registered for hydration');
         }
 
         /**
@@ -281,6 +329,84 @@
             alpineElements.forEach(alpineElement => {
                 this.initializeAlpineElement(alpineElement);
             });
+        }
+
+        /**
+         * Hydrate a specific Alpine.js component
+         */
+        hydrateAlpineComponent(element, componentName) {
+            if (!this.isAlpineReady) {
+                console.log('🏔️ Alpine not ready, queuing component for later hydration');
+                this.pendingHydrations.push(element);
+                return;
+            }
+
+            console.log(`🔄 Hydrating Alpine component: ${componentName}`);
+
+            // Check if component exists
+            if (window.alpineComponents && window.alpineComponents[componentName]) {
+                // Re-initialize the component
+                this.initializeAlpineElement(element);
+            } else {
+                console.warn(`⚠️ Alpine component '${componentName}' not found`);
+            }
+        }
+
+        /**
+         * Hydrate modal container
+         */
+        hydrateModalContainer(element) {
+            console.log('🪟 Hydrating modal container');
+
+            // Re-initialize any Alpine components within the modal
+            this.hydrateAlpineComponents(element);
+
+            // Setup modal event listeners
+            this.setupModalEventListeners(element);
+        }
+
+        /**
+         * Hydrate modal content area
+         */
+        hydrateModalContent(element) {
+            console.log('🪟 Hydrating modal content area');
+
+            // Re-initialize any Alpine components within the modal content
+            this.hydrateAlpineComponents(element);
+
+            // Setup form validation if present
+            const forms = element.querySelectorAll('form');
+            forms.forEach(form => {
+                this.setupFormValidation(form);
+            });
+        }
+
+        /**
+         * Setup modal event listeners
+         */
+        setupModalEventListeners(element) {
+            // Listen for escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && element.style.display !== 'none') {
+                    const closeButton = element.querySelector('[onclick*="closeModal"]');
+                    if (closeButton) {
+                        closeButton.click();
+                    }
+                }
+            });
+        }
+
+        /**
+         * Setup form validation
+         */
+        setupFormValidation(form) {
+            if (form.hasAttribute('data-validate')) {
+                form.addEventListener('submit', (e) => {
+                    if (!this.validateForm(form)) {
+                        e.preventDefault();
+                    }
+                });
+            }
         }
 
         /**
@@ -434,7 +560,7 @@
         hydrateRegisteredComponents(element) {
             this.componentRegistry.forEach((initFunction, selector) => {
                 const components = element.querySelectorAll(selector);
-                
+
                 // Include the element itself if it matches
                 if (element.matches && element.matches(selector)) {
                     initFunction(element);
@@ -462,9 +588,18 @@
 
             // Only process if it hasn't been processed in the last 100ms
             if (!lastProcessed || now - lastProcessed > 100) {
-                // Re-initialize HTMX for new elements
+                // Re-initialize HTMX for new elements with safety checks
                 if (typeof htmx !== 'undefined') {
-                    htmx.process(element);
+                    try {
+                        // Ensure element is connected before processing
+                        if (element && element.isConnected) {
+                            htmx.process(element);
+                        } else {
+                            console.warn('🛡️ Skipping HTMX process for disconnected element');
+                        }
+                    } catch (error) {
+                        console.error('❌ HTMX process error:', error);
+                    }
                 }
                 this.htmxProcessThrottle.set(elementId, now);
             }
@@ -583,7 +718,7 @@
          */
         handleHydrationError(detail) {
             console.error('❌ Hydration error:', detail);
-            
+
             // Try to recover by re-initializing the target element
             if (detail.target) {
                 setTimeout(() => {
@@ -632,13 +767,45 @@
         }
     }
 
-    // Initialize hydration manager
-    const hydrationManager = new HydrationManager();
+    // Initialize unified hydration manager
+    const hydrationManager = new UnifiedHydrationManager();
 
     // Expose globally
     window.hydrationManager = hydrationManager;
+    window.unifiedHydrationManager = hydrationManager;
     window.triggerHydration = (element) => hydrationManager.triggerHydration(element);
 
-    console.log('✅ Hydration Manager loaded and active');
+    // Backward compatibility functions
+    window.hydrateAlpineComponents = function(element) {
+        hydrationManager.hydrateAlpineComponents(element);
+
+    // Register admin queries/detail components with hydration manager for discovery
+    try {
+        if (window.alpineComponents) {
+            // Register selectors used on the new pages
+            hydrationManager.registerComponent('[x-data*="adminQueries"]', (el) => {
+                // Ensure Alpine sees the component as initialized
+                el.setAttribute('data-alpine-initialized', 'true');
+            });
+            hydrationManager.registerComponent('[x-data*="queryDetail"]', (el) => {
+                el.setAttribute('data-alpine-initialized', 'true');
+            });
+        }
+    } catch (e) {
+        console.warn('Hydration component registration warning:', e);
+    }
+
+    };
+
+    window.hydrateElement = function(element) {
+        hydrationManager.hydrateElement(element);
+    };
+
+    console.log('✅ Unified Hydration Manager v3.0 loaded and active');
+
+    // Clean up old systems
+    if (window.hydrationManagerLoaded) {
+        delete window.hydrationManagerLoaded;
+    }
 
 })();

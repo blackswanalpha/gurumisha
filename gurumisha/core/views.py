@@ -16,13 +16,13 @@ from django.utils import timezone
 import logging
 import time
 from .models import (
-    Car, CarBrand, CarModel, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
+    Car, CarMake, CarModel, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
     Inquiry, Testimonial, BlogPost, Vendor, User,
     Cart, CartItem, Order, OrderItem, Payment, Invoice, StockMovement,
     OpinionPoll, PollOption, PollVote, OpinionReview, ReviewHelpfulVote, Wishlist
 )
 from .forms import (
-    CustomUserRegistrationForm, CustomLoginForm, SellCarForm,
+    CustomUserRegistrationForm, CustomLoginForm, SellCarForm, SellCarDBForm,
     ImportRequestForm, ContactForm, CustomPasswordResetForm, CustomSetPasswordForm,
     CustomAuthenticationForm, ResendVerificationEmailForm,
     VerificationCodeForm, RequestVerificationCodeForm
@@ -367,9 +367,29 @@ def homepage(request):
     year_range = list(range(1990, current_year + 2))
     year_range.reverse()  # Show newest years first
 
+    # Order car makes by popularity (popular makes first, then alphabetical)
+    popular_makes = ['Toyota', 'Honda', 'Nissan', 'BMW', 'Mercedes-Benz', 'Mercedes', 'Mazda', 'Mitsubishi', 'Subaru', 'Volkswagen', 'Audi', 'Ford', 'Hyundai', 'Kia']
+    all_makes = CarMake.objects.filter(is_active=True)
+
+    # Create ordered list: popular makes first, then remaining makes alphabetically
+    car_makes_ordered = []
+    remaining_makes = list(all_makes)
+
+    # Add popular makes in order
+    for popular_make in popular_makes:
+        for make in remaining_makes[:]:  # Use slice to avoid modification during iteration
+            if make.name.lower() == popular_make.lower():
+                car_makes_ordered.append(make)
+                remaining_makes.remove(make)
+                break
+
+    # Add remaining makes alphabetically
+    remaining_makes.sort(key=lambda x: x.name)
+    car_makes_ordered.extend(remaining_makes)
+
     context = {
         'featured_cars': featured_cars,
-        'car_brands': CarBrand.objects.filter(is_active=True).order_by('name'),
+        'car_makes': car_makes_ordered,
         'testimonials': Testimonial.objects.filter(is_approved=True, is_featured=True)[:3],
         'blog_posts': BlogPost.objects.filter(is_published=True)[:3],
         'hot_deals': hot_deals,
@@ -388,16 +408,16 @@ class CarExploreView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = Car.objects.filter(is_approved=True).select_related('brand', 'model', 'condition')
+        queryset = Car.objects.filter(is_approved=True).select_related('make', 'model', 'condition')
 
         # Search filters - enhanced to include more fields
         search = self.request.GET.get('search')
         if search:
             queryset = queryset.filter(
                 Q(title__icontains=search) |
-                Q(brand__name__icontains=search) |
+                Q(make__name__icontains=search) |
                 Q(model__name__icontains=search) |
-                Q(brand_name__icontains=search) |
+                Q(make_name__icontains=search) |
                 Q(model_name__icontains=search) |
                 Q(description__icontains=search) |
                 Q(features__icontains=search) |
@@ -405,14 +425,14 @@ class CarExploreView(ListView):
                 Q(city__icontains=search)
             )
 
-        # Brand filter
-        brand = self.request.GET.get('brand')
-        if brand:
+        # Make filter
+        make = self.request.GET.get('make')
+        if make:
             queryset = queryset.filter(
-                Q(brand__id=brand) | Q(brand_name__iexact=brand)
+                Q(make__id=make) | Q(make_name__iexact=make)
             )
 
-        # Model filter (dynamic based on brand)
+        # Model filter (dynamic based on make)
         model = self.request.GET.get('model')
         if model:
             queryset = queryset.filter(
@@ -540,8 +560,8 @@ class CarExploreView(ListView):
         context = super().get_context_data(**kwargs)
 
         # Add filter options
-        context['car_brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
-        context['car_models'] = CarModel.objects.filter(is_active=True).select_related('brand').order_by('brand__name', 'name')
+        context['car_makes'] = CarMake.objects.filter(is_active=True).order_by('name')
+        context['car_models'] = CarModel.objects.filter(is_active=True).select_related('make').order_by('make__name', 'name')
         context['vehicle_conditions'] = VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name')
 
         # Body types from CarModel choices
@@ -576,7 +596,7 @@ class CarExploreView(ListView):
         # Current filters for maintaining state
         context['current_filters'] = {
             'search': self.request.GET.get('search', ''),
-            'brand': self.request.GET.get('brand', ''),
+            'make': self.request.GET.get('make', ''),
             'model': self.request.GET.get('model', ''),
             'condition': self.request.GET.get('condition', ''),
             'body_type': self.request.GET.get('body_type', ''),
@@ -626,23 +646,23 @@ class CarListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = Car.objects.filter(is_approved=True).select_related('brand', 'model')
+        queryset = Car.objects.filter(is_approved=True).select_related('make', 'model')
 
         # Search filters - enhanced to include more fields
         search = self.request.GET.get('search')
         if search:
             queryset = queryset.filter(
                 Q(title__icontains=search) |
-                Q(brand__name__icontains=search) |
+                Q(make__name__icontains=search) |
                 Q(model__name__icontains=search) |
                 Q(description__icontains=search) |
                 Q(features__icontains=search)
             )
 
-        # Brand filter
-        brand = self.request.GET.get('brand')
-        if brand:
-            queryset = queryset.filter(brand__id=brand)
+        # Make filter
+        make = self.request.GET.get('make')
+        if make:
+            queryset = queryset.filter(make__id=make)
 
         # Model filter
         model = self.request.GET.get('model')
@@ -766,8 +786,13 @@ class CarListView(ListView):
         context = super().get_context_data(**kwargs)
 
         # Enhanced context data
-        context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
-        context['car_models'] = CarModel.objects.filter(is_active=True).select_related('brand').order_by('brand__name', 'name')
+        # Order makes by popularity (number of approved available/featured cars)
+        from django.db.models import Count
+        popular_makes = CarMake.objects.filter(is_active=True).annotate(
+            active_car_count=Count('car', filter=models.Q(car__is_approved=True) & models.Q(car__status__in=['available', 'featured']))
+        ).order_by('-active_car_count', 'name')
+        context['makes'] = popular_makes
+        context['car_models'] = CarModel.objects.filter(is_active=True).select_related('make').order_by('make__name', 'name')
         context['fuel_types'] = Car.FUEL_TYPE_CHOICES
         context['transmission_types'] = Car.TRANSMISSION_CHOICES
         # Get condition types from VehicleCondition model
@@ -827,8 +852,8 @@ class CarListView(ListView):
         context['crossover_count'] = base_queryset.filter(model__body_type='crossover').count()
         context['compact_count'] = base_queryset.filter(model__body_type='compact').count()
 
-        # Add car brands for the brand showcase section and hero form
-        context['car_brands'] = CarBrand.objects.filter(is_active=True).prefetch_related('car_set')
+        # Add car makes for the make showcase section and hero form
+        context['car_makes'] = CarMake.objects.filter(is_active=True).prefetch_related('car_set')
 
         # Add vehicle conditions for hero form
         from .models import VehicleCondition
@@ -852,14 +877,14 @@ class CarListView(ListView):
             # For authenticated users
             recently_viewed = RecentlyViewedCar.objects.filter(
                 user=self.request.user
-            ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+            ).select_related('car', 'car__make', 'car__model').order_by('-viewed_at')[:5]
         else:
             # For anonymous users, use session
             session_key = self.request.session.session_key
             if session_key:
                 recently_viewed = RecentlyViewedCar.objects.filter(
                     session_key=session_key
-                ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+                ).select_related('car', 'car__make', 'car__model').order_by('-viewed_at')[:5]
             else:
                 recently_viewed = RecentlyViewedCar.objects.none()
 
@@ -941,7 +966,7 @@ class CarDetailView(DetailView):
 
         # Related cars
         context['related_cars'] = Car.objects.filter(
-            brand=car.brand,
+            make=car.make,
             is_approved=True,
             status='available'
         ).exclude(id=car.id)[:4]
@@ -1057,7 +1082,7 @@ def htmx_featured_cars_filter(request):
     cars = Car.objects.filter(
         is_approved=True,
         is_featured=True
-    ).select_related('brand', 'model', 'vendor')
+    ).select_related('make', 'model', 'vendor')
 
     # Apply filters
     if min_rating:
@@ -1082,7 +1107,7 @@ def htmx_hot_deals_refresh(request):
     hot_deals = HotDeal.objects.filter(
         is_active=True,
         car__is_approved=True
-    ).select_related('car', 'car__brand', 'car__model').order_by('-created_at')[:8]
+    ).select_related('car', 'car__make', 'car__model').order_by('-created_at')[:8]
 
     context = {'hot_deals': hot_deals}
     return render(request, 'components/hot_deals_grid.html', context)
@@ -1195,22 +1220,64 @@ def htmx_countdown_timer_update(request, deal_id):
         return render(request, 'components/countdown_timer.html', {'expired': True})
 
 
-def htmx_models_by_brand(request):
-    """HTMX endpoint for getting models based on selected brand"""
-    brand_id = request.GET.get('brand')
+def htmx_models_by_make(request):
+    """HTMX endpoint for getting models based on selected make"""
+    make_id = request.GET.get('make')
     models = []
 
-    if brand_id:
+    if make_id:
         try:
             models = CarModel.objects.filter(
-                brand_id=brand_id,
+                make_id=make_id,
                 is_active=True
             ).order_by('name')
-        except (ValueError, CarModel.DoesNotExist):
+            # Debug logging
+            if models.exists():
+                print(f"Found {models.count()} models for make_id {make_id}")
+            else:
+                print(f"No models found for make_id {make_id}")
+        except (ValueError, CarModel.DoesNotExist) as e:
+            print(f"Error fetching models for make_id {make_id}: {e}")
             pass
 
-    context = {'models': models, 'selected_model': request.GET.get('model', '')}
-    return render(request, 'core/partials/model_options.html', context)
+    context = {
+        'models': models,
+        'selected_model': request.GET.get('model', ''),
+        'has_make': bool(make_id),
+    }
+
+    # Use different template based on context (homepage vs car list vs valuation)
+    template_name = 'core/partials/model_options.html'
+    context_param = request.GET.get('context', '')
+
+    if context_param == 'homepage' or ('homepage' in request.META.get('HTTP_REFERER', '')):
+        template_name = 'core/partials/homepage_model_options.html'
+    elif context_param == 'valuation':
+        template_name = 'core/partials/homepage_model_options.html'  # Use same as homepage for valuation modal
+
+    return render(request, template_name, context)
+
+
+
+
+
+def htmx_subcategories_by_category(request):
+    """HTMX endpoint for getting subcategories based on selected primary category"""
+    category_id = request.GET.get('category')
+    subcategories = []
+
+    if category_id:
+        try:
+            from .models import SparePartCategory
+            subcategories = SparePartCategory.objects.filter(
+                parent_id=category_id,
+                is_active=True
+            ).order_by('name')
+        except (ValueError, SparePartCategory.DoesNotExist):
+            pass
+
+    context = {'subcategories': subcategories, 'selected_subcategory': request.GET.get('subcategory', '')}
+    return render(request, 'core/partials/subcategory_options.html', context)
 
 
 def htmx_filter_by_body_type(request):
@@ -1221,16 +1288,16 @@ def htmx_filter_by_body_type(request):
     cars = Car.objects.filter(
         is_approved=True,
         status__in=['available', 'featured']
-    ).select_related('brand', 'model', 'vendor')
+    ).select_related('make', 'model', 'vendor')
 
     # Apply body type filter
     if body_type:
         cars = cars.filter(model__body_type=body_type)
 
     # Apply other existing filters from request
-    brand = request.GET.get('brand')
-    if brand:
-        cars = cars.filter(brand_id=brand)
+    make = request.GET.get('make')
+    if make:
+        cars = cars.filter(make_id=make)
 
     min_price = request.GET.get('min_price')
     if min_price:
@@ -1267,14 +1334,14 @@ def htmx_recently_viewed_update(request):
         # For authenticated users
         recently_viewed = RecentlyViewedCar.objects.filter(
             user=request.user
-        ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+        ).select_related('car', 'car__make', 'car__model').order_by('-viewed_at')[:5]
     else:
         # For anonymous users, use session
         session_key = request.session.session_key
         if session_key:
             recently_viewed = RecentlyViewedCar.objects.filter(
                 session_key=session_key
-            ).select_related('car', 'car__brand', 'car__model').order_by('-viewed_at')[:5]
+            ).select_related('car', 'car__make', 'car__model').order_by('-viewed_at')[:5]
         else:
             recently_viewed = RecentlyViewedCar.objects.none()
 
@@ -1290,7 +1357,7 @@ def htmx_recently_viewed_update(request):
 def htmx_car_list_filter(request):
     """HTMX endpoint for dynamic car list filtering"""
     # Get filter parameters
-    brand = request.GET.get('brand')
+    make = request.GET.get('make')
     model = request.GET.get('model')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
@@ -1308,11 +1375,11 @@ def htmx_car_list_filter(request):
     cars = Car.objects.filter(
         is_approved=True,
         status__in=['available', 'featured']
-    ).select_related('brand', 'model', 'vendor')
+    ).select_related('make', 'model', 'vendor')
 
     # Apply filters
-    if brand:
-        cars = cars.filter(brand_id=brand)
+    if make:
+        cars = cars.filter(make_id=make)
 
     if model:
         cars = cars.filter(model_id=model)
@@ -1420,7 +1487,7 @@ def featured_cars_list(request):
     cars = Car.objects.filter(
         is_approved=True,
         is_featured=True
-    ).select_related('brand', 'model', 'vendor')
+    ).select_related('make', 'model', 'vendor')
 
     # Order by rating and views
     cars = cars.order_by('-calculated_rating', '-views_count')
@@ -1459,7 +1526,7 @@ def top_rated_vehicles(request):
     cars = Car.objects.filter(
         is_approved=True,
         calculated_rating__gte=min_rating
-    ).select_related('brand', 'model', 'vendor')
+    ).select_related('make', 'model', 'vendor')
 
     # Filter by category if provided
     if category:
@@ -1517,13 +1584,13 @@ def smart_recommendations(request):
             rating__gte=4.0
         ).select_related('car')
 
-        # Get brands and models user likes
-        liked_brands = set()
+        # Get makes and models user likes
+        liked_makes = set()
         liked_models = set()
         price_range = []
 
         for rating in user_ratings:
-            liked_brands.add(rating.car.brand_id)
+            liked_makes.add(rating.car.make_id)
             liked_models.add(rating.car.model_id)
             price_range.append(rating.car.price)
 
@@ -1540,14 +1607,14 @@ def smart_recommendations(request):
             status__in=['available', 'featured']
         ).exclude(
             id__in=user_ratings.values_list('car_id', flat=True)
-        ).select_related('brand', 'model', 'vendor')
+        ).select_related('make', 'model', 'vendor')
 
         # Apply preferences
-        if liked_brands:
-            brand_recommendations = recommendation_query.filter(
-                brand_id__in=liked_brands
+        if liked_makes:
+            make_recommendations = recommendation_query.filter(
+                make_id__in=liked_makes
             )
-            recommendations.extend(list(brand_recommendations[:5]))
+            recommendations.extend(list(make_recommendations[:5]))
 
         if liked_models:
             model_recommendations = recommendation_query.filter(
@@ -1600,7 +1667,7 @@ def hot_deals_list(request):
     hot_deals = HotDeal.objects.filter(
         is_active=True,
         car__is_approved=True
-    ).select_related('car', 'car__brand', 'car__model').order_by('-created_at')
+    ).select_related('car', 'car__make', 'car__model').order_by('-created_at')
 
     # Filter by search
     search = request.GET.get('search')
@@ -1608,7 +1675,7 @@ def hot_deals_list(request):
         hot_deals = hot_deals.filter(
             Q(title__icontains=search) |
             Q(car__title__icontains=search) |
-            Q(car__brand__name__icontains=search)
+            Q(car__make__name__icontains=search)
         )
 
     # Filter by discount type
@@ -1649,7 +1716,7 @@ def hot_deal_detail(request, deal_id):
     related_deals = HotDeal.objects.filter(
         is_active=True,
         car__is_approved=True,
-        car__brand=hot_deal.car.brand
+        car__make=hot_deal.car.make
     ).exclude(id=hot_deal.id)[:3]
 
     context = {
@@ -1761,10 +1828,15 @@ class SparePartListView(ListView):
         if category:
             queryset = queryset.filter(category_new__id=category)
 
-        # Brand compatibility filter
-        brand = self.request.GET.get('brand')
-        if brand:
-            queryset = queryset.filter(compatible_brands__id=brand)
+        # Subcategory filter
+        subcategory = self.request.GET.get('subcategory')
+        if subcategory:
+            queryset = queryset.filter(category_new__id=subcategory)
+
+        # Make compatibility filter
+        make = self.request.GET.get('make')
+        if make:
+            queryset = queryset.filter(compatible_makes__id=make)
 
         return queryset.order_by('-created_at')
 
@@ -1773,7 +1845,7 @@ class SparePartListView(ListView):
         # Use the new SparePartCategory model instead of the old category field
         from .models import SparePartCategory
         context['categories'] = SparePartCategory.objects.filter(is_active=True).order_by('name')
-        context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
+        context['makes'] = CarMake.objects.filter(is_active=True).order_by('name')
 
         # Add price range for filters
         price_range = SparePart.objects.filter(is_available=True).aggregate(
@@ -1823,7 +1895,7 @@ class SparePartDetailView(DetailView):
     def get_queryset(self):
         return SparePart.objects.filter(is_available=True).select_related(
             'vendor', 'supplier', 'category_new'
-        ).prefetch_related('compatible_brands', 'compatible_models', 'images')
+        ).prefetch_related('compatible_makes', 'compatible_models', 'images')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1867,15 +1939,26 @@ def spare_parts_search(request):
                 Q(description__icontains=search)
             )
 
-        # Category filter
+        # Category and subcategory filters
         category = request.GET.get('category')
-        if category:
-            queryset = queryset.filter(category=category)
+        subcategory = request.GET.get('subcategory')
+        if subcategory:
+            queryset = queryset.filter(category_new__id=subcategory)
+        elif category:
+            # Allow filtering by either legacy name or new category id/name
+            try:
+                # If numeric, treat as new category id
+                if str(category).isdigit():
+                    queryset = queryset.filter(category_new__id=category)
+                else:
+                    queryset = queryset.filter(models.Q(category=category) | models.Q(category_new__name__iexact=category))
+            except Exception:
+                queryset = queryset.filter(category_new__name__iexact=str(category))
 
-        # Brand compatibility filter
-        brand = request.GET.get('brand')
-        if brand:
-            queryset = queryset.filter(compatible_brands__id=brand)
+        # Make compatibility filter
+        make = request.GET.get('make')
+        if make:
+            queryset = queryset.filter(compatible_makes__id=make)
 
         # Price range filter
         min_price = request.GET.get('min_price')
@@ -2557,7 +2640,7 @@ def initiate_import_mpesa_payment(import_order, phone_number, request=None):
             phone_number=phone_number,
             amount=import_order.total_cost,
             account_reference=f"IMPORT-{import_order.order_number}",
-            transaction_desc=f"Import Fee - {import_order.brand} {import_order.model}"
+            transaction_desc=f"Import Fee - {import_order.make} {import_order.model}"
         )
 
         if result['success']:
@@ -2739,6 +2822,10 @@ class BlogListView(ListView):
         context['total_guides'] = context['guide_count']
         context['total_views'] = base_queryset.aggregate(total=models.Sum('views_count'))['total'] or 0
         context['total_subscribers'] = 2000  # This would come from a newsletter model
+
+        # IMPORTANT: Add the same context that HTMX template expects for initial page load
+        # This ensures the fallback content renders properly on first visit
+        context['posts'] = self.get_queryset()[:20]  # Limit to 20 for initial load
 
         return context
 
@@ -3087,7 +3174,7 @@ def car_compare(request):
     cars = Car.objects.filter(
         id__in=compare_ids,
         is_approved=True
-    ).select_related('brand', 'model', 'vendor').prefetch_related('images')
+    ).select_related('make', 'model', 'vendor').prefetch_related('images')
 
     # Ensure cars are in the same order as compare_ids
     cars_dict = {car.id: car for car in cars}
@@ -3109,6 +3196,21 @@ def add_to_compare(request, car_id):
         compare_list = request.session.get('compare_list', [])
 
         if len(compare_list) >= 3:
+            if request.headers.get('HX-Request'):
+                from django.template.loader import render_to_string
+                # Return error message as OOB swap
+                error_html = f'''
+                <div id="compare-error-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>You can only compare up to 3 cars at a time.</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                '''
+                return HttpResponse(error_html)
             return JsonResponse({
                 'success': False,
                 'message': 'You can only compare up to 3 cars at a time.',
@@ -3116,6 +3218,21 @@ def add_to_compare(request, car_id):
             })
 
         if car_id in compare_list:
+            if request.headers.get('HX-Request'):
+                from django.template.loader import render_to_string
+                # Return error message as OOB swap
+                error_html = f'''
+                <div id="compare-error-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Car is already in comparison list.</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                '''
+                return HttpResponse(error_html)
             return JsonResponse({
                 'success': False,
                 'message': 'Car is already in comparison list.',
@@ -3136,12 +3253,43 @@ def add_to_compare(request, car_id):
             else:
                 template = 'components/compare_button_compact.html'
 
+            # Get updated car objects for floating widget
+            all_cars = Car.objects.filter(
+                id__in=compare_list,
+                is_approved=True
+            ).select_related('make', 'model')
+
+            # Render button with updated context
             button_html = render_to_string(template, {
                 'car': car,
                 'in_compare': True,
                 'compare_count': len(compare_list)
             })
-            return HttpResponse(button_html)
+
+            # Render updated floating widget as OOB swap
+            widget_html = render_to_string('components/floating_compare_widget.html', {
+                'compare_list': compare_list,
+                'compare_count': len(compare_list),
+                'all_cars': all_cars,
+            })
+
+            # Combine button update and widget update
+            combined_html = button_html + f'<div id="floating-compare-widget" hx-swap-oob="true">{widget_html}</div>'
+
+            # Add success toast
+            success_html = f'''
+            <div id="compare-success-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span>{car.title} added to comparison!</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            '''
+
+            return HttpResponse(combined_html + success_html)
 
         return JsonResponse({
             'success': True,
@@ -3151,6 +3299,19 @@ def add_to_compare(request, car_id):
         })
 
     except Exception as e:
+        if request.headers.get('HX-Request'):
+            error_html = f'''
+            <div id="compare-error-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Error adding car to comparison.</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            '''
+            return HttpResponse(error_html)
         return JsonResponse({
             'success': False,
             'message': 'Error adding car to comparison.',
@@ -3181,12 +3342,49 @@ def remove_from_compare(request, car_id):
                 else:
                     template = 'components/compare_button_compact.html'
 
+                # Render button with updated context
                 button_html = render_to_string(template, {
                     'car': car,
                     'in_compare': False,
                     'compare_count': len(compare_list)
                 })
-                return HttpResponse(button_html)
+
+                # Handle floating widget update
+                if len(compare_list) == 0:
+                    # Remove the entire widget if no cars left
+                    widget_html = '<div id="floating-compare-widget" hx-swap-oob="true"></div>'
+                else:
+                    # Get updated car objects for floating widget
+                    all_cars = Car.objects.filter(
+                        id__in=compare_list,
+                        is_approved=True
+                    ).select_related('make', 'model')
+
+                    # Render updated floating widget as OOB swap
+                    widget_content = render_to_string('components/floating_compare_widget.html', {
+                        'compare_list': compare_list,
+                        'compare_count': len(compare_list),
+                        'all_cars': all_cars,
+                    })
+                    widget_html = f'<div id="floating-compare-widget" hx-swap-oob="true">{widget_content}</div>'
+
+                # Combine button update and widget update
+                combined_html = button_html + widget_html
+
+                # Add success toast
+                success_html = f'''
+                <div id="compare-success-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-check-circle"></i>
+                        <span>{car.title} removed from comparison.</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                '''
+
+                return HttpResponse(combined_html + success_html)
 
             return JsonResponse({
                 'success': True,
@@ -3194,6 +3392,19 @@ def remove_from_compare(request, car_id):
                 'count': len(compare_list)
             })
         else:
+            if request.headers.get('HX-Request'):
+                error_html = f'''
+                <div id="compare-error-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Car not found in comparison list.</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                '''
+                return HttpResponse(error_html)
             return JsonResponse({
                 'success': False,
                 'message': 'Car not found in comparison list.',
@@ -3201,6 +3412,19 @@ def remove_from_compare(request, car_id):
             })
 
     except Exception as e:
+        if request.headers.get('HX-Request'):
+            error_html = f'''
+            <div id="compare-error-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Error removing car from comparison.</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            '''
+            return HttpResponse(error_html)
         return JsonResponse({
             'success': False,
             'message': 'Error removing car from comparison.',
@@ -3216,7 +3440,20 @@ def clear_compare(request):
 
         # Check if this is an HTMX request for widget removal
         if request.headers.get('HX-Request'):
-            return HttpResponse('')  # Return empty response to remove widget
+            # Remove the entire widget and show success toast
+            widget_html = '<div id="floating-compare-widget" hx-swap-oob="true"></div>'
+            success_html = f'''
+            <div id="compare-success-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Comparison list cleared.</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            '''
+            return HttpResponse(widget_html + success_html)
 
         return JsonResponse({
             'success': True,
@@ -3224,6 +3461,19 @@ def clear_compare(request):
             'count': 0
         })
     except Exception as e:
+        if request.headers.get('HX-Request'):
+            error_html = f'''
+            <div id="compare-error-toast" hx-swap-oob="true" class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in-right">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Error clearing comparison list.</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            '''
+            return HttpResponse(error_html)
         return JsonResponse({
             'success': False,
             'message': 'Error clearing comparison list.',
@@ -3332,6 +3582,276 @@ def calculate_loan(request):
             'success': False,
             'error': 'An error occurred during calculation.'
         })
+
+
+@require_http_methods(["POST"])
+def car_valuation(request):
+    """Calculate car valuation based on make, model, year, mileage, and condition"""
+    try:
+        # Get form data
+        make_id = request.POST.get('make')
+        model_id = request.POST.get('model')
+        year = int(request.POST.get('year', 0))
+        mileage = int(request.POST.get('mileage', 0))
+        condition = request.POST.get('condition', '')
+
+        # Validate inputs
+        if not all([make_id, model_id, year, mileage, condition]):
+            return render(request, 'core/partials/valuation_result.html', {
+                'error': 'Please fill in all fields to get an accurate valuation.'
+            })
+
+        # Get make and model objects
+        try:
+            make = CarMake.objects.get(id=make_id)
+            model = CarModel.objects.get(id=model_id)
+        except (CarMake.DoesNotExist, CarModel.DoesNotExist):
+            return render(request, 'core/partials/valuation_result.html', {
+                'error': 'Invalid make or model selected.'
+            })
+
+        # Base valuation calculation
+        base_value = calculate_base_value(make, model, year)
+
+        # Apply depreciation based on age
+        current_year = timezone.now().year
+        age = current_year - year
+        depreciated_value = apply_age_depreciation(base_value, age)
+
+        # Apply mileage adjustment
+        mileage_adjusted_value = apply_mileage_adjustment(depreciated_value, mileage)
+
+        # Apply condition adjustment
+        final_value = apply_condition_adjustment(mileage_adjusted_value, condition)
+
+        # Ensure minimum value
+        final_value = max(final_value, 200000)  # Minimum 200k KSH
+
+        # Calculate confidence level based on data availability
+        confidence = calculate_confidence_level(make, model, year)
+
+        # Get market comparison data
+        market_data = get_market_comparison_data(make, model, year, mileage, condition)
+
+        context = {
+            'valuation': {
+                'estimated_value': final_value,
+                'confidence_level': confidence,
+                'make_name': make.name,
+                'model_name': model.name,
+                'year': year,
+                'mileage': mileage,
+                'condition': condition,
+                'base_value': base_value,
+                'depreciation_amount': base_value - depreciated_value,
+                'mileage_adjustment': depreciated_value - mileage_adjusted_value,
+                'condition_adjustment': mileage_adjusted_value - final_value,
+            },
+            'market_data': market_data,
+            'success': True
+        }
+
+        return render(request, 'core/partials/valuation_result.html', context)
+
+    except (ValueError, TypeError) as e:
+        return render(request, 'core/partials/valuation_result.html', {
+            'error': 'Invalid input data. Please check your values and try again.'
+        })
+    except Exception as e:
+        return render(request, 'core/partials/valuation_result.html', {
+            'error': 'An error occurred during valuation. Please try again later.'
+        })
+
+
+def calculate_base_value(make, model, year):
+    """Calculate base value based on make, model, and year"""
+    # Base values by make (in KSH)
+    make_base_values = {
+        'Toyota': 1200000,
+        'Honda': 1100000,
+        'Nissan': 1000000,
+        'Mazda': 950000,
+        'Subaru': 1150000,
+        'Mitsubishi': 900000,
+        'Suzuki': 800000,
+        'Mercedes-Benz': 2500000,
+        'BMW': 2200000,
+        'Audi': 2000000,
+        'Volkswagen': 1300000,
+        'Hyundai': 850000,
+        'Kia': 800000,
+        'Ford': 1100000,
+        'Chevrolet': 1000000,
+        'Land Rover': 3000000,
+        'Lexus': 2800000,
+        'Infiniti': 2000000,
+        'Acura': 1800000,
+    }
+
+    # Get base value for make
+    base_value = make_base_values.get(make.name, 1000000)  # Default 1M KSH
+
+    # Adjust for premium models
+    if make.is_premium:
+        base_value *= 1.3
+
+    # Adjust for model popularity and body type
+    if hasattr(model, 'is_popular') and model.is_popular:
+        base_value *= 1.1
+
+    # Body type adjustments
+    body_type_multipliers = {
+        'suv': 1.2,
+        'sedan': 1.0,
+        'hatchback': 0.9,
+        'coupe': 1.1,
+        'convertible': 1.3,
+        'wagon': 0.95,
+        'pickup': 1.15,
+        'van': 0.85,
+        'crossover': 1.1,
+        'sports': 1.4,
+        'luxury': 1.5,
+    }
+
+    if hasattr(model, 'body_type') and model.body_type:
+        multiplier = body_type_multipliers.get(model.body_type.lower(), 1.0)
+        base_value *= multiplier
+
+    return int(base_value)
+
+
+def apply_age_depreciation(base_value, age):
+    """Apply depreciation based on vehicle age"""
+    if age <= 0:
+        return base_value
+    elif age <= 2:
+        # New cars depreciate quickly in first 2 years
+        depreciation_rate = 0.15 * age  # 15% per year
+    elif age <= 5:
+        # Moderate depreciation for 3-5 years
+        depreciation_rate = 0.30 + (0.10 * (age - 2))  # Additional 10% per year
+    elif age <= 10:
+        # Slower depreciation for 6-10 years
+        depreciation_rate = 0.60 + (0.05 * (age - 5))  # Additional 5% per year
+    else:
+        # Minimal depreciation after 10 years
+        depreciation_rate = 0.85 + (0.02 * min(age - 10, 10))  # Additional 2% per year, max 95%
+
+    depreciation_rate = min(depreciation_rate, 0.95)  # Maximum 95% depreciation
+    return int(base_value * (1 - depreciation_rate))
+
+
+def apply_mileage_adjustment(value, mileage):
+    """Apply adjustment based on mileage"""
+    if mileage <= 30000:
+        # Low mileage bonus
+        adjustment = 1.1
+    elif mileage <= 50000:
+        # Average mileage
+        adjustment = 1.0
+    elif mileage <= 80000:
+        # Moderate mileage
+        adjustment = 0.95
+    elif mileage <= 120000:
+        # High mileage
+        adjustment = 0.85
+    elif mileage <= 200000:
+        # Very high mileage
+        adjustment = 0.75
+    else:
+        # Extremely high mileage
+        adjustment = 0.65
+
+    return int(value * adjustment)
+
+
+def apply_condition_adjustment(value, condition):
+    """Apply adjustment based on vehicle condition"""
+    condition_multipliers = {
+        'excellent': 1.15,  # 15% bonus for excellent condition
+        'good': 1.0,        # No adjustment for good condition
+        'fair': 0.85,       # 15% reduction for fair condition
+        'poor': 0.65        # 35% reduction for poor condition
+    }
+
+    multiplier = condition_multipliers.get(condition.lower(), 1.0)
+    return int(value * multiplier)
+
+
+def calculate_confidence_level(make, model, year):
+    """Calculate confidence level based on data availability"""
+    confidence = 70  # Base confidence
+
+    # Increase confidence for popular makes
+    if make.is_premium or make.name in ['Toyota', 'Honda', 'Nissan', 'Mazda']:
+        confidence += 15
+
+    # Increase confidence for recent years
+    current_year = timezone.now().year
+    age = current_year - year
+    if age <= 5:
+        confidence += 10
+    elif age <= 10:
+        confidence += 5
+
+    # Check if we have similar cars in database
+    similar_cars_count = Car.objects.filter(
+        make=make,
+        model=model,
+        year__range=(year-2, year+2),
+        is_approved=True
+    ).count()
+
+    if similar_cars_count >= 10:
+        confidence += 15
+    elif similar_cars_count >= 5:
+        confidence += 10
+    elif similar_cars_count >= 1:
+        confidence += 5
+
+    return min(confidence, 95)  # Maximum 95% confidence
+
+
+def get_market_comparison_data(make, model, year, mileage, condition):
+    """Get market comparison data for similar vehicles"""
+    # Find similar cars in the database
+    similar_cars = Car.objects.filter(
+        make=make,
+        model=model,
+        year__range=(year-2, year+2),
+        is_approved=True,
+        status__in=['available', 'featured']
+    ).order_by('price')[:5]
+
+    market_data = {
+        'similar_cars_count': similar_cars.count(),
+        'price_range': {},
+        'average_price': 0,
+        'similar_cars': []
+    }
+
+    if similar_cars:
+        prices = [car.price for car in similar_cars]
+        market_data['price_range'] = {
+            'min': min(prices),
+            'max': max(prices)
+        }
+        market_data['average_price'] = sum(prices) / len(prices)
+
+        # Add similar car details
+        for car in similar_cars:
+            market_data['similar_cars'].append({
+                'id': car.id,
+                'title': car.title,
+                'year': car.year,
+                'price': car.price,
+                'mileage': car.mileage,
+                'condition': car.condition_name if hasattr(car, 'condition_name') else 'N/A',
+                'url': f'/cars/{car.id}/'
+            })
+
+    return market_data
 
 
 def contact_us(request):
@@ -3453,9 +3973,51 @@ def sell_car(request):
     # Removed the automatic redirect to let admins use the sell car page normally
 
     if request.method == 'POST':
-        form = SellCarForm(request.POST, request.FILES)
+        form = SellCarDBForm(request.POST, request.FILES)
         if form.is_valid():
             car = form.save(commit=False)
+
+            # Enforce parent-child relationship between make and model (only when numeric IDs are posted)
+            make_val = request.POST.get('make', '')
+            model_val = request.POST.get('model', '')
+
+            validation_error = None
+            try:
+                if model_val and str(model_val).isdigit():
+                    # If model is provided as an ID, ensure it exists and infer/validate make
+                    model_obj = CarModel.objects.select_related('make').get(id=int(model_val))
+                    if make_val and str(make_val).isdigit() and int(make_val) != model_obj.make_id:
+                        validation_error = "Selected model does not belong to the chosen make."
+                    else:
+                        car.model = model_obj
+                        car.make = model_obj.make
+                elif make_val and str(make_val).isdigit():
+                    # Only make selected as an ID
+                    car.make = CarMake.objects.get(id=int(make_val))
+            except (ValueError, CarModel.DoesNotExist, CarMake.DoesNotExist):
+                validation_error = "Invalid make or model selection."
+
+            if validation_error:
+                messages.error(request, validation_error)
+                context = {
+                    'form': form,
+                    'car_makes': CarMake.objects.filter(is_active=True).order_by('display_order', 'name'),
+                    'car_models': CarModel.objects.filter(is_active=True).order_by('name'),
+                    'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name'),
+                }
+                return render(request, 'core/sell_car.html', context)
+
+            # If a non-ID model name is provided with a valid make, create the model if missing
+            if (not getattr(car, 'model', None)) and getattr(car, 'make', None) and model_val and not str(model_val).isdigit():
+                try:
+                    model_obj, _created = CarModel.objects.get_or_create(
+                        make=car.make,
+                        name=str(model_val).strip()
+                    )
+                    car.model = model_obj
+                except Exception as e:
+                    # Do not hard fail; continue with make only
+                    print(f"Warning: could not create CarModel for make {car.make_id}: {e}")
 
             # Handle multiple image uploads
             image_files = request.FILES.getlist('images')
@@ -3557,7 +4119,7 @@ def sell_car(request):
 
     context = {
         'form': form,
-        'car_brands': CarBrand.objects.filter(is_active=True).order_by('display_order', 'name'),
+        'car_makes': CarMake.objects.filter(is_active=True).order_by('display_order', 'name'),
         'car_models': CarModel.objects.filter(is_active=True).order_by('name'),
         'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order', 'name'),
     }
@@ -3795,7 +4357,7 @@ def import_order_tracking_dashboard(request):
         user_orders = user_orders.filter(
             Q(order_number__icontains=search_query) |
             Q(chassis_number__icontains=search_query) |
-            Q(brand__icontains=search_query) |
+            Q(make__icontains=search_query) |
             Q(model__icontains=search_query)
         )
 

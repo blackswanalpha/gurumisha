@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    User, Vendor, CarBrand, CarModel, Car, CarImage,
+    User, Vendor, CarMake, CarModel, Car, CarImage,
     ImportRequest, ImportOrder, ImportOrderStatusHistory, ImportOrderDocument,
     SparePart, SparePartCategory, SparePartImage,
     Supplier, PurchaseOrder, PurchaseOrderItem, StockMovement,
@@ -76,7 +76,7 @@ class FeaturedCarTierAdmin(admin.ModelAdmin):
 class HotDealAdmin(admin.ModelAdmin):
     list_display = ('title', 'car', 'discount_type', 'discount_value', 'discounted_price', 'start_date', 'end_date', 'is_active')
     list_filter = ('discount_type', 'is_active', 'auto_activate', 'start_date', 'end_date')
-    search_fields = ('title', 'car__title', 'car__brand__name')
+    search_fields = ('title', 'car__title', 'car__make__name')
     actions = ['activate_deals', 'deactivate_deals']
 
     readonly_fields = ('discounted_price', 'views_count', 'clicks_count', 'inquiries_count')
@@ -115,8 +115,8 @@ class PromotionAnalyticsAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(CarBrand)
-class CarBrandAdmin(admin.ModelAdmin):
+@admin.register(CarMake)
+class CarMakeAdmin(admin.ModelAdmin):
     list_display = ('name', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
@@ -124,9 +124,9 @@ class CarBrandAdmin(admin.ModelAdmin):
 
 @admin.register(CarModel)
 class CarModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'brand', 'is_active')
-    list_filter = ('brand', 'is_active')
-    search_fields = ('name', 'brand__name')
+    list_display = ('name', 'make', 'is_active')
+    list_filter = ('make', 'is_active')
+    search_fields = ('name', 'make__name')
 
 
 class CarImageInline(admin.TabularInline):
@@ -136,9 +136,9 @@ class CarImageInline(admin.TabularInline):
 
 @admin.register(Car)
 class CarAdmin(admin.ModelAdmin):
-    list_display = ('title', 'brand', 'model', 'year', 'price', 'is_featured', 'is_certified', 'calculated_rating', 'is_approved', 'is_hot_deal', 'views_count', 'created_at')
-    list_filter = ('brand', 'status', 'is_approved', 'is_hot_deal', 'is_featured', 'is_certified', 'condition', 'fuel_type', 'auto_featured', 'created_at')
-    search_fields = ('title', 'brand__name', 'model__name', 'vendor__company_name')
+    list_display = ('title', 'make', 'model', 'year', 'price', 'is_featured', 'is_certified', 'calculated_rating', 'is_approved', 'is_hot_deal', 'views_count', 'created_at')
+    list_filter = ('make', 'status', 'is_approved', 'is_hot_deal', 'is_featured', 'is_certified', 'condition', 'fuel_type', 'auto_featured', 'created_at')
+    search_fields = ('title', 'make__name', 'model__name', 'vendor__company_name')
     inlines = [CarImageInline]
     actions = [
         'approve_cars', 'feature_cars', 'unfeature_cars', 'mark_certified', 'unmark_certified',
@@ -149,7 +149,7 @@ class CarAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('vendor', 'title', 'brand', 'model', 'year', 'condition')
+            'fields': ('vendor', 'title', 'make', 'model', 'year', 'condition')
         }),
         ('Specifications', {
             'fields': ('engine_size', 'fuel_type', 'transmission', 'mileage', 'body_type', 'color')
@@ -222,9 +222,9 @@ class CarAdmin(admin.ModelAdmin):
 
 @admin.register(ImportRequest)
 class ImportRequestAdmin(admin.ModelAdmin):
-    list_display = ('customer', 'brand', 'model', 'year', 'status', 'estimated_cost', 'created_at')
+    list_display = ('customer', 'make', 'model', 'year', 'status', 'estimated_cost', 'created_at')
     list_filter = ('status', 'origin_country', 'created_at')
-    search_fields = ('customer__username', 'brand', 'model', 'tracking_number')
+    search_fields = ('customer__username', 'make', 'model', 'tracking_number')
 
 
 class ImportOrderStatusHistoryInline(admin.TabularInline):
@@ -244,7 +244,7 @@ class ImportOrderDocumentInline(admin.TabularInline):
 @admin.register(ImportOrder)
 class ImportOrderAdmin(admin.ModelAdmin):
     list_display = (
-        'order_number', 'customer', 'brand', 'model', 'year', 'status',
+        'order_number', 'customer', 'make', 'model', 'year', 'status',
         'payment_status', 'chassis_number', 'progress_percentage', 'created_at'
     )
     list_filter = (
@@ -253,7 +253,7 @@ class ImportOrderAdmin(admin.ModelAdmin):
     )
     search_fields = (
         'order_number', 'customer__username', 'customer__email',
-        'brand', 'model', 'chassis_number', 'engine_number',
+        'make', 'model', 'chassis_number', 'engine_number',
         'bill_of_lading', 'vessel_name', 'registration_number'
     )
     readonly_fields = ('order_number', 'progress_percentage', 'current_stage_number', 'estimated_days_remaining', 'created_at', 'updated_at')
@@ -263,7 +263,7 @@ class ImportOrderAdmin(admin.ModelAdmin):
             'fields': ('order_number', 'customer', 'import_request', 'status', 'payment_status')
         }),
         ('Vehicle Details', {
-            'fields': ('brand', 'model', 'year', 'color', 'engine_size', 'fuel_type', 'transmission', 'mileage')
+            'fields': ('make', 'model', 'year', 'color', 'engine_size', 'fuel_type', 'transmission', 'mileage')
         }),
         ('Import Details', {
             'fields': ('origin_country', 'origin_city')
@@ -417,7 +417,7 @@ class SparePartAdmin(admin.ModelAdmin):
             'fields': ('vendor', 'supplier', 'name', 'sku', 'part_number', 'barcode', 'category', 'category_new')
         }),
         ('Compatibility', {
-            'fields': ('compatible_brands', 'compatible_models', 'year_from', 'year_to')
+            'fields': ('compatible_makes', 'compatible_models', 'year_from', 'year_to')
         }),
         ('Details', {
             'fields': ('condition', 'description', 'specifications', 'unit', 'weight', 'dimensions')
@@ -901,10 +901,10 @@ class ContentPerformanceReportAdmin(admin.ModelAdmin):
 @admin.register(RecentlyViewedCar)
 class RecentlyViewedCarAdmin(admin.ModelAdmin):
     list_display = ['user', 'car', 'viewed_at', 'session_key']
-    list_filter = ['viewed_at', 'car__brand']
-    search_fields = ['user__username', 'car__title', 'car__brand__name']
+    list_filter = ['viewed_at', 'car__make']
+    search_fields = ['user__username', 'car__title', 'car__make__name']
     readonly_fields = ['viewed_at']
     ordering = ['-viewed_at']
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user', 'car', 'car__brand')
+        return super().get_queryset(request).select_related('user', 'car', 'car__make')

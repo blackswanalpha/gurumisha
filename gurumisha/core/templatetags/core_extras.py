@@ -15,6 +15,17 @@ def times(value):
     """Return a range from 0 to value"""
     return range(int(value))
 
+
+@register.filter
+def format_currency(value):
+    """Format currency with commas (xxx,xxx,xxx.xx format)"""
+    try:
+        # Convert to float and format with commas
+        amount = float(value)
+        return f"{amount:,.0f}"
+    except (ValueError, TypeError):
+        return value
+
 @register.inclusion_tag('components/toast_messages.html', takes_context=True)
 def render_toast_messages(context):
     """Render Django messages as toast notifications"""

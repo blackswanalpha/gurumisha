@@ -413,25 +413,27 @@ function clearFilters() {
     if (searchInput) {
         searchInput.value = '';
     }
-    
-    // Remove active state from filter pills
-    const filterPills = document.querySelectorAll('.filter-pill');
-    filterPills.forEach(pill => pill.classList.remove('active'));
-    
-    // Activate "All Content" filter
-    const allContentFilter = document.querySelector('.filter-pill[href*="resources"]');
-    if (allContentFilter && !allContentFilter.href.includes('content_type')) {
-        allContentFilter.classList.add('active');
+
+    // Update Alpine.js state if available
+    if (window.Alpine) {
+        const filterNav = document.querySelector('[x-data]');
+        if (filterNav && filterNav._x_dataStack) {
+            filterNav._x_dataStack[0].activeFilter = 'all';
+        }
     }
-    
+
     // Load all content
     htmx.ajax('GET', '{% url "core:resources_live_search" %}', {
         target: '#resources-content',
         swap: 'innerHTML'
     });
-    
+
     // Update URL
-    window.history.pushState({}, '', '{% url "core:resources" %}');
+    if (window.updateURL) {
+        window.updateURL('');
+    } else {
+        window.history.pushState({}, '', '{% url "core:resources" %}');
+    }
 }
 
 // Initialize content interactions

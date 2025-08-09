@@ -23,7 +23,7 @@ from io import StringIO
 logger = logging.getLogger(__name__)
 
 from .models import (
-    Car, CarBrand, CarModel, CarImage, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
+    Car, CarMake, CarModel, CarImage, VehicleCondition, SparePart, ImportRequest, ImportOrder, ImportOrderStatusHistory,
     Inquiry, Testimonial, BlogPost, Vendor, User,
     Supplier, PurchaseOrder, StockMovement, InventoryAlert,
     Order, OrderItem, Payment, SparePartCategory, Notification, SystemSetting,
@@ -63,16 +63,16 @@ def apply_import_request_filters(request, queryset):
             Q(customer__last_name__icontains=search_query) |
             Q(customer__email__icontains=search_query) |
             Q(customer__username__icontains=search_query) |
-            Q(brand__icontains=search_query) |
+            Q(make__icontains=search_query) |
             Q(model__icontains=search_query) |
             Q(tracking_number__icontains=search_query) |
             Q(id__icontains=search_query)
         )
 
-    # Brand filter
-    brand_filter = request.GET.get('brand')
-    if brand_filter:
-        queryset = queryset.filter(brand=brand_filter)
+    # Make filter
+    make_filter = request.GET.get('make')
+    if make_filter:
+        queryset = queryset.filter(make=make_filter)
 
     # Country filter
     country_filter = request.GET.get('country')
@@ -1202,7 +1202,7 @@ def user_import_requests_view(request):
     search_query = request.GET.get('search')
     if search_query:
         import_requests = import_requests.filter(
-            Q(brand__icontains=search_query) |
+            Q(make__icontains=search_query) |
             Q(model__icontains=search_query) |
             Q(origin_country__icontains=search_query)
         )
@@ -1336,7 +1336,7 @@ def user_listings_view(request):
         if search_query:
             user_cars = user_cars.filter(
                 Q(title__icontains=search_query) |
-                Q(brand__name__icontains=search_query) |
+                Q(make__name__icontains=search_query) |
                 Q(model__name__icontains=search_query)
             )
 
@@ -1555,7 +1555,7 @@ def vendor_car_view(request, car_id):
 
     try:
         car = get_object_or_404(
-            Car.objects.select_related('brand', 'model', 'condition', 'vendor')
+            Car.objects.select_related('make', 'model', 'condition', 'vendor')
                       .prefetch_related('images', 'inquiries'),
             id=car_id,
             vendor__user=request.user
@@ -1630,7 +1630,7 @@ def vendor_car_edit(request, car_id):
         # Get form data for GET requests
         context = {
             'car': car,
-            'car_brands': CarBrand.objects.filter(is_active=True).order_by('name'),
+            'car_makes': CarMake.objects.filter(is_active=True).order_by('name'),
             'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order'),
         }
 
@@ -1755,7 +1755,7 @@ def vendor_car_duplicate(request, car_id):
                 mileage=original_car.mileage,
                 fuel_type=original_car.fuel_type,
                 transmission=original_car.transmission,
-                brand=original_car.brand,
+                make=original_car.make,
                 model=original_car.model,
                 condition=original_car.condition,
                 status='available',
@@ -1838,7 +1838,7 @@ def vendor_export_listings(request):
         from django.http import HttpResponse
 
         vendor = request.user.vendor
-        cars = Car.objects.filter(vendor=vendor).select_related('brand', 'model', 'condition')
+        cars = Car.objects.filter(vendor=vendor).select_related('make', 'model', 'condition')
 
         # Create CSV response
         response = HttpResponse(content_type='text/csv')
@@ -1848,7 +1848,7 @@ def vendor_export_listings(request):
 
         # Write header
         writer.writerow([
-            'ID', 'Title', 'Brand', 'Model', 'Year', 'Price (KSH)',
+            'ID', 'Title', 'Make', 'Model', 'Year', 'Price (KSH)',
             'Mileage', 'Fuel Type', 'Transmission', 'Status',
             'Approved', 'Featured', 'Views', 'Created Date'
         ])
@@ -1858,7 +1858,7 @@ def vendor_export_listings(request):
             writer.writerow([
                 car.id,
                 car.title,
-                car.brand.name if car.brand else '',
+                car.make.name if car.make else '',
                 car.model.name if car.model else '',
                 car.year,
                 car.price,
@@ -2326,7 +2326,7 @@ def admin_listings_view(request):
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
-    cars = Car.objects.select_related('brand', 'model', 'vendor', 'vendor__user').order_by('-created_at')
+    cars = Car.objects.select_related('make', 'model', 'vendor', 'vendor__user').order_by('-created_at')
 
     # Filter by approval status
     status_filter = request.GET.get('status')
@@ -2346,7 +2346,7 @@ def admin_listings_view(request):
     if search:
         cars = cars.filter(
             Q(title__icontains=search) |
-            Q(brand__name__icontains=search) |
+            Q(make__name__icontains=search) |
             Q(model__name__icontains=search) |
             Q(vendor__company_name__icontains=search) |
             Q(vendor__user__first_name__icontains=search) |
@@ -2385,7 +2385,7 @@ def admin_car_detail_view(request, car_id):
         messages.error(request, 'Access denied.')
         return redirect('core:dashboard')
 
-    car = get_object_or_404(Car.objects.select_related('brand', 'model', 'vendor', 'vendor__user'), id=car_id)
+    car = get_object_or_404(Car.objects.select_related('make', 'model', 'vendor', 'vendor__user'), id=car_id)
 
     # Get car images
     car_images = car.images.all().order_by('order')
@@ -2409,7 +2409,7 @@ def admin_car_edit_view(request, car_id):
     if request.user.role != 'admin':
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    car = get_object_or_404(Car.objects.select_related('brand', 'model', 'condition', 'vendor__user'), id=car_id)
+    car = get_object_or_404(Car.objects.select_related('make', 'model', 'condition', 'vendor__user'), id=car_id)
     original_approval_status = car.is_approved
 
     if request.method == 'POST':
@@ -2583,7 +2583,7 @@ def admin_car_edit_view(request, car_id):
     context = {
         'form': form,
         'car': car,
-        'car_brands': CarBrand.objects.filter(is_active=True).order_by('name'),
+        'car_makes': CarMake.objects.filter(is_active=True).order_by('name'),
         'car_models': CarModel.objects.filter(is_active=True).order_by('name'),
         'vehicle_conditions': VehicleCondition.objects.filter(is_active=True).order_by('display_order'),
     }
@@ -2967,7 +2967,7 @@ def admin_analytics_view(request):
         'conversion_funnel': conversion_funnel,
         'monthly_data': monthly_data,
         'vendor_performance': vendor_performance,
-        'top_brands': CarBrand.objects.annotate(
+        'top_makes': CarMake.objects.annotate(
             car_count=Count('car')
         ).order_by('-car_count')[:5],
         'days': days,
@@ -3211,11 +3211,36 @@ def vendor_recent_listings_lazy(request):
 
 @login_required
 def admin_quick_actions_lazy(request):
-    """HTMX endpoint for admin quick actions"""
+    """HTMX endpoint for admin quick actions - returns JSON for sidebar stats"""
     if request.user.role != 'admin':
-        return HttpResponse('Unauthorized', status=403)
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
 
-    # Get admin stats
+    # Check if this is an HTMX request for JSON stats (from sidebar)
+    if request.headers.get('HX-Request') and 'stats' in request.path:
+        # Get admin stats for JSON response
+        total_users = User.objects.count()
+        total_cars = Car.objects.count()
+        active_vendors = Vendor.objects.filter(user__is_active=True).count()
+        pending_approvals = Car.objects.filter(is_approved=False).count()
+
+        # Get spare parts low stock count if available
+        try:
+            from .models import SparePart
+            low_stock = SparePart.objects.filter(stock_quantity__lte=5).count()
+        except:
+            low_stock = 0
+
+        stats = {
+            'total_users': total_users,
+            'active_vendors': active_vendors,
+            'total_cars': total_cars,
+            'pending_approvals': pending_approvals,
+            'low_stock': low_stock,
+        }
+
+        return JsonResponse(stats)
+
+    # Original HTML response for dashboard widgets
     total_users = User.objects.count()
     total_cars = Car.objects.count()
     total_vendors = Vendor.objects.count()
@@ -3229,6 +3254,42 @@ def admin_quick_actions_lazy(request):
     }
 
     return render(request, 'core/dashboard/partials/admin_quick_actions.html', context)
+
+
+@login_required
+def admin_stats_json(request):
+    """Dedicated JSON endpoint for admin sidebar stats"""
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    if not request.headers.get('HX-Request'):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    # Get admin stats for JSON response
+    total_users = User.objects.count()
+    total_cars = Car.objects.count()
+    active_vendors = Vendor.objects.filter(user__is_active=True).count()
+    pending_approvals = Car.objects.filter(is_approved=False).count()
+
+    # Get spare parts low stock count if available
+    try:
+        from .models import SparePart
+        low_stock = SparePart.objects.filter(stock_quantity__lte=5).count()
+    except:
+        low_stock = 0
+
+    stats = {
+        'total_users': total_users,
+        'active_vendors': active_vendors,
+        'total_cars': total_cars,
+        'pending_approvals': pending_approvals,
+        'low_stock': low_stock,
+    }
+
+    # Ensure proper JSON content type
+    response = JsonResponse(stats)
+    response['Content-Type'] = 'application/json'
+    return response
 
 
 # Spare Parts Dashboard Views
@@ -3644,7 +3705,7 @@ def vendor_import_requests_view(request):
         search_query = request.GET.get('search')
         if search_query:
             import_requests = import_requests.filter(
-                Q(brand__icontains=search_query) |
+                Q(make__icontains=search_query) |
                 Q(model__icontains=search_query) |
                 Q(origin_country__icontains=search_query)
             )
@@ -3777,7 +3838,7 @@ def customer_import_request_edit_view(request, request_id):
 
                 # Track changes for audit
                 changes = []
-                for field in ['brand', 'model', 'year', 'preferred_color', 'origin_country', 'budget_min', 'budget_max', 'special_requirements']:
+                for field in ['make', 'model', 'year', 'preferred_color', 'origin_country', 'budget_min', 'budget_max', 'special_requirements']:
                     old_value = getattr(import_request, field)
                     new_value = getattr(updated_request, field)
                     if old_value != new_value:
@@ -3798,7 +3859,7 @@ def customer_import_request_edit_view(request, request_id):
                 create_notification(
                     recipient=None,  # Admin notification
                     title="Import Request Updated",
-                    message=f"Customer {request.user.get_full_name() or request.user.username} updated import request #{import_request.id:05d} for {updated_request.year} {updated_request.brand} {updated_request.model}.",
+                    message=f"Customer {request.user.get_full_name() or request.user.username} updated import request #{import_request.id:05d} for {updated_request.year} {updated_request.make} {updated_request.model}.",
                     notification_type='info',
                     action_url=f"/dashboard/admin/import-requests/{import_request.id}/view-modal/",
                     action_text="View Request"
@@ -4205,13 +4266,13 @@ def export_cars_csv(request):
     response['Content-Disposition'] = 'attachment; filename="cars_export.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['ID', 'Brand', 'Model', 'Year', 'Price', 'Mileage', 'Fuel Type', 'Transmission', 'Condition', 'Vendor', 'Is Approved', 'Created At'])
+    writer.writerow(['ID', 'Make', 'Model', 'Year', 'Price', 'Mileage', 'Fuel Type', 'Transmission', 'Condition', 'Vendor', 'Is Approved', 'Created At'])
 
-    cars = Car.objects.select_related('brand', 'model', 'vendor').all().order_by('-created_at')
+    cars = Car.objects.select_related('make', 'model', 'vendor').all().order_by('-created_at')
     for car in cars:
         writer.writerow([
             car.id,
-            car.brand.name if car.brand else '',
+            car.make.name if car.make else '',
             car.model.name if car.model else '',
             car.year,
             car.price,
@@ -4282,8 +4343,8 @@ def export_analytics_json(request):
             'vendors': Vendor.objects.filter(created_at__range=[month_start, month_end]).count(),
         })
 
-    # Top brands
-    top_brands = list(CarBrand.objects.annotate(
+    # Top makes
+    top_makes = list(CarMake.objects.annotate(
         car_count=Count('car')
     ).order_by('-car_count')[:10].values('name', 'car_count'))
 
@@ -4296,7 +4357,7 @@ def export_analytics_json(request):
             'total_inquiries': total_inquiries,
         },
         'monthly_data': monthly_data,
-        'top_brands': top_brands,
+        'top_makes': top_makes,
     }
 
     response = HttpResponse(
@@ -4687,7 +4748,7 @@ def admin_import_requests_view(request):
     completed_imports = ImportRequest.objects.filter(status='completed').count()
 
     # Get unique values for filter dropdowns
-    brands = ImportRequest.objects.values_list('brand', flat=True).distinct().order_by('brand')
+    makes = ImportRequest.objects.values_list('make', flat=True).distinct().order_by('make')
     countries = ImportRequest.objects.values_list('origin_country', flat=True).distinct().order_by('origin_country')
 
     context = {
@@ -4697,12 +4758,12 @@ def admin_import_requests_view(request):
         'in_transit_imports': in_transit_imports,
         'completed_imports': completed_imports,
         'status_choices': ImportRequest.STATUS_CHOICES,
-        'brands': brands,
+        'makes': makes,
         'countries': countries,
         # Preserve filter values
         'current_status': request.GET.get('status', ''),
         'current_search': request.GET.get('search', ''),
-        'current_brand': request.GET.get('brand', ''),
+        'current_make': request.GET.get('make', ''),
         'current_country': request.GET.get('country', ''),
         'current_date_from': request.GET.get('date_from', ''),
         'current_date_to': request.GET.get('date_to', ''),
@@ -4748,7 +4809,7 @@ def admin_import_requests_export(request):
 
     # Write header
     writer.writerow([
-        'Order ID', 'Customer Name', 'Customer Email', 'Brand', 'Model', 'Year',
+        'Order ID', 'Customer Name', 'Customer Email', 'Make', 'Model', 'Year',
         'Origin Country', 'Status', 'Budget Min', 'Budget Max', 'Estimated Cost',
         'Created Date', 'Updated Date', 'Tracking Number'
     ])
@@ -4759,7 +4820,7 @@ def admin_import_requests_export(request):
             f"#{request_obj.id:05d}",
             request_obj.customer.get_full_name() or request_obj.customer.username,
             request_obj.customer.email,
-            request_obj.brand,
+            request_obj.make,
             request_obj.model,
             request_obj.year,
             request_obj.origin_country,
@@ -4801,7 +4862,7 @@ def apply_tracking_filters(request, queryset):
             Q(customer__email__icontains=search) |
             Q(customer__first_name__icontains=search) |
             Q(customer__last_name__icontains=search) |
-            Q(brand__icontains=search) |
+            Q(make__icontains=search) |
             Q(model__icontains=search) |
             Q(chassis_number__icontains=search) |
             Q(bill_of_lading__icontains=search) |
@@ -4882,7 +4943,7 @@ def admin_tracking_management_export_csv(request):
 
     # Write header
     writer.writerow([
-        'Order Number', 'Customer Name', 'Customer Email', 'Brand', 'Model', 'Year',
+        'Order Number', 'Customer Name', 'Customer Email', 'Make', 'Model', 'Year',
         'Color', 'Engine Size', 'Fuel Type', 'Origin Country', 'Status', 'Payment Status',
         'Total Cost', 'Paid Amount', 'Balance Due', 'Chassis Number', 'Bill of Lading',
         'Vessel Name', 'Departure Port', 'Arrival Port', 'Estimated Arrival', 'Actual Arrival',
@@ -4895,7 +4956,7 @@ def admin_tracking_management_export_csv(request):
             order.order_number,
             order.customer.get_full_name() or order.customer.username,
             order.customer.email,
-            order.brand,
+            order.make,
             order.model,
             order.year,
             order.color,
@@ -4951,7 +5012,7 @@ def admin_tracking_management_export_excel(request):
 
     # Write headers
     headers = [
-        'Order Number', 'Customer Name', 'Customer Email', 'Brand', 'Model', 'Year',
+        'Order Number', 'Customer Name', 'Customer Email', 'Make', 'Model', 'Year',
         'Color', 'Engine Size', 'Fuel Type', 'Origin Country', 'Status', 'Payment Status',
         'Total Cost', 'Paid Amount', 'Balance Due', 'Chassis Number', 'Bill of Lading',
         'Vessel Name', 'Departure Port', 'Arrival Port', 'Estimated Arrival', 'Actual Arrival',
@@ -4970,7 +5031,7 @@ def admin_tracking_management_export_excel(request):
             order.order_number,
             order.customer.get_full_name() or order.customer.username,
             order.customer.email,
-            order.brand,
+            order.make,
             order.model,
             order.year,
             order.color,
@@ -5048,7 +5109,7 @@ def admin_import_order_add(request):
         try:
             # Get form data
             customer_id = request.POST.get('customer')
-            brand = request.POST.get('brand')
+            make = request.POST.get('make')
             model = request.POST.get('model')
             year = request.POST.get('year')
             color = request.POST.get('color', '')
@@ -5059,7 +5120,7 @@ def admin_import_order_add(request):
             admin_notes = request.POST.get('admin_notes', '')
 
             # Validate required fields
-            if not all([customer_id, brand, model, year, total_cost]):
+            if not all([customer_id, make, model, year, total_cost]):
                 messages.error(request, 'Please fill in all required fields.')
                 return render(request, 'core/dashboard/partials/admin_tracking_management_table.html', {
                     'import_orders': ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')[:20]
@@ -5084,7 +5145,7 @@ def admin_import_order_add(request):
             import_order = ImportOrder.objects.create(
                 order_number=order_number,
                 customer=customer,
-                brand=brand,
+                make=make,
                 model=model,
                 year=int(year),
                 color=color,
@@ -5159,7 +5220,7 @@ def admin_import_order_edit(request, order_id):
             import_order = get_object_or_404(ImportOrder, id=order_id)
 
             # Get form data
-            brand = request.POST.get('brand')
+            make = request.POST.get('make')
             model = request.POST.get('model')
             year = request.POST.get('year')
             color = request.POST.get('color', '')
@@ -5174,7 +5235,7 @@ def admin_import_order_edit(request, order_id):
             admin_notes = request.POST.get('admin_notes', '')
 
             # Validate required fields
-            if not all([brand, model, year, total_cost, status]):
+            if not all([make, model, year, total_cost, status]):
                 messages.error(request, 'Please fill in all required fields.')
                 return render(request, 'core/dashboard/partials/admin_tracking_management_table.html', {
                     'import_orders': ImportOrder.objects.select_related('customer').prefetch_related('status_history').all().order_by('-created_at')[:20]
@@ -5184,7 +5245,7 @@ def admin_import_order_edit(request, order_id):
             previous_status = import_order.status
 
             # Update import order
-            import_order.brand = brand
+            import_order.make = make
             import_order.model = model
             import_order.year = int(year)
             import_order.color = color
@@ -5699,7 +5760,7 @@ def admin_queries_view(request):
         'current_filters': request.GET.dict(),
     }
 
-    return render(request, 'core/dashboard/admin_queries_enhanced.html', context)
+    return render(request, 'core/dashboard/admin_queries.html', context)
 
 
 @login_required
@@ -5899,40 +5960,53 @@ def admin_query_status_update(request, inquiry_id):
             else:
                 messages.error(request, 'Please correct the form errors.')
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    # GET request - return modal template
+    context = {
+        'inquiry': inquiry,
+        'status_choices': Inquiry.STATUS_CHOICES,
+        'priority_choices': Inquiry.PRIORITY_CHOICES,
+    }
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'core/dashboard/partials/admin_query_status_modal.html', context)
+    else:
+        return render(request, 'core/dashboard/admin_query_status.html', context)
 
 
 @login_required
 def admin_query_bulk_actions(request):
-    """Handle bulk actions on multiple inquiries"""
+    """Enhanced bulk actions handler for multiple inquiries"""
     if request.user.role != 'admin':
         return JsonResponse({'success': False, 'error': 'Access denied'})
 
-    from .dashboard_forms import AdminInquiryBulkActionForm
     from .models import InquiryResponse
+    from django.http import HttpResponse
+    import csv
+    from io import StringIO
 
     if request.method == 'POST':
-        form = AdminInquiryBulkActionForm(request.POST)
+        # Get action and selected inquiry IDs from request
+        action = request.POST.get('action')
+        selected_inquiries = request.POST.get('selected_inquiries', '')
 
-        if form.is_valid():
-            action = form.cleaned_data['action']
-            inquiry_ids = form.cleaned_data['selected_inquiries'].split(',')
+        # Parse inquiry IDs
+        try:
+            inquiry_ids = [int(id.strip()) for id in selected_inquiries.split(',') if id.strip()]
+            inquiries = Inquiry.objects.filter(id__in=inquiry_ids)
 
-            try:
-                inquiry_ids = [int(id.strip()) for id in inquiry_ids if id.strip()]
-                inquiries = Inquiry.objects.filter(id__in=inquiry_ids)
+            if not inquiries.exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No valid inquiries selected'
+                })
 
-                if not inquiries.exists():
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'No valid inquiries selected'
-                    })
+            updated_count = 0
 
-                updated_count = 0
-
-                if action == 'assign':
-                    admin_user = form.cleaned_data['assign_to_admin']
-                    if admin_user:
+            if action == 'assign':
+                assign_to_admin_id = request.POST.get('assign_to_admin')
+                if assign_to_admin_id:
+                    try:
+                        admin_user = User.objects.get(id=assign_to_admin_id, role='admin')
                         inquiries.update(assigned_admin=admin_user)
                         updated_count = inquiries.count()
 
@@ -5945,41 +6019,16 @@ def admin_query_bulk_actions(request):
                                 sender=request.user,
                                 is_internal=True
                             )
+                    except User.DoesNotExist:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Invalid admin user selected'
+                        })
 
-                elif action == 'status_change':
-                    new_status = form.cleaned_data['new_status']
-                    if new_status:
-                        inquiries.update(status=new_status)
-                        updated_count = inquiries.count()
-
-                        # Create system notes
-                        for inquiry in inquiries:
-                            InquiryResponse.objects.create(
-                                inquiry=inquiry,
-                                response_type='status_change',
-                                content=f"Status changed to {dict(Inquiry.STATUS_CHOICES)[new_status]}",
-                                sender=request.user,
-                                is_internal=True
-                            )
-
-                elif action == 'priority_change':
-                    new_priority = form.cleaned_data['new_priority']
-                    if new_priority:
-                        inquiries.update(priority=new_priority)
-                        updated_count = inquiries.count()
-
-                        # Create system notes
-                        for inquiry in inquiries:
-                            InquiryResponse.objects.create(
-                                inquiry=inquiry,
-                                response_type='status_change',
-                                content=f"Priority changed to {dict(Inquiry.PRIORITY_CHOICES)[new_priority]}",
-                                sender=request.user,
-                                is_internal=True
-                            )
-
-                elif action == 'mark_urgent':
-                    inquiries.update(is_urgent=True)
+            elif action == 'status':
+                new_status = request.POST.get('new_status')
+                if new_status and new_status in dict(Inquiry.STATUS_CHOICES):
+                    inquiries.update(status=new_status)
                     updated_count = inquiries.count()
 
                     # Create system notes
@@ -5987,13 +6036,15 @@ def admin_query_bulk_actions(request):
                         InquiryResponse.objects.create(
                             inquiry=inquiry,
                             response_type='status_change',
-                            content="Marked as urgent",
+                            content=f"Status changed to {dict(Inquiry.STATUS_CHOICES)[new_status]}",
                             sender=request.user,
                             is_internal=True
                         )
 
-                elif action == 'remove_urgent':
-                    inquiries.update(is_urgent=False)
+            elif action == 'priority':
+                new_priority = request.POST.get('new_priority')
+                if new_priority and new_priority in dict(Inquiry.PRIORITY_CHOICES):
+                    inquiries.update(priority=new_priority)
                     updated_count = inquiries.count()
 
                     # Create system notes
@@ -6001,71 +6052,79 @@ def admin_query_bulk_actions(request):
                         InquiryResponse.objects.create(
                             inquiry=inquiry,
                             response_type='status_change',
-                            content="Urgent flag removed",
+                            content=f"Priority changed to {dict(Inquiry.PRIORITY_CHOICES)[new_priority]}",
                             sender=request.user,
                             is_internal=True
                         )
 
-                elif action == 'export':
-                    # Export selected inquiries to CSV
-                    response = HttpResponse(content_type='text/csv')
-                    response['Content-Disposition'] = f'attachment; filename="inquiries_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+            elif action == 'delete':
+                # Soft delete by marking as deleted
+                deleted_count = inquiries.count()
+                inquiries.update(status='closed')
 
-                    writer = csv.writer(response)
-                    writer.writerow([
-                        'ID', 'Subject', 'Customer', 'Type', 'Status', 'Priority',
-                        'Assigned Admin', 'Created', 'Updated', 'Response Time (hrs)',
-                        'Resolution Time (hrs)'
-                    ])
-
-                    for inquiry in inquiries.select_related('customer', 'assigned_admin'):
-                        writer.writerow([
-                            inquiry.id,
-                            inquiry.subject,
-                            inquiry.customer.get_full_name() or inquiry.customer.username,
-                            inquiry.get_inquiry_type_display(),
-                            inquiry.get_status_display(),
-                            inquiry.get_priority_display(),
-                            inquiry.assigned_admin.get_full_name() if inquiry.assigned_admin else 'Unassigned',
-                            inquiry.created_at.strftime('%Y-%m-%d %H:%M'),
-                            inquiry.updated_at.strftime('%Y-%m-%d %H:%M'),
-                            inquiry.response_time_hours or '',
-                            inquiry.resolution_time_hours or ''
-                        ])
-
-                    return response
-
-                elif action == 'delete':
-                    # Soft delete or actual delete based on business requirements
-                    deleted_count = inquiries.count()
-                    inquiries.delete()
-
-                    return JsonResponse({
-                        'success': True,
-                        'message': f'Successfully deleted {deleted_count} inquiries',
-                        'reload': True
-                    })
+                # Create system notes
+                for inquiry in inquiries:
+                    InquiryResponse.objects.create(
+                        inquiry=inquiry,
+                        response_type='status_change',
+                        content="Inquiry closed via bulk action",
+                        sender=request.user,
+                        is_internal=True
+                    )
 
                 return JsonResponse({
                     'success': True,
-                    'message': f'Successfully updated {updated_count} inquiries',
-                    'reload': True
+                    'message': f'Successfully closed {deleted_count} inquiries'
                 })
 
-            except Exception as e:
-                logger.error(f"Error in bulk action: {e}")
-                return JsonResponse({
-                    'success': False,
-                    'error': 'An error occurred while processing the bulk action'
-                })
-        else:
+            elif action == 'export':
+                # Export selected inquiries to CSV
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="inquiries_export.csv"'
+
+                writer = csv.writer(response)
+                writer.writerow([
+                    'ID', 'Customer Name', 'Email', 'Subject', 'Message',
+                    'Status', 'Priority', 'Created Date', 'Assigned Admin'
+                ])
+
+                for inquiry in inquiries:
+                    writer.writerow([
+                        inquiry.id,
+                        inquiry.customer.get_full_name() if inquiry.customer else inquiry.name,
+                        inquiry.customer.email if inquiry.customer else inquiry.email,
+                        inquiry.subject,
+                        inquiry.message,
+                        inquiry.get_status_display(),
+                        inquiry.get_priority_display(),
+                        inquiry.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        inquiry.assigned_admin.get_full_name() if inquiry.assigned_admin else 'Unassigned'
+                    ])
+
+                return response
+
+            # Return success response for other actions
             return JsonResponse({
-                'success': False,
-                'error': 'Invalid form data',
-                'form_errors': form.errors
+                'success': True,
+                'message': f'Successfully updated {updated_count} inquiries',
+                'updated_count': updated_count
             })
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+        except ValueError as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Invalid inquiry IDs: {str(e)}'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'An error occurred: {str(e)}'
+            })
+
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
 
 
 @login_required
@@ -6133,53 +6192,136 @@ def admin_query_assign(request, inquiry_id):
                 'error': 'Failed to assign inquiry'
             })
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    # GET request - return modal template
+    admin_users = User.objects.filter(role='admin', is_active=True).order_by('first_name', 'last_name')
+
+    context = {
+        'inquiry': inquiry,
+        'admin_users': admin_users,
+    }
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'core/dashboard/partials/admin_query_assign_modal.html', context)
+    else:
+        return render(request, 'core/dashboard/admin_query_assign.html', context)
 
 
 @login_required
 def admin_queries_table_htmx(request):
-    """HTMX endpoint for queries table updates"""
+    """Enhanced HTMX endpoint for queries table updates with JSON response"""
     if request.user.role != 'admin':
-        return HttpResponse('Access denied', status=403)
+        return JsonResponse({'error': 'Access denied'}, status=403)
 
     from .dashboard_forms import AdminInquiryFilterForm
     from django.db.models import Q
+    from django.utils import timezone
+    from datetime import timedelta
 
-    # Apply filters similar to main view
-    filter_form = AdminInquiryFilterForm(request.GET)
+    # Get filters from request
+    search = request.GET.get('search', '').strip()
+    status = request.GET.get('status', '')
+    priority = request.GET.get('priority', '')
+    inquiry_type = request.GET.get('inquiry_type', '')
+    assigned_admin = request.GET.get('assigned_admin', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    is_urgent = request.GET.get('is_urgent') == 'true'
+    is_overdue = request.GET.get('is_overdue') == 'true'
+    unassigned_only = request.GET.get('unassigned_only') == 'true'
+
+    # Base queryset
     inquiries = Inquiry.objects.select_related('customer', 'assigned_admin', 'car', 'spare_part')
 
-    if filter_form.is_valid():
-        cleaned_data = filter_form.cleaned_data
+    # Apply filters
+    if search:
+        inquiries = inquiries.filter(
+            Q(subject__icontains=search) |
+            Q(message__icontains=search) |
+            Q(customer__username__icontains=search) |
+            Q(customer__email__icontains=search) |
+            Q(customer__first_name__icontains=search) |
+            Q(customer__last_name__icontains=search)
+        )
 
-        if cleaned_data.get('search'):
-            search_term = cleaned_data['search']
-            inquiries = inquiries.filter(
-                Q(subject__icontains=search_term) |
-                Q(message__icontains=search_term) |
-                Q(customer__username__icontains=search_term) |
-                Q(customer__email__icontains=search_term)
-            )
+    if status:
+        inquiries = inquiries.filter(status=status)
 
-        if cleaned_data.get('status'):
-            inquiries = inquiries.filter(status=cleaned_data['status'])
+    if priority:
+        inquiries = inquiries.filter(priority=priority)
 
-        if cleaned_data.get('priority'):
-            inquiries = inquiries.filter(priority=cleaned_data['priority'])
+    if inquiry_type:
+        inquiries = inquiries.filter(inquiry_type=inquiry_type)
 
-    # Order and paginate
-    inquiries = inquiries.order_by('-created_at')
+    if assigned_admin:
+        inquiries = inquiries.filter(assigned_admin_id=assigned_admin)
+
+    if date_from:
+        try:
+            from datetime import datetime
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            inquiries = inquiries.filter(created_at__date__gte=date_from_obj)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            from datetime import datetime
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            inquiries = inquiries.filter(created_at__date__lte=date_to_obj)
+        except ValueError:
+            pass
+
+    if is_urgent:
+        inquiries = inquiries.filter(priority__in=['urgent', 'critical'])
+
+    if is_overdue:
+        # Consider queries overdue if they're older than 24 hours and not resolved
+        overdue_time = timezone.now() - timedelta(hours=24)
+        inquiries = inquiries.filter(
+            created_at__lt=overdue_time,
+            status__in=['new', 'in_progress']
+        )
+
+    if unassigned_only:
+        inquiries = inquiries.filter(assigned_admin__isnull=True)
+
+    # Order by priority and creation date
+    inquiries = inquiries.order_by('-priority', '-created_at')
+
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 20))
 
     from django.core.paginator import Paginator
-    paginator = Paginator(inquiries, 20)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    paginator = Paginator(inquiries, page_size)
+    page_obj = paginator.get_page(page)
 
-    context = {
-        'inquiries': page_obj,
-    }
+    # Serialize data for JSON response
+    queries_data = []
+    for inquiry in page_obj:
+        queries_data.append({
+            'id': inquiry.id,
+            'customer_name': inquiry.customer.get_full_name() if inquiry.customer else inquiry.name,
+            'customer_email': inquiry.customer.email if inquiry.customer else inquiry.email,
+            'subject': inquiry.subject,
+            'message': inquiry.message[:100] + '...' if len(inquiry.message) > 100 else inquiry.message,
+            'status': inquiry.status,
+            'status_display': inquiry.get_status_display(),
+            'priority': inquiry.priority,
+            'priority_display': inquiry.get_priority_display(),
+            'assigned_admin': inquiry.assigned_admin.get_full_name() if inquiry.assigned_admin else None,
+            'created_at': inquiry.created_at.strftime('%b %d, %Y %I:%M %p'),
+            'is_overdue': (timezone.now() - inquiry.created_at).total_seconds() > 86400 and inquiry.status in ['new', 'in_progress'],
+        })
 
-    return render(request, 'core/dashboard/partials/admin_queries_table.html', context)
+    return JsonResponse({
+        'queries': queries_data,
+        'total': paginator.count,
+        'page': page,
+        'total_pages': paginator.num_pages,
+        'has_next': page_obj.has_next(),
+        'has_previous': page_obj.has_previous(),
+    })
 
 
 @login_required
@@ -6475,13 +6617,13 @@ def admin_spare_shop_view(request):
     elif availability_filter == 'out_of_stock':
         spare_parts = spare_parts.filter(stock_quantity=0)
 
-    # Filter by brand (compatible_brands is a ManyToManyField)
-    brand_filter = request.GET.get('brand')
-    if brand_filter:
+    # Filter by make (compatible_makes is a ManyToManyField)
+    make_filter = request.GET.get('make')
+    if make_filter:
         try:
-            spare_parts = spare_parts.filter(compatible_brands__name__icontains=brand_filter)
+            spare_parts = spare_parts.filter(compatible_makes__name__icontains=make_filter)
         except:
-            # Field might not exist or have different structure, skip brand filtering
+            # Field might not exist or have different structure, skip make filtering
             pass
 
     # Filter by price range
@@ -6562,7 +6704,7 @@ def admin_spare_shop_view(request):
         'recent_orders': recent_orders,
         'current_category': category_filter,
         'current_availability': availability_filter,
-        'current_brand': brand_filter,
+        'current_make': make_filter,
         'current_price_range': price_range_filter,
         'current_condition': condition_filter,
         'search_query': search_query,
@@ -6875,7 +7017,6 @@ def admin_spare_part_restock_view(request, part_id):
             quantity_before=old_quantity,
             quantity_after=spare_part.stock_quantity,
             unit_cost=unit_cost if unit_cost else None,
-            supplier_id=supplier_id,
             notes=notes,
             created_by=request.user
         )
@@ -7175,7 +7316,7 @@ def admin_import_request_add(request):
             # Create new import request
             import_request = ImportRequest.objects.create(
                 customer_id=request.POST.get('customer'),
-                brand=request.POST.get('brand'),
+                make=request.POST.get('make'),
                 model=request.POST.get('model'),
                 year=int(request.POST.get('year')),
                 preferred_color=request.POST.get('preferred_color', ''),
@@ -7192,7 +7333,7 @@ def admin_import_request_add(request):
             create_notification(
                 recipient=import_request.customer,
                 title="New Import Request Created",
-                message=f"Your import request for {import_request.year} {import_request.brand} {import_request.model} has been created.",
+                message=f"Your import request for {import_request.year} {import_request.make} {import_request.model} has been created.",
                 notification_type='info',
                 action_url=f"/dashboard/import-requests/{import_request.id}/",
                 action_text="View Request"
@@ -7256,7 +7397,7 @@ def admin_import_request_edit(request, request_id):
 
             # Update import request
             import_request.customer_id = request.POST.get('customer')
-            import_request.brand = request.POST.get('brand')
+            import_request.make = request.POST.get('make')
             import_request.model = request.POST.get('model')
             import_request.year = int(request.POST.get('year'))
             import_request.preferred_color = request.POST.get('preferred_color', '')
@@ -7329,7 +7470,7 @@ def admin_import_request_delete(request, request_id):
         try:
             import_request = get_object_or_404(ImportRequest, id=request_id)
             customer = import_request.customer
-            request_info = f"#{import_request.id:05d} - {import_request.year} {import_request.brand} {import_request.model}"
+            request_info = f"#{import_request.id:05d} - {import_request.year} {import_request.make} {import_request.model}"
 
             # Delete the import request
             import_request.delete()
@@ -7373,7 +7514,7 @@ def admin_import_request_track(request, request_id):
             import_order = ImportOrder.objects.create(
                 import_request=import_request,
                 customer=import_request.customer,
-                brand=import_request.brand,
+                make=import_request.make,
                 model=import_request.model,
                 year=import_request.year,
                 color=import_request.preferred_color or '',

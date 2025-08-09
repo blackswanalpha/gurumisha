@@ -1,414 +1,253 @@
 {% extends 'base_admin_dashboard.html' %}
 {% load static %}
 
-{% block page_title %}Customer Queries{% endblock %}
-{% block page_description %}Manage customer inquiries and support requests{% endblock %}
-
-{% block extra_css %}
-<style>
-    .query-priority-critical { @apply border-l-4 border-red-600 bg-red-50; }
-    .query-priority-urgent { @apply border-l-4 border-orange-500 bg-orange-50; }
-    .query-priority-high { @apply border-l-4 border-yellow-500 bg-yellow-50; }
-    .query-priority-normal { @apply border-l-4 border-blue-500 bg-blue-50; }
-    .query-priority-low { @apply border-l-4 border-gray-400 bg-gray-50; }
-
-    .query-overdue { @apply bg-red-100 border-red-300; }
-    .query-urgent-flag { @apply animate-pulse; }
-
-    .bulk-action-panel {
-        transform: translateY(-100%);
-        transition: transform 0.3s ease-in-out;
-    }
-    .bulk-action-panel.show {
-        transform: translateY(0);
-    }
-</style>
-{% endblock %}
+{% block page_title %}Queries Management{% endblock %}
+{% block page_description %}View, filter, and respond to all customer inquiries{% endblock %}
 
 {% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Enhanced Queries Header -->
-    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 animate-fade-in-up">
-        <div>
-            <h2 class="text-3xl font-bold text-harrier-dark font-montserrat">Customer Queries</h2>
-            <p class="text-gray-600 mt-1 font-raleway">Manage customer inquiries and support requests</p>
-            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                <span><i class="fas fa-clock mr-1"></i>Avg Response: {{ avg_response_time|floatformat:1 }}h</span>
-                <span><i class="fas fa-check-circle mr-1"></i>Avg Resolution: {{ avg_resolution_time|floatformat:1 }}h</span>
-            </div>
-        </div>
-
-        <div class="flex flex-wrap gap-3">
-            <button onclick="toggleFilters()" class="btn-admin-secondary text-sm">
-                <i class="fas fa-filter mr-2"></i>Filters
-            </button>
-            <button onclick="showBulkActions()" class="btn-admin-secondary text-sm" id="bulk-action-btn" style="display: none;">
-                <i class="fas fa-tasks mr-2"></i>Bulk Actions
-            </button>
-            <button onclick="exportQueries()" class="btn-admin-secondary text-sm">
-                <i class="fas fa-download mr-2"></i>Export
-            </button>
-            <button onclick="refreshQueries()" class="btn-admin-primary text-sm">
-                <i class="fas fa-sync-alt mr-2"></i>Refresh
-            </button>
-        </div>
+<div x-data="adminQueries()" x-init="init()" class="space-y-6">
+    <!-- Stats -->
+    <div>
+        {% include 'core/dashboard/partials/admin_queries_stats.html' %}
     </div>
 
-    <!-- Enhanced Query Stats -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 animate-fade-in-up" style="animation-delay: 0.2s;" id="query-stats">
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-blue-600">{{ total_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">Total</div>
-        </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-green-600">{{ new_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">New</div>
-        </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-blue-600">{{ open_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">Open</div>
-        </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-orange-600">{{ in_progress_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">In Progress</div>
-        </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-red-600">{{ urgent_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">Urgent</div>
-        </div>
-        <div class="admin-stat-card text-center">
-            <div class="admin-stat-value text-red-700">{{ overdue_inquiries|default:0 }}</div>
-            <div class="admin-stat-label">Overdue</div>
-        </div>
-    </div>
-
-    <!-- Advanced Filter Panel -->
-    <div id="filter-panel" class="glassmorphism-card p-6 hidden animate-fade-in-up">
-        <form method="GET" id="filter-form" hx-get="{% url 'core:admin_queries' %}" hx-target="#queries-table" hx-swap="outerHTML">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <!-- Search -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    {{ filter_form.search }}
-                </div>
-
-                <!-- Status Filter -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    {{ filter_form.status }}
-                </div>
-
-                <!-- Priority Filter -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                    {{ filter_form.priority }}
-                </div>
-
-                <!-- Type Filter -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    {{ filter_form.inquiry_type }}
-                </div>
-
-                <!-- Assigned Admin -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned Admin</label>
-                    {{ filter_form.assigned_admin }}
-                </div>
-
-                <!-- Date From -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                    {{ filter_form.date_from }}
-                </div>
-
-                <!-- Date To -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                    {{ filter_form.date_to }}
-                </div>
-
-                <!-- Quick Filters -->
-                <div class="flex flex-col space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Quick Filters</label>
-                    <div class="space-y-1">
-                        <label class="flex items-center">
-                            {{ filter_form.is_urgent }}
-                            <span class="ml-2 text-sm text-gray-600">Urgent Only</span>
-                        </label>
-                        <label class="flex items-center">
-                            {{ filter_form.is_overdue }}
-                            <span class="ml-2 text-sm text-gray-600">Overdue Only</span>
-                        </label>
-                        <label class="flex items-center">
-                            {{ filter_form.unassigned_only }}
-                            <span class="ml-2 text-sm text-gray-600">Unassigned Only</span>
-                        </label>
-                    </div>
-                </div>
+    <!-- Filters & Actions -->
+    <div class="glass-card p-4">
+        <form @submit.prevent class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+            <!-- Search -->
+            <div class="lg:col-span-2">
+                <label class="text-xs font-semibold text-gray-600">Search</label>
+                <input type="text" x-model.debounce.400ms="filters.search" @input="loadQueries(1)"
+                       placeholder="Subject, customer, message..."
+                       class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-harrier-red focus:border-transparent" />
             </div>
-
-            <div class="flex justify-between items-center">
-                <button type="button" onclick="clearFilters()" class="btn-admin-secondary text-sm">
-                    <i class="fas fa-times mr-2"></i>Clear Filters
-                </button>
-                <button type="submit" class="btn-admin-primary text-sm">
-                    <i class="fas fa-search mr-2"></i>Apply Filters
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Bulk Actions Panel -->
-    <div id="bulk-actions-panel" class="glassmorphism-card p-4 bulk-action-panel hidden">
-        <form id="bulk-actions-form" hx-post="{% url 'core:admin_query_bulk_actions' %}" hx-target="#bulk-actions-response">
-            {% csrf_token %}
-            <div class="flex flex-wrap items-center gap-4">
-                <div class="flex items-center">
-                    <span class="text-sm font-medium text-gray-700 mr-2">Selected: </span>
-                    <span id="selected-count" class="text-sm font-bold text-harrier-red">0</span>
-                </div>
-
-                <div class="flex-1 min-w-48">
-                    {{ bulk_form.action }}
-                </div>
-
-                <div id="bulk-assign-field" class="hidden">
-                    {{ bulk_form.assign_to_admin }}
-                </div>
-
-                <div id="bulk-status-field" class="hidden">
-                    {{ bulk_form.new_status }}
-                </div>
-
-                <div id="bulk-priority-field" class="hidden">
-                    {{ bulk_form.new_priority }}
-                </div>
-
-                {{ bulk_form.selected_inquiries }}
-
-                <button type="submit" class="btn-admin-primary text-sm">
-                    <i class="fas fa-check mr-2"></i>Execute
-                </button>
-
-                <button type="button" onclick="hideBulkActions()" class="btn-admin-secondary text-sm">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-            </div>
-        </form>
-        <div id="bulk-actions-response"></div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up" style="animation-delay: 0.3s;">
-        <div class="quick-action-card">
-            <div class="flex items-center">
-                <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-exclamation-circle text-white text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <h4 class="font-semibold text-harrier-dark font-raleway">Urgent Queries</h4>
-                    <p class="text-sm text-gray-600">{{ new_inquiries|default:0 }} require immediate attention</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="quick-action-card">
-            <div class="flex items-center">
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-clock text-white text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <h4 class="font-semibold text-harrier-dark font-raleway">Response Time</h4>
-                    <p class="text-sm text-gray-600">Avg: 2.5 hours</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="quick-action-card">
-            <div class="flex items-center">
-                <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-chart-line text-white text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <h4 class="font-semibold text-harrier-dark font-raleway">Resolution Rate</h4>
-                    <p class="text-sm text-gray-600">95% this month</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Queries List -->
-    <div class="admin-card animate-fade-in-up" style="animation-delay: 0.4s;">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-violet-600 rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-envelope text-white"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-harrier-dark font-montserrat">Recent Queries</h3>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors">
-                        <i class="fas fa-download mr-1"></i>Export
-                    </button>
-                    <button class="text-sm text-gray-600 hover:text-harrier-red transition-colors">
-                        <i class="fas fa-sync mr-1"></i>Refresh
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="p-6">
-            {% if inquiries %}
-                <div class="space-y-4">
-                    {% for inquiry in inquiries %}
-                    <div class="query-card border border-gray-200 rounded-lg p-6 hover:border-violet-300 hover:shadow-md transition-all duration-300">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start space-x-4 flex-1">
-                                <!-- Customer Avatar -->
-                                <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                    {{ inquiry.name|first|upper }}
-                                </div>
-                                
-                                <!-- Query Content -->
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <h4 class="text-lg font-semibold text-harrier-dark font-raleway">{{ inquiry.name }}</h4>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-montserrat
-                                            {% if inquiry.status == 'new' %}bg-red-100 text-red-800
-                                            {% elif inquiry.status == 'in_progress' %}bg-orange-100 text-orange-800
-                                            {% elif inquiry.status == 'resolved' %}bg-green-100 text-green-800
-                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                            {{ inquiry.get_status_display|default:inquiry.status|title }}
-                                        </span>
-                                        {% if inquiry.priority == 'high' %}
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>High Priority
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <p class="text-sm text-gray-600 mb-2">{{ inquiry.email }}</p>
-                                    <p class="text-gray-800 font-raleway">{{ inquiry.subject }}</p>
-                                    <p class="text-gray-600 mt-2 line-clamp-2">{{ inquiry.message|truncatewords:20 }}</p>
-                                    
-                                    <!-- Query Meta -->
-                                    <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                                        <span><i class="fas fa-clock mr-1"></i>{{ inquiry.created_at|timesince }} ago</span>
-                                        {% if inquiry.car %}
-                                        <span><i class="fas fa-car mr-1"></i>{{ inquiry.car.title }}</span>
-                                        {% endif %}
-                                        {% if inquiry.phone %}
-                                        <span><i class="fas fa-phone mr-1"></i>{{ inquiry.phone }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Actions -->
-                            <div class="flex flex-col space-y-2 ml-4">
-                                <button class="bg-violet-100 text-violet-700 hover:bg-violet-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-reply mr-1"></i>Reply
-                                </button>
-                                <button class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-check mr-1"></i>Resolve
-                                </button>
-                                <button class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-eye mr-1"></i>View
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Status -->
+            <div>
+                <label class="text-xs font-semibold text-gray-600">Status</label>
+                <select x-model="filters.status" @change="loadQueries(1)" class="form-input w-full">
+                    <option value="">All</option>
+                    {% for k,v in filter_form.fields.status.choices %}
+                        <option value="{{ k }}">{{ v }}</option>
                     {% endfor %}
-                </div>
-                
-                <!-- Pagination -->
-                <div class="mt-8 flex justify-center">
-                    <nav class="flex space-x-2">
-                        <button class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            Previous
-                        </button>
-                        <button class="px-3 py-2 text-sm font-medium text-white bg-harrier-red border border-harrier-red rounded-md">
-                            1
-                        </button>
-                        <button class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            2
-                        </button>
-                        <button class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            Next
-                        </button>
-                    </nav>
-                </div>
-            {% else %}
-                <div class="text-center py-12">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-envelope text-gray-400 text-2xl"></i>
-                    </div>
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2 font-montserrat">No queries yet</h4>
-                    <p class="text-gray-600 font-raleway">Customer inquiries will appear here when they contact you.</p>
-                </div>
-            {% endif %}
+                </select>
+            </div>
+            <!-- Priority -->
+            <div>
+                <label class="text-xs font-semibold text-gray-600">Priority</label>
+                <select x-model="filters.priority" @change="loadQueries(1)" class="form-input w-full">
+                    <option value="">All</option>
+                    {% for k,v in filter_form.fields.priority.choices %}
+                        <option value="{{ k }}">{{ v }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Type -->
+            <div>
+                <label class="text-xs font-semibold text-gray-600">Type</label>
+                <select x-model="filters.inquiry_type" @change="loadQueries(1)" class="form-input w-full">
+                    <option value="">All</option>
+                    {% for k,v in filter_form.fields.inquiry_type.choices %}
+                        <option value="{{ k }}">{{ v }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Assigned Admin -->
+            <div>
+                <label class="text-xs font-semibold text-gray-600">Assigned</label>
+                <select x-model="filters.assigned_admin" @change="loadQueries(1)" class="form-input w-full">
+                    <option value="">All</option>
+                    {% for admin in filter_form.fields.assigned_admin.queryset %}
+                        <option value="{{ admin.id }}">{{ admin.get_full_name|default:admin.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Quick toggles -->
+            <div class="lg:col-span-2 flex flex-wrap gap-2">
+                <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" x-model="filters.is_urgent" @change="loadQueries(1)" class="form-checkbox"> Urgent
+                </label>
+                <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" x-model="filters.is_overdue" @change="loadQueries(1)" class="form-checkbox"> Overdue
+                </label>
+                <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" x-model="filters.unassigned_only" @change="loadQueries(1)" class="form-checkbox"> Unassigned
+                </label>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr class="text-left text-gray-600">
+                        <th class="px-4 py-3">Subject</th>
+                        <th class="px-4 py-3">Customer</th>
+                        <th class="px-4 py-3">Type</th>
+                        <th class="px-4 py-3">Priority</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Assigned</th>
+                        <th class="px-4 py-3">Created</th>
+                        <th class="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-if="queries.length === 0">
+                        <tr>
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-500">No inquiries found for current filters.</td>
+                        </tr>
+                    </template>
+                    <template x-for="q in queries" :key="q.id">
+                        <tr class="border-t hover:bg-gray-50/60">
+                            <td class="px-4 py-3">
+                                <a :href="detailUrl(q.id)" class="font-semibold text-harrier-dark hover:text-harrier-red" x-text="q.subject"></a>
+                                <div class="text-xs text-gray-500 line-clamp-1" x-text="q.message"></div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="font-medium" x-text="q.customer_name || 'N/A'"></div>
+                                <div class="text-xs text-gray-500" x-text="q.customer_email || ''"></div>
+                            </td>
+                            <td class="px-4 py-3 capitalize" x-text="q.type || '-' "></td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold"
+                                      :class="priorityClass(q.priority)" x-text="q.priority_display"></span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold"
+                                      :class="statusClass(q.status)" x-text="q.status_display"></span>
+                            </td>
+                            <td class="px-4 py-3" x-text="q.assigned_admin || 'Unassigned'"></td>
+                            <td class="px-4 py-3 whitespace-nowrap" x-text="q.created_at"></td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a :href="detailUrl(q.id)" class="btn-modern btn-secondary text-xs"><i class="fas fa-eye mr-1"></i>View</a>
+                                    <button @click="openModal(replyUrl(q.id))" class="btn-modern btn-primary text-xs"><i class="fas fa-reply mr-1"></i>Reply</button>
+                                    <button @click="openModal(statusUrl(q.id))" class="btn-modern btn-secondary text-xs"><i class="fas fa-edit mr-1"></i>Status</button>
+                                    <button @click="openModal(assignUrl(q.id))" class="btn-modern btn-secondary text-xs"><i class="fas fa-user-cog mr-1"></i>Assign</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination -->
+        <div class="flex items-center justify-between px-4 py-3 border-t bg-white">
+            <div class="text-sm text-gray-600">Page <span x-text="page"></span> of <span x-text="totalPages"></span> • <span x-text="total"></span> total</div>
+            <div class="flex items-center gap-2">
+                <button class="btn-modern btn-secondary text-xs" :disabled="!hasPrevious" @click="loadQueries(page-1)">
+                    <i class="fas fa-chevron-left mr-1"></i>Prev
+                </button>
+                <button class="btn-modern btn-secondary text-xs" :disabled="!hasNext" @click="loadQueries(page+1)">
+                    Next<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div x-show="showingModal" x-transition.opacity class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50">
+        <div class="bg-white w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl">
+            <div id="modal-content-area" class="min-h-[200px]"></div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
-{{ block.super }}
-<style>
-    /* Query-specific styles */
-    .query-card {
-        transform: translateY(0);
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-
-    .query-card:hover {
-        transform: translateY(-2px);
-    }
-
-    /* Line clamp for message preview */
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    /* Status badge animations */
-    .inline-flex {
-        transition: all 0.2s ease;
-    }
-
-    .inline-flex:hover {
-        transform: scale(1.05);
-    }
-
-    /* Action button hover effects */
-    .query-card button {
-        transition: all 0.2s ease;
-    }
-
-    .query-card button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-        .query-card {
-            padding: 1rem;
+<script>
+function adminQueries() {
+    return {
+        queries: [],
+        page: 1,
+        totalPages: 1,
+        total: 0,
+        hasNext: false,
+        hasPrevious: false,
+        showingModal: false,
+        filters: {
+            search: '{{ current_filters.search|default:'' }}',
+            status: '{{ current_filters.status|default:'' }}',
+            priority: '{{ current_filters.priority|default:'' }}',
+            inquiry_type: '{{ current_filters.inquiry_type|default:'' }}',
+            assigned_admin: '{{ current_filters.assigned_admin|default:'' }}',
+            date_from: '{{ current_filters.date_from|default:'' }}',
+            date_to: '{{ current_filters.date_to|default:'' }}',
+            is_urgent: {{ current_filters.is_urgent|yesno:'true,false'|default:'false' }},
+            is_overdue: {{ current_filters.is_overdue|yesno:'true,false'|default:'false' }},
+            unassigned_only: {{ current_filters.unassigned_only|yesno:'true,false'|default:'false' }}
+        },
+        init() {
+            this.loadQueries(1);
+            // auto refresh every 30s
+            setInterval(() => this.loadQueries(this.page), 30000);
+        },
+        buildParams(page) {
+            const p = new URLSearchParams();
+            p.set('page', page || 1);
+            p.set('page_size', 20);
+            Object.entries(this.filters).forEach(([k,v]) => {
+                if (v !== '' && v !== false && v != null) {
+                    p.set(k, (v===true) ? 'true' : v);
+                }
+            });
+            return p.toString();
+        },
+        async loadQueries(page=1) {
+            this.page = page;
+            const params = this.buildParams(page);
+            const res = await fetch(`/dashboard/admin/queries/table-htmx/?${params}`);
+            if (!res.ok) { return; }
+            const data = await res.json();
+            this.queries = data.queries.map(q => ({
+                ...q,
+                type: q.type || '',
+            }));
+            this.total = data.total;
+            this.page = data.page;
+            this.totalPages = data.total_pages;
+            this.hasNext = data.has_next;
+            this.hasPrevious = data.has_previous;
+        },
+        // URLs
+        detailUrl(id){ return `/dashboard/admin/queries/${id}/`; },
+        replyUrl(id){ return `/dashboard/admin/queries/${id}/reply/`; },
+        statusUrl(id){ return `/dashboard/admin/queries/${id}/status/`; },
+        assignUrl(id){ return `/dashboard/admin/queries/${id}/assign/`; },
+        // Modal controls
+        openModal(url){
+            this.showingModal = true;
+            htmx.ajax('GET', url, { target: '#modal-content-area', swap: 'innerHTML' });
+            window.adminQueriesComponent = this; // expose for modal scripts
+        },
+        closeModal(){
+            this.showingModal = false;
+            const el = document.getElementById('modal-content-area');
+            if (el) el.innerHTML = '';
+        },
+        // Badge helpers
+        priorityClass(p){
+            const map = {
+                low: 'bg-gray-100 text-gray-700',
+                normal: 'bg-blue-100 text-blue-700',
+                high: 'bg-orange-100 text-orange-700',
+                urgent: 'bg-red-100 text-red-700',
+                critical: 'bg-red-200 text-red-800'
+            };
+            return map[p] || 'bg-gray-100 text-gray-700';
+        },
+        statusClass(s){
+            const map = {
+                new: 'bg-blue-100 text-blue-700',
+                open: 'bg-yellow-100 text-yellow-700',
+                in_progress: 'bg-purple-100 text-purple-700',
+                pending_customer: 'bg-orange-100 text-orange-700',
+                resolved: 'bg-green-100 text-green-700',
+                closed: 'bg-gray-100 text-gray-700',
+                escalated: 'bg-red-100 text-red-700'
+            };
+            return map[s] || 'bg-gray-100 text-gray-700';
         }
-        
-        .query-card .flex {
-            flex-direction: column;
-            space-y: 1rem;
-        }
-        
-        .query-card .ml-4 {
-            margin-left: 0;
-            margin-top: 1rem;
-        }
     }
-</style>
+}
+</script>
 {% endblock %}

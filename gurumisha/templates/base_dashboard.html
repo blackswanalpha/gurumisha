@@ -606,5 +606,89 @@ function initializeLazyLoading() {
 <!-- {% load core_extras %} -->
 <!-- {% toast_script %} -->
 <!-- {% render_toast_messages %} -->
+
+// Popup message functionality for all dashboard pages
+function checkForPopupMessages() {
+    // Try to use message integration if available
+    if (window.messageIntegration) {
+        window.messageIntegration.checkForPopupMessages();
+        return;
+    }
+
+    // Fallback: Direct fetch
+    fetch('/messages/popup/', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.text())
+    .then(data => {
+        if (data && !data.includes('"no_messages": true')) {
+            // Create a temporary container to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = data;
+
+            const popup = tempDiv.querySelector('.message-popup');
+            if (popup) {
+                // Append to body
+                document.body.appendChild(popup);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error checking for popup messages:', error);
+    });
+}
+
+// Message dismissal function
+function dismissMessage(messageId) {
+    // Send dismiss action to server
+    fetch(`/messages/action/${messageId}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            action: 'dismissed'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove popup from DOM
+        const popup = document.getElementById(`user-message-popup-${messageId}`);
+        if (popup) {
+            popup.remove();
+        }
+    })
+    .catch(error => {
+        console.error('Error dismissing message:', error);
+
+        // Still remove popup from DOM even if server request fails
+        const popup = document.getElementById(`user-message-popup-${messageId}`);
+        if (popup) {
+            popup.remove();
+        }
+    });
+}
+
+// Make functions globally available
+window.checkForPopupMessages = checkForPopupMessages;
+window.dismissMessage = dismissMessage;
+
+// Auto-check for popup messages on dashboard pages
+document.addEventListener('DOMContentLoaded', function() {
+    // Only check for popup messages on dashboard pages for authenticated users
+    if (window.location.pathname.includes('/dashboard/')) {
+        setTimeout(function() {
+            checkForPopupMessages();
+        }, 2000);
+    }
+});
 </script>
 {% endblock %}

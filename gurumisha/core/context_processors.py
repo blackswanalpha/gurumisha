@@ -277,7 +277,7 @@ def compare_context(request):
         all_cars = Car.objects.filter(
             id__in=compare_list,
             is_approved=True
-        ).select_related('brand', 'model')
+        ).select_related('make', 'model')
 
     return {
         'compare_list': compare_list,

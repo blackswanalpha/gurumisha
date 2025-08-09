@@ -1,0 +1,14 @@
+{% if not has_make %}
+    <option value="">Select Make First</option>
+{% else %}
+    {% if models %}
+        <option value="">Select Model</option>
+        {% for model in models %}
+            <option value="{{ model.id }}" {% if selected_model == model.id|stringformat:"s" %}selected{% endif %}>
+                {{ model.name }}
+            </option>
+        {% endfor %}
+    {% else %}
+        <option value="">No models found</option>
+    {% endif %}
+{% endif %}

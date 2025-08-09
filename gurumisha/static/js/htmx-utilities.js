@@ -206,7 +206,7 @@
          */
         request: function(method, url, options = {}) {
             const defaultOptions = {
-                target: options.target || 'body',
+                target: options.target || document.body,
                 swap: options.swap || 'innerHTML',
                 indicator: options.indicator,
                 headers: {
@@ -214,6 +214,12 @@
                     ...options.headers
                 }
             };
+
+            // Ensure target is a DOM Element
+            if (typeof defaultOptions.target === 'string') {
+                const el = document.querySelector(defaultOptions.target);
+                defaultOptions.target = el || document.body;
+            }
 
             // Use smart targeting
             if (options.smartTarget && options.triggerElement) {

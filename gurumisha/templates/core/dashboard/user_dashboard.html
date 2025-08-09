@@ -190,6 +190,13 @@
         <div class="absolute bottom-0 left-0 w-24 h-24 bg-white bg-opacity-5 rounded-full -ml-12 -mb-12"></div>
     </div>
 
+    <!-- Dashboard Messages Section -->
+    <div id="dashboard-messages-section" class="mb-8">
+        <!-- Messages will be loaded here via HTMX -->
+    </div>
+
+
+
     <!-- Enhanced Quick Actions Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Browse Cars Action -->
@@ -445,4 +452,35 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load dashboard messages on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load messages immediately
+    loadDashboardMessages();
+
+
+
+    // Refresh messages every 5 minutes
+    setInterval(loadDashboardMessages, 5 * 60 * 1000);
+});
+
+function loadDashboardMessages() {
+    fetch('{% url "core:user_dashboard_messages" %}')
+        .then(response => response.text())
+        .then(html => {
+            const messagesSection = document.getElementById('dashboard-messages-section');
+            if (messagesSection) {
+                messagesSection.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dashboard messages:', error);
+        });
+}
+
+
+</script>
 {% endblock %}

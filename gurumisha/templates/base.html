@@ -163,49 +163,49 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     <!-- Unified Hydration Manager (load after HTMX) -->
-    <script src="{% static 'js/hydration-manager.js' %}?v=20250801-1000"></script>
+    <script src="{% static 'js/hydration-manager.js' %}?v=20250807-01"></script>
 
     <!-- HTMX Configuration and Error Handling -->
-    <script src="{% static 'js/htmx-config.js' %}?v=20250801-1000"></script>
+    <script src="{% static 'js/htmx-config.js' %}?v=20250807-01"></script>
 
     <!-- Enhanced HTMX Integration -->
-    <script src="{% static 'js/htmx-integration-enhanced.js' %}?v=20250801-1500"></script>
+    <script src="{% static 'js/htmx-integration-enhanced.js' %}?v=20250807-01"></script>
 
     <!-- Enhanced Modal Manager -->
-    <script src="{% static 'js/modal-manager-enhanced.js' %}?v=20250801-1400"></script>
+    <script src="{% static 'js/modal-manager-enhanced.js' %}?v=20250807-01"></script>
 
     <!-- Modal Utilities -->
-    <script src="{% static 'js/modal-utilities.js' %}?v=20250801-1400"></script>
+    <script src="{% static 'js/modal-utilities.js' %}?v=20250807-01"></script>
 
     <!-- Modal Test Suite -->
-    <script src="{% static 'js/modal-test-suite.js' %}?v=20250801-1400"></script>
+    <script src="{% static 'js/modal-test-suite.js' %}?v=20250807-01"></script>
 
     <!-- Button Persistence Test Suite -->
-    <script src="{% static 'js/button-persistence-test.js' %}?v=20250801-1500"></script>
+    <script src="{% static 'js/button-persistence-test.js' %}?v=20250807-01"></script>
 
     <!-- Modal Error Catcher -->
-    <script src="{% static 'js/modal-error-catcher.js' %}?v=20250801-1700"></script>
+    <script src="{% static 'js/modal-error-catcher.js' %}?v=20250807-01"></script>
 
     <!-- Modal Error Test Suite -->
-    <script src="{% static 'js/modal-error-test-suite.js' %}?v=20250801-1700"></script>
+    <script src="{% static 'js/modal-error-test-suite.js' %}?v=20250807-01"></script>
 
     <!-- Modal Button Persistence -->
-    <script src="{% static 'js/modal-button-persistence.js' %}?v=20250801-1800"></script>
+    <script src="{% static 'js/modal-button-persistence.js' %}?v=20250807-01"></script>
 
     <!-- Modal Button Test Suite -->
-    <script src="{% static 'js/modal-button-test-suite.js' %}?v=20250801-1800"></script>
+    <script src="{% static 'js/modal-button-test-suite.js' %}?v=20250807-01"></script>
 
     <!-- Button Disappearing Fix -->
-    <script src="{% static 'js/button-disappearing-fix.js' %}?v=20250801-1900"></script>
+    <script src="{% static 'js/button-disappearing-fix.js' %}?v=20250807-01"></script>
 
     <!-- HTMX Preserve Extension -->
-    <script src="{% static 'js/htmx-preserve.js' %}?v=20250801-1000"></script>
+    <script src="{% static 'js/htmx-preserve.js' %}?v=20250807-01"></script>
 
     <!-- HTMX Enhanced Utilities -->
-    <script src="{% static 'js/htmx-utilities.js' %}?v=20250801-1000"></script>
+    <script src="{% static 'js/htmx-utilities.js' %}?v=20250807-01"></script>
 
     <!-- Tab and Button Preservation System -->
-    <script src="{% static 'js/tab-preservation.js' %}?v=20250801-1000"></script>
+    <script src="{% static 'js/tab-preservation.js' %}?v=20250807-01"></script>
 
     <!-- Global Floating Elements Z-Index Fix -->
     <style>
@@ -226,6 +226,38 @@
 
         #floating-compare-widget {
             z-index: 9997 !important;
+        }
+
+        /* Toast notification animations */
+        .animate-slide-in-right {
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Auto-remove toast notifications */
+        [id$="-toast"] {
+            animation: slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 4.7s forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
         }
 
         /* Ensure modals have proper z-index hierarchy */
@@ -285,6 +317,40 @@
         // Ensure floating elements are visible on page load
         document.addEventListener('DOMContentLoaded', function() {
             ensureFloatingElementsVisible();
+
+            // Auto-remove toast notifications
+            const autoRemoveToasts = () => {
+                const toasts = document.querySelectorAll('[id$="-toast"]');
+                toasts.forEach(toast => {
+                    setTimeout(() => {
+                        if (toast && toast.parentNode) {
+                            toast.remove();
+                        }
+                    }, 5000);
+                });
+            };
+
+            // Watch for new toasts added via HTMX
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1 && node.id && node.id.endsWith('-toast')) {
+                            setTimeout(() => {
+                                if (node && node.parentNode) {
+                                    node.remove();
+                                }
+                            }, 5000);
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            autoRemoveToasts();
         });
 
         // Re-ensure visibility after any HTMX swaps
@@ -693,7 +759,7 @@
                                     <a href="{% url 'core:car_list' %}" class="nav-link-harrier {% if 'car' in request.resolver_match.url_name %}active{% endif %}">CARS <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300 group-hover:rotate-180"></i></a>
                                     <div class="absolute top-full left-0 bg-white/95 backdrop-blur-md shadow-2xl rounded-xl py-3 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border border-gray-200/50 overflow-hidden">
                                         <a href="{% url 'core:car_list' %}" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">All Cars</a>
-                                        <a href="{% url 'core:car_list' %}?condition=new" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">New Cars</a>
+                                        <a href="{% url 'core:car_list' %}?condition=new" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">Fresh Imports</a>
                                         <a href="{% url 'core:car_list' %}?condition=used" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">Used Cars</a>
                                         <a href="{% url 'core:car_list' %}?status=featured" class="block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 font-medium">Featured Cars</a>
                                     </div>
@@ -903,60 +969,200 @@
 
             
 
-            <!-- Main Footer Content -->
-            <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-red-900 text-white py-16">
-                <div class="container mx-auto px-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <!-- Company Info -->
-                        <div class="lg:col-span-1">
-                            <div class="flex items-center mb-6">
-                                <img src="{% static 'images/logos.png' %}" alt="Gurumisha Motors" class="logo-footer h-1 sm:h-4 md:h-1 w-auto brightness-110 filter transition-all duration-300 hover:scale-105">
-                            </div>
-                            <p class="text-gray-300 mb-6 leading-relaxed">Your trusted automotive marketplace for buying, selling, and importing quality vehicles. We connect car enthusiasts with their dream cars.</p>
+            <!-- Main Footer Content with Premium Gradient Design -->
+            <div class="relative bg-gradient-to-br from-gray-900 via-black to-red-900 text-white py-20 overflow-hidden">
+                <!-- Enhanced Background Effects -->
+                <div class="absolute inset-0">
+                    <!-- Gradient Overlay for Depth -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-red-900/20 via-transparent to-red-900/20"></div>
 
-                            <!-- Social Media -->
-                            <div class="flex space-x-3 mb-6">
-                                <a href="#" class="w-12 h-12 social-link facebook rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-                                    <i class="fab fa-facebook-f text-white"></i>
-                                </a>
-                                <a href="#" class="w-12 h-12 social-link twitter rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-                                    <i class="fab fa-twitter text-white"></i>
-                                </a>
-                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-                                    <i class="fab fa-instagram text-white"></i>
-                                </a>
-                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-gray-700 to-black rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-                                    <i class="fab fa-tiktok text-white"></i>
-                                </a>
-                                <a href="#" class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-                                    <i class="fab fa-youtube text-white"></i>
-                                </a>
+                    <!-- Dynamic Accent Lines -->
+                    <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50"></div>
+                    <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-600 to-transparent opacity-40"></div>
+
+                    <!-- Enhanced Floating Elements -->
+                    <div class="absolute top-16 right-16 w-40 h-40 bg-gradient-to-br from-red-600/10 to-red-800/5 rounded-full blur-3xl animate-pulse"></div>
+                    <div class="absolute bottom-24 left-16 w-56 h-56 bg-gradient-to-br from-red-800/8 to-black/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-br from-red-900/5 to-transparent rounded-full blur-3xl animate-pulse delay-2000"></div>
+
+                    <!-- Sophisticated Grid Pattern -->
+                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, rgba(220,38,38,0.3) 1px, transparent 0); background-size: 24px 24px;"></div>
+
+                    <!-- Diagonal Accent Stripes -->
+                    <div class="absolute inset-0 opacity-5" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(220,38,38,0.1) 35px, rgba(220,38,38,0.1) 36px);"></div>
+                </div>
+
+                <!-- Main Content Container -->
+                <div class="relative z-10 container mx-auto px-4">
+                    <!-- Section Header -->
+                    <div class="text-center mb-16">
+                        <h2 class="text-3xl md:text-4xl font-bold font-montserrat mb-4">
+                            <span class="text-white">Connect with</span>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700"> Gurumisha</span>
+                        </h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto rounded-full"></div>
+                    </div>
+
+                    <!-- Footer Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                        <!-- Company Info with Enhanced Design -->
+                        <div class="lg:col-span-1">
+                            <!-- Premium Footer Logo Container with Gradient Enhancement -->
+                            <div class="mb-8 group">
+                                <div class="relative p-8 rounded-3xl bg-gradient-to-br from-gray-800/60 via-gray-900/70 to-black/80 backdrop-blur-lg border border-gray-700/40 hover:border-red-500/50 transition-all duration-700 shadow-2xl hover:shadow-red-900/20">
+                                    <!-- Enhanced Logo Background Effects -->
+                                    <div class="absolute inset-0 bg-gradient-to-br from-red-600/15 via-red-700/10 to-red-800/15 rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+                                    <div class="absolute inset-0 bg-gradient-to-r from-red-600/8 to-red-800/8 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-1000"></div>
+
+                                    <!-- Gradient Border Glow -->
+                                    <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-500/20 via-transparent to-red-700/20 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm"></div>
+
+                                    <!-- Enhanced Logo and Brand Container -->
+                                    <div class="relative z-10 flex items-center justify-center">
+                                        <div class="relative">
+                                            <!-- Multi-layered Animated Rings -->
+                                            <div class="absolute inset-0 w-28 h-28 border-2 border-gradient-to-r from-red-500/30 to-red-700/30 rounded-full animate-spin-slow opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                            <div class="absolute inset-0 w-32 h-32 border border-red-600/20 rounded-full animate-spin-slow opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animation-delay-500"></div>
+
+                                            <!-- Logo Background Glow -->
+                                            <div class="absolute inset-0 w-24 h-24 bg-gradient-to-br from-red-500/20 to-red-700/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+
+                                            <!-- Main Logo with Enhanced Effects -->
+                                            <img src="{% static 'images/log.png' %}"
+                                                 alt="Gurumisha Motors"
+                                                 class="relative z-10 h-18 sm:h-20 md:h-22 lg:h-24 xl:h-28 w-auto
+                                                        brightness-130 contrast-115 saturate-120
+                                                        filter drop-shadow-[0_8px_32px_rgba(0,0,0,0.4)]
+                                                        transition-all duration-700 ease-out
+                                                        group-hover:scale-115 group-hover:brightness-150
+                                                        group-hover:drop-shadow-[0_0_40px_rgba(220,38,38,0.6)]
+                                                        group-hover:saturate-150
+                                                        transform-gpu">
+                                        </div>
+                                    </div>
+
+                                    <!-- Enhanced Brand Text with Gradient -->
+                                    <div class="text-center mt-6">
+                                        <h3 class="text-2xl font-bold font-montserrat mb-2 transition-all duration-500">
+                                            <span class="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-red-300 group-hover:via-white group-hover:to-red-300">
+                                                Gurumisha Motors
+                                            </span>
+                                        </h3>
+                                        <p class="text-sm text-gray-300 font-raleway group-hover:text-gray-200 transition-colors duration-500">
+                                            Kenya's Premier Automotive Marketplace
+                                        </p>
+                                        <div class="w-16 h-0.5 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Description with Gradient Styling -->
+                            <div class="mb-8">
+                                <div class="relative p-6 rounded-xl bg-gradient-to-br from-gray-800/30 to-gray-900/40 backdrop-blur-sm border border-gray-700/30">
+                                    <p class="text-gray-200 leading-relaxed text-lg font-raleway">
+                                        Your trusted automotive marketplace for buying, selling, and importing quality vehicles.
+                                        <span class="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent font-semibold">
+                                            We connect car enthusiasts with their dream cars.
+                                        </span>
+                                    </p>
+                                    <!-- Decorative accent -->
+                                    <div class="absolute bottom-0 left-6 w-12 h-0.5 bg-gradient-to-r from-red-600 to-red-800 rounded-full"></div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Social Media Section -->
+                            <div class="space-y-4">
+                                <h4 class="text-lg font-semibold text-white font-montserrat mb-4">
+                                    <i class="fas fa-share-alt mr-2 text-red-500"></i>Follow Us
+                                </h4>
+                                <div class="flex flex-wrap gap-3">
+                                    <a href="#" class="group relative w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-3 transition-all duration-300 shadow-lg hover:shadow-blue-500/25">
+                                        <i class="fab fa-facebook-f text-white text-lg group-hover:scale-110 transition-transform duration-300"></i>
+                                        <div class="absolute inset-0 bg-blue-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </a>
+                                    <a href="#" class="group relative w-14 h-14 bg-gradient-to-br from-sky-500 to-sky-600 rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-3 transition-all duration-300 shadow-lg hover:shadow-sky-500/25">
+                                        <i class="fab fa-twitter text-white text-lg group-hover:scale-110 transition-transform duration-300"></i>
+                                        <div class="absolute inset-0 bg-sky-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </a>
+                                    <a href="#" class="group relative w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-3 transition-all duration-300 shadow-lg hover:shadow-pink-500/25">
+                                        <i class="fab fa-instagram text-white text-lg group-hover:scale-110 transition-transform duration-300"></i>
+                                        <div class="absolute inset-0 bg-pink-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </a>
+                                    <a href="#" class="group relative w-14 h-14 bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-3 transition-all duration-300 shadow-lg hover:shadow-gray-500/25">
+                                        <i class="fab fa-tiktok text-white text-lg group-hover:scale-110 transition-transform duration-300"></i>
+                                        <div class="absolute inset-0 bg-gray-600/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </a>
+                                    <a href="#" class="group relative w-14 h-14 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-3 transition-all duration-300 shadow-lg hover:shadow-red-500/25">
+                                        <i class="fab fa-youtube text-white text-lg group-hover:scale-110 transition-transform duration-300"></i>
+                                        <div class="absolute inset-0 bg-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </a>
+                                    <a href="https://wa.me/254720557457" class="group relative w-14 h-14 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-3 transition-all duration-300 shadow-lg hover:shadow-green-500/25">
+                                        <i class="fab fa-whatsapp text-white text-lg group-hover:scale-110 transition-transform duration-300"></i>
+                                        <div class="absolute inset-0 bg-green-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Quick Links -->
-                        <div>
-                            <h4 class="text-lg font-heading font-bold mb-6 text-primary-red uppercase tracking-wide" style="font-family: 'Saira Condensed', sans-serif;">Quick Links</h4>
-                            <ul class="space-y-3">
-                                <li><a href="{% url 'core:car_list' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
-                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Browse Cars
-                                </a></li>
-                                <li><a href="{% url 'core:spare_parts' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
-                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Spare Parts
-                                </a></li>
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
-                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Import Car
-                                </a></li>
-                                <li><a href="#" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
-                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Sell Your Car
-                                </a></li>
-                                <li><a href="{% url 'core:resources' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
-                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> Resources
-                                </a></li>
-                                <li><a href="{% url 'core:about_us' %}" class="text-gray-300 hover:text-primary-red transition-colors flex items-center group">
-                                    <i class="fas fa-chevron-right mr-3 text-xs text-primary-red group-hover:translate-x-1 transition-transform"></i> About Us
-                                </a></li>
-                            </ul>
+                        <!-- Enhanced Quick Links -->
+                        <div class="space-y-6">
+                            <div class="relative">
+                                <h4 class="text-xl font-bold text-white font-montserrat mb-6 relative">
+                                    <i class="fas fa-link mr-3 text-red-500"></i>Quick Links
+                                    <div class="absolute bottom-0 left-0 w-16 h-0.5 bg-gradient-to-r from-red-600 to-red-800 rounded-full"></div>
+                                </h4>
+                            </div>
+
+                            <div class="space-y-2">
+                                <a href="{% url 'core:car_list' %}" class="group flex items-center p-3 rounded-lg hover:bg-gray-900/50 transition-all duration-300 border border-transparent hover:border-red-600/20">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-car text-white text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-300 group-hover:text-white transition-colors duration-300 font-medium">Browse Cars</span>
+                                    <i class="fas fa-arrow-right ml-auto text-red-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                                </a>
+
+                                <a href="{% url 'core:spare_parts' %}" class="group flex items-center p-3 rounded-lg hover:bg-gray-900/50 transition-all duration-300 border border-transparent hover:border-red-600/20">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-cog text-white text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-300 group-hover:text-white transition-colors duration-300 font-medium">Spare Parts</span>
+                                    <i class="fas fa-arrow-right ml-auto text-red-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                                </a>
+
+                                <a href="#" class="group flex items-center p-3 rounded-lg hover:bg-gray-900/50 transition-all duration-300 border border-transparent hover:border-red-600/20">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-ship text-white text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-300 group-hover:text-white transition-colors duration-300 font-medium">Import Car</span>
+                                    <i class="fas fa-arrow-right ml-auto text-red-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                                </a>
+
+                                <a href="#" class="group flex items-center p-3 rounded-lg hover:bg-gray-900/50 transition-all duration-300 border border-transparent hover:border-red-600/20">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-handshake text-white text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-300 group-hover:text-white transition-colors duration-300 font-medium">Sell Your Car</span>
+                                    <i class="fas fa-arrow-right ml-auto text-red-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                                </a>
+
+                                <a href="{% url 'core:resources' %}" class="group flex items-center p-3 rounded-lg hover:bg-gray-900/50 transition-all duration-300 border border-transparent hover:border-red-600/20">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-book text-white text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-300 group-hover:text-white transition-colors duration-300 font-medium">Resources</span>
+                                    <i class="fas fa-arrow-right ml-auto text-red-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                                </a>
+
+                                <a href="{% url 'core:about_us' %}" class="group flex items-center p-3 rounded-lg hover:bg-gray-900/50 transition-all duration-300 border border-transparent hover:border-red-600/20">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                                        <i class="fas fa-info-circle text-white text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-300 group-hover:text-white transition-colors duration-300 font-medium">About Us</span>
+                                    <i class="fas fa-arrow-right ml-auto text-red-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Customer Service -->
@@ -1093,6 +1299,51 @@
             font-weight: 400;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Enhanced Footer Animations */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+
+        .animate-spin-slow {
+            animation: spin-slow 8s linear infinite;
+        }
+
+        .animation-delay-500 {
+            animation-delay: 0.5s;
+        }
+
+        .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient-shift 6s ease-in-out infinite;
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        /* Footer Background Pattern */
+        .bg-pattern {
+            background-image:
+                radial-gradient(circle at 25% 25%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(220, 38, 38, 0.05) 0%, transparent 50%);
+        }
+
+        /* Enhanced Gradient Borders */
+        .border-gradient-to-r {
+            border-image: linear-gradient(to right, rgba(239, 68, 68, 0.3), rgba(185, 28, 28, 0.3)) 1;
         }
 
         h1, h2, h3, h4, h5, h6 {

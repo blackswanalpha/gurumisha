@@ -217,7 +217,7 @@
                         hx-target="#users-table-container"
                         hx-trigger="keyup changed delay:500ms"
                         hx-include="[name='role'], [name='status']"
-                        hx-indicator="#loading-indicator">
+                        hx-indicator="#users-loading-indicator">
                     <i class="fas fa-search search-icon"></i>
                 </div>
             </div>
@@ -261,7 +261,7 @@
                 hx-get="{% url 'core:admin_users_search' %}"
                 hx-target="#users-table-container"
                 hx-include="[name='search'], [name='status']"
-                hx-indicator="#loading-indicator">
+                hx-indicator="#users-loading-indicator">
                 <option value="all">All Roles</option>
                 <option value="customer" {% if current_role_filter == 'customer' %}selected{% endif %}>Customers</option>
                 <option value="vendor" {% if current_role_filter == 'vendor' %}selected{% endif %}>Vendors</option>
@@ -274,7 +274,7 @@
                 hx-get="{% url 'core:admin_users_search' %}"
                 hx-target="#users-table-container"
                 hx-include="[name='search'], [name='role']"
-                hx-indicator="#loading-indicator">
+                hx-indicator="#users-loading-indicator">
                 <option value="all">All Status</option>
                 <option value="active" {% if current_status_filter == 'active' %}selected{% endif %}>Active</option>
                 <option value="inactive" {% if current_status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
@@ -297,6 +297,14 @@
     <!-- Bulk Actions Removed - Simplified interface with profile-only actions -->
 
     <!-- Enhanced Users Table Container -->
+    <!-- Stable Loading Indicator for Users Table -->
+    <div id="users-loading-indicator" class="htmx-indicator" aria-live="polite" style="display:none">
+        <div class="flex justify-center items-center py-4">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+            <span class="ml-2 text-gray-600">Loading...</span>
+        </div>
+    </div>
+
     <div class="dashboard-card">
         <div id="users-table-container">
             {% include 'core/dashboard/partials/admin_users_table.html' %}

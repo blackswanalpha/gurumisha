@@ -102,15 +102,83 @@
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="form-group">
-                                <label for="id_brand" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
+                                <label for="id_make" class="block text-sm font-semibold text-harrier-dark mb-2 font-montserrat">
                                     <i class="fas fa-industry text-harrier-red mr-1"></i>
-                                    Brand *
+                                    Make *
                                 </label>
-                                <select name="brand" id="id_brand" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
-                                    <option value="">Select a brand</option>
-                                    {% for brand in car_brands %}
-                                        <option value="{{ brand.id }}">{{ brand.name }}</option>
-                                    {% endfor %}
+                                <select name="make" id="id_make" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
+                                    <option value="">Select a make</option>
+                                    <option value="acura">Acura</option>
+                                    <option value="alfa_romeo">Alfa Romeo</option>
+                                    <option value="aston_martin">Aston Martin</option>
+                                    <option value="audi">Audi</option>
+                                    <option value="bentley">Bentley</option>
+                                    <option value="bmw">BMW</option>
+                                    <option value="buick">Buick</option>
+                                    <option value="byd">BYD</option>
+                                    <option value="cadillac">Cadillac</option>
+                                    <option value="chery">Chery</option>
+                                    <option value="chevrolet">Chevrolet</option>
+                                    <option value="chrysler">Chrysler</option>
+                                    <option value="citroen">Citroen</option>
+                                    <option value="dacia">Dacia</option>
+                                    <option value="daewoo">Daewoo</option>
+                                    <option value="daihatsu">Daihatsu</option>
+                                    <option value="dodge">Dodge</option>
+                                    <option value="dongfeng">Dongfeng</option>
+                                    <option value="faw">FAW</option>
+                                    <option value="ferrari">Ferrari</option>
+                                    <option value="fiat">Fiat</option>
+                                    <option value="ford">Ford</option>
+                                    <option value="foton">Foton</option>
+                                    <option value="geely">Geely</option>
+                                    <option value="genesis">Genesis</option>
+                                    <option value="gmc">GMC</option>
+                                    <option value="great_wall">Great Wall</option>
+                                    <option value="haval">Haval</option>
+                                    <option value="honda">Honda</option>
+                                    <option value="hummer">Hummer</option>
+                                    <option value="hyundai">Hyundai</option>
+                                    <option value="infiniti">Infiniti</option>
+                                    <option value="isuzu">Isuzu</option>
+                                    <option value="iveco">Iveco</option>
+                                    <option value="jac">JAC</option>
+                                    <option value="jaguar">Jaguar</option>
+                                    <option value="jeep">Jeep</option>
+                                    <option value="kia">Kia</option>
+                                    <option value="lamborghini">Lamborghini</option>
+                                    <option value="lancia">Lancia</option>
+                                    <option value="land_rover">Land Rover</option>
+                                    <option value="lexus">Lexus</option>
+                                    <option value="lincoln">Lincoln</option>
+                                    <option value="mahindra">Mahindra</option>
+                                    <option value="maserati">Maserati</option>
+                                    <option value="mazda">Mazda</option>
+                                    <option value="mclaren">McLaren</option>
+                                    <option value="mercedes">Mercedes-Benz</option>
+                                    <option value="mini">Mini</option>
+                                    <option value="mitsubishi">Mitsubishi</option>
+                                    <option value="nissan">Nissan</option>
+                                    <option value="opel">Opel</option>
+                                    <option value="peugeot">Peugeot</option>
+                                    <option value="porsche">Porsche</option>
+                                    <option value="proton">Proton</option>
+                                    <option value="ram">Ram</option>
+                                    <option value="renault">Renault</option>
+                                    <option value="rolls_royce">Rolls Royce</option>
+                                    <option value="saab">Saab</option>
+                                    <option value="seat">Seat</option>
+                                    <option value="skoda">Skoda</option>
+                                    <option value="smart">Smart</option>
+                                    <option value="ssangyong">SsangYong</option>
+                                    <option value="subaru">Subaru</option>
+                                    <option value="suzuki">Suzuki</option>
+                                    <option value="tata">Tata</option>
+                                    <option value="tesla">Tesla</option>
+                                    <option value="toyota">Toyota</option>
+                                    <option value="volkswagen">Volkswagen</option>
+                                    <option value="volvo">Volvo</option>
+                                    <option value="other">Other</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -120,9 +188,60 @@
                                 </label>
                                 <select name="model" id="id_model" class="enhanced-select w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white font-raleway text-sm">
                                     <option value="">Select a model</option>
-                                    {% for model in car_models %}
-                                        <option value="{{ model.id }}">{{ model.name }}</option>
-                                    {% endfor %}
+                                    <!-- Toyota Models -->
+                                    <option value="4runner">Toyota 4Runner</option>
+                                    <option value="camry">Toyota Camry</option>
+                                    <option value="corolla">Toyota Corolla</option>
+                                    <option value="harrier">Toyota Harrier</option>
+                                    <option value="hilux">Toyota Hilux</option>
+                                    <option value="land_cruiser">Toyota Land Cruiser</option>
+                                    <option value="prius">Toyota Prius</option>
+                                    <option value="rav4">Toyota RAV4</option>
+                                    <option value="vitz">Toyota Vitz</option>
+                                    <!-- Honda Models -->
+                                    <option value="accord">Honda Accord</option>
+                                    <option value="civic">Honda Civic</option>
+                                    <option value="cr_v">Honda CR-V</option>
+                                    <option value="fit">Honda Fit</option>
+                                    <option value="vezel">Honda Vezel</option>
+                                    <!-- BMW Models -->
+                                    <option value="3_series">BMW 3 Series</option>
+                                    <option value="5_series">BMW 5 Series</option>
+                                    <option value="x3">BMW X3</option>
+                                    <option value="x5">BMW X5</option>
+                                    <!-- Mercedes Models -->
+                                    <option value="c_class">Mercedes-Benz C-Class</option>
+                                    <option value="e_class">Mercedes-Benz E-Class</option>
+                                    <option value="ml_class">Mercedes-Benz ML-Class</option>
+                                    <!-- Nissan Models -->
+                                    <option value="altima">Nissan Altima</option>
+                                    <option value="march">Nissan March</option>
+                                    <option value="murano">Nissan Murano</option>
+                                    <option value="note">Nissan Note</option>
+                                    <option value="patrol">Nissan Patrol</option>
+                                    <option value="sentra">Nissan Sentra</option>
+                                    <option value="x_trail">Nissan X-Trail</option>
+                                    <!-- Mazda Models -->
+                                    <option value="axela">Mazda Axela</option>
+                                    <option value="cx_5">Mazda CX-5</option>
+                                    <option value="demio">Mazda Demio</option>
+                                    <!-- Mitsubishi Models -->
+                                    <option value="lancer">Mitsubishi Lancer</option>
+                                    <option value="outlander">Mitsubishi Outlander</option>
+                                    <option value="pajero">Mitsubishi Pajero</option>
+                                    <!-- Subaru Models -->
+                                    <option value="forester">Subaru Forester</option>
+                                    <option value="impreza">Subaru Impreza</option>
+                                    <option value="legacy">Subaru Legacy</option>
+                                    <option value="outback">Subaru Outback</option>
+                                    <!-- Volkswagen Models -->
+                                    <option value="golf">Volkswagen Golf</option>
+                                    <option value="jetta">Volkswagen Jetta</option>
+                                    <option value="passat">Volkswagen Passat</option>
+                                    <option value="polo">Volkswagen Polo</option>
+                                    <option value="tiguan">Volkswagen Tiguan</option>
+                                    <!-- Other Popular Models -->
+                                    <option value="other">Other</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -616,9 +735,9 @@
 </style>
 
 <script>
-// Model field is now independent from brand selection
+// Model field is now independent from make selection
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Car creation modal initialized - Model field is independent from brand');
+    console.log('Car creation modal initialized - Model field is independent from make');
 
     // Ensure form submission works correctly
     const form = document.getElementById('car-creation-form');

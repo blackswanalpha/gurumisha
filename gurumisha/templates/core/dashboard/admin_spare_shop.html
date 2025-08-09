@@ -506,8 +506,8 @@
                         <tr class="hover:bg-gray-50 transition-colors duration-200" data-part-id="{{ part.id }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    {% if part.image %}
-                                        <img src="{{ part.image.url }}" alt="{{ part.name }}" class="w-12 h-12 object-cover rounded-lg border-2 border-gray-200 mr-4">
+                                    {% if part.main_image %}
+                                        <img src="{{ part.main_image.url }}" alt="{{ part.name }}" class="w-12 h-12 object-cover rounded-lg border-2 border-gray-200 mr-4">
                                     {% else %}
                                         <div class="w-12 h-12 bg-gradient-to-br from-amber-200 to-amber-300 rounded-lg flex items-center justify-center mr-4">
                                             <i class="fas fa-cogs text-amber-600 text-lg"></i>

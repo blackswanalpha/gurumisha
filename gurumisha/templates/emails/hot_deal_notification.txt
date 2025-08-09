@@ -19,7 +19,7 @@ You Save: KSh {{ deal.original_price|sub:deal.discounted_price|floatformat:0 }}
 Offer expires on {{ deal.end_date|date:"F d, Y \a\t g:i A" }}
 
 🚗 VEHICLE DETAILS:
-- Brand: {{ deal.car.brand.name }}
+- Make: {{ deal.car.make.name }}
 - Model: {{ deal.car.model.name }}
 - Year: {{ deal.car.year }}
 - Mileage: {{ deal.car.mileage|floatformat:0 }} km

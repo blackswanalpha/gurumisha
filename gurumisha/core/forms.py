@@ -9,7 +9,7 @@ from django.conf import settings
 from .models import (
     User, Vendor, Car, ImportRequest, Inquiry, VerificationCode,
     SparePart, SparePartCategory, Supplier, PurchaseOrder, PurchaseOrderItem,
-    CarBrand, CarModel, VehicleCondition
+    CarMake, CarModel, VehicleCondition
 )
 from .email_notifications import send_verification_code_email
 
@@ -193,10 +193,10 @@ class SellCarForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Create independent hardcoded choice fields
-        # Brand selector with comprehensive brand list (72 brands)
-        self.fields['brand'] = forms.ChoiceField(
+        # Make selector with comprehensive make list (72 makes)
+        self.fields['make'] = forms.ChoiceField(
             choices=[
-                ('', 'Select a brand'),
+                ('', 'Select a make'),
                 ('acura', 'Acura'),
                 ('alfa_romeo', 'Alfa Romeo'),
                 ('aston_martin', 'Aston Martin'),
@@ -1245,7 +1245,7 @@ class SellCarForm(forms.ModelForm):
         )
 
         # Remove HTMX attributes since we're using independent selectors
-        # No dynamic loading needed for independent brand/model selection
+        # No dynamic loading needed for independent make/model selection
 
         # Add country choices with Kenya at top and East African countries prominently featured
         self.fields['country'].choices = [
@@ -1592,10 +1592,10 @@ class SellCarForm(forms.ModelForm):
         instance = super().save(commit=False)
 
         # Since we're using independent hardcoded choices, always save as strings
-        brand_value = self.cleaned_data.get('brand')
-        if brand_value:
-            instance.brand_name = brand_value
-            instance.brand = None
+        make_value = self.cleaned_data.get('make')
+        if make_value:
+            instance.make_name = make_value
+            instance.make = None
 
         model_value = self.cleaned_data.get('model')
         if model_value:
@@ -1612,16 +1612,125 @@ class SellCarForm(forms.ModelForm):
         return instance
 
 
+
+class SellCarDBForm(forms.ModelForm):
+    """DB-backed Sell Car form using ModelChoiceFields with HTMX-friendly widgets."""
+    make = forms.ModelChoiceField(
+        queryset=CarMake.objects.filter(is_active=True).order_by('name'),
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+            'hx-get': '',  # set in template or via JS
+        })
+    )
+    model = forms.ModelChoiceField(
+        queryset=CarModel.objects.none(),
+        required=True,
+        widget=forms.Select(attrs={
+            'id': 'sell-model-options',
+            'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Dynamically filter models by selected make (POST-back or initial)
+        make_id = None
+        try:
+            if self.data.get('make'):
+                make_id = int(self.data.get('make')) if str(self.data.get('make')).isdigit() else None
+            elif self.initial.get('make'):
+                make_id = self.initial.get('make').id if hasattr(self.initial.get('make'), 'id') else self.initial.get('make')
+        except Exception:
+            make_id = None
+
+        if make_id:
+            self.fields['model'].queryset = CarModel.objects.filter(make_id=make_id, is_active=True).order_by('name')
+        else:
+            self.fields['model'].queryset = CarModel.objects.filter(is_active=True).order_by('make__name', 'name')
+
+        # Common widget styling for consistency
+        self.fields['year'].widget = forms.NumberInput(attrs={
+            'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+            'min': '1990',
+            'max': '2025',
+            'placeholder': 'e.g., 2020'
+        })
+        self.fields['engine_size'].widget = forms.TextInput(attrs={
+            'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base',
+            'placeholder': 'e.g., 2.0L, 1800cc, 2500cc'
+        })
+        self.fields['fuel_type'].widget = forms.Select(attrs={'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'})
+        self.fields['transmission'].widget = forms.Select(attrs={'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'})
+        self.fields['mileage'].widget = forms.NumberInput(attrs={'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'})
+        self.fields['color'].widget = forms.TextInput(attrs={'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'})
+        self.fields['price'].widget = forms.NumberInput(attrs={'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base', 'step': '0.01'})
+        self.fields['title'].widget = forms.TextInput(attrs={'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'})
+        self.fields['description'].widget = forms.Textarea(attrs={'class': 'enhanced-textarea w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base', 'rows': 5})
+        self.fields['features'].widget = forms.Textarea(attrs={'class': 'enhanced-textarea w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base', 'rows': 3})
+        self.fields['listing_type'].widget = forms.Select(attrs={'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-harrier-red focus:border-harrier-red transition-all duration-300 bg-white/80 backdrop-blur-sm font-raleway text-base'})
+        self.fields['negotiable'].widget = forms.CheckboxInput(attrs={'class': 'w-4 h-4 text-harrier-red bg-gray-100 border-gray-300 rounded focus:ring-harrier-red focus:ring-2'})
+        self.fields['area'].widget = forms.TextInput(attrs={'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl'})
+        self.fields['city'].widget = forms.TextInput(attrs={'class': 'enhanced-input w-full px-6 py-4 border-2 border-gray-200 rounded-2xl'})
+        self.fields['country'].widget = forms.Select(attrs={'class': 'enhanced-select w-full px-6 py-4 border-2 border-gray-200 rounded-2xl'})
+
+    def save_images(self, car, image_files, captions=None, is_primary_list=None):
+        # Reuse same implementation style as SellCarForm
+        from .models import CarImage
+        try:
+            from .utils.image_optimization import validate_car_image
+        except ImportError:
+            def validate_car_image(image_file):
+                return True, None
+
+        if not image_files:
+            return []
+
+        created_images = []
+        captions = captions or []
+        is_primary_list = is_primary_list or []
+
+        primary_count = sum(1 for is_primary in is_primary_list if is_primary)
+        if primary_count != 1:
+            is_primary_list = [i == 0 for i in range(len(image_files))]
+
+        for i, image_file in enumerate(image_files):
+            try:
+                is_valid, error_msg = validate_car_image(image_file)
+                if not is_valid:
+                    continue
+                car_image = CarImage.objects.create(
+                    car=car,
+                    image=image_file,
+                    caption=captions[i] if i < len(captions) else '',
+                    order=i + 1,
+                    is_primary=is_primary_list[i] if i < len(is_primary_list) else False
+                )
+                created_images.append(car_image)
+            except Exception as e:
+                print(f"Error saving image {i}: {str(e)}")
+                continue
+        return created_images
+
+    class Meta:
+        model = Car
+        fields = [
+            'make', 'model',
+            'year', 'engine_size', 'fuel_type', 'transmission', 'mileage',
+            'color', 'price', 'title', 'description', 'features',
+            'listing_type', 'negotiable', 'area', 'city', 'country'
+        ]
+
 class ImportRequestForm(forms.ModelForm):
     """Form for car import requests"""
     class Meta:
         model = ImportRequest
         fields = [
-            'brand', 'model', 'year', 'preferred_color', 'origin_country',
+            'make', 'model', 'year', 'preferred_color', 'origin_country',
             'budget_min', 'budget_max', 'special_requirements'
         ]
         widgets = {
-            'brand': forms.TextInput(attrs={
+            'make': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent transition-all duration-200',
                 'placeholder': 'e.g., Toyota, Honda, BMW'
             }),
@@ -2102,7 +2211,7 @@ class SparePartForm(forms.ModelForm):
             'description', 'specifications', 'condition', 'unit', 'price', 'cost_price',
             'discount_price', 'stock_quantity', 'minimum_stock', 'maximum_stock',
             'reorder_point', 'reorder_quantity', 'warehouse_location', 'storage_conditions',
-            'weight', 'dimensions', 'year_from', 'year_to', 'compatible_brands',
+            'weight', 'dimensions', 'year_from', 'year_to', 'compatible_makes',
             'compatible_models', 'main_image', 'is_available', 'is_featured'
         ]
 
@@ -2193,7 +2302,7 @@ class SparePartForm(forms.ModelForm):
                 'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-harrier-red focus:border-transparent',
                 'placeholder': 'Compatible to year'
             }),
-            'compatible_brands': forms.CheckboxSelectMultiple(attrs={
+            'compatible_makes': forms.CheckboxSelectMultiple(attrs={
                 'class': 'grid grid-cols-2 gap-2'
             }),
             'compatible_models': forms.CheckboxSelectMultiple(attrs={

@@ -319,11 +319,15 @@
                                         CATEGORY
                                     </label>
                                     <div class="relative">
-                                        <select name="category" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/90 backdrop-blur-sm text-sm appearance-none cursor-pointer">
+                                        <select name="category" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/90 backdrop-blur-sm text-sm appearance-none cursor-pointer"
+                                                hx-get="{% url 'core:htmx_subcategories_by_category' %}"
+                                                hx-target="#subcategory-options"
+                                                hx-trigger="change"
+                                                hx-include="[name='category']">
                                             <option value="">All Categories</option>
                                             {% for category in categories %}
-                                                <option value="{{ category }}" {% if request.GET.category == category %}selected{% endif %}>
-                                                    {{ category }}
+                                                <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                                                    {{ category.name }}
                                                 </option>
                                             {% endfor %}
                                         </select>
@@ -332,6 +336,38 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Subcategory Selector (dynamic via HTMX) -->
+                                <div class="space-y-3 relative group">
+                                    <label class="block text-sm font-bold text-harrier-dark mb-3 flex items-center">
+                                        <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mr-2">
+                                            <i class="fas fa-sitemap text-white text-xs"></i>
+                                        </div>
+                                        SUBCATEGORY
+                                    </label>
+                                    <div class="relative">
+                                        <select name="subcategory" id="subcategory-options" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white/90 backdrop-blur-sm text-sm appearance-none cursor-pointer">
+                                            <option value="">All Subcategories</option>
+                                        </select>
+                                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                  const categorySelect = document.querySelector("select[name='category']");
+                                  const subcategorySelect = document.getElementById('subcategory-options');
+                                  if (categorySelect && categorySelect.value) {
+                                    const url = "{% url 'core:htmx_subcategories_by_category' %}?category=" + encodeURIComponent(categorySelect.value) + "&subcategory=" + encodeURIComponent("{{ request.GET.subcategory|default:'' }}");
+                                    fetch(url, { headers: { 'HX-Request': 'true' } })
+                                      .then(r => r.text())
+                                      .then(html => { subcategorySelect.innerHTML = html; })
+                                      .catch(() => {});
+                                  }
+                                });
+                                </script>
 
                                 <!-- Brand Selector -->
                                 <div class="space-y-3 relative group">

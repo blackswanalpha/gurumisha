@@ -19,7 +19,11 @@
             this.buttonStates = new Map();
             this.modalOperationInProgress = false;
             this.protectedButtons = new Set();
-            this.init();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.init(), { once: true });
+            } else {
+                this.init();
+            }
         }
 
         init() {
@@ -40,17 +44,22 @@
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node && node.nodeType === Node.ELEMENT_NODE) {
                             this.protectModalButtonsInElement(node);
                         }
                     });
                 });
             });
 
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+            const root = document && document.body ? document.body : null;
+            if (root) {
+                observer.observe(root, {
+                    childList: true,
+                    subtree: true
+                });
+            } else {
+                console.warn('ModalButtonPersistence: document.body not available for MutationObserver');
+            }
         }
 
         /**
@@ -222,20 +231,24 @@
         setupHTMXInterception() {
             // Intercept HTMX before swap to preserve buttons
             document.addEventListener('htmx:beforeSwap', (event) => {
-                const target = event.detail.target;
-                
+                const target = event.detail && event.detail.target;
+                if (!target) return;
+                const canClosest = typeof target.closest === 'function';
+
                 // If swapping table content, preserve button states
-                if (target.id === 'tracking-table-content' || target.closest('#tracking-table-content')) {
+                if (target.id === 'tracking-table-content' || (canClosest && target.closest('#tracking-table-content'))) {
                     this.preserveButtonStatesBeforeSwap(target);
                 }
             });
 
             // Restore buttons after swap
             document.addEventListener('htmx:afterSwap', (event) => {
-                const target = event.detail.target;
-                
+                const target = event.detail && event.detail.target;
+                if (!target) return;
+                const canClosest = typeof target.closest === 'function';
+
                 // If table content was swapped, restore and protect buttons
-                if (target.id === 'tracking-table-content' || target.closest('#tracking-table-content')) {
+                if (target.id === 'tracking-table-content' || (canClosest && target.closest('#tracking-table-content'))) {
                     setTimeout(() => {
                         this.restoreButtonStatesAfterSwap(target);
                         this.protectModalButtonsInElement(target);

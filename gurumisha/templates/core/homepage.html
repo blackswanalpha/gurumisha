@@ -329,16 +329,82 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="brand" class="block text-sm font-semibold text-gray-700 mb-2">Brand</label>
-                                    <select name="brand" id="brand" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
-                                            hx-get="{% url 'core:htmx_models_by_brand' %}"
+                                    <label for="make" class="block text-sm font-semibold text-gray-700 mb-2">Make</label>
+                                    <select name="make" id="make" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                                            hx-get="{% url 'core:htmx_models_by_make' %}?context=homepage"
                                             hx-target="#model-options"
-                                            hx-include="[name='brand']">
-                                        <option value="">Select Brand</option>
-                                        {% for brand in car_brands %}
-                                            <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                            hx-trigger="change"
+                                            hx-params="not model">
+                                        <option value="">Select Make</option>
+                                        {% for make in car_makes %}
+                                            <option value="{{ make.id }}">{{ make.name }}</option>
                                         {% endfor %}
                                     </select>
+
+<script>
+  // Homepage Make->Model: loading UX + auto-trigger on initial load
+  (function() {
+    const init = function() {
+      const makeSelect = document.getElementById('make');
+      const modelSelect = document.getElementById('model-options');
+      if (!makeSelect || !modelSelect) return;
+
+      // 1) Show "Loading…" while fetching models and disable the model select
+      document.addEventListener('htmx:beforeRequest', function(e) {
+        if (e.detail && e.detail.elt === makeSelect) {
+          try {
+            modelSelect.disabled = true;
+            modelSelect.innerHTML = '<option disabled selected>Loading…</option>';
+          } catch (_) {}
+        }
+      });
+
+      // 2) Re-enable model select after swap into #model-options and clear transient hx-vals
+      document.addEventListener('htmx:afterSwap', function(e) {
+        if (e.detail && e.detail.target && e.detail.target.id === 'model-options') {
+          try { modelSelect.disabled = false; } catch (_) {}
+          // Clear transient hx-vals after first successful fetch
+          if (makeSelect.hasAttribute('hx-vals')) {
+            makeSelect.removeAttribute('hx-vals');
+          }
+        }
+      });
+
+      // 3) Auto-trigger on initial page load when URL contains ?make=... (& model)
+      const params = new URLSearchParams(window.location.search);
+      const makeParam = params.get('make');
+      const modelParam = params.get('model');
+
+      if (makeParam) {
+        // Only set value if it exists in options
+        const opt = Array.from(makeSelect.options).find(o => o.value === makeParam);
+        if (opt) {
+          makeSelect.value = makeParam;
+          // If model is present, add it via hx-vals to avoid duplicate params
+          if (modelParam) {
+            makeSelect.setAttribute('hx-vals', JSON.stringify({ model: modelParam }));
+          }
+          // Trigger htmx fetch
+          makeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    };
+
+    // Wait for HTMX to be ready (provided by htmx-config.js), then initialize
+    const start = function() {
+      if (window.waitForHTMX) {
+        window.waitForHTMX(init);
+      } else if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+      } else {
+        init();
+      }
+    };
+
+    start();
+  })();
+</script>
+
                                 </div>
                             </div>
 
@@ -346,7 +412,7 @@
                                 <div class="form-group">
                                     <label for="model" class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
                                     <select name="model" id="model-options" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
-                                        <option value="">Select Brand First</option>
+                                        <option value="">Select Make First</option>
                                     </select>
                                 </div>
 
@@ -742,19 +808,21 @@
                 <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform duration-300"></i>EXPLORE ALL CARS
             </a>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="featured-cars">
             {% for car in featured_cars %}
                 {% load promotion_tags %}
                 <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 group border border-gray-200/50 hover:scale-105 hover:-translate-y-2 overflow-hidden animate-scale-in hover-lift" style="animation-delay: {{ forloop.counter0|add:1 }}00ms;">
                     <div class="relative overflow-hidden">
-                        {% if car.main_image %}
-                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500">
-                        {% else %}
-                            <div class="w-full h-64 bg-gradient-to-br from-red-600 to-gray-900 flex items-center justify-center">
-                                <i class="fas fa-car text-white text-5xl"></i>
-                            </div>
-                        {% endif %}
+                        {% with car.get_display_image as display_image %}
+                            {% if display_image %}
+                                <img src="{{ display_image.url }}" alt="{{ car.title }}" class="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500">
+                            {% else %}
+                                <div class="w-full h-64 bg-gradient-to-br from-red-600 to-gray-900 flex items-center justify-center">
+                                    <i class="fas fa-car text-white text-5xl"></i>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
 
                         <!-- Enhanced Promotion Badges -->
                         {% promotion_badge car %}
@@ -787,8 +855,8 @@
                     </div>
 
                     <div class="p-6">
-                        <!-- Brand -->
-                        <div class="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 font-montserrat">{{ car.brand.name }}</div>
+                        <!-- Make -->
+                        <div class="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 font-montserrat">{{ car.make.name }}</div>
 
                         <!-- Title -->
                         <h3 class="text-xl font-bold text-gray-900 mb-3 font-montserrat group-hover:text-red-600 transition-colors duration-300">{{ car.title }}</h3>
@@ -876,11 +944,11 @@
                 </div>
                 <h2 class="text-4xl md:text-5xl font-montserrat font-bold text-gray-900">
                     TRUSTED
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">BRANDS</span>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">MAKES</span>
                 </h2>
             </div>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway animate-fade-in-up animate-delay-400">
-                We work with the world's leading automotive brands to bring you quality and reliability
+                We work with the world's leading automotive makes to bring you quality and reliability
             </p>
             <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
@@ -959,14 +1027,14 @@
                     <i class="icon fas fa-shield-alt text-white text-2xl group-hover:rotate-12 transition-transform duration-300"></i>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2 group-hover:text-red-600 transition-colors duration-300">100%</div>
-                <div class="text-gray-600 text-base font-raleway">Verified Brands</div>
+                <div class="text-gray-600 text-base font-raleway">Verified Makes</div>
             </div>
             <div class="trust-indicator group">
                 <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
                     <i class="icon fas fa-star text-white text-2xl"></i>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 font-montserrat mb-2">8+</div>
-                <div class="text-gray-600 text-base font-raleway">Premium Brands</div>
+                <div class="text-gray-600 text-base font-raleway">Premium Makes</div>
             </div>
             <div class="trust-indicator group">
                 <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 group-hover:shadow-red-500/30 transition-all duration-500">
@@ -1069,10 +1137,11 @@
 </section>
 
 <!-- Get Valuation Modal -->
-<div id="valuation-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 overflow-hidden">
-            <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white">
+<div id="valuation-modal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden overflow-y-auto">
+    <div class="flex items-start justify-center min-h-screen p-4 py-8">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 overflow-hidden max-h-[90vh] flex flex-col">
+            <!-- Fixed Header -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white flex-shrink-0">
                 <div class="flex justify-between items-center">
                     <h3 class="text-xl font-montserrat font-bold">Get Car Valuation</h3>
                     <button id="close-valuation-modal" class="text-white hover:text-gray-200 transition-colors">
@@ -1082,27 +1151,62 @@
                 <p class="text-red-100 mt-2 font-raleway">Get an instant estimate of your car's value</p>
             </div>
 
-            <form id="valuation-form" class="p-6 space-y-4" hx-post="/get-valuation/" hx-target="#valuation-result">
-                {% csrf_token %}
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto">
+
+                <form id="valuation-form" class="p-6 space-y-4"
+                      hx-post="{% url 'core:car_valuation' %}"
+                      hx-target="#valuation-result"
+                      hx-indicator="#valuation-loading"
+                      hx-swap="innerHTML"
+                      hx-on::before-request="document.getElementById('valuation-loading').classList.remove('hidden')"
+                      hx-on::after-request="document.getElementById('valuation-loading').classList.add('hidden'); scrollToValuationResult();">
+                    {% csrf_token %}
                 <div>
                     <label class="block text-gray-700 font-medium mb-2 font-montserrat">Car Make</label>
-                    <input type="text" name="make" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                    <select name="make" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter"
+                            hx-get="{% url 'core:htmx_models_by_make' %}?context=valuation"
+                            hx-target="#valuation-model-select"
+                            hx-trigger="change"
+                            hx-include="[name='make']"
+                            hx-params="not model">
+                        <option value="">Select Make</option>
+                        {% for make in car_makes %}
+                            <option value="{{ make.id }}">{{ make.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div>
                     <label class="block text-gray-700 font-medium mb-2 font-montserrat">Model</label>
-                    <input type="text" name="model" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                    <select id="valuation-model-select" name="model" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                        <option value="">Select Model</option>
+                    </select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-gray-700 font-medium mb-2 font-montserrat">Year</label>
-                        <input type="number" name="year" required min="1990" max="2024" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                        <select name="year" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                            <option value="">Select Year</option>
+                            {% for year in year_range %}
+                                <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div>
                         <label class="block text-gray-700 font-medium mb-2 font-montserrat">Mileage (km)</label>
-                        <input type="number" name="mileage" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                        <select name="mileage" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
+                            <option value="">Select Mileage Range</option>
+                            <option value="10000">0 - 10,000 KM</option>
+                            <option value="30000">10,001 - 30,000 KM</option>
+                            <option value="50000">30,001 - 50,000 KM</option>
+                            <option value="80000">50,001 - 80,000 KM</option>
+                            <option value="120000">80,001 - 120,000 KM</option>
+                            <option value="200000">120,001 - 200,000 KM</option>
+                            <option value="300000">200,001+ KM</option>
+                        </select>
                     </div>
                 </div>
 
@@ -1110,19 +1214,28 @@
                     <label class="block text-gray-700 font-medium mb-2 font-montserrat">Condition</label>
                     <select name="condition" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 font-inter">
                         <option value="">Select Condition</option>
-                        <option value="excellent">Excellent</option>
-                        <option value="good">Good</option>
-                        <option value="fair">Fair</option>
-                        <option value="poor">Poor</option>
+                        <option value="excellent">Excellent - Like new, no visible wear</option>
+                        <option value="good">Good - Minor wear, well maintained</option>
+                        <option value="fair">Fair - Some wear, needs minor repairs</option>
+                        <option value="poor">Poor - Significant wear, needs major repairs</option>
                     </select>
                 </div>
 
-                <div id="valuation-result" class="mt-4"></div>
+                <!-- Loading indicator -->
+                <div id="valuation-loading" class="hidden text-center py-4">
+                    <div class="inline-flex items-center">
+                        <i class="fas fa-spinner fa-spin text-red-600 mr-2"></i>
+                        <span class="text-gray-600 font-montserrat">Calculating valuation...</span>
+                    </div>
+                </div>
 
-                <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white font-bold py-3 px-6 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
-                    Get Valuation
-                </button>
-            </form>
+                    <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white font-bold py-3 px-6 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
+                        <i class="fas fa-calculator mr-2"></i>Get Valuation
+                    </button>
+
+                    <div id="valuation-result" class="mt-4"></div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -1179,13 +1292,15 @@
             {% for car in hot_deals %}
                 <a href="{% url 'core:car_detail' car.pk %}" class="block bg-white/95 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 group cursor-pointer transform hover:-translate-y-3 hover:scale-105 border border-gray-200/50 hover:border-red-300 animate-scale-in hover-lift" style="animation-delay: {{ forloop.counter0|add:1 }}00ms;" data-deal-id="{% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% endif %}" onclick="trackHotDealCardClick({{ car.pk }}, {% if car.hot_deal_details %}{{ car.hot_deal_details.id }}{% else %}null{% endif %})">
                     <div class="relative">
-                        {% if car.main_image %}
-                            <img src="{{ car.main_image.url }}" alt="{{ car.title }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
-                        {% else %}
-                            <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-car text-gray-400 text-3xl"></i>
-                            </div>
-                        {% endif %}
+                        {% with car.get_display_image as display_image %}
+                            {% if display_image %}
+                                <img src="{{ display_image.url }}" alt="{{ car.title }}" class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500">
+                            {% else %}
+                                <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-car text-gray-400 text-3xl"></i>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
 
                         <!-- Enhanced Hot Deal Badge -->
                         <div class="absolute top-3 left-3">
@@ -1279,7 +1394,7 @@
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-500">Spare Parts</span>
                 </h2>
             </div>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Quality spare parts for all major car brands. Keep your vehicle running smoothly with our authentic, certified automotive components.</p>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto font-raleway leading-relaxed animate-fade-in-up animate-delay-400">Quality spare parts for all major car makes. Keep your vehicle running smoothly with our authentic, certified automotive components.</p>
             <div class="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto mt-6 rounded-full animate-scale-in animate-delay-600"></div>
         </div>
 
@@ -2278,93 +2393,279 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModalBtn = document.getElementById('close-valuation-modal');
     const valuationForm = document.getElementById('valuation-form');
 
+    // Store original body overflow and scroll position
+    let originalBodyOverflow = '';
+    let originalScrollPosition = 0;
+
+    // Function to prevent body scroll
+    function preventBodyScroll() {
+        try {
+            if (window.setGlobalBodyScrollLock) {
+                window.setGlobalBodyScrollLock('valuation-modal');
+            } else {
+                document.body.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+            }
+            document.dispatchEvent(new CustomEvent('modal:show', { detail: { modalId: 'valuation-modal' } }));
+        } catch (e) { console.warn('Scroll lock (modal open) fallback used:', e); }
+    }
+
+    // Function to restore body scroll
+    function restoreBodyScroll() {
+        try {
+            if (window.restoreGlobalBodyScroll) {
+                window.restoreGlobalBodyScroll('valuation-modal');
+            } else if (window.restoreScroll) {
+                window.restoreScroll();
+            } else {
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
+            }
+            document.dispatchEvent(new CustomEvent('modal:hide', { detail: { modalId: 'valuation-modal' } }));
+        } catch (e) { console.warn('Scroll restore (modal close) fallback used:', e); }
+    }
+
     // Open modal
     if (getValuationBtn) {
         getValuationBtn.addEventListener('click', function(e) {
             e.preventDefault();
             valuationModal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
+            preventBodyScroll();
+
+            // Reset form and result
+            if (valuationForm) {
+                valuationForm.reset();
+                const resultDiv = document.getElementById('valuation-result');
+                if (resultDiv) {
+                    resultDiv.innerHTML = '';
+                }
+
+                // Reset model dropdown to initial state
+                const modelSelect = document.getElementById('valuation-model-select');
+                if (modelSelect) {
+                    modelSelect.innerHTML = '<option value="">Select Model</option>';
+                }
+
+                // Clear any loading states
+                const loadingDiv = document.getElementById('valuation-loading');
+                if (loadingDiv) {
+                    loadingDiv.classList.add('hidden');
+                }
+
+                // Reinitialize HTMX for the form elements to ensure dropdowns work
+                if (typeof htmx !== 'undefined') {
+                    htmx.process(valuationForm);
+
+                    // Auto-trigger Model fetch when preselected make/model exist in URL
+                    (function() {
+                        try {
+                            const params = new URLSearchParams(window.location.search);
+                            const makeParam = params.get('vmake') || params.get('make');
+                            const modelParam = params.get('vmodel') || params.get('model');
+                            const makeSelect = valuationForm.querySelector("select[name='make']");
+                            const modelSelect2 = document.getElementById('valuation-model-select');
+                            if (!makeSelect || !modelSelect2) return;
+
+                            const beforeReq = function(e) {
+                                if (e.detail && e.detail.elt === makeSelect) {
+                                    try {
+                                        modelSelect2.disabled = true;
+                                        modelSelect2.innerHTML = '<option disabled selected>Loading…</option>';
+                                    } catch (_) {}
+                                }
+                            };
+                            const afterSwap = function(e) {
+                                if (e.detail && e.detail.target && e.detail.target.id === 'valuation-model-select') {
+                                    try { modelSelect2.disabled = false; } catch (_) {}
+                                    if (makeSelect.hasAttribute('hx-vals')) makeSelect.removeAttribute('hx-vals');
+                                    document.removeEventListener('htmx:beforeRequest', beforeReq);
+                                    document.removeEventListener('htmx:afterSwap', afterSwap);
+                                }
+                            };
+
+                            if (makeParam) {
+                                const opt = Array.from(makeSelect.options).find(o => o.value === makeParam);
+                                if (opt) {
+                                    makeSelect.value = makeParam;
+                                    if (modelParam) {
+                                        makeSelect.setAttribute('hx-vals', JSON.stringify({ model: modelParam }));
+                                    }
+                                    document.addEventListener('htmx:beforeRequest', beforeReq);
+                                    document.addEventListener('htmx:afterSwap', afterSwap);
+                                    makeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Valuation modal auto-trigger failed:', e);
+                        }
+                    })();
+                }
+            }
         });
+    }
+
+    // Auto-open valuation modal if URL contains vmake/make (and optional vmodel/model)
+    (function() {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const makeParam = params.get('vmake') || params.get('make');
+            const modelParam = params.get('vmodel') || params.get('model');
+            if (makeParam) {
+                // Open the modal programmatically as if the user clicked the button
+                if (getValuationBtn) {
+                    getValuationBtn.click();
+                } else {
+                    // Fallback if button missing
+                    valuationModal.classList.remove('hidden');
+                    preventBodyScroll();
+                    // Ensure form processed before auto-trigger runs
+                    if (valuationForm && typeof htmx !== 'undefined') {
+                        htmx.process(valuationForm);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Auto-open valuation modal failed:', e);
+        }
+    })();
+
+
+    // Close modal function
+    function closeModal() {
+        valuationModal.classList.add('hidden');
+        restoreBodyScroll();
     }
 
     // Close modal
     if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', function() {
-            valuationModal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        });
+        closeModalBtn.addEventListener('click', closeModal);
     }
 
     // Close modal when clicking outside
-    valuationModal.addEventListener('click', function(e) {
-        if (e.target === valuationModal) {
-            valuationModal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-    });
+    if (valuationModal) {
+        valuationModal.addEventListener('click', function(e) {
+            if (e.target === valuationModal) {
+                closeModal();
+            }
+        });
+    }
 
     // Close modal with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && !valuationModal.classList.contains('hidden')) {
-            valuationModal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
+            closeModal();
         }
     });
 
-    // Form submission (placeholder - would need backend implementation)
-    if (valuationForm) {
-        valuationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    // Function to scroll to valuation result
+    window.scrollToValuationResult = function() {
+        setTimeout(function() {
+            const resultDiv = document.getElementById('valuation-result');
+            const modalContent = valuationModal.querySelector('.overflow-y-auto');
 
-            // Get form data
-            const formData = new FormData(valuationForm);
-            const make = formData.get('make');
-            const model = formData.get('model');
-            const year = formData.get('year');
-            const mileage = formData.get('mileage');
-            const condition = formData.get('condition');
+            if (resultDiv && resultDiv.innerHTML.trim() && modalContent) {
+                // Scroll the modal content to show the result
+                resultDiv.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'nearest'
+                });
 
-            // Simple valuation calculation (placeholder)
-            let baseValue = 1000000; // Base value in KSh
-            const currentYear = new Date().getFullYear();
-            const age = currentYear - parseInt(year);
+                // Alternative: scroll the modal container
+                const resultTop = resultDiv.offsetTop;
+                const modalScrollTop = modalContent.scrollTop;
+                const modalHeight = modalContent.clientHeight;
+                const resultHeight = resultDiv.offsetHeight;
 
-            // Depreciation based on age
-            baseValue -= (age * 50000);
-
-            // Adjust for mileage
-            const mileageValue = parseInt(mileage);
-            if (mileageValue > 100000) {
-                baseValue -= 200000;
-            } else if (mileageValue > 50000) {
-                baseValue -= 100000;
+                if (resultTop + resultHeight > modalScrollTop + modalHeight) {
+                    modalContent.scrollTo({
+                        top: resultTop - modalHeight + resultHeight + 20,
+                        behavior: 'smooth'
+                    });
+                }
             }
+        }, 100);
+    };
 
-            // Adjust for condition
-            const conditionMultipliers = {
-                'excellent': 1.2,
-                'good': 1.0,
-                'fair': 0.8,
-                'poor': 0.6
-            };
-
-            baseValue *= conditionMultipliers[condition] || 1.0;
-
-            // Ensure minimum value
-            baseValue = Math.max(baseValue, 200000);
-
-            // Display result
+    // Enhanced HTMX error handling for valuation form
+    if (valuationForm) {
+        // Add HTMX error handling
+        valuationForm.addEventListener('htmx:responseError', function(event) {
+            console.log('HTMX Response Error:', event.detail);
             const resultDiv = document.getElementById('valuation-result');
             resultDiv.innerHTML = `
-                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mt-4">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
                     <div class="flex items-center">
-                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                        <h4 class="font-bold text-green-800 font-montserrat">Estimated Value</h4>
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        <h4 class="font-bold text-red-800 font-montserrat">Error</h4>
                     </div>
-                    <p class="text-2xl font-bold text-green-700 mt-2 font-montserrat">KSH ${baseValue.toLocaleString()}</p>
-                    <p class="text-sm text-green-600 mt-1 font-raleway">This is an estimated value. Contact us for a detailed assessment.</p>
+                    <p class="text-red-700 mt-2 font-raleway">Unable to calculate valuation. Please try again later.</p>
                 </div>
             `;
+            scrollToValuationResult();
+        });
+
+        // Add HTMX timeout handling
+        valuationForm.addEventListener('htmx:timeout', function(event) {
+            const resultDiv = document.getElementById('valuation-result');
+            resultDiv.innerHTML = `
+                <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-clock text-yellow-500 mr-2"></i>
+                        <h4 class="font-bold text-yellow-800 font-montserrat">Request Timeout</h4>
+                    </div>
+                    <p class="text-yellow-700 mt-2 font-raleway">The request took too long. Please try again.</p>
+                </div>
+            `;
+            scrollToValuationResult();
+        });
+
+        // Add success handling
+        valuationForm.addEventListener('htmx:afterRequest', function(event) {
+            console.log('HTMX After Request:', event.detail);
+            if (event.detail.successful) {
+                scrollToValuationResult();
+            }
+        });
+
+        // Add debugging for make dropdown changes
+        const makeSelect = valuationForm.querySelector('select[name="make"]');
+        if (makeSelect) {
+            makeSelect.addEventListener('change', function(e) {
+                console.log('Make selected:', e.target.value);
+                const modelSelect = document.getElementById('valuation-model-select');
+                if (modelSelect) {
+                    console.log('Model select found, will be updated by HTMX');
+                } else {
+                    console.error('Model select not found!');
+                }
+            });
+        }
+
+        // Handle form submission to ensure proper scrolling
+        valuationForm.addEventListener('submit', function(event) {
+            // Ensure the modal content area is properly configured for scrolling
+            const modalContent = valuationModal.querySelector('.overflow-y-auto');
+            if (modalContent) {
+                modalContent.style.maxHeight = '70vh';
+                modalContent.style.overflowY = 'auto';
+            }
+
+            // Small delay to ensure loading indicator is shown
+            setTimeout(function() {
+                const loadingDiv = document.getElementById('valuation-loading');
+                if (loadingDiv && !loadingDiv.classList.contains('hidden')) {
+                    loadingDiv.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }
+            }, 50);
         });
     }
 
@@ -2529,4 +2830,91 @@ function testMessagePopup() {
        aria-label="Contact us on WhatsApp">
         <i class="fab fa-whatsapp"></i>
     </a>
+
+    <!-- Modal Scrolling Fixes -->
+    <style>
+        /* Modal Scrolling Fixes */
+        #valuation-modal {
+            overscroll-behavior: contain;
+        }
+
+        #valuation-modal .overflow-y-auto {
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Ensure modal content is properly scrollable */
+        #valuation-modal .max-h-\[90vh\] {
+            max-height: 90vh !important;
+        }
+
+        /* Smooth scrolling for modal content */
+        #valuation-modal .overflow-y-auto {
+            scroll-behavior: smooth;
+        }
+
+        /* Fix for mobile devices */
+        @media (max-width: 768px) {
+            #valuation-modal .max-h-\[90vh\] {
+                max-height: 95vh !important;
+            }
+
+            #valuation-modal .p-4 {
+                padding: 1rem !important;
+            }
+
+            #valuation-modal .py-8 {
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+        }
+
+        /* Ensure valuation result is visible */
+        #valuation-result {
+            scroll-margin-top: 20px;
+            scroll-margin-bottom: 20px;
+        }
+
+        /* Loading indicator positioning */
+        #valuation-loading {
+            scroll-margin-top: 20px;
+        }
+
+        /* Prevent modal content from being cut off */
+        #valuation-modal .flex-1 {
+            min-height: 0;
+        }
+
+        /* Ensure proper scrolling on iOS */
+        #valuation-modal .overflow-y-auto {
+            -webkit-overflow-scrolling: touch;
+            transform: translateZ(0);
+        }
+
+        /* Body scroll prevention when modal is open */
+        body.modal-open {
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            left: 0 !important;
+            right: 0 !important;
+        }
+
+        /* Prevent scrollbar jump */
+        body.modal-open {
+            padding-right: 0 !important;
+        }
+    </style>
+
+    <script>
+        // HTMX now handles model population dynamically from the database
+        // No need for hardcoded car models - they're loaded via HTMX from the comprehensive database
+
+        // Optional: Add any additional JavaScript functionality here
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize any additional homepage functionality
+            console.log('Homepage loaded with comprehensive car models from database');
+        });
+    </script>
+
 {% endblock %}
